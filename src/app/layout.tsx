@@ -29,7 +29,10 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     template: "%s | Liverpool FC",
     default: "Liverpool FC — Anfield's Finest",
@@ -42,6 +45,7 @@ export const metadata: Metadata = {
     siteName: "Liverpool FC Fan Site",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({

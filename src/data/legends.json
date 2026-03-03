@@ -1,0 +1,90 @@
+[
+  {
+    "name": "Bill Shankly",
+    "role": "Manager",
+    "years": "1959–1974",
+    "caps": null,
+    "goals": null,
+    "bio": "The man who built modern Liverpool. Shankly transformed a struggling Second Division club into a formidable First Division force, winning three league titles, two FA Cups and the UEFA Cup. His philosophy — 'football is not just a matter of life and death, it is much more important than that' — lives on at Anfield."
+  },
+  {
+    "name": "Bob Paisley",
+    "role": "Manager",
+    "years": "1974–1983",
+    "caps": null,
+    "goals": null,
+    "bio": "The most decorated manager in Liverpool's history. Paisley won six league titles, three European Cups, three League Cups and one UEFA Cup in nine seasons — a record that may never be surpassed. Quiet, modest and tactically brilliant."
+  },
+  {
+    "name": "Kenny Dalglish",
+    "role": "Forward / Manager",
+    "years": "1977–1990",
+    "caps": 355,
+    "goals": 172,
+    "bio": "Widely regarded as Liverpool's greatest ever player. Dalglish scored the winning goal in the 1978 European Cup final and later led the club as player-manager to a legendary league and FA Cup double in 1986. A true legend of Anfield."
+  },
+  {
+    "name": "Steven Gerrard",
+    "role": "Midfielder",
+    "years": "1998–2015",
+    "caps": 710,
+    "goals": 186,
+    "bio": "The heartbeat of Liverpool for 17 years. Gerrard inspired the Miracle of Istanbul with a second-half header and played with passion and leadership in every game he wore the red shirt. One of the finest midfielders of his generation."
+  },
+  {
+    "name": "Ian Rush",
+    "role": "Striker",
+    "years": "1980–1996",
+    "caps": 660,
+    "goals": 346,
+    "bio": "Liverpool's all-time leading goal scorer. Rush was a relentless predator in the penalty area, winning five league titles and three FA Cups. His partnership with Kenny Dalglish was one of the most lethal in English football history."
+  },
+  {
+    "name": "Robbie Fowler",
+    "role": "Striker",
+    "years": "1993–2001 / 2006–2007",
+    "caps": 369,
+    "goals": 183,
+    "bio": "Known as 'God' on the Kop, Fowler's natural finishing ability made him one of the deadliest strikers of his era. He scored 28 goals in his first full season and went on to become a Liverpool icon."
+  },
+  {
+    "name": "Jamie Carragher",
+    "role": "Defender",
+    "years": "1996–2013",
+    "caps": 737,
+    "goals": 4,
+    "bio": "Carra was a warrior at the heart of Liverpool's defence for 17 years. His performances in Istanbul in 2005 were heroic. A born leader and one of the best defenders of his generation who dedicated his career entirely to Liverpool."
+  },
+  {
+    "name": "Graeme Souness",
+    "role": "Midfielder",
+    "years": "1978–1984",
+    "caps": 359,
+    "goals": 56,
+    "bio": "One of the most complete midfielders in English football history. Souness was the engine of the all-conquering Liverpool teams of the late 1970s and early 1980s, winning five league titles and three European Cups."
+  },
+  {
+    "name": "Mohamed Salah",
+    "role": "Forward",
+    "years": "2017–present",
+    "caps": null,
+    "goals": null,
+    "bio": "The Egyptian King. Salah broke the Premier League single-season record with 32 goals in 2017/18 and has been Liverpool's most consistent match-winner ever since. A Champions League winner in 2019 and Premier League champion in 2020."
+  },
+  {
+    "name": "Virgil van Dijk",
+    "role": "Defender",
+    "years": "2018–present",
+    "caps": null,
+    "goals": null,
+    "bio": "The best centre-back in the world at his peak. Van Dijk's arrival transformed Liverpool's defensive record and was central to winning the Champions League and Premier League. A commanding presence and superb leader."
+  },
+  {
+    "name": "Jürgen Klopp",
+    "role": "Manager",
+    "years": "2015–2024",
+    "caps": null,
+    "goals": null,
+    "bio": "The 'Normal One'. Klopp arrived in 2015 and built a team capable of conquering Europe and England. He delivered Liverpool's first Champions League in 14 years, the FIFA Club World Cup and ended the 30-year wait for a league title. Left with nine trophies and eternal love from the Kop."
+  }
+]
