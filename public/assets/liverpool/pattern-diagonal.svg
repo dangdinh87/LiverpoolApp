@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" fill="none" role="img" aria-label="Diagonal stripe pattern">
+  <defs>
+    <pattern id="diag" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="28" height="28" fill="transparent"/>
+      <path d="M0 0H28" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="6" stroke-linecap="square"/>
+    </pattern>
+    <radialGradient id="r" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 120) rotate(110) scale(720 520)">
+      <stop stop-color="#F6EB61" stop-opacity="0.10"/>
+      <stop offset="0.35" stop-color="#C8102E" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#0D0D0D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="800" fill="#0D0D0D"/>
+  <rect width="1200" height="800" fill="url(#r)"/>
+  <rect width="1200" height="800" fill="url(#diag)"/>
+</svg>

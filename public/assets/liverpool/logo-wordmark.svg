@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="96" viewBox="0 0 520 96" fill="none" role="img" aria-label="Liverpool fan site wordmark">
+  <defs>
+    <linearGradient id="red" x1="0" y1="0" x2="520" y2="0" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8102E"/>
+      <stop offset="0.6" stop-color="#C8102E"/>
+      <stop offset="1" stop-color="#F6EB61"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon placeholder (matches logo-mark proportions) -->
+  <g transform="translate(0,0)">
+    <rect x="4" y="4" width="88" height="88" rx="44" fill="#0D0D0D" fill-opacity="0.35" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <path d="M48 24h16v44h24v12H48V24Z" fill="#FFFFFF" fill-opacity="0.92"/>
+    <path d="M51 27h7v47h25v3H51V27Z" fill="#F6EB61" fill-opacity="0.14"/>
+  </g>
+
+  <!-- Wordmark (kept as vector shapes; no font dependency) -->
+  <!-- Style intent: bold condensed, stadium vibe -->
+  <g transform="translate(112,18)" fill="url(#red)">
+    <!-- L -->
+    <path d="M0 0h12v42h24v10H0V0Z"/>
+    <!-- I -->
+    <path d="M46 0h12v52H46V0Z"/>
+    <!-- V -->
+    <path d="M72 0h13l11 36 11-36h13L104 52H88L72 0Z"/>
+    <!-- E -->
+    <path d="M138 0h40v10h-28v10h26v10h-26v12h30v10h-42V0Z"/>
+    <!-- R -->
+    <path d="M194 0h30c10.5 0 18 7.2 18 17 0 7-3.8 12.4-10 15l12 20h-13l-11-18h-14v18h-12V0Zm12 10v14h16c4.6 0 8-3 8-7s-3.4-7-8-7h-16Z"/>
+    <!-- P -->
+    <path d="M256 0h28c11 0 19 7.6 19 18s-8 18-19 18h-16v16h-12V0Zm12 10v16h15c4.9 0 8.6-3.5 8.6-8s-3.7-8-8.6-8h-15Z"/>
+    <!-- O -->
+    <path d="M318 26c0-15 11.8-26 27-26s27 11 27 26-11.8 26-27 26-27-11-27-26Zm12 0c0 9 6.6 16 15 16s15-7 15-16-6.6-16-15-16-15 7-15 16Z"/>
+    <!-- O -->
+    <path d="M388 26c0-15 11.8-26 27-26s27 11 27 26-11.8 26-27 26-27-11-27-26Zm12 0c0 9 6.6 16 15 16s15-7 15-16-6.6-16-15-16-15 7-15 16Z"/>
+    <!-- L -->
+    <path d="M458 0h12v42h24v10h-36V0Z"/>
+  </g>
+
+  <!-- Small descriptor -->
+  <g transform="translate(112,78)" fill="#A0A0A0">
+    <path d="M0 0h290v2H0V0Z" fill="#2A2A2A"/>
+    <path d="M0 10h7v8h-7v-8Zm10 0h6.4c2.7 0 4.6 1.7 4.6 4.1 0 2.4-1.9 3.9-4.6 3.9H10V10Zm2.2 1.9v4.2h4.1c1.5 0 2.5-.8 2.5-2.1s-1-2.1-2.5-2.1h-4.1Z" fill="#A0A0A0"/>
+    <path d="M30 10h11.2v1.9h-9v1.4h8.3v1.8h-8.3v1.6h9.4V18H30V10Z" fill="#A0A0A0"/>
+    <path d="M51 10h2.2v8H51v-8Z" fill="#A0A0A0"/>
+    <path d="M62 10h2l6.6 5.3V10h2.2v8h-2l-6.6-5.3V18H62v-8Z" fill="#A0A0A0"/>
+    <path d="M82 10h6.9c2.8 0 5 1.8 5 4s-2.2 4-5 4H82v-8Zm2.2 1.9v4.2h4.6c1.7 0 2.9-.9 2.9-2.1s-1.2-2.1-2.9-2.1h-4.6Z" fill="#A0A0A0"/>
+    <path d="M104 10h11.2v1.9h-9v1.4h8.3v1.8h-8.3v1.6h9.4V18H104V10Z" fill="#A0A0A0"/>
+  </g>
+</svg>

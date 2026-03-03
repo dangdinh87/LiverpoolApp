@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" fill="none" role="img" aria-label="Stadium grid pattern">
+  <defs>
+    <linearGradient id="v" x1="0" y1="0" x2="0" y2="800" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8102E" stop-opacity="0.18"/>
+      <stop offset="0.35" stop-color="#FFFFFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.02"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 180) rotate(120) scale(760 520)">
+      <stop stop-color="#C8102E" stop-opacity="0.26"/>
+      <stop offset="0.55" stop-color="#C8102E" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#0D0D0D" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="96" height="96" patternUnits="userSpaceOnUse">
+      <path d="M96 0H0V96" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1"/>
+      <path d="M48 0V96" stroke="#FFFFFF" stroke-opacity="0.03" stroke-width="1"/>
+      <path d="M0 48H96" stroke="#FFFFFF" stroke-opacity="0.03" stroke-width="1"/>
+      <path d="M0 0H96V96H0V0Z" stroke="#FFFFFF" stroke-opacity="0.02" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="800" fill="#0D0D0D"/>
+  <rect width="1200" height="800" fill="url(#glow)"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+  <rect width="1200" height="800" fill="url(#v)"/>
+</svg>

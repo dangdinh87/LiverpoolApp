@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" role="img" aria-label="Liverpool fan site mark">
+  <defs>
+    <radialGradient id="g0" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(78 28) rotate(120) scale(120)">
+      <stop offset="0" stop-color="#F6EB61" stop-opacity="0.22"/>
+      <stop offset="0.32" stop-color="#C8102E" stop-opacity="1"/>
+      <stop offset="1" stop-color="#7A0A1B" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="g1" x1="18" y1="18" x2="110" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0.02"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.10"/>
+    </linearGradient>
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.35 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer badge -->
+  <circle cx="64" cy="64" r="58" fill="url(#g0)"/>
+  <circle cx="64" cy="64" r="58" fill="url(#g1)"/>
+  <circle cx="64" cy="64" r="58" stroke="#0D0D0D" stroke-opacity="0.55" stroke-width="4"/>
+
+  <!-- Inner plate -->
+  <path d="M64 22c16.6 0 30 13.4 30 30v27.1c0 9.4-5.1 18-13.2 22.4l-13.1 7.1c-2.3 1.2-5.1 1.2-7.4 0l-13.1-7.1C39.1 97.1 34 88.5 34 79.1V52c0-16.6 13.4-30 30-30Z"
+        fill="#0D0D0D" fill-opacity="0.20" stroke="#FFFFFF" stroke-opacity="0.14" stroke-width="2"/>
+
+  <!-- Monogram "L" (geometric, not a club crest) -->
+  <g filter="url(#softGlow)">
+    <path d="M52 42h16v44h24v12H52V42Z" fill="#FFFFFF"/>
+    <path d="M56.5 46.5h7v47h25v3H56.5v-50Z" fill="#F6EB61" fill-opacity="0.16"/>
+  </g>
+
+  <!-- Micro detail ring -->
+  <circle cx="64" cy="64" r="46" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="2"/>
+</svg>
