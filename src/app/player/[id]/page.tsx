@@ -5,6 +5,9 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getPlayerStats, getSquad } from "@/lib/api-football";
 import { POSITION_LABELS } from "@/lib/types/football";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { FavouriteButton } from "@/components/profile/favourite-button";
+import type { FavouritePlayer } from "@/lib/supabase";
 
 export const revalidate = 86400;
 
@@ -43,17 +46,40 @@ export default async function PlayerPage({ params }: PageProps) {
   // Use stats from first entry (should be PL season)
   const stats = statistics[0];
 
+  // Auth + favourite state (non-blocking — no redirect on failure)
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let isFavourited = false;
+  if (user) {
+    const { data: fav } = await supabase
+      .from("favourite_players")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("player_id", player.id)
+      .single<FavouritePlayer>();
+    isFavourited = !!fav;
+  }
+
   return (
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back nav */}
-        <Link
-          href="/squad"
-          className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm mb-8 transition-colors group"
-        >
-          <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-          Back to Squad
-        </Link>
+        {/* Back nav + favourite */}
+        <div className="flex items-center justify-between mb-8">
+          <Link
+            href="/squad"
+            className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm transition-colors group"
+          >
+            <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
+            Back to Squad
+          </Link>
+          <FavouriteButton
+            playerId={player.id}
+            playerName={player.name}
+            playerPhoto={player.photo}
+            initialFavourited={isFavourited}
+            isLoggedIn={!!user}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Left: photo + basic info */}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Bebas_Neue, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
-import { Navbar } from "@/components/layout/navbar";
+import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
@@ -59,7 +59,7 @@ export default function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
         >
-          <Navbar />
+          <NavbarAuth />
           <main>{children}</main>
           <Footer />
         </ThemeProvider>
