@@ -83,6 +83,7 @@ function getRevalidateTime(endpoint: string): number {
   if (endpoint.includes("/fixtures")) return 3600;          // 1h
   if (endpoint.includes("/standings")) return 21600;        // 6h
   if (endpoint.includes("/players/topscorers")) return 21600; // 6h
+  if (endpoint.includes("/players/topassists")) return 21600;  // 6h
   if (endpoint.includes("/players")) return 86400;          // 24h
   return 3600;
 }
@@ -124,6 +125,14 @@ export const getTopScorers = cache(async (): Promise<TopScorer[]> => {
   });
 });
 
+/** Get top assists in Premier League */
+export const getTopAssists = cache(async (): Promise<TopScorer[]> => {
+  return apiFetch<TopScorer>("/players/topassists", {
+    league: LEAGUE_ID,
+    season: SEASON,
+  });
+});
+
 /** Get individual player stats — React.cache() deduplicates calls within one render */
 export const getPlayerStats = cache(async (playerId: number): Promise<PlayerStats | null> => {
   const data = await apiFetch<PlayerStats>("/players", {
@@ -141,6 +150,7 @@ function getMockData<T>(endpoint: string): T[] {
   if (endpoint.includes("/fixtures")) return mockFixtures as T[];
   if (endpoint.includes("/standings")) return [{ league: { standings: [mockStandings] } }] as T[];
   if (endpoint.includes("/players/topscorers")) return mockTopScorers as T[];
+  if (endpoint.includes("/players/topassists")) return mockTopAssists as T[];
   return [] as T[];
 }
 
@@ -201,4 +211,12 @@ export const mockStandings: Standing[] = [
 export const mockTopScorers: TopScorer[] = [
   { player: mockSquad[8], statistics: [{ team: { id: 40, name: "Liverpool", logo: "" }, league: { id: 39, name: "Premier League", season: 2024 }, games: { appearences: 27, lineups: 26, minutes: 2340, rating: "8.2" }, goals: { total: 22, assists: 12, conceded: null, saves: null }, passes: { total: 890, accuracy: "82" }, tackles: { total: 18 }, cards: { yellow: 1, red: 0 }, shots: { total: 98, on: 54 }, dribbles: { attempts: 65, success: 42 } }] },
   { player: mockSquad[9], statistics: [{ team: { id: 40, name: "Liverpool", logo: "" }, league: { id: 39, name: "Premier League", season: 2024 }, games: { appearences: 23, lineups: 20, minutes: 1780, rating: "7.6" }, goals: { total: 12, assists: 4, conceded: null, saves: null }, passes: { total: 520, accuracy: "74" }, tackles: { total: 25 }, cards: { yellow: 3, red: 0 }, shots: { total: 62, on: 28 }, dribbles: { attempts: 42, success: 24 } }] },
+];
+
+// ─── Mock Top Assists ─────────────────────────────────────────────────────────
+
+export const mockTopAssists: TopScorer[] = [
+  { player: mockSquad[8], statistics: [{ team: { id: 40, name: "Liverpool", logo: "" }, league: { id: 39, name: "Premier League", season: 2024 }, games: { appearences: 27, lineups: 26, minutes: 2340, rating: "8.2" }, goals: { total: 22, assists: 12, conceded: null, saves: null }, passes: { total: 890, accuracy: "82" }, tackles: { total: 18 }, cards: { yellow: 1, red: 0 }, shots: { total: 98, on: 54 }, dribbles: { attempts: 65, success: 42 } }] },
+  { player: mockSquad[5], statistics: [{ team: { id: 40, name: "Liverpool", logo: "" }, league: { id: 39, name: "Premier League", season: 2024 }, games: { appearences: 27, lineups: 27, minutes: 2430, rating: "8.0" }, goals: { total: 8, assists: 10, conceded: null, saves: null }, passes: { total: 1120, accuracy: "88" }, tackles: { total: 42 }, cards: { yellow: 2, red: 0 }, shots: { total: 35, on: 18 }, dribbles: { attempts: 28, success: 20 } }] },
+  { player: mockSquad[10], statistics: [{ team: { id: 40, name: "Liverpool", logo: "" }, league: { id: 39, name: "Premier League", season: 2024 }, games: { appearences: 25, lineups: 22, minutes: 1980, rating: "7.8" }, goals: { total: 9, assists: 8, conceded: null, saves: null }, passes: { total: 640, accuracy: "79" }, tackles: { total: 22 }, cards: { yellow: 2, red: 0 }, shots: { total: 55, on: 26 }, dribbles: { attempts: 52, success: 34 } }] },
 ];
