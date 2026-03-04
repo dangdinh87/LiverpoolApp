@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTopScorers, getTopAssists } from "@/lib/api-football";
+import { getTopScorers, getTopAssists } from "@/lib/football";
 import { StatNumber } from "@/components/stats/stat-number";
 import { StatChart } from "@/components/stats/stat-chart";
 
@@ -29,20 +29,28 @@ export default async function StatsPage() {
   const topScorerGoals = scorers[0]?.statistics[0]?.goals?.total ?? 0;
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-12">
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="relative h-[40vh] min-h-[320px] flex items-end">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/assets/lfc/fans/fans-anfield.webp')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
           <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
             Premier League · 2024/25
           </p>
-          <h1 className="font-bebas text-6xl md:text-7xl text-white tracking-wider leading-none">
+          <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none">
             Statistics
           </h1>
         </div>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
         {/* Headline stats — animated count-up */}
-        <div className="grid grid-cols-3 gap-4 mb-16 bg-stadium-surface border border-stadium-border rounded-2xl p-8">
+        <div className="grid grid-cols-3 gap-4 mb-16 bg-stadium-surface border border-stadium-border rounded-none p-8">
           <StatNumber
             value={totalLfcGoals}
             label="LFC Goals"
@@ -62,7 +70,7 @@ export default async function StatsPage() {
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Top Scorers */}
-          <div className="bg-stadium-surface border border-stadium-border rounded-2xl p-6">
+          <div className="bg-stadium-surface border border-stadium-border rounded-none p-6">
             <h2 className="font-bebas text-2xl text-white tracking-wider mb-1">
               Top Scorers
             </h2>
@@ -73,7 +81,7 @@ export default async function StatsPage() {
           </div>
 
           {/* Top Assists */}
-          <div className="bg-stadium-surface border border-stadium-border rounded-2xl p-6">
+          <div className="bg-stadium-surface border border-stadium-border rounded-none p-6">
             <h2 className="font-bebas text-2xl text-white tracking-wider mb-1">
               Top Assists
             </h2>
@@ -86,7 +94,7 @@ export default async function StatsPage() {
 
         {/* Liverpool top scorers table */}
         {lfcScorers.length > 0 && (
-          <div className="mt-8 bg-stadium-surface border border-stadium-border rounded-2xl overflow-hidden">
+          <div className="mt-8 bg-stadium-surface border border-stadium-border rounded-none overflow-hidden">
             <div className="px-6 py-4 border-b border-stadium-border">
               <h2 className="font-bebas text-2xl text-white tracking-wider">
                 Liverpool Scorers

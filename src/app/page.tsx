@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { getFixtures, getStandings, getSquad } from "@/lib/api-football";
+import { getFixtures, getStandings } from "@/lib/football";
 import { getNews } from "@/lib/rss-parser";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
+import { NewsSection } from "@/components/home/news-section";
 import type { Fixture } from "@/lib/types/football";
 
 export const metadata: Metadata = {
@@ -15,10 +16,9 @@ export const metadata: Metadata = {
 export const revalidate = 1800; // 30min
 
 export default async function HomePage() {
-  const [fixtures, standings, squad, news] = await Promise.all([
+  const [fixtures, standings, news] = await Promise.all([
     getFixtures(),
     getStandings(),
-    getSquad(),
     getNews(6),
   ]);
 
@@ -27,14 +27,19 @@ export default async function HomePage() {
     fixtures.find((f) => f.fixture.status.short === "NS") ?? null;
 
   return (
-    <main>
+    <>
+      {/* Section 1: Hero — full viewport */}
       <Hero />
-      <BentoGrid
-        nextMatch={nextMatch}
-        standings={standings}
-        players={squad}
-        news={news}
-      />
-    </main>
+
+      {/* Section 2: Overview */}
+      <div className="min-h-screen flex items-center snap-start">
+        <BentoGrid nextMatch={nextMatch} standings={standings} />
+      </div>
+
+      {/* Section 3: News */}
+      <div className="min-h-screen flex items-start pt-20 snap-start">
+        <NewsSection articles={news} />
+      </div>
+    </>
   );
 }
