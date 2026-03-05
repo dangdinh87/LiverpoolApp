@@ -20,6 +20,7 @@ export interface ArticleContent {
 type Extractor = ($: cheerio.CheerioAPI, url: string) => ArticleContent;
 
 const extractors: Record<string, Extractor> = {
+  "liverpoolfc.com": extractLfcOfficial,
   "bbc.com": extractBBC,
   "bbc.co.uk": extractBBC,
   "theguardian.com": extractGuardian,
@@ -27,6 +28,52 @@ const extractors: Record<string, Extractor> = {
   "24h.com.vn": extractVietnamese,
   "bongdaplus.vn": extractVietnamese,
 };
+
+function extractLfcOfficial($: cheerio.CheerioAPI, url: string): ArticleContent {
+  // LFC injects <style> tags inside headings — use og:title first
+  const ogTitle = $('meta[property="og:title"]').attr("content")?.replace(/\s*[-|]\s*Liverpool FC$/i, "");
+  const h1 = $("h1").first().clone();
+  h1.find("style, script").remove();
+  const title = ogTitle || h1.text().trim() || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  // LFC site uses Next.js — try __NEXT_DATA__ first for structured content
+  const nextDataScript = $("#__NEXT_DATA__").html();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+
+  if (nextDataScript) {
+    try {
+      const data = JSON.parse(nextDataScript);
+      const body = data?.props?.pageProps?.data?.article?.body;
+      if (Array.isArray(body)) {
+        for (const block of body) {
+          if (block.type === "paragraph" && typeof block.value === "string") {
+            // Strip HTML tags from paragraph value
+            const text = block.value.replace(/<[^>]+>/g, "").trim();
+            if (text.length > 20) paragraphs.push(text);
+          } else if (block.type === "image" && block.value?.url) {
+            images.push(block.value.url);
+          }
+        }
+      }
+    } catch {
+      // Fall through to cheerio extraction
+    }
+  }
+
+  // Fallback: cheerio extraction from article body
+  if (paragraphs.length === 0) {
+    const container = $("article, .article-body, [data-testid='article-body'], main").first();
+    container.find("p").each((_, el) => {
+      const text = $(el).text().trim();
+      if (text.length > 20) paragraphs.push(text);
+    });
+  }
+
+  return { title, heroImage, description, paragraphs, images, sourceUrl: url, sourceName: "LiverpoolFC.com" };
+}
 
 function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
   const title = $("h1").first().text().trim();

@@ -8,7 +8,7 @@ import * as cheerio from "cheerio";
 // Types
 // ---------------------------------------------------------------------------
 
-export type NewsSource = "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus";
+export type NewsSource = "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus";
 export type NewsLanguage = "en" | "vi";
 
 export interface NewsArticle {
@@ -25,6 +25,11 @@ export const SOURCE_CONFIG: Record<
   NewsSource,
   { label: string; color: string; language: NewsLanguage }
 > = {
+  lfc: {
+    label: "LFC",
+    color: "bg-lfc-red/20 text-lfc-red",
+    language: "en",
+  },
   bbc: {
     label: "BBC",
     color: "bg-[#BB1919]/20 text-[#FF6B6B]",
@@ -192,6 +197,77 @@ async function fetchRssFeed(config: RssFeedConfig): Promise<NewsArticle[]> {
   } catch (err) {
     console.warn(
       `[rss-parser] Failed to fetch ${config.source} (${config.url}):`,
+      err instanceof Error ? err.message : err
+    );
+    return [];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// LFC Official Scraper (liverpoolfc.com — __NEXT_DATA__ extraction)
+// ---------------------------------------------------------------------------
+
+interface LfcNewsItem {
+  title: string;
+  url: string;
+  publishedAt: string;
+  kicker?: string;
+  coverImage?: {
+    sizes?: {
+      sm?: { webpUrl?: string; url?: string };
+      md?: { webpUrl?: string; url?: string };
+    };
+  };
+}
+
+async function scrapeLfcOfficial(): Promise<NewsArticle[]> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch("https://www.liverpoolfc.com/news", {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      next: { revalidate: 1800 },
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return [];
+
+    const html = await res.text();
+
+    // Extract __NEXT_DATA__ JSON
+    const match = html.match(
+      /<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/
+    );
+    if (!match?.[1]) return [];
+
+    const data = JSON.parse(match[1]);
+    const results: LfcNewsItem[] =
+      data?.props?.pageProps?.data?.newsPage?.results ?? [];
+
+    return results.slice(0, 15).map((item) => {
+      const img =
+        item.coverImage?.sizes?.sm?.webpUrl ??
+        item.coverImage?.sizes?.sm?.url ??
+        item.coverImage?.sizes?.md?.webpUrl ??
+        undefined;
+
+      return {
+        title: item.title,
+        link: `https://www.liverpoolfc.com${item.url}`,
+        pubDate: item.publishedAt || new Date().toISOString(),
+        contentSnippet: item.kicker ?? "",
+        thumbnail: sanitizeUrl(img),
+        source: "lfc" as NewsSource,
+        language: "en" as NewsLanguage,
+      };
+    });
+  } catch (err) {
+    console.warn(
+      "[scraper] LFC Official failed:",
       err instanceof Error ? err.message : err
     );
     return [];
@@ -385,6 +461,7 @@ export const getNews = cache(async (limit = 20): Promise<NewsArticle[]> => {
   try {
     // Fetch all sources in parallel — graceful per-source failure
     const results = await Promise.allSettled([
+      scrapeLfcOfficial(),
       ...RSS_FEEDS.map((feed) => fetchRssFeed(feed)),
       scrapeBongdaplus(),
     ]);

@@ -1,13 +1,14 @@
 // Shared news config for client components
 // (rss-parser.ts has `import "server-only"` — can't import it from client code)
 
-export type NewsSource = "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus";
+export type NewsSource = "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus";
 export type NewsLanguage = "en" | "vi";
 
 export const SOURCE_CONFIG: Record<
   NewsSource,
   { label: string; color: string }
 > = {
+  lfc: { label: "LFC", color: "bg-lfc-red/20 text-lfc-red" },
   bbc: { label: "BBC", color: "bg-[#BB1919]/20 text-[#FF6B6B]" },
   guardian: { label: "Guardian", color: "bg-[#052962]/20 text-[#6B9AFF]" },
   bongda: { label: "Bongda", color: "bg-emerald-500/20 text-emerald-400" },

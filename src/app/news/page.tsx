@@ -5,7 +5,7 @@ import { NewsFeed } from "@/components/news/news-feed";
 export const metadata: Metadata = {
   title: "News",
   description:
-    "Latest Liverpool FC news from BBC Sport, The Guardian, Bongda.com.vn, 24h.com.vn and more.",
+    "Latest Liverpool FC news from LiverpoolFC.com, BBC Sport, The Guardian, Bongda.com.vn and more.",
 };
 
 // ISR: revalidate every 30 minutes
@@ -35,8 +35,8 @@ export default async function NewsPage() {
             Latest News
           </h1>
           <p className="font-inter text-stadium-muted text-sm">
-            Liverpool FC news from BBC Sport, The Guardian, Bongda.com.vn, 24h
-            &amp; more
+            Liverpool FC news from LiverpoolFC.com, BBC Sport, The Guardian,
+            Bongda.com.vn &amp; more
           </p>
         </div>
       </div>
@@ -48,6 +48,15 @@ export default async function NewsPage() {
         {/* Attribution */}
         <p className="text-center text-stadium-muted font-inter text-xs mt-10">
           News aggregated from{" "}
+          <a
+            href="https://www.liverpoolfc.com/news"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lfc-red hover:underline"
+          >
+            LiverpoolFC.com
+          </a>
+          ,{" "}
           <a
             href="https://www.bbc.co.uk/sport/football/teams/liverpool"
             target="_blank"

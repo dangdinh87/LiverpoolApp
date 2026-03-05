@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
       // Supabase Storage (user avatars)
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "https", hostname: "*.supabase.in" },
+      // News sources — LFC Official
+      { protocol: "https", hostname: "backend.liverpoolfc.com" },
       // News sources — BBC
       { protocol: "https", hostname: "ichef.bbci.co.uk" },
       // News sources — Guardian

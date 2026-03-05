@@ -22,6 +22,7 @@ function decodeSlug(slug: string): string | null {
 
 // Detect source from URL
 function detectSource(url: string): NewsSource {
+  if (url.includes("liverpoolfc.com")) return "lfc";
   if (url.includes("bbc.com") || url.includes("bbc.co.uk")) return "bbc";
   if (url.includes("theguardian.com")) return "guardian";
   if (url.includes("bongda.com.vn")) return "bongda";
