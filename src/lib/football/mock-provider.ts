@@ -2,7 +2,7 @@
 // Used when FOOTBALL_DATA_PROVIDER=mock or no API keys are configured.
 
 import type { FootballDataProvider } from "./provider";
-import type { Player, PlayerStats, Fixture, Standing, TopScorer, FixtureEvent, FixtureLineup, FixtureTeamStats, Injury, TeamInfo, Coach } from "@/lib/types/football";
+import type { Player, PlayerStats, Fixture, Standing, TopScorer, FixtureEvent, FixtureLineup, FixtureTeamStats, Injury, TeamInfo, Coach, GameweekInfo } from "@/lib/types/football";
 import {
   mockSquad, mockFixtures, mockStandings, mockTopScorers, mockTopAssists,
   mockEvents, mockLineups, mockFixtureStats, mockInjuries, mockTeamInfo, mockCoach,
@@ -57,5 +57,9 @@ export class MockProvider implements FootballDataProvider {
 
   async getCoach(): Promise<Coach | null> {
     return mockCoach;
+  }
+
+  async getGameweekInfo(): Promise<GameweekInfo | null> {
+    return null;
   }
 }

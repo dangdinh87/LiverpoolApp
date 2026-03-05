@@ -1,35 +1,48 @@
 import type { Metadata } from "next";
-import { getSquad } from "@/lib/api-football";
+import { getSquadPlayers } from "@/lib/squad-data";
+import { getInjuries } from "@/lib/football";
 import { SquadGrid } from "@/components/squad/squad-grid";
+import { InjuryWidget } from "@/components/squad/injury-widget";
 
 export const metadata: Metadata = {
   title: "Squad",
-  description: "Liverpool FC first-team squad for the 2024/25 season.",
+  description: "Liverpool FC first-team squad for the 2025/26 season.",
 };
 
-// ISR: revalidate squad data every 24h
-export const revalidate = 86400;
+export const revalidate = 1800; // 30min (injuries update)
 
 export default async function SquadPage() {
-  const players = await getSquad();
+  const players = getSquadPlayers({ includeLoans: true, includeForever: true });
+  const injuries = await getInjuries();
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page header */}
-        <div className="mb-10">
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="relative h-[40vh] min-h-[320px] flex items-end">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/assets/lfc/stadium/anfield-pitch.webp')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
           <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
-            2024/25 Season
+            2025/26 Season
           </p>
-          <h1 className="font-bebas text-6xl md:text-7xl text-white tracking-wider leading-none mb-3">
+          <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none mb-3">
             The Squad
           </h1>
-          <p className="text-stadium-muted font-inter">
-            {players.length} players · Liverpool FC
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="font-inter text-stadium-muted">
+              {players.length} players · Liverpool FC
+            </p>
+            {injuries.length > 0 && <InjuryWidget injuries={injuries} />}
+          </div>
         </div>
+      </div>
 
-        {/* Squad grid with position filter */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+        {/* Squad grid with search and position filter */}
         <SquadGrid players={players} />
       </div>
     </div>

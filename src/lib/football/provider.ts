@@ -13,6 +13,7 @@ import type {
   Injury,
   TeamInfo,
   Coach,
+  GameweekInfo,
 } from "@/lib/types/football";
 
 /** Abstract contract for football data providers (API-Football, SofaScore, mock, etc.) */
@@ -31,4 +32,5 @@ export interface FootballDataProvider {
   getInjuries(): Promise<Injury[]>;
   getTeamInfo(): Promise<TeamInfo | null>;
   getCoach(): Promise<Coach | null>;
+  getGameweekInfo(): Promise<GameweekInfo | null>;
 }

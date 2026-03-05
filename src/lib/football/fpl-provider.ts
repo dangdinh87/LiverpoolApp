@@ -7,7 +7,7 @@ import type { FootballDataProvider } from "./provider";
 import type {
   Player, PlayerStats, Fixture, Standing, TopScorer,
   FixtureEvent, FixtureLineup, FixtureTeamStats,
-  Injury, TeamInfo, Coach,
+  Injury, TeamInfo, Coach, GameweekInfo,
 } from "@/lib/types/football";
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
@@ -577,7 +577,7 @@ export class FplProvider implements FootballDataProvider {
             id: el.id,
             name: `${el.first_name} ${el.second_name}`,
             photo: playerPhotoUrl(el.code),
-            type: el.status === "i" ? "Injury" : el.status === "s" ? "Suspended" : "Unavailable",
+            type: el.status === "d" ? "Doubtful" : "Missing Fixture",
             reason: el.news || "Unknown",
           },
           team: { id: LFC_CANONICAL_ID, name: "Liverpool", logo: teamBadgeUrl(14) },
@@ -628,5 +628,27 @@ export class FplProvider implements FootballDataProvider {
 
   async getCoach(): Promise<Coach | null> {
     return null;
+  }
+
+  // ─── Gameweek Info ────────────────────────────────────────────────────────
+
+  async getGameweekInfo(): Promise<GameweekInfo | null> {
+    try {
+      const { events } = await this.getBootstrap();
+      const current = events.find((e) => e.is_current);
+      const next = events.find((e) => e.is_next);
+      if (!current) return null;
+
+      return {
+        current: current.id,
+        currentName: current.name,
+        isFinished: current.finished,
+        nextDeadline: next?.deadline_time ?? null,
+        nextGw: next?.id ?? null,
+      };
+    } catch (err) {
+      console.error("[fpl] getGameweekInfo failed:", err);
+      return null;
+    }
   }
 }

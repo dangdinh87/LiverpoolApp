@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getFixtures, getStandings } from "@/lib/football";
+import { getFixtures, getStandings, getGameweekInfo } from "@/lib/football";
 import { getNews } from "@/lib/rss-parser";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
@@ -16,10 +16,11 @@ export const metadata: Metadata = {
 export const revalidate = 1800; // 30min
 
 export default async function HomePage() {
-  const [fixtures, standings, news] = await Promise.all([
+  const [fixtures, standings, news, gameweek] = await Promise.all([
     getFixtures(),
     getStandings(),
     getNews(6),
+    getGameweekInfo(),
   ]);
 
   // First upcoming match
@@ -33,7 +34,7 @@ export default async function HomePage() {
 
       {/* Section 2: Overview */}
       <div className="min-h-screen flex items-center snap-start">
-        <BentoGrid nextMatch={nextMatch} standings={standings} />
+        <BentoGrid nextMatch={nextMatch} standings={standings} gameweek={gameweek} />
       </div>
 
       {/* Section 3: News */}

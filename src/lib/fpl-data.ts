@@ -337,3 +337,4 @@ export async function getFplPlayerDetail(playerId: number): Promise<FplPlayerDet
     pastSeasons,
   };
 }
+

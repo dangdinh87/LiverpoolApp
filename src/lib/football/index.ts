@@ -39,3 +39,4 @@ export const getFixtureStatistics = cache((id: number) => provider.getFixtureSta
 export const getInjuries = cache(() => provider.getInjuries());
 export const getTeamInfo = cache(() => provider.getTeamInfo());
 export const getCoach = cache(() => provider.getCoach());
+export const getGameweekInfo = cache(() => provider.getGameweekInfo());

@@ -1,9 +1,10 @@
 ---
 phase: 3
 title: "Data Enhancement & Polish"
-status: Planned
+status: Done
 effort: 1.5h
 depends: [phase-01, phase-02]
+completed: 2026-03-05
 ---
 
 # Phase 03 — Data Enhancement & Polish

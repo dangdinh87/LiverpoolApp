@@ -1,7 +1,7 @@
 ---
 title: "FPL API Integration + Players Page"
 description: "Replace all providers with FPL API, add new Players page with live 2025-26 stats, enhance missing features"
-status: pending
+status: completed
 priority: P1
 effort: 6h
 branch: master
@@ -50,8 +50,8 @@ FPL `/bootstrap-static/` teams have `win/draw/loss/played/points` fields but **a
 | # | Phase | Status | Effort |
 |---|-------|--------|--------|
 | 1 | [FPL Provider + Cleanup](phase-01-fpl-provider.md) | ✅ DONE (2026-03-05) | 2h |
-| 2 | [Players Page + Components](phase-02-players-page.md) | Planned | 2.5h |
-| 3 | [Data Enhancement & Polish](phase-03-data-enhancement.md) | Planned | 1.5h |
+| 2 | [Players Page + Components](phase-02-players-page.md) | ✅ DONE (2026-03-05) | 2.5h |
+| 3 | [Data Enhancement & Polish](phase-03-data-enhancement.md) | ✅ DONE (2026-03-05) | 1.5h |
 
 ## Architecture (After Cleanup)
 

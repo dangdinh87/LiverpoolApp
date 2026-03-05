@@ -235,6 +235,14 @@ export interface CoachCareer {
   end: string | null;
 }
 
+export interface GameweekInfo {
+  current: number;
+  currentName: string;
+  isFinished: boolean;
+  nextDeadline: string | null;
+  nextGw: number | null;
+}
+
 export interface Coach {
   id: number;
   name: string;

@@ -5,7 +5,7 @@ import { StatChart } from "@/components/stats/stat-chart";
 
 export const metadata: Metadata = {
   title: "Stats",
-  description: "Liverpool FC Premier League statistics 2024/25 — top scorers, assists and more.",
+  description: "Liverpool FC Premier League statistics 2025/26 — top scorers, assists and more.",
 };
 
 export const revalidate = 21600; // 6h
@@ -40,7 +40,7 @@ export default async function StatsPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
           <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
-            Premier League · 2024/25
+            Premier League · 2025/26
           </p>
           <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none">
             Statistics
@@ -75,7 +75,7 @@ export default async function StatsPage() {
               Top Scorers
             </h2>
             <p className="font-inter text-xs text-stadium-muted mb-5">
-              Premier League 2024/25 · Red = Liverpool player
+              Premier League 2025/26 · Red = Liverpool player
             </p>
             <StatChart scorers={scorers} type="goals" limit={10} />
           </div>
@@ -86,7 +86,7 @@ export default async function StatsPage() {
               Top Assists
             </h2>
             <p className="font-inter text-xs text-stadium-muted mb-5">
-              Premier League 2024/25 · Red = Liverpool player
+              Premier League 2025/26 · Red = Liverpool player
             </p>
             <StatChart scorers={assists} type="assists" limit={10} />
           </div>
