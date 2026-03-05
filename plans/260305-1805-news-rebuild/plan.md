@@ -1,7 +1,7 @@
 ---
 title: "News Feature Rebuild"
 description: "Multi-source RSS (EN+VN), image handling, hero+grid layout, language badges"
-status: pending
+status: done
 priority: P2
 effort: 5h
 branch: master
@@ -30,8 +30,8 @@ Multi-source news aggregation (EN + VN), modern Hero+Grid+List layout, language 
 | # | Phase | Effort | Status |
 |---|-------|--------|--------|
 | 1 | [Multi-Source Backend](./phase-01-multi-source-backend.md) | 2h | **Done** |
-| 2 | [News Page UI Redesign](./phase-02-news-page-redesign.md) | 2h | Pending |
-| 3 | [Homepage News Update](./phase-03-homepage-news-update.md) | 1h | Pending |
+| 2 | [News Page UI Redesign](./phase-02-news-page-redesign.md) | 2h | **Done** |
+| 3 | [Homepage News Update](./phase-03-homepage-news-update.md) | 1h | **Done** |
 
 ## Architecture
 

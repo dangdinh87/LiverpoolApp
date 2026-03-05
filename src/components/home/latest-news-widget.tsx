@@ -1,18 +1,9 @@
 import Link from "next/link";
 import type { NewsArticle } from "@/lib/rss-parser";
+import { formatRelativeDate } from "@/lib/news-config";
 
 interface LatestNewsWidgetProps {
   articles: NewsArticle[];
-}
-
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const diff = Date.now() - date.getTime();
-  const hours = Math.floor(diff / 3600000);
-  if (hours < 1) return "Just now";
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
 }
 
 export function LatestNewsWidget({ articles }: LatestNewsWidgetProps) {
