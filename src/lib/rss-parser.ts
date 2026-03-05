@@ -317,6 +317,67 @@ function deduplicateArticles(articles: NewsArticle[]): NewsArticle[] {
 }
 
 // ---------------------------------------------------------------------------
+// OG Image Enrichment (fetch og:image for articles missing thumbnails)
+// ---------------------------------------------------------------------------
+
+async function fetchOgImage(url: string): Promise<string | undefined> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; LiverpoolApp/1.0)",
+        Accept: "text/html",
+      },
+      next: { revalidate: 86400 },
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) return undefined;
+
+    // Only read first 50KB for og:image
+    const reader = res.body?.getReader();
+    if (!reader) return undefined;
+
+    let html = "";
+    const decoder = new TextDecoder();
+    while (html.length < 50000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += decoder.decode(value, { stream: true });
+      if (html.includes("</head>")) break;
+    }
+    reader.cancel();
+
+    const match = html.match(/property="og:image"\s+content="([^"]+)"/);
+    return sanitizeUrl(match?.[1]);
+  } catch {
+    return undefined;
+  }
+}
+
+async function enrichThumbnails(
+  articles: NewsArticle[],
+  maxFetches: number
+): Promise<void> {
+  const toEnrich = articles
+    .filter((a) => !a.thumbnail && a.link !== "#")
+    .slice(0, maxFetches);
+
+  if (toEnrich.length === 0) return;
+
+  const results = await Promise.allSettled(
+    toEnrich.map((a) => fetchOgImage(a.link))
+  );
+
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled" && result.value) {
+      toEnrich[i].thumbnail = result.value;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -346,7 +407,12 @@ export const getNews = cache(async (limit = 20): Promise<NewsArticle[]> => {
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
 
-    return unique.slice(0, limit);
+    const sliced = unique.slice(0, limit);
+
+    // Enrich top 7 articles missing thumbnails with og:image
+    await enrichThumbnails(sliced, 7);
+
+    return sliced;
   } catch (err) {
     console.error("[rss-parser] Fatal error in getNews:", err);
     return getMockNews().slice(0, limit);

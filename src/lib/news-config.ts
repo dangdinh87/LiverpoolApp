@@ -15,6 +15,21 @@ export const SOURCE_CONFIG: Record<
   bongdaplus: { label: "BD+", color: "bg-sky-500/20 text-sky-400" },
 };
 
+// Encode article URL → base64url slug for /news/[slug] route
+export function encodeArticleSlug(url: string): string {
+  if (typeof window !== "undefined") {
+    // Client-side: use btoa
+    return btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  // Server-side: use Buffer
+  return Buffer.from(url).toString("base64url");
+}
+
+// Build in-app article URL
+export function getArticleUrl(articleLink: string): string {
+  return `/news/${encodeArticleSlug(articleLink)}`;
+}
+
 export function formatRelativeDate(dateStr: string): string {
   const date = new Date(dateStr);
   const diff = Date.now() - date.getTime();

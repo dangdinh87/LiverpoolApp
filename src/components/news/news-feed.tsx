@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
-import { Newspaper, Clock, ArrowUpRight } from "lucide-react";
+import { Newspaper, Clock, ArrowUpRight, ExternalLink } from "lucide-react";
 import type { NewsArticle } from "@/lib/rss-parser";
 import {
   SOURCE_CONFIG,
   formatRelativeDate,
+  getArticleUrl,
   type NewsSource,
   type NewsLanguage,
 } from "@/lib/news-config";
@@ -43,10 +45,8 @@ function ImageFallback({ className }: { className?: string }) {
 
 function HeroCard({ article }: { article: NewsArticle }) {
   return (
-    <a
-      href={article.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={getArticleUrl(article.link)}
       className="group block relative overflow-hidden rounded-sm"
     >
       {/* Image */}
@@ -86,16 +86,14 @@ function HeroCard({ article }: { article: NewsArticle }) {
           </p>
         )}
       </div>
-    </a>
+    </Link>
   );
 }
 
 function MediumCard({ article }: { article: NewsArticle }) {
   return (
-    <a
-      href={article.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={getArticleUrl(article.link)}
       className="group block bg-stadium-surface border border-stadium-border rounded-sm overflow-hidden hover:border-lfc-red/40 transition-all duration-300 cursor-pointer"
     >
       {/* Thumbnail */}
@@ -128,16 +126,14 @@ function MediumCard({ article }: { article: NewsArticle }) {
           {article.title}
         </h3>
       </div>
-    </a>
+    </Link>
   );
 }
 
 function CompactItem({ article }: { article: NewsArticle }) {
   return (
-    <a
-      href={article.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={getArticleUrl(article.link)}
       className="group flex items-center gap-3 py-3 border-b border-stadium-border/50 last:border-0 hover:bg-stadium-surface/50 transition-colors px-2 -mx-2 rounded-sm cursor-pointer"
     >
       <ArticleBadge source={article.source} language={article.language} />
@@ -148,7 +144,7 @@ function CompactItem({ article }: { article: NewsArticle }) {
         {formatRelativeDate(article.pubDate)}
         <ArrowUpRight className="w-3 h-3 text-stadium-muted group-hover:text-lfc-red transition-colors" />
       </span>
-    </a>
+    </Link>
   );
 }
 
