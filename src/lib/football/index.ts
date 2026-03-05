@@ -5,32 +5,17 @@ import "server-only";
 import { cache } from "react";
 import type { FootballDataProvider } from "./provider";
 import { MockProvider } from "./mock-provider";
-import { ApiFootballProvider } from "./api-football-provider";
-
-// Resolve which provider to use based on env configuration
-function resolveProviderName(): string {
-  const explicit = process.env.FOOTBALL_DATA_PROVIDER;
-  if (explicit) return explicit;
-
-  // Auto-detect based on available keys
-  if (process.env.API_FOOTBALL_KEY) return "api-football";
-  return "mock"; // fallback when no API key configured
-}
+import { FplProvider } from "./fpl-provider";
 
 function createProvider(): FootballDataProvider {
-  const providerName = resolveProviderName();
+  const providerName = process.env.FOOTBALL_DATA_PROVIDER ?? "fpl";
 
   switch (providerName) {
-    case "sofascore":
-      // Phase 02: SofaScore provider will be added here
-      throw new Error(
-        "[football] SofaScore provider not yet implemented. Set FOOTBALL_DATA_PROVIDER=api-football or mock.",
-      );
     case "mock":
       return new MockProvider();
-    case "api-football":
+    case "fpl":
     default:
-      return new ApiFootballProvider();
+      return new FplProvider();
   }
 }
 
