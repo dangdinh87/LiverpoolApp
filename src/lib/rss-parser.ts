@@ -202,108 +202,92 @@ async function fetchRssFeed(config: RssFeedConfig): Promise<NewsArticle[]> {
 // Bongdaplus Scraper
 // ---------------------------------------------------------------------------
 
-const BONGDAPLUS_URL = "https://bongdaplus.vn/liverpool";
+// Bongdaplus pages to scrape — premier-league has more LFC content
+const BONGDAPLUS_URLS = [
+  "https://bongdaplus.vn/ngoai-hang-anh",
+  "https://bongdaplus.vn/champions-league-cup-c1",
+];
+
+// Keywords to filter Liverpool-related articles (Vietnamese + English)
+const LFC_KEYWORDS = [
+  "liverpool",
+  "anfield",
+  "salah",
+  "van dijk",
+  "slot",
+  "the kop",
+  "lu do",
+];
+
+function isLfcRelated(title: string, href: string): boolean {
+  const text = `${title} ${href}`.toLowerCase();
+  return LFC_KEYWORDS.some((kw) => text.includes(kw));
+}
 
 async function scrapeBongdaplus(): Promise<NewsArticle[]> {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(BONGDAPLUS_URL, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; LiverpoolApp/1.0; +https://github.com)",
-      },
-      next: { revalidate: 1800 },
-    });
-    clearTimeout(timeoutId);
-
-    if (!res.ok) {
-      console.warn(`[scraper] Bongdaplus returned ${res.status}`);
-      return [];
-    }
-
-    const html = await res.text();
-    const $ = cheerio.load(html);
     const articles: NewsArticle[] = [];
 
-    // Bongdaplus article list — try common selectors
-    const selectors = [
-      ".news-item",
-      ".article-item",
-      ".list-news li",
-      ".news-list .item",
-      ".cate-news-item",
-    ];
+    // Scrape multiple pages in parallel
+    const results = await Promise.allSettled(
+      BONGDAPLUS_URLS.map(async (url) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (compatible; LiverpoolApp/1.0; +https://github.com)",
+          },
+          next: { revalidate: 1800 },
+        });
+        clearTimeout(timeoutId);
+        if (!res.ok) return [];
 
-    let $items = $(selectors[0]);
-    for (const sel of selectors) {
-      const $found = $(sel);
-      if ($found.length > 0) {
-        $items = $found;
-        break;
+        const html = await res.text();
+        const $ = cheerio.load(html);
+        const pageArticles: NewsArticle[] = [];
+
+        // Bongdaplus uses .news class for article items
+        $(".news").each((_, el) => {
+          const $el = $(el);
+          const $a = $el.find("a").first();
+          const href = $a.attr("href") || "";
+          const title = $a.attr("title") || $el.find("h3, h4").first().text().trim() || $a.text().trim();
+
+          if (!href || !title || title.length < 10) return;
+          if (!isLfcRelated(title, href)) return;
+
+          const $img = $el.find("img");
+          const thumbnail =
+            $img.attr("data-src") || $img.attr("src") || $img.attr("data-original") || undefined;
+
+          const fullLink = href.startsWith("http")
+            ? href
+            : `https://bongdaplus.vn${href}`;
+
+          pageArticles.push({
+            title,
+            link: sanitizeUrl(fullLink) ?? "#",
+            pubDate: new Date().toISOString(),
+            contentSnippet: "",
+            thumbnail: sanitizeUrl(thumbnail),
+            source: "bongdaplus",
+            language: "vi",
+          });
+        });
+
+        return pageArticles;
+      })
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        articles.push(...result.value);
       }
     }
 
-    // Fallback: look for any article links with images
-    if ($items.length === 0) {
-      $("a[href*='/tin-']").each((_, el) => {
-        const $a = $(el);
-        const href = $a.attr("href");
-        const title = $a.attr("title") || $a.text().trim();
-        if (!href || !title || title.length < 10) return;
-
-        const $img = $a.find("img");
-        const thumbnail =
-          $img.attr("data-src") || $img.attr("src") || undefined;
-
-        const fullLink = href.startsWith("http")
-          ? href
-          : `https://bongdaplus.vn${href}`;
-
-        articles.push({
-          title,
-          link: sanitizeUrl(fullLink) ?? "#",
-          pubDate: new Date().toISOString(),
-          contentSnippet: "",
-          thumbnail: sanitizeUrl(thumbnail),
-          source: "bongdaplus",
-          language: "vi",
-        });
-      });
-
-      return articles;
-    }
-
-    $items.each((_, el) => {
-      const $el = $(el);
-      const $a = $el.find("a").first();
-      const href = $a.attr("href");
-      const title =
-        $a.attr("title") || $el.find("h3, h4, .title").first().text().trim() || $a.text().trim();
-
-      if (!href || !title || title.length < 10) return;
-
-      const $img = $el.find("img");
-      const thumbnail =
-        $img.attr("data-src") || $img.attr("src") || undefined;
-
-      const fullLink = href.startsWith("http")
-        ? href
-        : `https://bongdaplus.vn${href}`;
-
-      articles.push({
-        title,
-        link: sanitizeUrl(fullLink) ?? "#",
-        pubDate: new Date().toISOString(),
-        contentSnippet: "",
-        thumbnail: sanitizeUrl(thumbnail),
-        source: "bongdaplus",
-        language: "vi",
-      });
-    });
-
-    return articles.slice(0, 15);
+    return articles.slice(0, 10);
   } catch (err) {
     console.warn(
       "[scraper] Bongdaplus failed:",
