@@ -4,8 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, Moon, Sun, User, LogOut } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Menu, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -20,11 +19,11 @@ import type { UserProfile } from "@/lib/supabase";
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/squad", label: "Squad" },
-  { href: "/fixtures", label: "Fixtures" },
-  { href: "/standings", label: "Standings" },
-  { href: "/stats", label: "Stats" },
+  { href: "/players", label: "Players" },
+  { href: "/season", label: "Season" },
   { href: "/news", label: "News" },
-  { href: "/history", label: "History" },
+  { href: "/history", label: "The Club" },
+  { href: "/about", label: "About" },
 ];
 
 interface NavbarClientProps {
@@ -37,7 +36,6 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -66,10 +64,15 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-lfc-red rounded-full flex items-center justify-center font-bebas text-white text-sm group-hover:bg-lfc-red-dark transition-colors">
-              LFC
-            </div>
-            <span className="font-bebas text-xl text-white tracking-wider hidden sm:block">
+            <Image
+              src="/assets/lfc/crest.webp"
+              alt="Liverpool FC"
+              width={32}
+              height={40}
+              className="h-9 w-auto group-hover:scale-105 transition-transform"
+              priority
+            />
+            <span className="font-bebas text-xl text-white tracking-widest hidden sm:block">
               Liverpool FC
             </span>
           </Link>
@@ -81,7 +84,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                 <Link
                   href={href}
                   className={cn(
-                    "relative px-3 py-2 text-sm font-inter font-medium transition-colors",
+                    "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
                     pathname === href ? "text-white" : "text-stadium-muted hover:text-white"
                   )}
                 >
@@ -96,15 +99,6 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 text-stadium-muted hover:text-white transition-colors rounded-md"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
             {/* Auth: avatar dropdown or login button */}
             {user ? (
               <div className="relative hidden md:block">
@@ -134,7 +128,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                 {avatarMenuOpen && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-10 w-48 bg-stadium-surface border border-stadium-border rounded-xl shadow-xl overflow-hidden z-50"
+                    className="absolute right-0 top-10 w-48 bg-stadium-surface border border-stadium-border rounded-none shadow-xl overflow-hidden z-50"
                   >
                     <div className="px-4 py-3 border-b border-stadium-border">
                       <p className="font-inter text-xs text-white font-semibold truncate">
@@ -172,7 +166,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               <Button
                 asChild
                 size="sm"
-                className="hidden md:flex bg-lfc-red hover:bg-lfc-red-dark text-white font-inter font-medium"
+                className="hidden md:flex bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm"
               >
                 <Link href="/auth/login">Login</Link>
               </Button>
@@ -195,7 +189,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                       <Link
                         href={href}
                         className={cn(
-                          "px-4 py-3 rounded-lg font-inter font-medium transition-colors",
+                          "px-4 py-3 rounded-none font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
                           pathname === href
                             ? "bg-lfc-red text-white"
                             : "text-stadium-muted hover:bg-stadium-surface hover:text-white"
@@ -210,7 +204,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                       <SheetClose asChild>
                         <Link
                           href="/profile"
-                          className="mt-4 px-4 py-3 border border-stadium-border text-white rounded-lg font-inter font-medium text-center hover:bg-stadium-surface transition-colors"
+                          className="mt-4 px-4 py-3 border border-stadium-border text-white rounded-none font-barlow font-bold uppercase tracking-[0.12em] text-center hover:bg-stadium-surface transition-colors"
                         >
                           My Profile
                         </Link>
@@ -218,7 +212,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                       <form action={() => startTransition(() => logout())}>
                         <button
                           type="submit"
-                          className="w-full mt-2 px-4 py-3 text-stadium-muted rounded-lg font-inter font-medium text-center hover:bg-stadium-surface hover:text-white transition-colors"
+                          className="w-full mt-2 px-4 py-3 text-stadium-muted rounded-none font-barlow font-semibold uppercase tracking-[0.12em] text-center hover:bg-stadium-surface hover:text-white transition-colors"
                         >
                           Sign Out
                         </button>
@@ -228,7 +222,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     <SheetClose asChild>
                       <Link
                         href="/auth/login"
-                        className="mt-4 px-4 py-3 bg-lfc-red text-white rounded-lg font-inter font-medium text-center hover:bg-lfc-red-dark transition-colors"
+                        className="mt-4 px-4 py-3 bg-lfc-red text-white rounded-none font-barlow font-bold uppercase tracking-[0.12em] text-center hover:bg-lfc-red-dark transition-colors"
                       >
                         Login / Register
                       </Link>
