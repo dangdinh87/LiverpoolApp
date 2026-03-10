@@ -1,4 +1,5 @@
 // Server component — fetches auth state and passes to client Navbar
+import { Suspense } from "react";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import type { UserProfile } from "@/lib/supabase";
 import { NavbarClient } from "./navbar-client";
@@ -19,13 +20,19 @@ export async function NavbarAuth() {
     }
 
     return (
-      <NavbarClient
-        user={user ? { id: user.id, email: user.email ?? null } : null}
-        profile={profile}
-      />
+      <Suspense>
+        <NavbarClient
+          user={user ? { id: user.id, email: user.email ?? null } : null}
+          profile={profile}
+        />
+      </Suspense>
     );
   } catch {
     // Fallback if Supabase is not configured (dev without .env)
-    return <NavbarClient user={null} profile={null} />;
+    return (
+      <Suspense>
+        <NavbarClient user={null} profile={null} />
+      </Suspense>
+    );
   }
 }

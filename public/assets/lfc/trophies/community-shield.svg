@@ -1,0 +1,9 @@
+<svg viewBox="0 0 160 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Community Shield</title>
+  <path
+    fillRule="evenodd"
+    clipRule="evenodd"
+    d="M80 8L20 40v50c0 35 27 65 60 72 33-7 60-37 60-72V40L80 8zm0 12l48 28v42c0 30-22 56-48 62-26-6-48-32-48-62V48l48-28z"
+    fill="#F6EB61"
+  />
+</svg>

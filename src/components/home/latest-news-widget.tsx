@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { NewsArticle } from "@/lib/rss-parser";
+import type { NewsArticle } from "@/lib/news/types";
 import { formatRelativeDate } from "@/lib/news-config";
 
 interface LatestNewsWidgetProps {
@@ -37,7 +37,7 @@ export function LatestNewsWidget({ articles }: LatestNewsWidgetProps) {
                 {article.title}
               </p>
               <p className="font-inter text-xs text-stadium-muted">
-                {formatRelativeDate(article.pubDate)}
+                {formatRelativeDate(article.pubDate, article.language)}
               </p>
             </div>
           </a>

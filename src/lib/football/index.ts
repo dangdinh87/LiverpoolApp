@@ -1,83 +1,154 @@
-// Football data barrel — selects provider via env var, wraps all exports in React.cache().
+// Football data barrel — uses Football-Data.org as primary provider.
 // Import "server-only" to prevent any client component from importing this module.
 
 import "server-only";
 import { cache } from "react";
-import type { FootballDataProvider } from "./provider";
-import { MockProvider } from "./mock-provider";
-import { FplProvider } from "./fpl-provider";
-import { getFdoStandings } from "./fdo-standings";
+import type { Standing } from "@/lib/types/football";
+import { FdoProvider } from "./fdo-provider";
+import { getFdoStandings, getFdoUclStandings } from "./fdo-standings";
 import { getFdoLfcFixtures, getFdoCoach } from "./fdo-matches";
+import { getEspnMatchEvents, getEspnMatchDetail, getEspnCupFixtures } from "./espn-events";
+export type { EspnMatchDetail } from "./espn-events";
 
-function createProvider(): FootballDataProvider {
-  const providerName = process.env.FOOTBALL_DATA_PROVIDER ?? "fpl";
-
-  switch (providerName) {
-    case "mock":
-      return new MockProvider();
-    case "fpl":
-    default:
-      return new FplProvider();
-  }
-}
-
-const provider = createProvider();
+const provider = new FdoProvider();
 
 const hasFdoKey = !!process.env.FOOTBALL_DATA_ORG_KEY;
 
 if (process.env.NODE_ENV === "development") {
-  console.info(`[football] Provider: ${provider.name}, FDO standings: ${hasFdoKey ? "yes" : "no"}`);
+  console.info(`[football] Provider: ${provider.name}, FDO key: ${hasFdoKey ? "yes" : "no"}`);
 }
 
 // Re-export all functions wrapped in React.cache() for per-request deduplication.
-// Pages import these directly — they never touch the provider class.
 export const getSquad = cache(() => provider.getSquad());
 
-// Fixtures: merge FPL (PL matches with detail) + FDO non-PL matches (UCL, FA Cup, etc.)
+// Fixtures: FDO (all comps) + ESPN (FA Cup, EFL Cup supplement)
 export const getFixtures = cache(async () => {
-  const fplFixtures = await provider.getFixtures();
-  if (hasFdoKey) {
-    try {
-      const fdoFixtures = await getFdoLfcFixtures();
-      const nonPl = fdoFixtures.filter((f) => f.league.name !== "Premier League");
-      return [...fplFixtures, ...nonPl];
-    } catch (err) {
-      console.error("[football] FDO fixtures failed, using FPL only:", err);
-    }
+  if (!hasFdoKey) {
+    console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no fixtures");
+    return [];
   }
-  return fplFixtures;
+
+  try {
+    const allFixtures = await getFdoLfcFixtures();
+    const coveredComps = new Set(allFixtures.map((f) => f.league.name));
+
+    // ESPN: FA Cup, EFL Cup (free, no key needed)
+    try {
+      const espnCups = await getEspnCupFixtures();
+      const newCups = espnCups.filter((f) => !coveredComps.has(f.league.name));
+      allFixtures.push(...newCups);
+    } catch (err) {
+      console.error("[football] ESPN cup fixtures failed:", err);
+    }
+
+    return allFixtures;
+  } catch (err) {
+    console.error("[football] FDO fixtures failed:", err);
+    return [];
+  }
 });
 
-// Standings: use Football-Data.org when key is set (real W/D/L/GF/GA/form),
-// fall back to provider (FPL returns [], mock returns mock data).
+// Standings: Football-Data.org (real W/D/L/GF/GA/form)
 export const getStandings = cache(async () => {
-  if (hasFdoKey) {
-    try {
-      return await getFdoStandings();
-    } catch (err) {
-      console.error("[football] FDO standings failed, falling back to provider:", err);
-    }
+  if (!hasFdoKey) {
+    console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no standings");
+    return [];
   }
-  return provider.getStandings();
+
+  try {
+    return await getFdoStandings();
+  } catch (err) {
+    console.error("[football] FDO standings failed:", err);
+    return [];
+  }
+});
+
+// UCL standings
+export const getUclStandings = cache(async () => {
+  if (!hasFdoKey) return [] as Standing[];
+  try {
+    return await getFdoUclStandings();
+  } catch (err) {
+    console.error("[football] FDO UCL standings failed:", err);
+    return [] as Standing[];
+  }
 });
 
 export const getTopScorers = cache(() => provider.getTopScorers());
 export const getTopAssists = cache(() => provider.getTopAssists());
 export const getPlayerStats = cache((id: number) => provider.getPlayerStats(id));
-export const getFixtureEvents = cache((id: number) => provider.getFixtureEvents(id));
-export const getFixtureLineups = cache((id: number) => provider.getFixtureLineups(id));
-export const getFixtureStatistics = cache((id: number) => provider.getFixtureStatistics(id));
-export const getInjuries = cache(() => provider.getInjuries());
-export const getTeamInfo = cache(() => provider.getTeamInfo());
-// Coach: use FDO team endpoint (FPL has no coach data)
-export const getCoach = cache(async () => {
-  if (hasFdoKey) {
+
+// Fixture events: ESPN (has minutes) → provider fallback
+export const getFixtureEvents = cache(async (id: number, fixtureDate?: string) => {
+  if (fixtureDate) {
     try {
-      return await getFdoCoach();
+      const espnEvents = await getEspnMatchEvents(fixtureDate);
+      if (espnEvents.length > 0) return espnEvents;
     } catch (err) {
-      console.error("[football] FDO coach failed, falling back to provider:", err);
+      console.error("[football] ESPN events failed:", err);
     }
   }
-  return provider.getCoach();
+  return provider.getFixtureEvents(id);
 });
-export const getGameweekInfo = cache(() => provider.getGameweekInfo());
+
+export const getFixtureLineups = cache((id: number) => provider.getFixtureLineups(id));
+export const getFixtureStatistics = cache((id: number) => provider.getFixtureStatistics(id));
+
+// Match detail: ESPN (venue, attendance, referee, stats)
+export const getMatchDetail = cache(async (fixtureDate: string) => {
+  try {
+    return await getEspnMatchDetail(fixtureDate);
+  } catch (err) {
+    console.error("[football] ESPN match detail failed:", err);
+    return null;
+  }
+});
+
+export const getInjuries = cache(() => provider.getInjuries());
+export const getTeamInfo = cache(() => provider.getTeamInfo());
+
+// Coach: FDO team endpoint
+export const getCoach = cache(async () => {
+  if (!hasFdoKey) return null;
+  try {
+    return await getFdoCoach();
+  } catch (err) {
+    console.error("[football] FDO coach failed:", err);
+    return null;
+  }
+});
+
+// Gameweek: derive from already-fetched fixtures (no extra API call)
+export const getGameweekInfo = cache(async () => {
+  try {
+    const fixtures = await getFixtures();
+    const plFixtures = fixtures.filter((f) => f.league.name === "Premier League");
+    if (plFixtures.length === 0) return null;
+
+    const finished = plFixtures
+      .filter((f) => f.fixture.status.short === "FT")
+      .sort((a, b) => b.fixture.date.localeCompare(a.fixture.date));
+    const upcoming = plFixtures
+      .filter((f) => f.fixture.status.short === "NS")
+      .sort((a, b) => a.fixture.date.localeCompare(b.fixture.date));
+
+    // Extract matchday number from round string "Matchday 29" → 29
+    const extractMatchday = (round: string) => {
+      const m = round.match(/(\d+)/);
+      return m ? Number(m[1]) : null;
+    };
+
+    const currentMatchday = extractMatchday(finished[0]?.league.round ?? "") ?? 1;
+    const nextMatchday = extractMatchday(upcoming[0]?.league.round ?? "") ?? (currentMatchday + 1);
+
+    return {
+      current: currentMatchday,
+      currentName: `Gameweek ${currentMatchday}`,
+      isFinished: true, // derived from finished matches
+      nextDeadline: upcoming[0]?.fixture.date ?? null,
+      nextGw: nextMatchday,
+    };
+  } catch {
+    return null;
+  }
+});

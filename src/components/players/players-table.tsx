@@ -5,7 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import type { FplPlayerRow, FplTeamOption, FplPosition } from "@/lib/fpl-data";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
@@ -41,6 +43,8 @@ const COLUMNS: { key: SortKey; label: string; shortLabel: string }[] = [
 // ─── Component ──────────────────────────────────────────────────────────────────
 
 export function PlayersTable({ players, teams }: Props) {
+  const t = useTranslations("Common.labels");
+  const posT = useTranslations("Squad.positions");
   const [search, setSearch] = useState("");
   const [position, setPosition] = useState<FplPosition | "ALL">("ALL");
   const [teamFilter, setTeamFilter] = useState<number | "ALL">("ALL");
@@ -89,6 +93,18 @@ export function PlayersTable({ players, teams }: Props) {
     setPage(0);
   }
 
+  const COLUMNS_LOCAL: { key: SortKey; label: string; shortLabel: string }[] = [
+    { key: "totalPoints", label: t("points"), shortLabel: t("points") },
+    { key: "minutes", label: t("minutes"), shortLabel: t("minutes") },
+    { key: "goals", label: "Goals", shortLabel: "G" },
+    { key: "assists", label: "Assists", shortLabel: "A" },
+    { key: "xG", label: "xG", shortLabel: "xG" },
+    { key: "xA", label: "xA", shortLabel: "xA" },
+    { key: "cleanSheets", label: "Clean Sheets", shortLabel: "CS" },
+    { key: "yellowCards", label: "Yellow Cards", shortLabel: "YC" },
+    { key: "price", label: "Price", shortLabel: "£" },
+  ];
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -106,7 +122,7 @@ export function PlayersTable({ players, teams }: Props) {
                   : "bg-stadium-surface2 text-stadium-muted hover:text-white border border-stadium-border",
               )}
             >
-              {pos}
+              {pos === "ALL" ? posT("all") : posT(pos.toUpperCase())}
             </button>
           ))}
         </div>
@@ -118,7 +134,7 @@ export function PlayersTable({ players, teams }: Props) {
           aria-label="Filter by team"
           className="bg-stadium-surface2 border border-stadium-border text-white text-xs font-inter px-3 py-1.5 min-w-[140px] focus:outline-none focus:border-lfc-red/50"
         >
-          <option value="ALL">All Teams</option>
+          <option value="ALL">{t("allTeams")}</option>
           {teams.map((t) => (
             <option key={t.id} value={t.id}>{t.name}</option>
           ))}
@@ -131,8 +147,8 @@ export function PlayersTable({ players, teams }: Props) {
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Search players..."
-            aria-label="Search players"
+            placeholder={t("search")}
+            aria-label={t("search")}
             className="w-full bg-stadium-surface2 border border-stadium-border text-white text-xs font-inter pl-8 pr-3 py-1.5 placeholder:text-stadium-muted focus:outline-none focus:border-lfc-red/50"
           />
         </div>
@@ -140,23 +156,23 @@ export function PlayersTable({ players, teams }: Props) {
 
       {/* Results count */}
       <p className="text-stadium-muted text-xs font-inter">
-        {filtered.length} player{filtered.length !== 1 ? "s" : ""}
-        {position !== "ALL" && ` · ${position}`}
+        {filtered.length} {filtered.length === 1 ? "player" : "players"}
+        {position !== "ALL" && ` · ${posT(position)}`}
         {teamFilter !== "ALL" && ` · ${teams.find((t) => t.id === teamFilter)?.name}`}
       </p>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-stadium-border">
+      <ScrollArea className="border border-stadium-border">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stadium-surface2">
               <th className="sticky left-0 z-10 bg-stadium-surface2 text-left px-3 py-2.5 font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs whitespace-nowrap">
-                Player
+                {t("player")}
               </th>
               <th className="px-2 py-2.5 text-center font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">
-                Pos
+                {t("pos")}
               </th>
-              {COLUMNS.map((col) => (
+              {COLUMNS_LOCAL.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
@@ -235,9 +251,9 @@ export function PlayersTable({ players, teams }: Props) {
                   <span className={cn(
                     "text-[10px] font-barlow font-semibold uppercase tracking-wider px-1.5 py-0.5",
                     p.position === "GK" ? "text-amber-400" :
-                    p.position === "DEF" ? "text-green-400" :
-                    p.position === "MID" ? "text-blue-400" :
-                    "text-red-400",
+                      p.position === "DEF" ? "text-green-400" :
+                        p.position === "MID" ? "text-blue-400" :
+                          "text-red-400",
                   )}>
                     {p.position}
                   </span>
@@ -255,7 +271,8 @@ export function PlayersTable({ players, teams }: Props) {
             ))}
           </tbody>
         </table>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       {/* Pagination */}
       {totalPages > 1 && (

@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, Inter, Barlow_Condensed } from "next/font/google";
+import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getLocale } from 'next-intl/server';
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
+import { SplashScreen } from "@/components/layout/splash-screen";
+import { GlobalChat } from "@/components/chat/global-chat";
+import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
 
-// Bebas Neue — headlines, stats numbers, jersey watermarks
-const bebasNeue = Bebas_Neue({
-  weight: "400",
+// League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
+const leagueGothic = League_Gothic({
   variable: "--font-bebas",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 
-// Inter — body text, UI labels, forms
+// Inter — body text, UI labels, forms (weights match wireframes)
 const inter = Inter({
-  weight: ["400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 
@@ -25,7 +29,7 @@ const inter = Inter({
 const barlowCondensed = Barlow_Condensed({
   weight: ["400", "600", "700"],
   variable: "--font-barlow",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 
@@ -48,24 +52,34 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
     <html
-      lang="en"
-      className={`${bebasNeue.variable} ${inter.variable} ${barlowCondensed.variable}`}
+      lang={locale}
+      className={`${leagueGothic.variable} ${inter.variable} ${barlowCondensed.variable}`}
       suppressHydrationWarning
     >
-      <body className="antialiased bg-stadium-bg text-white font-inter">
+      <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem={false}
         >
-          <NavbarAuth />
-          <main>{children}</main>
-          <Footer />
+          <QueryProvider>
+            <NextIntlClientProvider messages={messages}>
+              <SplashScreen>
+                <NavbarAuth />
+                <main>{children}</main>
+                <Footer />
+                <GlobalChat />
+              </SplashScreen>
+            </NextIntlClientProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -18,21 +18,21 @@ export function StandingsPreview({ standings }: StandingsPreviewProps) {
         </span>
         <Link
           href="/standings"
-          className="font-barlow text-xs text-lfc-red hover:underline uppercase tracking-wider font-semibold"
+          className="font-barlow text-[10px] text-lfc-red hover:underline uppercase tracking-wider font-semibold"
         >
           Full Table
         </Link>
       </div>
 
-      <div className="flex-1 flex flex-col justify-between gap-1">
+      <div className="flex-1 flex flex-col justify-between gap-0.5">
         {top5.map((s) => {
           const isLiverpool = s.team.id === 40;
           return (
             <div
               key={s.team.id}
               className={cn(
-                "flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors",
-                isLiverpool ? "bg-lfc-red/10" : "hover:bg-stadium-surface2"
+                "flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-colors",
+                isLiverpool ? "bg-lfc-red/10 border border-lfc-red/20" : "hover:bg-stadium-surface2"
               )}
             >
               <span
@@ -43,7 +43,7 @@ export function StandingsPreview({ standings }: StandingsPreviewProps) {
               >
                 {s.rank}
               </span>
-              <div className="relative w-5 h-5 flex-shrink-0">
+              <div className="relative w-5 h-5 shrink-0">
                 <Image
                   src={s.team.logo}
                   alt={s.team.name}
@@ -62,7 +62,7 @@ export function StandingsPreview({ standings }: StandingsPreviewProps) {
               </span>
               <span
                 className={cn(
-                  "font-bebas text-base",
+                  "font-bebas text-base tabular-nums",
                   isLiverpool ? "text-lfc-red" : "text-white"
                 )}
               >

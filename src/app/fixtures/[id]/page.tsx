@@ -2,19 +2,28 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft, MapPin, Calendar, Clock, Users,
+  CircleDot, ArrowUpFromLine, ArrowDownToLine, ChevronDown,
+} from "lucide-react";
 import {
   getFixtures,
   getFixtureEvents,
   getFixtureLineups,
   getFixtureStatistics,
+  getMatchDetail,
 } from "@/lib/football";
 import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 3600;
+
+const LFC_ID = 40;
+
+function teamLogo(id: number, apiLogo: string): string {
+  return id === LFC_ID ? "/assets/lfc/crest.webp" : apiLogo;
+}
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -35,231 +44,416 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const { id } = await params;
   const fixtureId = Number(id);
 
-  // Fetch fixture from the season list
   const fixtures = await getFixtures();
   const match = fixtures.find((f) => f.fixture.id === fixtureId);
   if (!match) notFound();
 
-  const { fixture: f, league, teams, goals } = match;
+  const { fixture: f, league, teams, goals, score } = match;
   const result = getMatchResult(match);
-  const isFinished = f.status.short === "FT" || f.status.short === "AET" || f.status.short === "PEN";
+  const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
+  const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
 
-  // Fetch detailed data only for finished/live matches
-  const [events, lineups, stats] = isFinished
-    ? await Promise.all([
-        getFixtureEvents(fixtureId),
-        getFixtureLineups(fixtureId),
-        getFixtureStatistics(fixtureId),
-      ])
-    : [[], [], []];
-
-  // For upcoming matches, still try to get lineups (available ~1h before kickoff)
-  const lineupData = lineups.length > 0 ? lineups : !isFinished ? await getFixtureLineups(fixtureId) : [];
+  const [events, lineups, providerStats, espnDetail] = await Promise.all([
+    isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
+    getFixtureLineups(fixtureId),
+    isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
+    isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
+  ]);
 
   const date = new Date(f.date);
-  const dateStr = date.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateStr = date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   const timeStr = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 
-  const homeTeam = stats.find((s) => s.team.id === teams.home.id);
-  const awayTeam = stats.find((s) => s.team.id === teams.away.id);
-  const homeLineup = lineupData.find((l) => l.team.id === teams.home.id);
-  const awayLineup = lineupData.find((l) => l.team.id === teams.away.id);
+  const matchStats = espnDetail?.stats?.length ? espnDetail.stats : providerStats;
+  const homeStats = matchStats.find((s) =>
+    s.team.id === teams.home.id || s.team.name.toLowerCase().includes(teams.home.name.toLowerCase().split(" ")[0].toLowerCase())
+  );
+  const awayStats = matchStats.find((s) =>
+    s.team.id === teams.away.id || s.team.name.toLowerCase().includes(teams.away.name.toLowerCase().split(" ")[0].toLowerCase())
+  );
+
+  const homeLineup = lineups.find((l) => l.team.id === teams.home.id);
+  const awayLineup = lineups.find((l) => l.team.id === teams.away.id);
+
+  const htHome = score.halftime.home;
+  const htAway = score.halftime.away;
+  const hasHt = htHome !== null && htAway !== null;
+
+  const venue = espnDetail?.venue ?? ([f.venue.name, f.venue.city].filter(Boolean).join(", ") || null);
+  const attendance = espnDetail?.attendance;
+  const referee = espnDetail?.referee;
+
+  // Goal scorers for header display
+  const goalEvents = events.filter((e) => e.type === "Goal");
+  const resolvedGoals = goalEvents.map((e) => {
+    if (e.team.id !== 0) return e;
+    const name = e.team.name.toLowerCase();
+    const homeName = teams.home.name.toLowerCase();
+    const awayName = teams.away.name.toLowerCase();
+    const homeMatch = homeName.includes(name) || name.includes(homeName.split(" ")[0]);
+    const awayMatch = awayName.includes(name) || name.includes(awayName.split(" ")[0]);
+    const resolvedId = homeMatch ? teams.home.id : awayMatch ? teams.away.id : 0;
+    return { ...e, team: { ...e.team, id: resolvedId } };
+  });
+  const homeGoals = resolvedGoals.filter((e) => e.team.id === teams.home.id);
+  const awayGoals = resolvedGoals.filter((e) => e.team.id === teams.away.id);
+
+  const resolvedEvents = events.map((e) => {
+    if (e.team.id !== 0) return e;
+    const name = e.team.name.toLowerCase();
+    const homeName = teams.home.name.toLowerCase();
+    const awayName = teams.away.name.toLowerCase();
+    const homeMatch = homeName.includes(name) || name.includes(homeName.split(" ")[0]);
+    const awayMatch = awayName.includes(name) || name.includes(awayName.split(" ")[0]);
+    const resolvedId = homeMatch ? teams.home.id : awayMatch ? teams.away.id : 0;
+    return { ...e, team: { ...e.team, id: resolvedId } };
+  });
 
   return (
     <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back nav */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <Link
           href="/fixtures"
-          className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm transition-colors group mb-8"
+          className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm transition-colors group mb-6"
         >
           <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-          Back to Fixtures
+          Fixtures
         </Link>
 
         {/* ─── Match Header ─── */}
-        <div className="bg-stadium-surface border border-stadium-border rounded-none p-6 mb-6">
-          {/* League + round */}
-          <div className="flex items-center justify-center gap-2 mb-4">
-            {league.logo && <Image src={league.logo} alt="" width={20} height={20} />}
-            <span className="font-barlow text-stadium-muted text-xs uppercase tracking-wider">
-              {league.name} · {league.round}
-            </span>
-          </div>
+        <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6 mb-4 relative overflow-hidden">
+          {/* Watermark competition logo */}
+          {league.logo && (
+            <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-64 h-64 opacity-[0.12] rotate-[-12deg] pointer-events-none select-none">
+              <Image src={league.logo} alt="" fill sizes="256px" className="object-contain brightness-200" loading="lazy" />
+            </div>
+          )}
 
-          {/* Teams + score */}
-          <div className="flex items-center justify-center gap-6 mb-4">
-            {/* Home */}
-            <div className="flex flex-col items-center gap-2 flex-1">
-              <div className="relative w-16 h-16">
-                <Image src={teams.home.logo} alt={teams.home.name} fill sizes="64px" className="object-contain" />
-              </div>
-              <span className={cn("font-inter font-semibold text-sm text-center", teams.home.id === 40 ? "text-white" : "text-stadium-muted")}>
-                {teams.home.name}
+          {/* Result accent strip */}
+          {isFinished && result !== "NS" && (
+            <div className={cn(
+              "absolute left-0 top-0 bottom-0 w-1",
+              result === "W" && "bg-green-500",
+              result === "D" && "bg-yellow-500",
+              result === "L" && "bg-red-500",
+            )} />
+          )}
+          {isLive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lfc-red animate-pulse" />}
+
+          {/* Top bar: comp name + result badge (matches card style) */}
+          <div className="relative flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <span className="font-bebas text-base uppercase tracking-wider text-white/60">
+                {league.name}
               </span>
-              {homeLineup && (
-                <span className="font-barlow text-stadium-muted text-xs">{homeLineup.formation}</span>
+              {league.round && (
+                <>
+                  <span className="text-stadium-border">·</span>
+                  <span className="text-stadium-muted font-barlow text-sm">{league.round}</span>
+                </>
               )}
             </div>
+            {isFinished && result !== "NS" && (
+              <span className="inline-flex items-center gap-1.5">
+                <span className={cn("w-2 h-2 rounded-full", result === "W" && "bg-green-500", result === "D" && "bg-yellow-500", result === "L" && "bg-red-500")} />
+                <span className={cn("text-xs font-bebas tracking-widest leading-none", result === "W" && "text-green-400", result === "D" && "text-yellow-400", result === "L" && "text-red-400")}>
+                  {result === "W" ? "WIN" : result === "D" ? "DRAW" : "LOSS"}
+                </span>
+              </span>
+            )}
+            {isLive && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-lfc-red/15 border border-lfc-red/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-lfc-red animate-pulse" />
+                <span className="text-lfc-red text-[11px] font-bebas tracking-wider leading-none">LIVE {f.status.elapsed}&apos;</span>
+              </span>
+            )}
+          </div>
 
-            {/* Score */}
-            <div className="text-center">
-              {isFinished ? (
-                <>
-                  <div className="font-bebas text-6xl text-white tracking-wider leading-none">
-                    {goals.home} – {goals.away}
+          <div className="relative flex items-center justify-center gap-3 sm:gap-6">
+            {/* Home team + scorers */}
+            <div className="flex items-center gap-2.5 flex-1 justify-end">
+              <div className={cn("text-right", teams.home.id === LFC_ID ? "text-white" : "text-white/70")}>
+                <span className="font-inter font-semibold text-sm sm:text-base block">{teams.home.name}</span>
+                {homeLineup && <span className="font-barlow text-stadium-muted text-[10px]">{homeLineup.formation}</span>}
+                {isFinished && homeGoals.length > 0 && (
+                  <div className="mt-1 space-y-0.5">
+                    {homeGoals.map((g, i) => (
+                      <p key={i} className="text-[11px] font-inter text-stadium-muted">
+                        <span className="text-white/80">{g.player.name}</span>
+                        {g.time.elapsed ? <span className="text-lfc-gold ml-1">{g.time.extra ? `${g.time.elapsed}+${g.time.extra}'` : `${g.time.elapsed}'`}</span> : null}
+                        {g.detail.includes("Penalty") && <span className="text-stadium-muted ml-0.5">(P)</span>}
+                        {g.detail.includes("Own") && <span className="text-red-400 ml-0.5">(OG)</span>}
+                      </p>
+                    ))}
                   </div>
-                  <Badge
-                    className={cn(
-                      "mt-2 font-barlow text-xs",
-                      result === "W" && "bg-green-500/20 text-green-400 border-green-500/30",
-                      result === "D" && "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-                      result === "L" && "bg-red-500/20 text-red-400 border-red-500/30",
-                    )}
-                  >
-                    {f.status.long}
-                  </Badge>
+                )}
+              </div>
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0">
+                <Image src={teamLogo(teams.home.id, teams.home.logo)} alt={teams.home.name} fill sizes="48px" className="object-contain" />
+              </div>
+            </div>
+
+            {/* Score / Time block */}
+            <div className="text-center shrink-0 min-w-[80px]">
+              {isFinished || isLive ? (
+                <>
+                  <div className="flex items-center justify-center gap-2">
+                    <span className={cn("font-bebas text-4xl sm:text-5xl tracking-wider leading-none", teams.home.winner ? "text-white" : "text-white/50")}>{goals.home}</span>
+                    <span className="text-stadium-muted font-bebas text-3xl leading-none">:</span>
+                    <span className={cn("font-bebas text-4xl sm:text-5xl tracking-wider leading-none", teams.away.winner ? "text-white" : "text-white/50")}>{goals.away}</span>
+                  </div>
+                  {isFinished && hasHt && <p className="text-stadium-muted text-[10px] font-inter mt-1">HT {htHome} – {htAway}</p>}
+                  {(f.status.short === "AET" || f.status.short === "PEN") && (
+                    <p className="text-stadium-muted text-[9px] font-barlow font-semibold uppercase tracking-wider">
+                      {f.status.short === "AET" ? "After Extra Time" : "Penalties"}
+                    </p>
+                  )}
                 </>
               ) : (
-                <>
-                  <div className="font-bebas text-4xl text-stadium-muted tracking-wider">VS</div>
-                  <p className="font-inter text-white text-sm mt-1">{timeStr}</p>
-                </>
+                <span className="font-bebas text-4xl text-white tracking-wider leading-none block">{timeStr}</span>
               )}
             </div>
 
-            {/* Away */}
-            <div className="flex flex-col items-center gap-2 flex-1">
-              <div className="relative w-16 h-16">
-                <Image src={teams.away.logo} alt={teams.away.name} fill sizes="64px" className="object-contain" />
+            {/* Away team + scorers */}
+            <div className="flex items-center gap-2.5 flex-1">
+              <div className="relative w-10 h-10 sm:w-12 sm:h-12 shrink-0">
+                <Image src={teamLogo(teams.away.id, teams.away.logo)} alt={teams.away.name} fill sizes="48px" className="object-contain" />
               </div>
-              <span className={cn("font-inter font-semibold text-sm text-center", teams.away.id === 40 ? "text-white" : "text-stadium-muted")}>
-                {teams.away.name}
-              </span>
-              {awayLineup && (
-                <span className="font-barlow text-stadium-muted text-xs">{awayLineup.formation}</span>
-              )}
+              <div className={cn(teams.away.id === LFC_ID ? "text-white" : "text-white/70")}>
+                <span className="font-inter font-semibold text-sm sm:text-base block">{teams.away.name}</span>
+                {awayLineup && <span className="font-barlow text-stadium-muted text-[10px]">{awayLineup.formation}</span>}
+                {isFinished && awayGoals.length > 0 && (
+                  <div className="mt-1 space-y-0.5">
+                    {awayGoals.map((g, i) => (
+                      <p key={i} className="text-[11px] font-inter text-stadium-muted">
+                        <span className="text-white/80">{g.player.name}</span>
+                        {g.time.elapsed ? <span className="text-lfc-gold ml-1">{g.time.extra ? `${g.time.elapsed}+${g.time.extra}'` : `${g.time.elapsed}'`}</span> : null}
+                        {g.detail.includes("Penalty") && <span className="text-stadium-muted ml-0.5">(P)</span>}
+                        {g.detail.includes("Own") && <span className="text-red-400 ml-0.5">(OG)</span>}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Date + venue */}
-          <p className="text-center text-stadium-muted text-xs font-inter">
-            {dateStr} · {f.venue.name}, {f.venue.city}
-          </p>
+          {/* Bottom info bar — always shown */}
+          <div className="relative border-t border-stadium-border/50 pt-3 mt-4">
+            <div className="flex items-center justify-center gap-4 flex-wrap text-[11px] font-inter">
+              <span className="flex items-center gap-1.5 text-stadium-muted">
+                <Calendar size={11} className="opacity-60" />{dateStr}
+              </span>
+              {venue && (
+                <span className="flex items-center gap-1.5 text-stadium-muted">
+                  <MapPin size={11} className="opacity-60" />{venue}
+                </span>
+              )}
+              {attendance && attendance > 0 && (
+                <span className="flex items-center gap-1.5 text-stadium-muted">
+                  <Users size={11} className="opacity-60" />{attendance.toLocaleString()}
+                </span>
+              )}
+              {referee && (
+                <span className="flex items-center gap-1.5 text-white/80">
+                  <CircleDot size={11} className="text-lfc-gold" />
+                  <span className="font-medium">{referee}</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* ─── Match Events Timeline ─── */}
-        {events.length > 0 && (
-          <section className="bg-stadium-surface border border-stadium-border rounded-none p-6 mb-6">
-            <h2 className="font-bebas text-2xl text-white tracking-wider mb-4">Match Events</h2>
-            <div className="space-y-3">
-              {events.map((event, i) => (
-                <EventRow key={i} event={event} homeTeamId={teams.home.id} />
+        {/* ─── Match Timeline (collapsible) ─── */}
+        {resolvedEvents.length > 0 && (
+          <DetailSection title="Match Timeline">
+            <div>
+              {resolvedEvents.map((event, i) => (
+                <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
               ))}
             </div>
-          </section>
+          </DetailSection>
         )}
 
-        {/* ─── Lineups ─── */}
+        {/* ─── Match Statistics (collapsible) ─── */}
+        {homeStats && awayStats && (
+          <DetailSection title="Statistics">
+            <StatsComparison home={homeStats} away={awayStats} />
+          </DetailSection>
+        )}
+
+        {/* ─── Lineups (collapsible) ─── */}
         {(homeLineup || awayLineup) && (
-          <section className="bg-stadium-surface border border-stadium-border rounded-none p-6 mb-6">
-            <h2 className="font-bebas text-2xl text-white tracking-wider mb-4">Lineups</h2>
+          <DetailSection title="Lineups">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {homeLineup && <LineupSection lineup={homeLineup} />}
               {awayLineup && <LineupSection lineup={awayLineup} />}
             </div>
-          </section>
-        )}
-
-        {/* ─── Match Statistics ─── */}
-        {homeTeam && awayTeam && (
-          <section className="bg-stadium-surface border border-stadium-border rounded-none p-6">
-            <h2 className="font-bebas text-2xl text-white tracking-wider mb-4">Match Statistics</h2>
-            <StatsComparison home={homeTeam} away={awayTeam} />
-          </section>
+          </DetailSection>
         )}
       </div>
     </div>
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Collapsible section using native <details> ────────────────────────────
 
-function EventRow({ event, homeTeamId }: { event: FixtureEvent; homeTeamId: number }) {
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details open className="group bg-stadium-surface border border-stadium-border mb-4">
+      <summary className="flex items-center justify-between cursor-pointer p-4 sm:p-5 select-none list-none [&::-webkit-details-marker]:hidden">
+        <h2 className="font-bebas text-lg text-white tracking-wider">{title}</h2>
+        <ChevronDown size={18} className="text-stadium-muted transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+// ─── Timeline ───────────────────────────────────────────────────────────────
+
+function TimelineRow({ event, homeTeamId }: { event: FixtureEvent; homeTeamId: number }) {
   const isHome = event.team.id === homeTeamId;
-  const icon = getEventIcon(event.type, event.detail);
-  const minute = event.time.extra
-    ? `${event.time.elapsed}+${event.time.extra}'`
-    : `${event.time.elapsed}'`;
+  const hasMinute = event.time.elapsed !== null && event.time.elapsed > 0;
+  const minute = hasMinute
+    ? event.time.extra ? `${event.time.elapsed}+${event.time.extra}'` : `${event.time.elapsed}'`
+    : null;
 
   return (
-    <div className={cn("flex items-center gap-3", isHome ? "flex-row" : "flex-row-reverse")}>
-      <div className={cn("flex items-center gap-2 flex-1", isHome ? "justify-start" : "justify-end")}>
+    <div className={cn(
+      "flex items-center gap-2 py-2 border-b border-stadium-border/20 last:border-0",
+      isHome ? "flex-row" : "flex-row-reverse",
+    )}>
+      <div className={cn("flex items-center gap-1.5 flex-1 flex-wrap", isHome ? "justify-start" : "justify-end")}>
         <span className="text-white font-inter text-sm font-medium">
           {event.player.name}
         </span>
         {event.assist.name && event.type === "Goal" && (
-          <span className="text-stadium-muted text-xs font-inter">
-            ({event.assist.name})
-          </span>
+          <span className="text-stadium-muted text-xs font-inter">({event.assist.name})</span>
         )}
         {event.type === "subst" && event.assist.name && (
-          <span className="text-stadium-muted text-xs font-inter">
-            for {event.assist.name}
-          </span>
+          <span className="text-stadium-muted text-xs font-inter">for {event.assist.name}</span>
         )}
       </div>
-      <div className="flex items-center gap-1.5 shrink-0 w-20 justify-center">
-        <span className="text-lg">{icon}</span>
-        <span className="font-barlow text-stadium-muted text-xs font-semibold">{minute}</span>
+
+      <div className="flex items-center gap-1 shrink-0 w-[60px] justify-center">
+        <EventIcon type={event.type} detail={event.detail} />
+        {minute && <span className="font-barlow text-stadium-muted text-[11px] font-semibold">{minute}</span>}
       </div>
+
       <div className="flex-1" />
     </div>
   );
 }
 
-function getEventIcon(type: string, detail: string): string {
+function EventIcon({ type, detail }: { type: string; detail: string }) {
   if (type === "Goal") {
-    if (detail.includes("Own")) return "\u26BD\u274C"; // own goal
-    if (detail.includes("Penalty")) return "\u26BD\uD83C\uDFAF"; // penalty goal — ⚽🎯
-    return "\u26BD"; // ⚽
+    const isOwn = detail.includes("Own");
+    const isPen = detail.includes("Penalty");
+    return <span className={cn("text-sm", isOwn ? "text-red-400" : "text-white")}>{isPen ? "⚽P" : isOwn ? "⚽OG" : "⚽"}</span>;
   }
   if (type === "Card") {
-    if (detail.includes("Red")) return "\uD83D\uDFE5"; // 🟥
-    return "\uD83D\uDFE8"; // 🟨
+    return <span className={cn("inline-block w-3 h-4 rounded-[1px]", detail.includes("Red") ? "bg-red-500" : "bg-yellow-400")} />;
   }
-  if (type === "subst") return "\uD83D\uDD04"; // 🔄
-  if (type === "Var") return "\uD83D\uDCFA"; // 📺
-  return "\u2022"; // •
+  if (type === "subst") {
+    return (
+      <span className="flex items-center -space-x-0.5">
+        <ArrowUpFromLine size={12} className="text-green-400" />
+        <ArrowDownToLine size={12} className="text-red-400" />
+      </span>
+    );
+  }
+  return <span className="text-stadium-muted text-xs">•</span>;
 }
+
+// ─── Stats (center-outward bars) ────────────────────────────────────────────
+
+function StatsComparison({ home, away }: { home: FixtureTeamStats; away: FixtureTeamStats }) {
+  const statTypes = home.statistics.map((s) => s.type);
+
+  return (
+    <div className="space-y-3">
+      {statTypes.map((type) => {
+        const homeVal = home.statistics.find((s) => s.type === type)?.value;
+        const awayVal = away.statistics.find((s) => s.type === type)?.value;
+        if (homeVal == null && awayVal == null) return null;
+
+        const hStr = String(homeVal ?? 0);
+        const aStr = String(awayVal ?? 0);
+        const hNum = parseFloat(hStr.replace("%", "")) || 0;
+        const aNum = parseFloat(aStr.replace("%", "")) || 0;
+        const total = hNum + aNum || 1;
+        const hPct = Math.round((hNum / total) * 100);
+        const aPct = 100 - hPct;
+        const hWins = hNum > aNum;
+        const aWins = aNum > hNum;
+
+        return (
+          <div key={type}>
+            {/* Label centered */}
+            <p className="text-stadium-muted text-[11px] font-inter text-center mb-1">{type}</p>
+            {/* Values + bars */}
+            <div className="flex items-center gap-2">
+              <span className={cn("font-inter text-sm font-semibold w-14 text-right", hWins ? "text-white" : "text-stadium-muted")}>{hStr}</span>
+              <div className="flex-1 flex h-2 gap-0.5">
+                {/* Home bar (grows right-to-left) */}
+                <div className="flex-1 flex justify-end bg-stadium-surface2 rounded-l-sm overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-l-sm transition-all", hWins ? "bg-lfc-red" : "bg-stadium-muted/50")}
+                    style={{ width: `${hPct}%` }}
+                  />
+                </div>
+                {/* Away bar (grows left-to-right) */}
+                <div className="flex-1 bg-stadium-surface2 rounded-r-sm overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-r-sm transition-all", aWins ? "bg-sky-500" : "bg-stadium-muted/50")}
+                    style={{ width: `${aPct}%` }}
+                  />
+                </div>
+              </div>
+              <span className={cn("font-inter text-sm font-semibold w-14 text-left", aWins ? "text-white" : "text-stadium-muted")}>{aStr}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Lineups ────────────────────────────────────────────────────────────────
 
 function LineupSection({ lineup }: { lineup: FixtureLineup }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        <Image src={lineup.team.logo} alt="" width={20} height={20} />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="relative w-4 h-4 shrink-0">
+          <Image
+            src={lineup.team.id === LFC_ID ? "/assets/lfc/crest.webp" : lineup.team.logo}
+            alt="" fill sizes="16px" className="object-contain"
+          />
+        </div>
         <span className="font-inter font-semibold text-white text-sm">{lineup.team.name}</span>
         <span className="font-barlow text-lfc-gold text-xs ml-auto">{lineup.formation}</span>
       </div>
 
-      {/* Starting XI */}
-      <div className="space-y-1 mb-3">
+      <div className="space-y-0.5 mb-2">
         {lineup.startXI.map(({ player: p }) => (
-          <div key={p.id} className="flex items-center gap-2 text-sm font-inter">
+          <div key={p.id} className="flex items-center gap-2 text-sm font-inter py-0.5">
             <span className="w-5 text-center font-barlow text-stadium-muted text-xs">{p.number}</span>
             <span className="text-white">{p.name}</span>
-            <span className="text-stadium-muted text-xs ml-auto">{posLabel(p.pos)}</span>
+            <span className="text-stadium-muted text-[10px] ml-auto">{posLabel(p.pos)}</span>
           </div>
         ))}
       </div>
 
-      {/* Substitutes */}
       {lineup.substitutes.length > 0 && (
         <>
-          <p className="font-barlow text-stadium-muted text-[10px] uppercase tracking-wider mb-1">Substitutes</p>
-          <div className="space-y-1">
+          <p className="font-barlow text-stadium-muted text-[10px] uppercase tracking-wider mb-0.5">Substitutes</p>
+          <div className="space-y-0.5">
             {lineup.substitutes.map(({ player: p }) => (
-              <div key={p.id} className="flex items-center gap-2 text-sm font-inter">
+              <div key={p.id} className="flex items-center gap-2 text-sm font-inter py-0.5">
                 <span className="w-5 text-center font-barlow text-stadium-muted text-xs">{p.number}</span>
                 <span className="text-stadium-muted">{p.name}</span>
               </div>
@@ -268,8 +462,7 @@ function LineupSection({ lineup }: { lineup: FixtureLineup }) {
         </>
       )}
 
-      {/* Coach */}
-      <p className="mt-3 text-xs font-inter text-stadium-muted">
+      <p className="mt-2 text-xs font-inter text-stadium-muted">
         Coach: <span className="text-white">{lineup.coach.name}</span>
       </p>
     </div>
@@ -279,63 +472,4 @@ function LineupSection({ lineup }: { lineup: FixtureLineup }) {
 function posLabel(pos: string): string {
   const map: Record<string, string> = { G: "GK", D: "DEF", M: "MID", F: "FWD" };
   return map[pos] ?? pos;
-}
-
-function StatsComparison({ home, away }: { home: FixtureTeamStats; away: FixtureTeamStats }) {
-  // Pair up stats by type
-  const statTypes = home.statistics.map((s) => s.type);
-
-  // Display-friendly label mapping
-  const labelMap: Record<string, string> = {
-    "Ball Possession": "Possession",
-    "Shots on Goal": "Shots on Target",
-    "Shots off Goal": "Shots off Target",
-    "Total Shots": "Total Shots",
-    "Blocked Shots": "Blocked Shots",
-    "Corner Kicks": "Corners",
-    "Offsides": "Offsides",
-    "Fouls": "Fouls",
-    "Yellow Cards": "Yellow Cards",
-    "Red Cards": "Red Cards",
-    "Total passes": "Total Passes",
-    "Passes accurate": "Accurate Passes",
-    "Passes %": "Pass Accuracy",
-    "expected_goals": "Expected Goals (xG)",
-  };
-
-  return (
-    <div className="space-y-3">
-      {statTypes.map((type) => {
-        const homeVal = home.statistics.find((s) => s.type === type)?.value;
-        const awayVal = away.statistics.find((s) => s.type === type)?.value;
-        if (homeVal == null && awayVal == null) return null;
-
-        const label = labelMap[type] ?? type;
-        const hNum = parseFloat(String(homeVal ?? 0));
-        const aNum = parseFloat(String(awayVal ?? 0));
-        const total = hNum + aNum || 1;
-        const hPct = (hNum / total) * 100;
-
-        return (
-          <div key={type}>
-            <div className="flex justify-between text-sm font-inter mb-1">
-              <span className="text-white font-medium">{String(homeVal ?? 0)}</span>
-              <span className="text-stadium-muted text-xs">{label}</span>
-              <span className="text-white font-medium">{String(awayVal ?? 0)}</span>
-            </div>
-            <div className="flex h-1.5 rounded-full overflow-hidden bg-stadium-surface2">
-              <div
-                className="bg-lfc-red rounded-l-full transition-all"
-                style={{ width: `${hPct}%` }}
-              />
-              <div
-                className="bg-stadium-muted/50 rounded-r-full transition-all"
-                style={{ width: `${100 - hPct}%` }}
-              />
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
 }

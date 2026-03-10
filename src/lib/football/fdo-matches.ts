@@ -109,6 +109,15 @@ function mapTeamId(fdoId: number): number {
   return fdoId === FDO_LFC_ID ? CANONICAL_LFC_ID : fdoId;
 }
 
+// Local competition logos (override remote FDO emblems)
+const COMP_LOGO: Record<string, string> = {
+  "Premier League": "/assets/lfc/premier-league.svg",
+  "UEFA Champions League": "/assets/lfc/champions-league.png",
+  "FA Cup": "/assets/lfc/fa-cup.png",
+  "Carabao Cup": "/assets/lfc/carabao-cup.png",
+  "EFL Cup": "/assets/lfc/carabao-cup.png",
+};
+
 // ─── Fixture mapper ─────────────────────────────────────────────────────────
 
 function mapMatchToFixture(m: FdoMatch): Fixture {
@@ -127,7 +136,7 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
       id: m.competition.id,
       name: m.competition.name,
       country: "England",
-      logo: m.competition.emblem,
+      logo: COMP_LOGO[m.competition.name] ?? m.competition.emblem,
       season: 2025,
       round: m.matchday ? `Matchday ${m.matchday}` : m.stage,
     },

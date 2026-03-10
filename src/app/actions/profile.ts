@@ -3,13 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
+const MAX_USERNAME_LENGTH = 30;
+const MAX_BIO_LENGTH = 200;
+
 export async function updateProfile(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim() || null;
   const bio = String(formData.get("bio") ?? "").trim() || null;
 
+  // Server-side validation
+  if (username && username.length > MAX_USERNAME_LENGTH) {
+    return { error: `Username must be ${MAX_USERNAME_LENGTH} characters or less` };
+  }
+  if (bio && bio.length > MAX_BIO_LENGTH) {
+    return { error: `Bio must be ${MAX_BIO_LENGTH} characters or less` };
+  }
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (!user) return { error: "Not authenticated" };
 
   const { error } = await supabase
@@ -23,40 +33,24 @@ export async function updateProfile(formData: FormData) {
   return { success: true };
 }
 
-export async function uploadAvatar(formData: FormData) {
-  const file = formData.get("avatar") as File | null;
-  if (!file) return { error: "No file provided" };
-
-  // Validate type + size (max 2MB)
-  if (!file.type.startsWith("image/")) return { error: "Only image files allowed" };
-  if (file.size > 2 * 1024 * 1024) return { error: "File must be under 2MB" };
-
+/**
+ * Update avatar URL after client-side upload to Supabase Storage.
+ * File is uploaded directly from the browser — no 1MB body limit issue.
+ */
+export async function updateAvatarUrl(publicUrl: string) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
-  const ext = file.name.split(".").pop() ?? "jpg";
-  const path = `${user.id}/avatar.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("avatars")
-    .upload(path, file, { upsert: true });
-
-  if (uploadError) return { error: uploadError.message };
-
-  const { data: { publicUrl } } = supabase.storage
-    .from("avatars")
-    .getPublicUrl(path);
-
-  const { error: updateError } = await supabase
+  const { error } = await supabase
     .from("user_profiles")
     .update({ avatar_url: publicUrl })
     .eq("user_id", user.id);
 
-  if (updateError) return { error: updateError.message };
+  if (error) return { error: "Failed to update avatar" };
 
   revalidatePath("/profile");
-  return { success: true, url: publicUrl };
+  return { success: true };
 }
 
 export async function toggleFavouritePlayer(
@@ -77,24 +71,26 @@ export async function toggleFavouritePlayer(
     .single();
 
   if (existing) {
-    // Remove favourite
-    await supabase
+    const { error } = await supabase
       .from("favourite_players")
       .delete()
       .eq("user_id", user.id)
       .eq("player_id", playerId);
 
+    if (error) return { error: "Failed to remove favourite" };
+
     revalidatePath("/profile");
     revalidatePath(`/player/${playerId}`);
     return { favourited: false };
   } else {
-    // Add favourite
-    await supabase.from("favourite_players").insert({
+    const { error } = await supabase.from("favourite_players").insert({
       user_id: user.id,
       player_id: playerId,
       player_name: playerName,
       player_photo: playerPhoto,
     });
+
+    if (error) return { error: "Failed to add favourite" };
 
     revalidatePath("/profile");
     revalidatePath(`/player/${playerId}`);

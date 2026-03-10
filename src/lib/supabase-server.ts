@@ -1,7 +1,7 @@
 // Server-only: never import this in client components
-import "server-only";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import 'server-only';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 /**
  * Server-side Supabase client with cookie-based session.
@@ -18,11 +18,15 @@ export async function createServerSupabaseClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Ignore error when called from a Server Component or GET route handler
+          }
         },
       },
-    }
+    },
   );
 }

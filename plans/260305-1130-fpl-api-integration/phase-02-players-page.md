@@ -1,9 +1,10 @@
 ---
 phase: 2
 title: "Players Page + Components"
-status: Planned
+status: Done
 effort: 2.5h
 depends: [phase-01]
+completed: 2026-03-05
 ---
 
 # Phase 02 — Players Page + Components

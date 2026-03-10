@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liverpool FC — Standings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0D0D0D; --surface: #1A1A1A; --surface2: #252525;
+    --red: #C8102E; --red-dark: #A00E24; --red-glow: rgba(200,16,46,0.25);
+    --gold: #F6EB61; --white: #fff; --muted: #A0A0A0; --border: #2A2A2A;
+  }
+  body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; width: 100%; z-index: 100; background: rgba(26,26,26,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo svg { width: 36px; height: 36px; }
+  .nav-logo span { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a.active { color: var(--white); border-bottom: 2px solid var(--red); padding-bottom: 2px; }
+  .nav-cta { background: var(--red); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 20px; border: none; cursor: pointer; }
+
+  /* PAGE HEADER */
+  .page-header { padding: 100px 2rem 2rem; max-width: 1280px; margin: 0 auto; }
+  .breadcrumb { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  .breadcrumb span { color: var(--red); }
+  .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5rem); letter-spacing: 0.02em; }
+
+  /* LEAGUE SELECTOR */
+  .league-selector { max-width: 1280px; margin: 0 auto; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .league-btn { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--border); padding: 10px 18px; cursor: pointer; transition: all 0.15s; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .league-btn:hover { color: var(--white); border-color: var(--surface2); }
+  .league-btn.active { background: var(--surface2); border-color: var(--red); color: var(--white); }
+  .league-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-pl { background: #6C63FF; }
+  .dot-ucl { background: #3B82F6; }
+
+  /* TABLE WRAPPER */
+  .table-wrapper { max-width: 1280px; margin: 0 auto; padding: 0 2rem 5rem; display: grid; grid-template-columns: 1fr 300px; gap: 2rem; align-items: start; }
+
+  /* TABLE CARD */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; overflow: hidden; }
+  .table-header { display: grid; grid-template-columns: 40px 1fr repeat(7, 48px) 100px 32px; gap: 0; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .th { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-align: center; }
+  .th:nth-child(2) { text-align: left; }
+
+  /* Table Row */
+  .table-row { display: grid; grid-template-columns: 40px 1fr repeat(7, 48px) 100px 32px; gap: 0; padding: 10px 16px; border-bottom: 1px solid rgba(42,42,42,0.6); align-items: center; transition: background 0.15s; cursor: pointer; }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: rgba(255,255,255,0.02); }
+  .table-row.lfc-row { background: rgba(200,16,46,0.07); border-left: 3px solid var(--red); }
+  .table-row.lfc-row:hover { background: rgba(200,16,46,0.1); }
+  .table-row.champions { border-left: 3px solid #6C63FF; }
+  .table-row.ucl { border-left: 3px solid #3B82F6; }
+  .table-row.rel { border-left: 3px solid #ef4444; }
+
+  .td { font-family: 'Inter', sans-serif; font-size: 0.85rem; text-align: center; color: var(--white); }
+  .td.left { text-align: left; }
+  .td.muted { color: var(--muted); }
+  .td.bold { font-weight: 700; }
+
+  /* Position number */
+  .pos-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; line-height: 1; text-align: center; }
+  .pos-num.top { color: var(--red); }
+  .pos-champion { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: #6C63FF; }
+
+  /* Team cell */
+  .team-cell { display: flex; align-items: center; gap: 10px; }
+  .team-crest { width: 24px; height: 24px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.55rem; color: var(--muted); flex-shrink: 0; }
+  .team-crest.lfc { border-color: var(--red); color: var(--red); background: rgba(200,16,46,0.1); }
+  .team-label { font-size: 0.9rem; font-weight: 500; }
+  .team-label.lfc { color: var(--red); font-weight: 700; }
+
+  /* Progress bar */
+  .pts-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .pts-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .pts-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+  .pts-fill.lfc { background: var(--red); }
+  .pts-fill.top { background: #6C63FF; }
+  .pts-fill.mid { background: var(--muted); opacity: 0.4; }
+  .pts-fill.low { background: #ef4444; opacity: 0.4; }
+
+  /* PTS number in bar col */
+  .pts-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; text-align: right; min-width: 28px; }
+  .pts-num.lfc { color: var(--red); }
+
+  /* Form mini dots */
+  .mini-form { display: flex; gap: 3px; justify-content: flex-end; }
+  .mf-dot { width: 14px; height: 14px; border-radius: 50%; font-family: 'Bebas Neue', sans-serif; font-size: 0.55rem; display: flex; align-items: center; justify-content: center; }
+  .mf-dot.W { background: rgba(34,197,94,0.3); color: #22c55e; }
+  .mf-dot.D { background: rgba(234,179,8,0.25); color: #eab308; }
+  .mf-dot.L { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+  /* Qualification legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 1rem; padding: 1rem 16px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .legend-bar { width: 12px; height: 3px; border-radius: 1px; }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .sidebar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem; }
+  .sidebar-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; }
+  .lfc-hero-stat { text-align: center; margin-bottom: 1rem; }
+  .lfc-hero-stat .n { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; line-height: 1; color: var(--red); }
+  .lfc-hero-stat .l { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .stat-grid-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .sgm-item { background: var(--surface2); border: 1px solid var(--border); padding: 0.75rem; text-align: center; }
+  .sgm-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; line-height: 1; }
+  .sgm-lbl { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+  .title-chances { margin-top: 1rem; }
+  .chances-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .chances-bar { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .chances-fill { height: 100%; background: linear-gradient(to right, var(--red), #FF4060); border-radius: 4px; width: 84%; }
+  .chances-pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--red); margin-top: 4px; }
+
+  .top-scorer-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .top-scorer-row:last-child { border-bottom: none; }
+  .scorer-name { font-size: 0.85rem; }
+  .scorer-team { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .scorer-goals { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; }
+
+  @media (max-width: 1024px) { .table-wrapper { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="17" fill="#C8102E" stroke="#A00E24" stroke-width="2"/>
+      <text x="18" y="24" text-anchor="middle" fill="white" font-family="'Bebas Neue',sans-serif" font-size="14">LFC</text>
+    </svg>
+    <span>Liverpool FC</span>
+  </div>
+  <div class="nav-links">
+    <a href="#">Home</a><a href="#">Squad</a><a href="#">Fixtures</a>
+    <a href="#" class="active">Standings</a>
+    <a href="#">News</a>
+  </div>
+  <button class="nav-cta">Sign In</button>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb">Home <span>/</span> Standings</div>
+  <h1 class="page-title">League Standings</h1>
+</div>
+
+<!-- LEAGUE SELECTOR -->
+<div class="league-selector">
+  <button class="league-btn active"><span class="league-dot dot-pl"></span>Premier League</button>
+  <button class="league-btn"><span class="league-dot dot-ucl"></span>Champions League</button>
+  <div style="margin-left:auto;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;letter-spacing:0.1em;color:var(--muted);">Updated: 3 Mar 2026 · Matchday 29</div>
+</div>
+
+<!-- TABLE + SIDEBAR -->
+<div class="table-wrapper">
+
+  <!-- TABLE -->
+  <div>
+    <div class="table-card">
+      <!-- Header -->
+      <div class="table-header">
+        <div class="th">#</div>
+        <div class="th" style="text-align:left;">Team</div>
+        <div class="th">P</div>
+        <div class="th">W</div>
+        <div class="th">D</div>
+        <div class="th">L</div>
+        <div class="th">GF</div>
+        <div class="th">GA</div>
+        <div class="th">GD</div>
+        <div class="th" style="text-align:left;padding-left:8px;">Points</div>
+        <div class="th">Form</div>
+      </div>
+
+      <!-- 1 - Liverpool (LFC) -->
+      <div class="table-row lfc-row champions">
+        <div class="td"><div class="pos-num top">1</div></div>
+        <div class="td left">
+          <div class="team-cell">
+            <div class="team-crest lfc">LFC</div>
+            <span class="team-label lfc">Liverpool</span>
+          </div>
+        </div>
+        <div class="td muted">29</div>
+        <div class="td bold">21</div>
+        <div class="td muted">3</div>
+        <div class="td muted">2</div>
+        <div class="td">82</div>
+        <div class="td">30</div>
+        <div class="td bold" style="color:#22c55e;">+52</div>
+        <div class="td">
+          <div class="pts-bar-wrap">
+            <div class="pts-bar"><div class="pts-fill lfc" style="width:88%;"></div></div>
+            <div class="pts-num lfc">66</div>
+          </div>
+        </div>
+        <div class="td">
+          <div class="mini-form">
+            <div class="mf-dot W">W</div><div class="mf-dot W">W</div>
+            <div class="mf-dot D">D</div><div class="mf-dot W">W</div>
+            <div class="mf-dot W">W</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 - Arsenal -->
+      <div class="table-row champions">
+        <div class="td"><div class="pos-num">2</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest">ARS</div><span class="team-label">Arsenal</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">18</div>
+        <div class="td muted">5</div>
+        <div class="td muted">4</div>
+        <div class="td">64</div><div class="td">35</div>
+        <div class="td bold" style="color:#22c55e;">+29</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill top" style="width:76%;"></div></div><div class="pts-num">59</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot W">W</div><div class="mf-dot D">D</div><div class="mf-dot W">W</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div></div></div>
+      </div>
+
+      <!-- 3 - Man City -->
+      <div class="table-row champions">
+        <div class="td"><div class="pos-num">3</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#63B3ED;">MCI</div><span class="team-label">Man City</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">17</div>
+        <div class="td muted">5</div>
+        <div class="td muted">7</div>
+        <div class="td">58</div><div class="td">40</div>
+        <div class="td bold" style="color:#22c55e;">+18</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill top" style="width:70%;"></div></div><div class="pts-num">56</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot W">W</div><div class="mf-dot W">W</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div><div class="mf-dot D">D</div></div></div>
+      </div>
+
+      <!-- 4 - Chelsea -->
+      <div class="table-row ucl">
+        <div class="td"><div class="pos-num">4</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#3B82F6;">CHE</div><span class="team-label">Chelsea</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">16</div>
+        <div class="td muted">4</div>
+        <div class="td muted">9</div>
+        <div class="td">55</div><div class="td">44</div>
+        <div class="td bold" style="color:#22c55e;">+11</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill mid" style="width:64%;"></div></div><div class="pts-num">52</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot D">D</div><div class="mf-dot W">W</div><div class="mf-dot W">W</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div></div></div>
+      </div>
+
+      <!-- 5 - Tottenham -->
+      <div class="table-row">
+        <div class="td"><div class="pos-num">5</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#aaa;">TOT</div><span class="team-label">Tottenham</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">14</div>
+        <div class="td muted">5</div>
+        <div class="td muted">10</div>
+        <div class="td">50</div><div class="td">48</div>
+        <div class="td muted">+2</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill mid" style="width:58%;"></div></div><div class="pts-num">47</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot W">W</div><div class="mf-dot D">D</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div><div class="mf-dot D">D</div></div></div>
+      </div>
+
+      <!-- 6 - Newcastle -->
+      <div class="table-row">
+        <div class="td"><div class="pos-num">6</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#aaa;">NEW</div><span class="team-label">Newcastle</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">13</div>
+        <div class="td muted">6</div>
+        <div class="td muted">10</div>
+        <div class="td">46</div><div class="td">42</div>
+        <div class="td muted">+4</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill mid" style="width:54%;"></div></div><div class="pts-num">45</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot W">W</div><div class="mf-dot W">W</div><div class="mf-dot D">D</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div></div></div>
+      </div>
+
+      <!-- 7 - Aston Villa -->
+      <div class="table-row">
+        <div class="td"><div class="pos-num">7</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#7c3aed;">AVL</div><span class="team-label">Aston Villa</span></div></div>
+        <div class="td muted">29</div>
+        <div class="td bold">12</div>
+        <div class="td muted">7</div>
+        <div class="td muted">10</div>
+        <div class="td">44</div><div class="td">46</div>
+        <div class="td muted" style="color:#ef4444;">-2</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill mid" style="width:51%;"></div></div><div class="pts-num">43</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot L">L</div><div class="mf-dot W">W</div><div class="mf-dot W">W</div><div class="mf-dot D">D</div><div class="mf-dot L">L</div></div></div>
+      </div>
+
+      <!-- 8-14 abbreviated -->
+      <div class="table-row">
+        <div class="td"><div class="pos-num" style="color:var(--muted);font-size:1rem;">8</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest">BRI</div><span class="team-label" style="color:var(--muted);">Brighton</span></div></div>
+        <div class="td muted">29</div><div class="td muted">12</div><div class="td muted">5</div><div class="td muted">12</div>
+        <div class="td muted">42</div><div class="td muted">48</div><div class="td muted">-6</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill mid" style="width:48%;"></div></div><div class="pts-num" style="color:var(--muted);">41</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot D">D</div><div class="mf-dot W">W</div><div class="mf-dot L">L</div><div class="mf-dot W">W</div><div class="mf-dot D">D</div></div></div>
+      </div>
+
+      <!-- 18 - Rel zone -->
+      <div style="padding:6px 16px;background:rgba(239,68,68,0.03);border-top:1px solid rgba(239,68,68,0.15);border-bottom:none;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(239,68,68,0.6);">Relegation Zone</div>
+      </div>
+      <div class="table-row rel">
+        <div class="td"><div class="pos-num" style="color:#ef4444;font-size:1rem;">18</div></div>
+        <div class="td left"><div class="team-cell"><div class="team-crest" style="color:#ef4444;border-color:rgba(239,68,68,0.3);">IPW</div><span class="team-label" style="color:var(--muted);">Ipswich</span></div></div>
+        <div class="td muted">29</div><div class="td muted">4</div><div class="td muted">5</div><div class="td muted">20</div>
+        <div class="td muted">24</div><div class="td muted">70</div>
+        <div class="td" style="color:#ef4444;">-46</div>
+        <div class="td"><div class="pts-bar-wrap"><div class="pts-bar"><div class="pts-fill low" style="width:20%;"></div></div><div class="pts-num" style="color:#ef4444;">17</div></div></div>
+        <div class="td"><div class="mini-form"><div class="mf-dot L">L</div><div class="mf-dot L">L</div><div class="mf-dot L">L</div><div class="mf-dot D">D</div><div class="mf-dot L">L</div></div></div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item"><div class="legend-bar" style="background:#6C63FF;"></div>Champions League (Group)</div>
+        <div class="legend-item"><div class="legend-bar" style="background:#3B82F6;"></div>Champions League (Qual.)</div>
+        <div class="legend-item"><div class="legend-bar" style="background:#F97316;"></div>Europa League</div>
+        <div class="legend-item"><div class="legend-bar" style="background:#ef4444;"></div>Relegation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- LFC Position card -->
+    <div class="sidebar-card" style="border-left:3px solid var(--red);">
+      <div class="sidebar-title">Liverpool Position</div>
+      <div class="lfc-hero-stat">
+        <div class="n">1st</div>
+        <div class="l">Premier League 2024/25</div>
+      </div>
+      <div class="stat-grid-mini">
+        <div class="sgm-item">
+          <div class="sgm-val" style="color:var(--red);">66</div>
+          <div class="sgm-lbl">Points</div>
+        </div>
+        <div class="sgm-item">
+          <div class="sgm-val" style="color:#22c55e;">+52</div>
+          <div class="sgm-lbl">Goal Diff</div>
+        </div>
+        <div class="sgm-item">
+          <div class="sgm-val">21</div>
+          <div class="sgm-lbl">Wins</div>
+        </div>
+        <div class="sgm-item">
+          <div class="sgm-val">7</div>
+          <div class="sgm-lbl">Remaining</div>
+        </div>
+      </div>
+      <div class="title-chances">
+        <div class="chances-label">Title Probability</div>
+        <div class="chances-bar"><div class="chances-fill"></div></div>
+        <div class="chances-pct">84%</div>
+      </div>
+    </div>
+
+    <!-- Top Scorers -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">PL Top Scorers</div>
+      <div class="top-scorer-row">
+        <div><div class="scorer-name" style="color:var(--gold);">M. Salah</div><div class="scorer-team" style="color:var(--red);">Liverpool</div></div>
+        <div class="scorer-goals" style="color:var(--gold);">22</div>
+      </div>
+      <div class="top-scorer-row">
+        <div><div class="scorer-name">E. Haaland</div><div class="scorer-team">Man City</div></div>
+        <div class="scorer-goals">19</div>
+      </div>
+      <div class="top-scorer-row">
+        <div><div class="scorer-name">A. Isak</div><div class="scorer-team">Newcastle</div></div>
+        <div class="scorer-goals">16</div>
+      </div>
+      <div class="top-scorer-row">
+        <div><div class="scorer-name">C. Palmer</div><div class="scorer-team">Chelsea</div></div>
+        <div class="scorer-goals">15</div>
+      </div>
+      <div class="top-scorer-row">
+        <div><div class="scorer-name">B. Saka</div><div class="scorer-team">Arsenal</div></div>
+        <div class="scorer-goals">14</div>
+      </div>
+    </div>
+
+    <!-- Points to catch -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Points Gap To Liverpool</div>
+      <div class="top-scorer-row">
+        <div class="scorer-name">Arsenal</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#ef4444;">-7</div>
+      </div>
+      <div class="top-scorer-row">
+        <div class="scorer-name">Man City</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#ef4444;">-10</div>
+      </div>
+      <div class="top-scorer-row">
+        <div class="scorer-name">Chelsea</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#ef4444;">-14</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end table-wrapper -->
+
+</body>
+</html>

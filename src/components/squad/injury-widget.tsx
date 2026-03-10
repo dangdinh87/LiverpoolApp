@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { AlertCircle } from "lucide-react";
 import type { Injury } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
@@ -14,45 +15,47 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-// Status config: label, description, colors, severity order
-const STATUS_CONFIG: Record<
-  string,
-  { label: string; description: string; bg: string; text: string; border: string; dot: string; order: number }
-> = {
-  "Missing Fixture": {
-    label: "OUT",
-    description: "Confirmed out",
-    bg: "bg-red-500/10",
-    text: "text-red-400",
-    border: "border-red-500/25",
-    dot: "bg-red-500",
-    order: 0,
-  },
-  Doubtful: {
-    label: "DOUBT",
-    description: "Unlikely to play",
-    bg: "bg-orange-500/10",
-    text: "text-orange-400",
-    border: "border-orange-500/25",
-    dot: "bg-orange-500",
-    order: 1,
-  },
-  Questionable: {
-    label: "50/50",
-    description: "Fitness test required",
-    bg: "bg-yellow-500/10",
-    text: "text-yellow-400",
-    border: "border-yellow-500/25",
-    dot: "bg-yellow-500",
-    order: 2,
-  },
-};
-
-const DEFAULT_STATUS = STATUS_CONFIG["Missing Fixture"];
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("Squad.injuries");
+
+  // Status config: label, description, colors, severity order
+  const STATUS_CONFIG: Record<
+    string,
+    { label: string; description: string; bg: string; text: string; border: string; dot: string; order: number }
+  > = {
+    "Missing Fixture": {
+      label: t("statuses.OUT"),
+      description: t("descriptions.out"),
+      bg: "bg-red-500/10",
+      text: "text-red-400",
+      border: "border-red-500/25",
+      dot: "bg-red-500",
+      order: 0,
+    },
+    Doubtful: {
+      label: t("statuses.DOUBT"),
+      description: t("descriptions.doubtful"),
+      bg: "bg-orange-500/10",
+      text: "text-orange-400",
+      border: "border-orange-500/25",
+      dot: "bg-orange-500",
+      order: 1,
+    },
+    Questionable: {
+      label: t("statuses.5050"),
+      description: t("descriptions.questionable"),
+      bg: "bg-yellow-500/10",
+      text: "text-yellow-400",
+      border: "border-yellow-500/25",
+      dot: "bg-yellow-500",
+      order: 2,
+    },
+  };
+
+  const DEFAULT_STATUS = STATUS_CONFIG["Missing Fixture"];
 
   // Deduplicate by player id, keep latest entry
   const unique = Array.from(
@@ -89,7 +92,7 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
         >
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           <span className="font-barlow font-semibold text-xs uppercase tracking-wider">
-            Injuries
+            {t("label")}
           </span>
           <span className="font-bebas text-base leading-none text-red-400">
             {unique.length}
@@ -109,20 +112,20 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
             </div>
             <div>
               <DialogTitle className="font-bebas text-2xl text-white tracking-wider leading-none">
-                Injury Room
+                {t("title")}
               </DialogTitle>
               <DialogDescription asChild>
                 <div className="flex items-center gap-3 mt-1.5">
                   {outCount > 0 && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-inter">
                       <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="text-red-400 font-medium">{outCount} out</span>
+                      <span className="text-red-400 font-medium">{t("out", { count: outCount })}</span>
                     </span>
                   )}
                   {doubtCount > 0 && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-inter">
                       <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span className="text-yellow-400 font-medium">{doubtCount} doubtful</span>
+                      <span className="text-yellow-400 font-medium">{t("doubtful", { count: doubtCount })}</span>
                     </span>
                   )}
                 </div>
@@ -132,7 +135,7 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
         </DialogHeader>
 
         {/* Grouped player list */}
-        <div className="max-h-[60vh] overflow-y-auto">
+        <ScrollArea className="max-h-[60vh]">
           {groupOrder.map(([type, players]) => {
             const cfg = STATUS_CONFIG[type] ?? DEFAULT_STATUS;
             return (
@@ -199,7 +202,7 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
               </div>
             );
           })}
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -16,18 +15,15 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/squad", label: "Squad" },
-  { href: "/fixtures", label: "Fixtures" },
-  { href: "/standings", label: "Standings" },
-  { href: "/stats", label: "Stats" },
   { href: "/news", label: "News" },
+  { href: "/squad", label: "Squad" },
+  { href: "/season", label: "Season" },
   { href: "/history", label: "History" },
 ];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
 
   // Transition navbar from transparent to solid on scroll
   useEffect(() => {
@@ -64,7 +60,7 @@ export function Navbar() {
                 <Link
                   href={href}
                   className={cn(
-                    "relative px-3 py-2 text-sm font-inter font-medium transition-colors",
+                    "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
                     pathname === href
                       ? "text-white"
                       : "text-stadium-muted hover:text-white"
@@ -80,22 +76,13 @@ export function Navbar() {
             ))}
           </ul>
 
-          {/* Right side: dark mode toggle + auth */}
+          {/* Right side: auth */}
           <div className="flex items-center gap-2">
-            {/* Theme toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 text-stadium-muted hover:text-white transition-colors rounded-md"
-              aria-label="Toggle theme"
-            >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
             {/* Login button — replaced with Avatar when logged in */}
             <Button
               asChild
               size="sm"
-              className="hidden md:flex bg-lfc-red hover:bg-lfc-red-dark text-white font-inter font-medium"
+              className="hidden md:flex bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm"
             >
               <Link href="/auth/login">Login</Link>
             </Button>
@@ -120,7 +107,7 @@ export function Navbar() {
                       <Link
                         href={href}
                         className={cn(
-                          "px-4 py-3 rounded-lg font-inter font-medium transition-colors",
+                          "px-4 py-3 rounded-none font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
                           pathname === href
                             ? "bg-lfc-red text-white"
                             : "text-stadium-muted hover:bg-stadium-surface hover:text-white"
@@ -133,7 +120,7 @@ export function Navbar() {
                   <SheetClose asChild>
                     <Link
                       href="/auth/login"
-                      className="mt-4 px-4 py-3 bg-lfc-red text-white rounded-lg font-inter font-medium text-center hover:bg-lfc-red-dark transition-colors"
+                      className="mt-4 px-4 py-3 bg-lfc-red text-white rounded-none font-barlow font-bold uppercase tracking-[0.12em] text-center hover:bg-lfc-red-dark transition-colors"
                     >
                       Login / Register
                     </Link>

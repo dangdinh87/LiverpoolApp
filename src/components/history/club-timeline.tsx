@@ -37,7 +37,7 @@ export function ClubTimeline({ events }: ClubTimelineProps) {
 
               {/* Content card */}
               <div className={`ml-10 md:ml-0 md:w-[calc(50%-2rem)] ${isLeft ? "md:mr-8 md:text-right" : "md:ml-8"}`}>
-                <div className="bg-stadium-surface border border-stadium-border rounded-xl p-5 hover:border-lfc-red/30 transition-colors">
+                <div className="bg-stadium-surface border border-stadium-border rounded-none p-5 hover:border-lfc-red/30 transition-colors">
                   <span className="font-bebas text-3xl text-lfc-red leading-none block mb-1">
                     {event.year}
                   </span>

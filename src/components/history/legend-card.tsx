@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
 interface Legend {
@@ -26,59 +27,65 @@ function getInitials(name: string): string {
 }
 
 export function LegendCard({ legend }: LegendCardProps) {
+  const t = useTranslations("History.legends");
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.45 }}
-      className="bg-stadium-surface border border-stadium-border rounded-2xl overflow-hidden hover:border-lfc-red/30 transition-colors group"
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="bg-stadium-surface border border-stadium-border group relative overflow-hidden transition-all duration-500 hover:border-white/20"
     >
-      {/* Avatar area */}
-      <div className="relative h-24 bg-gradient-to-br from-lfc-red/10 to-stadium-bg flex items-center justify-center border-b border-stadium-border">
-        {/* Jersey number style initials */}
-        <span className="font-bebas text-6xl text-white/10 absolute right-3 bottom-0 leading-none select-none">
-          {getInitials(legend.name)}
-        </span>
-        <div className="w-14 h-14 rounded-full bg-stadium-surface2 border border-stadium-border flex items-center justify-center z-10">
-          <span className="font-bebas text-xl text-lfc-red">{getInitials(legend.name)}</span>
+      {/* Decorative background initials */}
+      <span className="font-bebas text-[120px] text-white/5 absolute -right-6 -top-12 leading-none select-none pointer-events-none transition-transform duration-700 group-hover:scale-110 group-hover:text-white/10">
+        {getInitials(legend.name)}
+      </span>
+
+      {/* Profile Header */}
+      <div className="relative p-6 pb-2 border-b border-stadium-border/30">
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-stadium-surface to-stadium-surface2 border border-stadium-border/50 flex items-center justify-center mb-4 transition-all duration-500 group-hover:border-lfc-red/50 group-hover:shadow-[0_0_15px_rgba(200,16,46,0.1)]">
+          <span className="font-bebas text-2xl text-lfc-red">{getInitials(legend.name)}</span>
+        </div>
+        <h3 className="font-bebas text-3xl text-white tracking-widest leading-none mb-1 group-hover:text-lfc-red transition-colors duration-500">
+          {legend.name}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="font-barlow text-lfc-red text-[10px] font-bold uppercase tracking-[0.2em]">
+            {legend.role}
+          </span>
+          <span className="w-1 h-1 rounded-full bg-stadium-border" />
+          <span className="font-inter text-stadium-muted text-[10px] uppercase tracking-widest font-bold font-semibold opacity-70">
+            {legend.years}
+          </span>
         </div>
       </div>
 
-      <div className="p-5">
-        <h3 className="font-bebas text-2xl text-white tracking-wider leading-tight mb-0.5">
-          {legend.name}
-        </h3>
-        <div className="flex items-center gap-2 mb-3">
-          <span className="font-barlow text-lfc-red text-xs font-semibold uppercase tracking-wider">
-            {legend.role}
-          </span>
-          <span className="text-stadium-border">·</span>
-          <span className="font-inter text-stadium-muted text-xs">{legend.years}</span>
-        </div>
-
-        {/* Stats row */}
+      <div className="p-6 pt-6">
+        {/* Stats Row */}
         {(legend.caps !== null || legend.goals !== null) && (
-          <div className="flex gap-4 mb-3 border-t border-stadium-border/60 pt-3">
+          <div className="flex gap-10 mb-6">
             {legend.caps !== null && (
-              <div>
-                <p className="font-bebas text-xl text-white">{legend.caps}</p>
-                <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider">Apps</p>
+              <div className="flex flex-col">
+                <p className="font-bebas text-3xl text-white leading-none mb-1">{legend.caps}</p>
+                <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("appearances")}</p>
               </div>
             )}
             {legend.goals !== null && (
-              <div>
-                <p className="font-bebas text-xl text-lfc-red">{legend.goals}</p>
-                <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider">Goals</p>
+              <div className="flex flex-col">
+                <p className="font-bebas text-3xl text-lfc-red leading-none mb-1">{legend.goals}</p>
+                <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("goals")}</p>
               </div>
             )}
           </div>
         )}
 
-        <p className="font-inter text-xs text-stadium-muted leading-relaxed line-clamp-4">
+        <p className="font-inter text-xs text-stadium-muted leading-relaxed opacity-80 line-clamp-4 group-hover:opacity-100 transition-opacity duration-500 border-l border-white/5 pl-4">
           {legend.bio}
         </p>
       </div>
+
+      {/* Hover Line */}
+      <div className="absolute bottom-0 left-0 w-0 h-1 bg-lfc-red transition-all duration-700 group-hover:w-full" />
     </motion.div>
   );
 }

@@ -144,3 +144,28 @@ export async function getFdoStandings(): Promise<Standing[]> {
 
   return totalGroup.table.map((e) => mapEntry(e, homeMap, awayMap, formMap));
 }
+
+/** Fetch UCL league-phase standings from Football-Data.org. Cache 6h. */
+export async function getFdoUclStandings(): Promise<Standing[]> {
+  const data = await fdoFetch<FdoStandingsResponse>(
+    "/competitions/CL/standings",
+    21600
+  );
+
+  const totalGroup = data.standings.find((s) => s.type === "TOTAL");
+  const homeGroup = data.standings.find((s) => s.type === "HOME");
+  const awayGroup = data.standings.find((s) => s.type === "AWAY");
+
+  if (!totalGroup) return [];
+
+  const homeMap = new Map<number, FdoTableEntry>();
+  const awayMap = new Map<number, FdoTableEntry>();
+  const emptyFormMap = new Map<number, string>();
+
+  for (const e of homeGroup?.table ?? []) homeMap.set(e.team.id, e);
+  for (const e of awayGroup?.table ?? []) awayMap.set(e.team.id, e);
+
+  return totalGroup.table.map((e) =>
+    mapEntry(e, homeMap, awayMap, emptyFormMap)
+  );
+}

@@ -7,23 +7,16 @@ import {
   Youtube,
   Linkedin,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /* ── Data ────────────────────────────────────────────────────────── */
 
-const QUICK_LINKS = [
-  { href: "/squad", label: "Squad" },
-  { href: "/season", label: "Season" },
-  { href: "/season?tab=standings", label: "Standings" },
-  { href: "/season?tab=stats", label: "Stats" },
-  { href: "/news", label: "News" },
-  { href: "/history", label: "The Club" },
-] as const;
 
 const LEGAL_LINKS = [
-  { href: "/legal", label: "Privacy Policy" },
-  { href: "/legal", label: "Terms of Use" },
-  { href: "/legal", label: "Cookie Policy" },
-  { href: "/about", label: "About" },
+  { href: "/legal", labelKey: "privacy" },
+  { href: "/legal", labelKey: "terms" },
+  { href: "/legal", labelKey: "cookie" },
+  { href: "/about", labelKey: "about" },
 ] as const;
 
 const SOCIAL_LINKS = [
@@ -56,6 +49,17 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
 /* ── Footer ──────────────────────────────────────────────────────── */
 
 export function Footer() {
+  const t = useTranslations("Footer");
+  const navT = useTranslations("Common.nav");
+
+  const QUICK_LINKS = [
+    { href: "/squad", label: navT("squad") },
+    { href: "/season", label: navT("season") },
+    { href: "/season?tab=standings", label: navT("stats") },
+    { href: "/season?tab=stats", label: navT("stats") },
+    { href: "/news", label: navT("news") },
+    { href: "/history", label: navT("history") },
+  ] as const;
   return (
     <footer className="relative mt-20 overflow-hidden">
       {/* Subtle top accent line */}
@@ -80,7 +84,7 @@ export function Footer() {
                 </span>
               </Link>
               <p className="font-inter text-sm text-stadium-muted leading-relaxed">
-                A fan-made hub for everything Liverpool FC — results, stats, squad, and more.
+                {t("about")}
               </p>
 
               {/* Social row */}
@@ -112,11 +116,11 @@ export function Footer() {
             {/* Quick Links */}
             <div>
               <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-4">
-                Quick Links
+                {t("quickLinks")}
               </h3>
               <ul className="space-y-2.5">
                 {QUICK_LINKS.map(({ href, label }) => (
-                  <li key={label}>
+                  <li key={href}>
                     <Link
                       href={href}
                       className="text-stadium-muted hover:text-white text-sm font-inter transition-colors inline-flex items-center gap-1.5 group"
@@ -132,10 +136,15 @@ export function Footer() {
             {/* Legal */}
             <div>
               <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-4">
-                Legal
+                {t("legal")}
               </h3>
               <ul className="space-y-2.5">
-                {LEGAL_LINKS.map(({ href, label }) => (
+                {[
+                  { href: "/legal", label: t("legalLinks.privacy") },
+                  { href: "/legal", label: t("legalLinks.terms") },
+                  { href: "/legal", label: t("legalLinks.cookie") },
+                  { href: "/about", label: t("legalLinks.about") },
+                ].map(({ href, label }) => (
                   <li key={label}>
                     <Link
                       href={href}
@@ -152,18 +161,23 @@ export function Footer() {
             {/* Contact */}
             <div>
               <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-4">
-                Contact
+                {t("contact")}
               </h3>
               <div className="space-y-1.5 text-stadium-muted text-sm font-inter">
-                <p>Anfield Road</p>
-                <p>Liverpool, L4 0TH</p>
-                <p>United Kingdom</p>
-                <p className="mt-3">
+                <p className="mt-1">
                   <a
-                    href="mailto:contactus@liverpoolfc.com"
+                    href="mailto:nguyendangdinh47@gmail.com"
                     className="hover:text-white transition-colors underline underline-offset-2 decoration-stadium-border hover:decoration-lfc-red"
                   >
-                    contactus@liverpoolfc.com
+                    nguyendangdinh47@gmail.com
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href="tel:0977963775"
+                    className="hover:text-white transition-colors underline underline-offset-2 decoration-stadium-border hover:decoration-lfc-red"
+                  >
+                    0977 963 775
                   </a>
                 </p>
               </div>
@@ -181,10 +195,10 @@ export function Footer() {
             </p>
             <div className="flex flex-col items-center sm:items-end gap-1">
               <p className="text-stadium-muted text-xs font-inter">
-                &copy; {new Date().getFullYear()} Liverpool FC Fan Site. Fan-made &amp; unofficial.
+                &copy; {new Date().getFullYear()} {t("rights")}
               </p>
               <p className="text-stadium-muted/60 text-[10px] font-inter">
-                Not affiliated with Liverpool FC or FSG. Data by Fantasy Premier League & Football-Data.org. News via BBC Sport RSS.
+                {t("disclaimer")}
               </p>
             </div>
           </div>

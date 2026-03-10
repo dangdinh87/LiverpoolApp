@@ -5,7 +5,7 @@ export default function StandingsLoading() {
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Skeleton className="h-12 w-48 mb-8" />
-        <div className="bg-stadium-surface border border-stadium-border rounded-2xl overflow-hidden">
+        <div className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden">
           <div className="flex gap-4 px-6 py-3 border-b border-stadium-border">
             <Skeleton className="h-3 flex-1" />
             {[20, 16, 16, 16, 16, 16, 16, 24].map((w, i) => (

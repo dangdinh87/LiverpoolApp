@@ -1,0 +1,167 @@
+{
+  "fullName": "Liverpool Football Club",
+  "founded": "15 March 1892",
+  "founder": "John Houlding",
+  "nickname": ["The Reds", "The Redmen", "Pool", "The Kop", "LFC"],
+  "motto": "You'll Never Walk Alone",
+  "captain": "Virgil van Dijk",
+  "kitManufacturer": "Adidas",
+  "website": "liverpoolfc.com",
+  "colours": {
+    "home": "Red",
+    "homeHex": "#C8102E",
+    "away": "White / Various",
+    "awayHex": "#F6F6F6"
+  },
+  "owner": "Fenway Sports Group (FSG)",
+  "chairman": "Tom Werner",
+  "manager": "Arne Slot",
+  "league": "Premier League",
+  "stadium": {
+    "name": "Anfield",
+    "capacity": 61276,
+    "opened": 1884,
+    "address": "Anfield Road, Liverpool, L4 0TH",
+    "pitch": "105m × 68m",
+    "recordAttendance": "61905 (February 2, 1952 vs Wolves)",
+    "stands": [
+      {
+        "name": "The Kop",
+        "capacity": 12982,
+        "description": "The famous end behind the goal. Home to Liverpool's most vocal supporters, known as 'Kopites'. Originally a terraced stand, it was rebuilt as an all-seater in 1994. Now features 12,850 rail seats."
+      },
+      {
+        "name": "Main Stand",
+        "capacity": 20500,
+        "description": "Expanded in 2016 with a new upper tier, making it one of the largest single-tier stands in European football. Houses the press box, executive areas and corporate facilities."
+      },
+      {
+        "name": "Anfield Road End",
+        "capacity": 15967,
+        "description": "Completed its expansion in 2024, adding over 7,000 seats. The redevelopment included a new upper tier and premium hospitality areas."
+      },
+      {
+        "name": "Kenny Dalglish Stand",
+        "capacity": 11762,
+        "description": "Named after Liverpool's greatest ever player. Formerly the Centenary Stand, it was renamed in 2017 in honour of Sir Kenny Dalglish."
+      }
+    ],
+    "landmarks": [
+      {
+        "name": "This Is Anfield",
+        "description": "The iconic sign in the tunnel that players touch before walking onto the pitch. A tradition that Bill Shankly started to intimidate visiting teams."
+      },
+      {
+        "name": "Shankly Gates",
+        "description": "The ornate iron gates at the entrance to Anfield, dedicated to Bill Shankly with the words 'You'll Never Walk Alone'."
+      },
+      {
+        "name": "The Hillsborough Memorial",
+        "description": "A permanent memorial dedicated to the 97 Liverpool supporters who lost their lives at Hillsborough on 15 April 1989."
+      },
+      {
+        "name": "The Paisley Gateway",
+        "description": "The gateway at the Anfield Road End entrance, honouring the legacy of Bob Paisley."
+      }
+    ]
+  },
+  "records": {
+    "topScorer": { "name": "Ian Rush", "goals": 346 },
+    "mostAppearances": { "name": "Ian Callaghan", "appearances": 857 },
+    "biggestWin": "11–0 vs Strømsgodset (1974, Cup Winners' Cup)",
+    "biggestLeagueWin": "10–1 vs Rotherham United (1896)",
+    "recordTransferIn": {
+      "name": "Darwin Núñez",
+      "fee": "£64m (2022)",
+      "from": "Benfica"
+    },
+    "recordTransferOut": {
+      "name": "Philippe Coutinho",
+      "fee": "£142m (2018)",
+      "to": "Barcelona"
+    }
+  },
+  "honours": {
+    "leagueTitles": 20,
+    "championsLeague": 6,
+    "faCup": 8,
+    "leagueCup": 10,
+    "uefaCup": 3,
+    "superCup": 4,
+    "clubWorldCup": 1,
+    "communityShield": 16
+  },
+  "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world.",
+  "traditions": [
+    {
+      "name": "You'll Never Walk Alone",
+      "description": "Adopted from the Gerry and the Pacemakers hit in 1963, YNWA is sung before every home game at Anfield. The song has become the club's anthem and is recognised worldwide as a symbol of Liverpool FC's unity and spirit.",
+      "songUrl": "https://www.youtube.com/watch?v=Go-jJlGd1so"
+    },
+    {
+      "name": "The Kop",
+      "description": "Named after Spion Kop, a hill in the Boer War where Liverpool soldiers died in battle. The Kop has been the beating heart of Anfield since 1906, home to the most passionate supporters who create an atmosphere that has inspired countless comebacks."
+    },
+    {
+      "name": "The Boot Room",
+      "description": "A small room at Anfield where coaching staff would gather to discuss tactics over tea. Established by Bill Shankly, the Boot Room became legendary as the birthplace of Liverpool's tactical philosophy and produced a succession of managers: Paisley, Fagan, and Dalglish."
+    },
+    {
+      "name": "This Is Anfield",
+      "description": "The iconic sign hanging in the tunnel that players touch before walking onto the pitch. Introduced by Bill Shankly to intimidate visiting teams, it has become a sacred ritual. Under Jürgen Klopp, only players who had won a trophy were allowed to touch it."
+    }
+  ],
+  "managers": [
+    {
+      "name": "Bill Shankly",
+      "years": "1959–1974",
+      "trophies": "3 League, 2 FA Cup, 1 UEFA Cup"
+    },
+    {
+      "name": "Bob Paisley",
+      "years": "1974–1983",
+      "trophies": "6 League, 3 European Cup, 3 League Cup, 1 UEFA Cup, 1 UEFA Super Cup"
+    },
+    {
+      "name": "Joe Fagan",
+      "years": "1983–1985",
+      "trophies": "1 League, 1 European Cup, 1 League Cup"
+    },
+    {
+      "name": "Kenny Dalglish",
+      "years": "1985–1991, 2011–2012",
+      "trophies": "3 League, 2 FA Cup, 1 League Cup"
+    },
+    {
+      "name": "Graeme Souness",
+      "years": "1991–1994",
+      "trophies": "1 FA Cup"
+    },
+    {
+      "name": "Roy Evans",
+      "years": "1994–1998",
+      "trophies": "1 League Cup"
+    },
+    {
+      "name": "Gérard Houllier",
+      "years": "1998–2004",
+      "trophies": "1 FA Cup, 1 League Cup, 1 UEFA Cup, 1 UEFA Super Cup, 1 Community Shield"
+    },
+    {
+      "name": "Rafael Benítez",
+      "years": "2004–2010",
+      "trophies": "1 Champions League, 1 FA Cup, 1 UEFA Super Cup, 1 Community Shield"
+    },
+    {
+      "name": "Brendan Rodgers",
+      "years": "2012–2015",
+      "trophies": "—"
+    },
+    {
+      "name": "Jürgen Klopp",
+      "years": "2015–2024",
+      "trophies": "1 League, 1 Champions League, 1 FA Cup, 2 League Cup, 1 Club World Cup, 1 UEFA Super Cup"
+    },
+    { "name": "Arne Slot", "years": "2024–present", "trophies": "1 League" }
+  ]
+}

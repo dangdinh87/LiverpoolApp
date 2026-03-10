@@ -27,7 +27,7 @@ export function FavouriteList({ favourites }: FavouriteListProps) {
       {favourites.map((fav) => (
         <div
           key={fav.player_id}
-          className="bg-stadium-surface border border-stadium-border rounded-xl overflow-hidden group"
+          className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden group"
         >
           <Link href={`/player/${fav.player_id}`} className="block">
             <div className="relative h-28 bg-stadium-surface2">

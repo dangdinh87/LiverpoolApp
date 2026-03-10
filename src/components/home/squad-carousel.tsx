@@ -4,19 +4,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Player } from "@/lib/types/football";
-import { POSITION_LABELS } from "@/lib/types/football";
+import type { PlayerPosition } from "@/lib/squad-data";
+import { POSITION_DISPLAY } from "@/lib/squad-data";
 import { cn } from "@/lib/utils";
 
-const POSITION_COLORS: Record<Player["position"], string> = {
-  Goalkeeper: "text-yellow-400",
-  Defender: "text-blue-400",
-  Midfielder: "text-green-400",
-  Attacker: "text-lfc-red",
+const POSITION_COLORS: Record<PlayerPosition, string> = {
+  goalkeeper: "text-yellow-400",
+  defender: "text-blue-400",
+  midfielder: "text-green-400",
+  forward: "text-lfc-red",
 };
 
+interface CarouselPlayer {
+  id: number;
+  name: string;
+  slug: string;
+  position: PlayerPosition;
+  localPhoto: string;
+}
+
 interface SquadCarouselProps {
-  players: Player[];
+  players: CarouselPlayer[];
 }
 
 export function SquadCarousel({ players }: SquadCarouselProps) {
@@ -60,12 +68,12 @@ export function SquadCarousel({ players }: SquadCarouselProps) {
         {featured.map((player) => (
           <Link
             key={player.id}
-            href={`/player/${player.id}`}
+            href={`/player/${player.slug}`}
             className="flex-shrink-0 w-20 snap-start group"
           >
-            <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-stadium-surface2 border border-stadium-border group-hover:border-lfc-red/50 transition-colors">
+            <div className="relative w-20 h-20 rounded-none overflow-hidden bg-stadium-surface2 border border-stadium-border group-hover:border-lfc-red/50 transition-colors">
               <Image
-                src={player.photo}
+                src={player.localPhoto}
                 alt={player.name}
                 fill
                 sizes="80px"
@@ -73,10 +81,10 @@ export function SquadCarousel({ players }: SquadCarouselProps) {
               />
             </div>
             <p className="font-inter text-xs text-white font-semibold truncate mt-1 group-hover:text-lfc-red transition-colors">
-              {player.lastname || player.name.split(" ").pop()}
+              {player.name.split(" ").pop()}
             </p>
             <p className={cn("font-barlow text-xs font-semibold uppercase", POSITION_COLORS[player.position])}>
-              {POSITION_LABELS[player.position]}
+              {POSITION_DISPLAY[player.position]}
             </p>
           </Link>
         ))}

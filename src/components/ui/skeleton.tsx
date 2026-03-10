@@ -3,10 +3,7 @@ import { cn } from "@/lib/utils";
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-md bg-stadium-surface2",
-        className
-      )}
+      className={cn("rounded-none skeleton", className)}
     />
   );
 }

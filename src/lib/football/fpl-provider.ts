@@ -15,7 +15,7 @@ import type {
 const FPL_BASE = "https://fantasy.premierleague.com/api";
 const FPL_LFC_TEAM_ID = 12;         // Liverpool in FPL
 const LFC_CANONICAL_ID = 40;         // Canonical ID used by page components
-const PL_LOGO = "https://resources.premierleague.com/premierleague/badges/rb/t39.svg"; // Premier League logo
+const PL_LOGO = "/assets/lfc/premier-league.svg";
 const FETCH_TIMEOUT_MS = 10_000;
 
 // ─── Core fetcher ──────────────────────────────────────────────────────────────
@@ -494,7 +494,7 @@ export class FplProvider implements FootballDataProvider {
         for (const entry of stat.h) {
           const player = this.elementMap.get(entry.element);
           events.push({
-            time: { elapsed: 0, extra: null }, // FPL doesn't provide minute
+            time: { elapsed: null, extra: null }, // FPL doesn't provide minute
             team: { id: this.mapTeamId(fixture.team_h), name: this.getTeamName(fixture.team_h), logo: this.getTeamBadge(fixture.team_h) },
             player: { id: entry.element, name: player?.web_name ?? null },
             assist: { id: null, name: null },

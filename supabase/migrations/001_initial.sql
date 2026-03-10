@@ -56,3 +56,34 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================
+-- Storage: avatars bucket
+-- ============================================================
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow authenticated users to upload their own avatar
+CREATE POLICY "Users upload own avatar"
+  ON storage.objects FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- Allow authenticated users to update (upsert) their own avatar
+CREATE POLICY "Users update own avatar"
+  ON storage.objects FOR UPDATE
+  TO authenticated
+  USING (
+    bucket_id = 'avatars'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- Allow anyone to read avatars (public bucket)
+CREATE POLICY "Public read avatars"
+  ON storage.objects FOR SELECT
+  TO public
+  USING (bucket_id = 'avatars');

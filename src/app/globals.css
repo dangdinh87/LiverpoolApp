@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -139,11 +139,15 @@
 
   body {
     @apply bg-stadium-bg text-white font-inter;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 
   /* Headings use Bebas Neue by default */
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-family: var(--font-bebas);
     letter-spacing: 0.02em;
   }
@@ -161,8 +165,9 @@
 
   /* Liverpool red glow effect */
   .glow-red {
-    box-shadow: 0 0 20px rgba(200, 16, 46, 0.3),
-                0 0 40px rgba(200, 16, 46, 0.1);
+    box-shadow:
+      0 0 20px rgba(200, 16, 46, 0.3),
+      0 0 40px rgba(200, 16, 46, 0.1);
   }
 
   /* Stadium gradient text */
@@ -173,35 +178,181 @@
     background-clip: text;
   }
 
-  /* Font utilities */
-  .font-bebas { font-family: var(--font-bebas); }
-  .font-inter { font-family: var(--font-inter); }
-  .font-barlow { font-family: var(--font-barlow); }
+  /* Font utilities — match wireframes */
+  .font-bebas {
+    font-family: var(--font-bebas);
+  }
+  .font-inter {
+    font-family: var(--font-inter);
+  }
+  .font-barlow {
+    font-family: var(--font-barlow);
+  }
+
+  /* Section label — Barlow 700, 0.75rem, 0.2em spacing (wireframe .section-label) */
+  .section-label {
+    font-family: var(--font-barlow);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
 }
 
 /* ─── Animations ─────────────────────────────────────────────── */
 @keyframes pulse-red {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.7); }
-  50%       { opacity: 0.9; box-shadow: 0 0 0 8px rgba(200, 16, 46, 0); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.7);
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 0 8px rgba(200, 16, 46, 0);
+  }
 }
 
 @keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .animate-pulse-red {
   animation: pulse-red 2s ease-in-out infinite;
 }
 
-/* Skeleton loading shimmer */
+/* Tab panel fade-slide-in */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Skeleton loading shimmer — red-tinted brand feel */
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--stadium-surface) 25%,
-    var(--stadium-surface2) 50%,
-    var(--stadium-surface) 75%
+    #1e1e1e 25%,
+    #3d1520 50%,
+    #1e1e1e 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Chat shimmer effect for thinking indicator */
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Chat wave loading dots */
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); opacity: 0.4; }
+  50% { transform: scaleY(2.2); opacity: 1; }
+}
+.animate-wave {
+  animation: wave 1.2s ease-in-out infinite;
+}
+
+/* Hide native scrollbar on assistant-ui thread viewport, use thin custom one */
+.aui-thread-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(0 0% 20% / 0.5) transparent;
+}
+.aui-thread-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+.aui-thread-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+.aui-thread-viewport::-webkit-scrollbar-thumb {
+  background-color: hsl(0 0% 30% / 0.5);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.aui-thread-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(0 0% 40% / 0.7);
+}
+
+/* ─── Chat AI button: rotating conic-gradient border ────────── */
+@keyframes spin-border {
+  to { --border-angle: 360deg; }
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.ai-btn {
+  --border-angle: 0deg;
+  position: relative;
+  background: linear-gradient(var(--color-stadium-bg), var(--color-stadium-bg)) padding-box,
+              conic-gradient(from var(--border-angle), #C8102E 0%, #F6EB61 25%, #C8102E 50%, transparent 80%) border-box;
+  border: 1.5px solid transparent;
+  animation: spin-border 3s linear infinite;
+}
+
+.ai-btn::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--border-angle), rgba(200,16,46,0.5) 0%, rgba(246,235,97,0.3) 25%, rgba(200,16,46,0.5) 50%, transparent 80%);
+  filter: blur(8px);
+  z-index: -1;
+  animation: spin-border 3s linear infinite;
+  opacity: 0.6;
+}
+
+.ai-btn:hover::before {
+  opacity: 1;
+  filter: blur(12px);
+}
+
+/* Animated gradient text inside ai-btn */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.ai-btn-text {
+  background: linear-gradient(90deg, #C8102E, #F6EB61, #C8102E, #F6EB61);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes sparkle-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(15deg); }
+}
+
+.ai-btn-icon {
+  animation: sparkle-float 2s ease-in-out infinite;
+}
+
+/* Subtle zoom for hero backgrounds */
+@keyframes subtleZoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1.12);
+  }
 }

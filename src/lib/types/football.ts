@@ -156,7 +156,7 @@ export interface TopScorer {
 // ─── Fixture Events (goals, cards, subs) ────────────────────────────────────
 
 export interface FixtureEvent {
-  time: { elapsed: number; extra: number | null };
+  time: { elapsed: number | null; extra: number | null };
   team: { id: number; name: string; logo: string };
   player: { id: number | null; name: string | null };
   assist: { id: number | null; name: string | null };

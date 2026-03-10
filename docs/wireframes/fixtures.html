@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liverpool FC — Fixtures & Results</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0D0D0D; --surface: #1A1A1A; --surface2: #252525;
+    --red: #C8102E; --red-dark: #A00E24; --red-glow: rgba(200,16,46,0.25);
+    --gold: #F6EB61; --white: #fff; --muted: #A0A0A0; --border: #2A2A2A;
+  }
+  body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; }
+
+  /* NAV */
+  nav { position: fixed; top: 0; width: 100%; z-index: 100; background: rgba(26,26,26,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 64px; }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo svg { width: 36px; height: 36px; }
+  .nav-logo span { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+  .nav-links a.active { color: var(--white); border-bottom: 2px solid var(--red); padding-bottom: 2px; }
+  .nav-cta { background: var(--red); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 20px; border: none; cursor: pointer; }
+
+  /* PAGE HEADER */
+  .page-header { padding: 100px 2rem 3rem; max-width: 1280px; margin: 0 auto; }
+  .breadcrumb { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+  .breadcrumb span { color: var(--red); }
+  .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5rem); letter-spacing: 0.02em; }
+  .season-meta { display: flex; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
+  .meta-stat { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; }
+  .meta-stat strong { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; display: inline; margin-right: 6px; }
+  .meta-stat.w strong { color: #22c55e; }
+  .meta-stat.d strong { color: #eab308; }
+  .meta-stat.l strong { color: #ef4444; }
+  .meta-stat.g strong { color: var(--white); }
+
+  /* FILTER BAR */
+  .filter-bar { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 0 2rem; }
+  .filter-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 0; }
+  .filter-tab { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 14px 20px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; border: none; background: none; }
+  .filter-tab:hover { color: var(--white); }
+  .filter-tab.active { color: var(--red); border-bottom: 2px solid var(--red); }
+  .filter-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .filter-right { margin-left: auto; display: flex; gap: 6px; }
+  .season-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; padding: 6px 14px; cursor: pointer; }
+  .season-btn.active { background: var(--border); color: var(--white); }
+
+  /* LAYOUT */
+  .content { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem 5rem; display: grid; grid-template-columns: 1fr 320px; gap: 2rem; }
+
+  /* TIMELINE */
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+
+  /* Month group */
+  .month-group { margin-bottom: 2rem; }
+  .month-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 12px; }
+  .month-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .month-matches { padding-left: 1.5rem; border-left: 1px solid var(--border); display: flex; flex-direction: column; gap: 0.75rem; }
+
+  /* Match card */
+  .match-card {
+    background: var(--surface); border: 1px solid var(--border);
+    position: relative; overflow: hidden; cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s;
+    border-radius: 2px;
+  }
+  .match-card:hover { border-color: var(--surface2); transform: translateX(4px); }
+  .match-card.upcoming { border-left: 3px solid var(--border); }
+  .match-card.next-match { border-left: 3px solid var(--red); background: rgba(200,16,46,0.04); }
+  .match-card.win { border-left: 3px solid rgba(34,197,94,0.5); }
+  .match-card.draw { border-left: 3px solid rgba(234,179,8,0.5); }
+  .match-card.loss { border-left: 3px solid rgba(239,68,68,0.4); }
+
+  /* Timeline dot */
+  .timeline-dot { position: absolute; left: -1.5rem; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--border); background: var(--black); }
+  .match-card.win .timeline-dot { border-color: #22c55e; background: rgba(34,197,94,0.3); }
+  .match-card.draw .timeline-dot { border-color: #eab308; background: rgba(234,179,8,0.3); }
+  .match-card.loss .timeline-dot { border-color: #ef4444; }
+  .match-card.next-match .timeline-dot { border-color: var(--red); background: rgba(200,16,46,0.4); animation: pulse-red 1.5s ease-in-out infinite; }
+
+  .match-inner { display: flex; align-items: center; padding: 1rem 1.25rem; gap: 1.5rem; }
+  .match-date-col { min-width: 90px; }
+  .match-day { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .match-datenum { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; line-height: 1; color: var(--white); }
+  .match-time { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; letter-spacing: 0.08em; color: var(--muted); margin-top: 2px; }
+
+  .competition-badge { background: var(--surface2); border: 1px solid var(--border); padding: 3px 8px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .competition-badge.pl { color: #6C63FF; border-color: rgba(108,99,255,0.3); background: rgba(108,99,255,0.1); }
+  .competition-badge.ucl { color: #3B82F6; border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.1); }
+  .competition-badge.fac { color: var(--gold); border-color: rgba(246,235,97,0.3); background: rgba(246,235,97,0.05); }
+
+  .match-teams-col { flex: 1; display: flex; align-items: center; gap: 1rem; }
+  .home-team { text-align: right; flex: 1; }
+  .away-team { text-align: left; flex: 1; }
+  .team-nm { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.03em; }
+  .team-nm.lfc { color: var(--red); }
+  .venue-tag { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  .score-display { text-align: center; min-width: 80px; }
+  .score-nums { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; line-height: 1; letter-spacing: 0.05em; }
+  .score-nums.win { color: #22c55e; }
+  .score-nums.draw { color: #eab308; }
+  .score-nums.loss { color: #ef4444; }
+  .score-upcoming { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.15em; color: var(--muted); }
+  .result-dot { display: inline-block; width: 20px; height: 20px; border-radius: 50%; font-family: 'Bebas Neue', sans-serif; font-size: 0.65rem; line-height: 20px; text-align: center; }
+  .result-dot.W { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .result-dot.D { background: rgba(234,179,8,0.2); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+  .result-dot.L { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+
+  .match-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 100px; }
+  .venue-name { font-size: 0.75rem; color: var(--muted); text-align: right; }
+  .next-badge { background: rgba(200,16,46,0.15); border: 1px solid var(--red); color: var(--red); font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 8px; display: flex; align-items: center; gap: 5px; }
+  .next-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: pulse-red 1.5s ease-in-out infinite; }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .sidebar-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 1.25rem; }
+  .sidebar-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; }
+  .form-row { display: flex; gap: 6px; margin-bottom: 0.5rem; }
+  .form-dot { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.8rem; }
+  .form-dot.W { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .form-dot.D { background: rgba(234,179,8,0.2); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+  .form-dot.L { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+  .mini-stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mini-stat-row:last-child { border-bottom: none; }
+  .mini-stat-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.08em; color: var(--muted); }
+  .mini-stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--white); }
+  .mini-stat-val.red { color: var(--red); }
+
+  @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @media (max-width: 1024px) { .content { grid-template-columns: 1fr; } .sidebar { display: none; } }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="17" fill="#C8102E" stroke="#A00E24" stroke-width="2"/>
+      <text x="18" y="24" text-anchor="middle" fill="white" font-family="'Bebas Neue',sans-serif" font-size="14">LFC</text>
+    </svg>
+    <span>Liverpool FC</span>
+  </div>
+  <div class="nav-links">
+    <a href="#">Home</a><a href="#">Squad</a>
+    <a href="#" class="active">Fixtures</a>
+    <a href="#">Standings</a><a href="#">News</a>
+  </div>
+  <button class="nav-cta">Sign In</button>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="breadcrumb">Home <span>/</span> Fixtures & Results</div>
+  <h1 class="page-title">Fixtures & Results</h1>
+  <div class="season-meta">
+    <div class="meta-stat w"><strong>21</strong> Wins</div>
+    <div class="meta-stat d"><strong>3</strong> Draws</div>
+    <div class="meta-stat l"><strong>2</strong> Losses</div>
+    <div class="meta-stat g"><strong>82</strong> Goals Scored</div>
+    <div class="meta-stat" style="color:var(--muted);">Season 2024/25 · 26 played</div>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <div class="filter-inner">
+    <button class="filter-tab active">All</button>
+    <button class="filter-tab">Premier League</button>
+    <div class="filter-divider"></div>
+    <button class="filter-tab">Champions League</button>
+    <div class="filter-divider"></div>
+    <button class="filter-tab">FA Cup</button>
+    <button class="filter-tab">Home</button>
+    <button class="filter-tab">Away</button>
+    <div class="filter-right">
+      <button class="season-btn active">2024/25</button>
+      <button class="season-btn">2023/24</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="content">
+  <div class="timeline">
+
+    <!-- MARCH 2025 -->
+    <div class="month-group">
+      <div class="month-label">March 2025</div>
+      <div class="month-matches">
+
+        <!-- Upcoming / Next Match -->
+        <div class="match-card next-match">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sat</div>
+              <div class="match-datenum">8 Mar</div>
+              <div class="match-time">17:30</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD30</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Home</div>
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+              <div class="score-display">
+                <div class="score-upcoming">VS</div>
+              </div>
+              <div class="away-team">
+                <div class="team-nm">Man City</div>
+                <div class="venue-tag">Away</div>
+              </div>
+            </div>
+            <div class="match-right">
+              <div class="next-badge"><span class="dot"></span>Next Match</div>
+              <div class="venue-name">Anfield</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming -->
+        <div class="match-card upcoming">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Wed</div>
+              <div class="match-datenum">12 Mar</div>
+              <div class="match-time">20:00</div>
+            </div>
+            <div class="competition-badge ucl">Champions League · R16</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Away</div>
+                <div class="team-nm">PSG</div>
+              </div>
+              <div class="score-display">
+                <div class="score-upcoming">VS</div>
+              </div>
+              <div class="away-team">
+                <div class="team-nm lfc">Liverpool</div>
+                <div class="venue-tag">Away</div>
+              </div>
+            </div>
+            <div class="match-right">
+              <div class="venue-name">Parc des Princes</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming -->
+        <div class="match-card upcoming">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sat</div>
+              <div class="match-datenum">15 Mar</div>
+              <div class="match-time">15:00</div>
+            </div>
+            <div class="competition-badge fac">FA Cup · QF</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Home</div>
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+              <div class="score-display"><div class="score-upcoming">VS</div></div>
+              <div class="away-team">
+                <div class="team-nm">Nottm Forest</div>
+              </div>
+            </div>
+            <div class="match-right">
+              <div class="venue-name">Anfield</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FEBRUARY 2025 -->
+    <div class="month-group">
+      <div class="month-label">February 2025</div>
+      <div class="month-matches">
+
+        <!-- Win -->
+        <div class="match-card win">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sat</div>
+              <div class="match-datenum">22 Feb</div>
+              <div class="match-time">12:30</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD29</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Away</div>
+                <div class="team-nm">Brentford</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums win">0 — 3</div>
+                <div class="result-dot W">W</div>
+              </div>
+              <div class="away-team">
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+            </div>
+            <div class="match-right">
+              <div class="venue-name">Gtech Community Stadium</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Win -->
+        <div class="match-card win">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Tue</div>
+              <div class="match-datenum">18 Feb</div>
+              <div class="match-time">20:00</div>
+            </div>
+            <div class="competition-badge ucl">Champions League · R16</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Home</div>
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums win">3 — 1</div>
+                <div class="result-dot W">W</div>
+              </div>
+              <div class="away-team"><div class="team-nm">PSG</div></div>
+            </div>
+            <div class="match-right">
+              <div class="venue-name">Anfield</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Draw -->
+        <div class="match-card draw">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sat</div>
+              <div class="match-datenum">8 Feb</div>
+              <div class="match-time">17:30</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD28</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Home</div>
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums draw">1 — 1</div>
+                <div class="result-dot D">D</div>
+              </div>
+              <div class="away-team"><div class="team-nm">Arsenal</div></div>
+            </div>
+            <div class="match-right">
+              <div class="venue-name">Anfield</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- JANUARY 2025 -->
+    <div class="month-group">
+      <div class="month-label">January 2025</div>
+      <div class="month-matches">
+
+        <!-- Win -->
+        <div class="match-card win">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sun</div>
+              <div class="match-datenum">26 Jan</div>
+              <div class="match-time">16:30</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD27</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Away</div>
+                <div class="team-nm">Wolves</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums win">0 — 2</div>
+                <div class="result-dot W">W</div>
+              </div>
+              <div class="away-team"><div class="team-nm lfc">Liverpool</div></div>
+            </div>
+            <div class="match-right"><div class="venue-name">Molineux</div></div>
+          </div>
+        </div>
+
+        <!-- Loss -->
+        <div class="match-card loss">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Wed</div>
+              <div class="match-datenum">15 Jan</div>
+              <div class="match-time">20:00</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD26</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Away</div>
+                <div class="team-nm">Newcastle</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums loss">2 — 1</div>
+                <div class="result-dot L">L</div>
+              </div>
+              <div class="away-team"><div class="team-nm lfc">Liverpool</div></div>
+            </div>
+            <div class="match-right"><div class="venue-name">St. James' Park</div></div>
+          </div>
+        </div>
+
+        <!-- Win -->
+        <div class="match-card win">
+          <div class="timeline-dot"></div>
+          <div class="match-inner">
+            <div class="match-date-col">
+              <div class="match-day">Sat</div>
+              <div class="match-datenum">4 Jan</div>
+              <div class="match-time">15:00</div>
+            </div>
+            <div class="competition-badge pl">Premier League · MD25</div>
+            <div class="match-teams-col">
+              <div class="home-team">
+                <div class="venue-tag">Home</div>
+                <div class="team-nm lfc">Liverpool</div>
+              </div>
+              <div class="score-display">
+                <div class="score-nums win">4 — 0</div>
+                <div class="result-dot W">W</div>
+              </div>
+              <div class="away-team"><div class="team-nm">Brighton</div></div>
+            </div>
+            <div class="match-right"><div class="venue-name">Anfield</div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end timeline -->
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-card">
+      <div class="sidebar-title">Season Form (Last 10)</div>
+      <div class="form-row">
+        <div class="form-dot W">W</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot D">D</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot W">W</div>
+      </div>
+      <div class="form-row">
+        <div class="form-dot W">W</div>
+        <div class="form-dot L">L</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot D">D</div>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Season Statistics</div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Played</span>
+        <span class="mini-stat-val">26</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Wins</span>
+        <span class="mini-stat-val" style="color:#22c55e;">21</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Goals For</span>
+        <span class="mini-stat-val red">82</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Goals Against</span>
+        <span class="mini-stat-val">30</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Clean Sheets</span>
+        <span class="mini-stat-val">14</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Avg Goals/Game</span>
+        <span class="mini-stat-val red">3.1</span>
+      </div>
+    </div>
+
+    <div class="sidebar-card">
+      <div class="sidebar-title">Top Scorers This Season</div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">M. Salah</span>
+        <span class="mini-stat-val" style="color:var(--gold);">22</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">D. Núñez</span>
+        <span class="mini-stat-val">12</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">L. Díaz</span>
+        <span class="mini-stat-val">10</span>
+      </div>
+      <div class="mini-stat-row">
+        <span class="mini-stat-label">Mac Allister</span>
+        <span class="mini-stat-val">8</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end content -->
+
+</body>
+</html>

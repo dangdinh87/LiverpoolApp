@@ -1,0 +1,133 @@
+{
+  "club": {
+    "official_name": "Liverpool Football Club",
+    "founded": {
+      "formation_date": "1892-03-15",
+      "notes": "Formed on 15 March 1892 following a disagreement between Everton directors and John Houlding",
+      "official_recognition_date": "1892-06-03",
+      "notes_recognition": "Board of Trade certificate granted on 3 June 1892"
+    },
+    "founder": "John Houlding",
+    "founded_notes": "c. August 1833 – 17 March 1902. English businessman and local politician who created the club after Everton moved to Goodison Park, leaving Anfield empty.",
+    "football_league_entry": {
+      "year": 1893,
+      "season": "1893-94",
+      "division": "Second Division",
+      "first_match": "2 September 1893 vs Middlesbrough Ironopolis (won 2-0)",
+      "first_season_achievement": "Won league at first attempt, unbeaten in 28 matches (22 wins)"
+    }
+  },
+  "nicknames": [
+    "The Reds",
+    "The Pool"
+  ],
+  "nicknames_notes": "The Reds became the official nickname after 1965 when Bill Shankly introduced all-red kit. Kopites refers to fans (from Kop stand). Liverpudlians refers to supporters from Liverpool.",
+  "stadium": {
+    "name": "Anfield",
+    "capacity": 61276,
+    "capacity_notes": "Expanded to 61,276 following completion of Anfield Road Stand redevelopment in 2024",
+    "address": "Anfield Road, Liverpool, L4 0TH, England",
+    "year_built": 1884,
+    "record_attendance_all_time": {
+      "attendance": 61905,
+      "date": "1952-02-02",
+      "match": "FA Cup tie vs Wolverhampton Wanderers",
+      "notes": "All-time record standing for over 70 years"
+    },
+    "record_attendance_league": {
+      "attendance": 60420,
+      "date": "2025-01",
+      "match": "vs Ipswich Town",
+      "notes": "Most recent league record set January 2025"
+    }
+  },
+  "current_management": {
+    "manager": "Arne Slot",
+    "season": "2025-26",
+    "appointment": "2024",
+    "previous_role": "Feyenoord (Eredivisie)",
+    "notes": "Won Premier League title in 2024-25 inaugural season; won LMA Manager of the Year award"
+  },
+  "captain": {
+    "name": "Virgil van Dijk",
+    "season": "2025-26",
+    "vice_captain": "Andy Robertson"
+  },
+  "ownership": {
+    "parent_company": "Fenway Sports Group (FSG)",
+    "principal_owner": "John W. Henry",
+    "principal_owner_stake": "~40%",
+    "chairman": "Tom Werner",
+    "president": "Mike Gordon",
+    "notes": "FSG also owns Boston Red Sox (MLB), Pittsburgh Penguins (NHL), RFK Racing (NASCAR), and TGL"
+  },
+  "league": {
+    "current": "Premier League (England)",
+    "tier": "Tier 1 (top division of English football)"
+  },
+  "colors": {
+    "primary": "Red",
+    "primary_hex": "#C8102E",
+    "primary_name": "Liverpool Red / Strawberry Red",
+    "secondary": "White",
+    "secondary_hex": "#FFFFFF",
+    "history_notes": "Changed to all-red kit in 1964 under Bill Shankly. Prior to 1896: red shirts & white shorts. From 1896-1964: red shirts & white shorts to differentiate from Everton (all blue)"
+  },
+  "motto": {
+    "official": "You'll Never Walk Alone",
+    "origin": "From 1945 Rodgers & Hammerstein musical Carousel",
+    "adoption": "Became club anthem circa 1963, added to coat of arms and Shankly Gates (unveiled 1982)",
+    "usage": "Sung before each home match at Anfield by supporters"
+  },
+  "official_website": "https://www.liverpoolfc.com",
+  "major_honors": {
+    "league_titles": 20,
+    "league_titles_notes": "Joint-record with Manchester United",
+    "european_cups_champions_league": 6,
+    "european_cups_notes": "1977, 1978, 1981, 1984, 2005, 2019. English record (Real Madrid & AC Milan have more overall)",
+    "fa_cups": 8,
+    "league_cups": 10,
+    "league_cups_notes": "Record number in England",
+    "uefa_cups_europa_league": 3,
+    "uefa_cups_notes": "1973, 1976, 2001",
+    "fa_community_shields": 16,
+    "fa_community_shields_notes": "Includes Charity Shields",
+    "fifa_club_world_cup": 1,
+    "fifa_club_world_cup_notes": "2019 (first English side to win international treble that year: Champions League + UEFA Super Cup + Club World Cup)",
+    "uefa_super_cups": 4,
+    "uefa_super_cups_notes": "English record",
+    "total_major_honors": 52,
+    "total_major_honors_notes": "52 major men's honours across all competitions"
+  },
+  "kit_manufacturer": {
+    "current": "Adidas",
+    "start_date": "2025-26 season (1 August 2025)",
+    "deal_value": "£60+ million annually",
+    "notes": "Adidas returns for third tenure (previously 1985-1996, 2006-2012). Ended 13-year Nike partnership.",
+    "kit_design_2025_26": "Strawberry Red with crisp white accents, cuffed sleeves, simple crewneck"
+  },
+  "main_sponsor": {
+    "shirt_sponsor": "Standard Chartered",
+    "sleeve_sponsor": "Expedia",
+    "deal_duration": "Through 2026-27 season"
+  },
+  "training_ground": {
+    "first_team_academy": "AXA Training Centre",
+    "location": "Kirkby, Liverpool",
+    "in_use_since": "November 2020",
+    "women_academy": "AXA Melwood Training Centre",
+    "melwood_location": "West Derby, Liverpool",
+    "melwood_status": "Women's first team, youth teams, and academy (re-purchased June 2023)",
+    "melwood_history": "First team training ground from 1950s until November 2020",
+    "melwood_facilities": "Three full-size synthetic pitches, indoor astro, rehabilitation rooms, gymnasium, swimming pool, restaurant, recreational facilities"
+  },
+  "interesting_facts": [
+    "Liverpool is the most successful English club in European competitions with 14 international trophies",
+    "Record attendance of 61,905 set in 1952 vs Wolverhampton Wanderers - stood untouched for over 70 years",
+    "The Kop Stand named after Spion Kop hill in South Africa (Boer War reference from 1899)",
+    "In 2019, became first English club to win the international treble: Champions League + UEFA Super Cup + Club World Cup",
+    "Arne Slot won Premier League title in inaugural 2024-25 season, winning 20 league titles (joint-record with Manchester United)",
+    "Global fanbase of 200+ officially recognized LFC Supporters Clubs in at least 50 countries",
+    "One of the world's most valuable and widely supported football clubs"
+  ]
+}

@@ -1,4 +1,4 @@
-import { getSquad } from "@/lib/api-football";
+import { getAllPlayers } from "@/lib/squad-data";
 
 export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -13,18 +13,13 @@ export async function GET() {
     { path: "/history", changefreq: "monthly", priority: "0.6" },
   ];
 
-  let playerUrls = "";
-  try {
-    const players = await getSquad();
-    playerUrls = players
-      .map(
-        (p) =>
-          `  <url><loc>${siteUrl}/player/${p.id}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`
-      )
-      .join("\n");
-  } catch {
-    // Skip player URLs if API unavailable
-  }
+  const players = getAllPlayers();
+  const playerUrls = players
+    .map(
+      (p) =>
+        `  <url><loc>${siteUrl}/player/${p.slug}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>`
+    )
+    .join("\n");
 
   const staticUrls = staticRoutes
     .map(

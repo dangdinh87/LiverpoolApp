@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import type { FplMatchEntry, FplPastSeason } from "@/lib/fpl-data";
+import { useTranslations } from "next-intl";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 // ─── Match History Table ────────────────────────────────────────────────────────
 
@@ -12,33 +14,35 @@ interface MatchLogProps {
 }
 
 export function PlayerMatchLog({ matches }: MatchLogProps) {
+  const t = useTranslations("Common.labels");
+  const tp = useTranslations("PlayerDetail");
   const [showAll, setShowAll] = useState(false);
   const visible = showAll ? matches : matches.slice(0, 10);
 
   if (matches.length === 0) {
     return (
       <p className="text-stadium-muted font-inter text-sm py-6 text-center">
-        No match history available yet.
+        {tp("matchLog.noHistory")}
       </p>
     );
   }
 
   return (
     <div>
-      <div className="overflow-x-auto border border-stadium-border">
+      <ScrollArea className="border border-stadium-border">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-stadium-surface2">
               <th className="px-3 py-2 text-left font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">GW</th>
-              <th className="px-3 py-2 text-left font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Opponent</th>
-              <th className="px-2 py-2 text-center font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Score</th>
-              <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Min</th>
+              <th className="px-3 py-2 text-left font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("opponent")}</th>
+              <th className="px-2 py-2 text-center font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("score")}</th>
+              <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("minutes")}</th>
               <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">G</th>
               <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">A</th>
               <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">xG</th>
               <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">CS</th>
-              <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Bon</th>
-              <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs font-bold">Pts</th>
+              <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("bonus")}</th>
+              <th className="px-2 py-2 text-right font-barlow font-bold text-stadium-muted uppercase tracking-wider text-xs">{t("points")}</th>
             </tr>
           </thead>
           <tbody>
@@ -82,9 +86,9 @@ export function PlayerMatchLog({ matches }: MatchLogProps) {
                 <td className={cn(
                   "px-2 py-2 text-right font-inter text-xs font-bold",
                   m.totalPoints >= 10 ? "text-green-400" :
-                  m.totalPoints >= 5 ? "text-white" :
-                  m.totalPoints <= 0 ? "text-red-400" :
-                  "text-stadium-muted",
+                    m.totalPoints >= 5 ? "text-white" :
+                      m.totalPoints <= 0 ? "text-red-400" :
+                        "text-stadium-muted",
                 )}>
                   {m.totalPoints}
                 </td>
@@ -92,14 +96,15 @@ export function PlayerMatchLog({ matches }: MatchLogProps) {
             ))}
           </tbody>
         </table>
-      </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       {matches.length > 10 && !showAll && (
         <button
           onClick={() => setShowAll(true)}
           className="mt-3 text-xs font-barlow font-semibold uppercase tracking-wider text-lfc-red hover:text-lfc-gold transition-colors"
         >
-          Show all {matches.length} gameweeks
+          {tp("matchLog.showAll", { count: matches.length })}
         </button>
       )}
     </div>
@@ -113,16 +118,17 @@ interface PastSeasonsProps {
 }
 
 export function PlayerPastSeasons({ seasons }: PastSeasonsProps) {
+  const t = useTranslations("Common.labels");
   if (seasons.length === 0) return null;
 
   return (
-    <div className="overflow-x-auto border border-stadium-border">
+    <ScrollArea className="border border-stadium-border">
       <table className="w-full text-sm">
         <thead>
           <tr className="bg-stadium-surface2">
-            <th className="px-3 py-2 text-left font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Season</th>
-            <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Pts</th>
-            <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">Min</th>
+            <th className="px-3 py-2 text-left font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("season")}</th>
+            <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("points")}</th>
+            <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">{t("minutes")}</th>
             <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">G</th>
             <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">A</th>
             <th className="px-2 py-2 text-right font-barlow font-semibold text-stadium-muted uppercase tracking-wider text-xs">CS</th>
@@ -147,6 +153,7 @@ export function PlayerPastSeasons({ seasons }: PastSeasonsProps) {
           ))}
         </tbody>
       </table>
-    </div>
+      <ScrollBar orientation="horizontal" />
+    </ScrollArea>
   );
 }

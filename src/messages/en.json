@@ -1,0 +1,796 @@
+{
+  "Common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "nav": {
+      "home": "Home",
+      "squad": "Squad",
+      "season": "Season",
+      "news": "News",
+      "history": "The Club",
+      "about": "About",
+      "stats": "Stats",
+      "login": "Login",
+      "logout": "Sign Out",
+      "profile": "Profile",
+      "members": "Members",
+      "memberArea": "Member Area",
+      "auth": "Login / Register"
+    },
+    "labels": {
+      "opponent": "Opponent",
+      "score": "Score",
+      "minutes": "Min",
+      "bonus": "Bon",
+      "points": "Pts",
+      "season": "Season",
+      "allTeams": "All Teams",
+      "last5": "Last 5",
+      "halftime": "HT",
+      "player": "Player",
+      "pos": "Pos",
+      "search": "Search players...",
+      "pageOf": "Page {page} of {total}"
+    }
+  },
+  "Hero": {
+    "tagline": "Liverpool Football Club · Est. 1892",
+    "title": "Welcome to Anfield",
+    "subtitle": "The Official Fan App for Liverpool FC",
+    "description": "A fan-made hub for everything Liverpool FC — results, stats, squad, and more.",
+    "cta": "Explore the Squad",
+    "badge": "Made by fans, for fans — Unofficial",
+    "scroll": "Scroll",
+    "fixtures": "Fixtures & Results",
+    "standings": "Standings"
+  },
+  "Bento": {
+    "season": "Season 2025/26",
+    "title": "Club Overview",
+    "gameweekComplete": "Complete",
+    "deadline": "Deadline"
+  },
+  "News": {
+    "metadata": {
+      "title": "Latest News",
+      "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more"
+    },
+    "tagline": "Multi-Source",
+    "title": "Latest News",
+    "heroDesc": "All the latest Liverpool FC news aggregated from trusted sources worldwide.",
+    "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more",
+    "summary": "{total} articles — {en} international, {vi} Vietnamese",
+    "search": "Search news...",
+    "filter": "Filter",
+    "langAll": "All",
+    "langLocal": "Vietnamese",
+    "langGlobal": "International",
+    "viewAll": "All News →",
+    "attribution": "News aggregated from {sources}. All rights belong to their respective owners.",
+    "categories": {
+      "all": "All",
+      "official": "Official",
+      "match-report": "Match Reports",
+      "transfer": "Transfers",
+      "injury": "Injuries",
+      "team-news": "Team News",
+      "analysis": "Analysis",
+      "opinion": "Opinion"
+    },
+    "comments": {
+      "title": "Comments",
+      "count": "({count})",
+      "placeholder": "Write a comment...",
+      "send": "Send",
+      "login": "Log in to comment",
+      "loginBtn": "Login",
+      "empty": "No comments yet. Be the first!",
+      "deleteConfirm": "Are you sure you want to delete this comment?",
+      "justNow": "just now",
+      "minutesAgo": "{n} min ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago",
+      "charCount": "{n}/1000",
+      "totalArticle": "{count} comments"
+    },
+    "article": {
+      "backToNews": "Back to News",
+      "contentUnavailable": "Content Unavailable",
+      "contentUnavailableDesc": "This article couldn't be loaded for in-app reading. You can read it on the original site.",
+      "readOriginal": "Read Original",
+      "readFullOn": "Read Full Article on {source}",
+      "thinContentMsg": "This article is best viewed on the original site for the full reading experience.",
+      "sourcedFrom": "Content sourced from <source>{sourceName}</source>. All rights belong to the original publisher."
+    },
+    "feed": {
+      "all": "All",
+      "local": "Local News",
+      "global": "International",
+      "moreStories": "More Stories",
+      "loadMore": "Load More ({count} remaining)",
+      "noArticles": "No Articles Found",
+      "noArticlesDesc": "Try a different filter or check back later.",
+      "translateBadge": "AI Translation"
+    }
+  },
+  "NextMatch": {
+    "title": "Next Match",
+    "live": "Live",
+    "noMatch": "No upcoming match"
+  },
+  "Squad": {
+    "metadata": {
+      "title": "Squad & Player Stats",
+      "description": "Liverpool FC first-team squad and player statistics for the 2025/26 season."
+    },
+    "title": "The Squad",
+    "season": "{season} Season",
+    "players": "Players",
+    "club": "Liverpool Football Club",
+    "search": "Search players...",
+    "noPlayers": "No players matching \"{search}\"",
+    "noPlayersFilter": "No players found for this filter.",
+    "count": "{count} {n, plural, one {player} other {players}}",
+    "tabs": {
+      "squad": "Squad",
+      "stats": "Player Stats",
+      "fpl": "FPL"
+    },
+    "dataSource": "Data: {source}",
+    "positions": {
+      "all": "All",
+      "goalkeeper": "Goalkeeper",
+      "defender": "Defender",
+      "midfielder": "Midfielder",
+      "forward": "Forward",
+      "GK": "GK",
+      "DEF": "DEF",
+      "MID": "MID",
+      "FWD": "FWD"
+    },
+    "status": {
+      "onLoan": "On Loan",
+      "forever": "Forever",
+      "unavailable": "Unavailable",
+      "injured": "Injured",
+      "suspended": "Suspended",
+      "doubtful": "Doubtful"
+    },
+    "injuries": {
+      "label": "Injuries",
+      "title": "Injury Room",
+      "out": "{count} out",
+      "doubtful": "{count} doubtful",
+      "statuses": {
+        "OUT": "OUT",
+        "DOUBT": "DOUBT",
+        "5050": "50/50"
+      },
+      "descriptions": {
+        "out": "Confirmed out",
+        "doubtful": "Unlikely to play",
+        "questionable": "Fitness test required"
+      }
+    },
+    "glossary": {
+      "title": "Stats Glossary",
+      "subtitle": "What does each stat mean?",
+      "description": "All statistics sourced from Fantasy Premier League (FPL) — 2025/26 season.",
+      "items": {
+        "Pts": {
+          "name": "Total Points",
+          "desc": "Total FPL points earned this season. Accumulated from goals, assists, clean sheets, bonus, and minutes played."
+        },
+        "Min": {
+          "name": "Minutes",
+          "desc": "Total minutes played across all Premier League appearances this season."
+        },
+        "St": {
+          "name": "Starts",
+          "desc": "Number of matches the player started in the first XI."
+        },
+        "G": {
+          "name": "Goals",
+          "desc": "Total goals scored in the Premier League this season."
+        },
+        "A": {
+          "name": "Assists",
+          "desc": "Total assists — the final pass or cross leading directly to a goal."
+        },
+        "xG": {
+          "name": "Expected Goals",
+          "desc": "Statistical measure of the quality of chances. An xG of 0.5 means a 50% probability of scoring from that position."
+        },
+        "xA": {
+          "name": "Expected Assists",
+          "desc": "Statistical measure of the quality of chances created for teammates."
+        },
+        "CS": {
+          "name": "Clean Sheets",
+          "desc": "Matches where the team conceded zero goals while the player was on the pitch for 60+ minutes."
+        },
+        "Bon": {
+          "name": "Bonus Points",
+          "desc": "Extra FPL points awarded to the top 3 performers in each match based on the Bonus Points System (BPS)."
+        },
+        "Form": {
+          "name": "Form",
+          "desc": "Average FPL points per match over the last 30 days. A higher number indicates stronger recent performance."
+        },
+        "PPG": {
+          "name": "Points per Game",
+          "desc": "Average FPL points earned per match across the entire season."
+        },
+        "xP": {
+          "name": "Expected Points Next",
+          "desc": "FPL's predicted points for the next gameweek, factoring in fixture difficulty, form, and historical data."
+        },
+        "Price": {
+          "name": "Price",
+          "desc": "Current FPL price in millions. Price rises when many managers transfer a player in, and falls when transferred out."
+        },
+        "DT": {
+          "name": "Dream Team",
+          "desc": "Number of times the player appeared in the FPL Gameweek Dream Team — the best XI of each week."
+        }
+      }
+    }
+  },
+  "PlayerDetail": {
+    "back": "Player Stats",
+    "backSquad": "Back to Squad",
+    "viewOnLfc": "View on liverpoolfc.com",
+    "status": {
+      "available": "Available",
+      "injured": "Injured",
+      "suspended": "Suspended",
+      "doubtful": "Doubtful",
+      "unavailable": "Unavailable",
+      "onLoan": "On Loan",
+      "forever": "Forever",
+      "active": "Active"
+    },
+    "quickStats": {
+      "points": "Points",
+      "goals": "Goals",
+      "assists": "Assists",
+      "form": "Form",
+      "ppg": "PPG",
+      "price": "Price"
+    },
+    "sections": {
+      "seasonStats": "2025/26 Season Stats",
+      "matchHistory": "Match History",
+      "pastSeasons": "Past Seasons",
+      "playerInfo": "Player Information",
+      "honours": "Honours at Liverpool FC",
+      "biography": "Biography"
+    },
+    "info": {
+      "fullName": "Full Name",
+      "shirtName": "Shirt Name",
+      "nationality": "Nationality",
+      "dob": "Date of Birth",
+      "age": "Age",
+      "ageYears": "{age} years",
+      "position": "Position",
+      "shirtNumber": "Shirt Number",
+      "status": "Status",
+      "honours": "Honours"
+    },
+    "stats": {
+      "attack": "Attack",
+      "defence": "Defence",
+      "general": "General",
+      "fpl": "FPL",
+      "ictIndex": "ICT Index",
+      "goals": "Goals",
+      "assists": "Assists",
+      "xG": "xG",
+      "xA": "xA",
+      "pensMissed": "Pens Missed",
+      "cleanSheets": "Clean Sheets",
+      "goalsConceded": "Goals Conceded",
+      "saves": "Saves",
+      "pensSaved": "Pens Saved",
+      "minutes": "Minutes",
+      "starts": "Starts",
+      "yellowCards": "Yellow Cards",
+      "redCards": "Red Cards",
+      "ownGoals": "Own Goals",
+      "totalPoints": "Total Points",
+      "form": "Form",
+      "bonus": "Bonus",
+      "bps": "BPS",
+      "selectedBy": "Selected By",
+      "price": "Price",
+      "influence": "Influence",
+      "creativity": "Creativity",
+      "threat": "Threat",
+      "ictIndexStat": "ICT Index"
+    },
+    "statsDesc": {
+      "goals": "Goals scored in the Premier League this season",
+      "assists": "Final pass or cross leading directly to a goal",
+      "xG": "Expected Goals — quality of chances. 0.5 = 50% chance of scoring",
+      "xA": "Expected Assists — quality of chances created for teammates",
+      "pensMissed": "Penalty kicks that were missed or saved",
+      "cleanSheets": "Matches with zero goals conceded (60+ min played)",
+      "goalsConceded": "Total goals conceded while on the pitch",
+      "saves": "Shots stopped by the goalkeeper",
+      "pensSaved": "Penalty kicks saved by the goalkeeper",
+      "minutes": "Total minutes played across all PL appearances",
+      "starts": "Matches started in the first XI",
+      "yellowCards": "Yellow cards received",
+      "redCards": "Red cards received (direct or double yellow)",
+      "ownGoals": "Goals accidentally scored into own net",
+      "totalPoints": "Total FPL points from goals, assists, clean sheets, bonus & minutes",
+      "form": "Average FPL points per match over the last 30 days",
+      "bonus": "Extra FPL points for top 3 performers each match",
+      "bps": "Bonus Points System — raw performance score used to award bonus",
+      "selectedBy": "Percentage of FPL managers who own this player",
+      "price": "Current FPL price. Rises/falls based on transfer activity",
+      "influence": "Impact on a match — goals, assists, tackles, saves",
+      "creativity": "Chance creation — key passes, crosses, through balls",
+      "threat": "Goal threat — shots on target, touches in box, penalties",
+      "ictIndexStat": "Combined Influence + Creativity + Threat score"
+    },
+    "matchLog": {
+      "noHistory": "No match history available yet.",
+      "showAll": "Show all {count} gameweeks"
+    },
+    "positions": {
+      "goalkeeper": "Goalkeeper",
+      "defender": "Defender",
+      "midfielder": "Midfielder",
+      "forward": "Forward"
+    }
+  },
+  "Season": {
+    "metadata": {
+      "title": "{season} Season",
+      "description": "Liverpool FC Premier League {season} — fixtures, results, standings, and statistics."
+    },
+    "title": "Season",
+    "stats": {
+      "goals": "LFC Goals",
+      "assists": "LFC Assists",
+      "topScorer": "Top Scorer"
+    },
+    "charts": {
+      "scorers": "Top Scorers",
+      "assists": "Top Assists",
+      "lfcScorers": "Liverpool Scorers",
+      "legend": "Premier League {season} · Red = Liverpool"
+    },
+    "table": {
+      "title": "Liverpool Scorers",
+      "goals": "Goals",
+      "assists": "Assists",
+      "apps": "Apps"
+    },
+    "chips": {
+      "pos": "Pos",
+      "pts": "Pts",
+      "form": "Form"
+    },
+    "next": "Next: ",
+    "vs": "vs ",
+    "at": "@ "
+  },
+  "Stats": {
+    "metadata": {
+      "title": "Statistics",
+      "description": "Liverpool FC Premier League statistics 2025/26 — top scorers, assists and more."
+    },
+    "hero": {
+      "season": "Premier League · 2025/26",
+      "title": "Statistics"
+    },
+    "headlines": {
+      "goals": "LFC Goals",
+      "assists": "LFC Assists",
+      "topScorerGoals": "Top Scorer Goals"
+    },
+    "charts": {
+      "scorers": "Top Scorers",
+      "assists": "Top Assists",
+      "legend": "Premier League 2025/26 · Red = Liverpool player"
+    },
+    "table": {
+      "title": "Liverpool Scorers",
+      "goalsShort": "G",
+      "assistsShort": "A",
+      "appsShort": "Apps"
+    }
+  },
+  "History": {
+    "metadata": {
+      "title": "The Club",
+      "description": "Liverpool FC — 20 league titles, 6 European Cups. Explore the history, stadium, legends, traditions and more."
+    },
+    "hero": {
+      "est": "Established 1892",
+      "trophies": "Major Trophies",
+      "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world."
+    },
+    "sections": {
+      "profile": "Club Profile",
+      "facts": "Key Facts",
+      "culture": "Culture",
+      "traditions": "Traditions",
+      "allTime": "All-Time",
+      "records": "Club Records",
+      "layout": "Stadium Layout",
+      "stands": "The Four Stands",
+      "iconic": "Iconic Sites",
+      "anfield": "Around Anfield",
+      "glory": "Glory",
+      "cabinet": "Trophy Cabinet",
+      "history": "History",
+      "timeline": "Club Timeline",
+      "masterminds": "Masterminds",
+      "managers": "Great Managers",
+      "immortals": "The Immortals",
+      "legends": "Legends"
+    },
+    "facts": {
+      "fullName": "Full Name",
+      "founded": "Founded",
+      "founder": "Founder",
+      "nickname": "Nickname",
+      "captain": "Captain",
+      "manager": "Manager",
+      "owner": "Owner",
+      "chairman": "Chairman",
+      "league": "League",
+      "kitManufacturer": "Kit Manufacturer",
+      "website": "Website",
+      "colours": "Colours",
+      "white": "White"
+    },
+    "tradition": {
+      "listen": "Listen"
+    },
+    "records": {
+      "topScorer": "Top Scorer",
+      "goalsCount": "{count} goals",
+      "appearances": "Most Appearances",
+      "appsCount": "{count} apps",
+      "signing": "Record Signing",
+      "sale": "Record Sale"
+    },
+    "legends": {
+      "appearances": "Appearances",
+      "goals": "Goals"
+    },
+    "stadium": {
+      "fortress": "The Fortress",
+      "capacity": "Capacity",
+      "opened": "Opened",
+      "pitch": "Pitch",
+      "record": "Record",
+      "seats": "Seats"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "anfield": "Anfield",
+      "honours": "Honours",
+      "timeline": "Timeline",
+      "legends": "Legends"
+    }
+  },
+  "About": {
+    "metadata": {
+      "title": "About | Liverpool FC Fan Site",
+      "description": "Learn more about the project, features, tech stack, and the creator behind this fan-made Liverpool FC application."
+    },
+    "label": "About",
+    "title": "The Story Behind",
+    "disclaimer": "This is a <status>fan-made & unofficial</status> project. Not endorsed by or affiliated with Liverpool Football Club, Fenway Sports Group, or the Premier League. All trademarks belong to their respective owners.",
+    "whatIs": {
+      "title": "What is this site?",
+      "description": "An all-in-one Liverpool FC fan hub that brings together real-time football data, multilingual news, and rich club history — designed for Reds worldwide.",
+      "featuresTitle": "Features",
+      "features": {
+        "squad": "Full squad with FPL stats — form, price, xG/xA, selection %, injury updates",
+        "season": "Season dashboard with fixtures, PL & UCL standings, top scorers & assists charts",
+        "fixtures": "Match timeline across 4 competitions — Premier League, Champions League, FA Cup, EFL Cup",
+        "news": "News from 10+ sources in English & Vietnamese with smart categorisation and in-app reading",
+        "history": "Club heritage — Anfield stadium, trophy cabinet, historical timeline, legends & managers",
+        "profile": "Personal account with avatar, favourite players, and saved preferences"
+      },
+      "dataTitle": "Data Sources",
+      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS feeds from BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, and Vietnamese outlets (Bóng Đá, 24h). Content enriched with Mozilla Readability.",
+      "techTitle": "Tech Stack",
+      "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
+    },
+    "creator": {
+      "title": "Creator",
+      "role": "Developer & Lifelong Red",
+      "bio": "A software engineer by trade, a Liverpool fan by heart. Built this as a personal companion app and decided to share it with the global LFC community."
+    },
+    "contact": {
+      "title": "Get in Touch",
+      "description": "Feedback, bug reports, collaboration ideas, or just want to say hi — I'd love to hear from you.",
+      "email": "Email",
+      "github": "GitHub",
+      "githubUrl": "https://github.com/nguyendangdinh",
+      "phone": "Phone"
+    },
+    "support": {
+      "title": "Support This Project",
+      "description": "Free forever. A small contribution helps cover API and hosting costs.",
+      "buyCoffee": "Buy Me a Coffee",
+      "momoAlt": "MoMo QR - Nguyen Dang Dinh"
+    }
+  },
+  "Standings": {
+    "metadata": {
+      "title": "Standings",
+      "description": "Premier League standings 2024/25 season."
+    },
+    "hero": {
+      "season": "Premier League · 2024/25",
+      "title": "Standings",
+      "lfcPosition": "Liverpool FC · {rank}{suffix} place",
+      "points": "{count} points",
+      "suffixes": {
+        "st": "st",
+        "nd": "nd",
+        "rd": "rd",
+        "th": "th"
+      }
+    },
+    "rank": "#",
+    "club": "Club",
+    "played": "P",
+    "win": "W",
+    "draw": "D",
+    "lose": "L",
+    "gf": "GF",
+    "ga": "GA",
+    "gd": "GD",
+    "pts": "Pts",
+    "form": "Form",
+    "progressBar": {
+      "label": "Liverpool"
+    },
+    "zones": {
+      "cl": "Champions League",
+      "el": "Europa League",
+      "ecl": "Conference League",
+      "rel": "Relegation",
+      "r16": "Round of 16",
+      "playoff": "Playoff Round",
+      "elim": "Eliminated",
+      "win": "Win",
+      "draw": "Draw",
+      "loss": "Loss"
+    }
+  },
+  "Fixtures": {
+    "metadata": {
+      "title": "Fixtures & Results",
+      "description": "Liverpool FC fixtures and results for the 2024/25 season."
+    },
+    "hero": {
+      "season": "2024/25 Season",
+      "title": "Fixtures & Results",
+      "subtitle": "{count} matches · Liverpool FC"
+    },
+    "timeline": {
+      "filter": {
+        "all": "All Comps"
+      },
+      "sections": {
+        "upcoming": "Upcoming",
+        "results": "Results"
+      },
+      "noFixtures": "No fixtures found for this competition."
+    }
+  },
+  "Legal": {
+    "metadata": {
+      "title": "Legal",
+      "description": "Legal information, privacy policy, and terms of use."
+    },
+    "title": "Legal Information",
+    "lastUpdated": "Last updated: {date}",
+    "contact": "For questions or concerns, contact {email}",
+    "labels": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "cookies": "Cookie Policy"
+    },
+    "sections": {
+      "privacy": {
+        "title": "Privacy Policy",
+        "content": "This is a fan-made website and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. We do not sell or share your data with third parties."
+      },
+      "terms": {
+        "title": "Terms of Use",
+        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from the Fantasy Premier League API and Football-Data.org. News content is aggregated from BBC Sport RSS feeds. Use of this site constitutes acceptance of these terms."
+      },
+      "cookies": {
+        "title": "Cookie Policy",
+        "content": "This site uses essential cookies for authentication and theme preferences. No tracking or advertising cookies are used. By continuing to use this site, you consent to our use of essential cookies."
+      },
+      "sources": {
+        "title": "Data Sources",
+        "content": "Match data, fixtures, and player statistics are provided by the Fantasy Premier League API (fantasy.premierleague.com). League standings are provided by Football-Data.org. News articles are aggregated from BBC Sport RSS feeds. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+      }
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your account",
+      "email": "Email Address",
+      "password": "Password",
+      "button": "Sign In",
+      "loading": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "register": "Register here",
+      "error": "Invalid login credentials",
+      "google": "Continue with Google",
+      "or": "or"
+    },
+    "register": {
+      "title": "Join the Reds",
+      "subtitle": "Create your fan account",
+      "username": "Username",
+      "email": "Email Address",
+      "password": "Password",
+      "button": "Create Account",
+      "loading": "Creating account...",
+      "hasAccount": "Already have an account?",
+      "login": "Sign in here",
+      "error": "Failed to create account",
+      "confirm": "Confirm Password",
+      "confirmMismatch": "Passwords do not match",
+      "passwordShort": "Password must be at least 6 characters"
+    }
+  },
+  "Profile": {
+    "title": "Profile Settings",
+    "username": "Username",
+    "username_placeholder": "Your display name",
+    "bio": "Bio",
+    "bio_placeholder": "Tell us about yourself as a Liverpool fan...",
+    "email": "Email Address",
+    "update": "Save Changes",
+    "saving": "Saving...",
+    "success": "Profile updated successfully!",
+    "memberSince": "Member since {date}",
+    "signOut": "Sign Out",
+    "favouritePlayers": "Favourite Players",
+    "favouritePlayersEmpty": "No favourite players yet. Visit a player's page to add them.",
+    "removeFav": "Remove",
+    "avatar": {
+      "title": "Avatar",
+      "upload": "Upload",
+      "change": "Change",
+      "removing": "Removing...",
+      "error": "Failed to upload avatar",
+      "clickToChange": "Click to change avatar (max 2MB)",
+      "uploading": "Uploading..."
+    }
+  },
+  "Match": {
+    "live": "LIVE",
+    "win": "WIN",
+    "draw": "DRAW",
+    "loss": "LOSS",
+    "home": "Home",
+    "away": "Away",
+    "aet": "After Extra Time",
+    "pen": "Penalties",
+    "kickoff": "Kick-off {time}",
+    "halftimeShort": "HT",
+    "locale_code": "en-GB",
+    "countdown": {
+      "inMins": "in {n}m",
+      "inHours": "in {n}h {m}m",
+      "inDays": "in {n}d {h}h",
+      "inMonths": "in {n} month{s}"
+    }
+  },
+  "Footer": {
+    "about": "A fan-made hub for everything Liverpool FC — results, stats, squad, and more.",
+    "quickLinks": "Quick Links",
+    "legal": "Legal",
+    "contact": "Contact",
+    "rights": "All rights reserved.",
+    "disclaimer": "This is a fan-made site and is not affiliated with Liverpool FC.",
+    "legalLinks": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Use",
+      "cookie": "Cookie Policy",
+      "about": "About"
+    }
+  },
+  "Language": {
+    "aria": {
+      "toggle": "Toggle Language"
+    }
+  },
+  "chat": {
+    "thinking": "Thinking...",
+    "searching": "Searching the web...",
+    "newChat": "New Chat",
+    "subtitle": "AI Assistant",
+    "historyTitle": "Chat History",
+    "noConversations": "No conversations yet. Start a new chat!",
+    "deleteConfirmTitle": "Delete conversation?",
+    "deleteConfirmDescription": "This action cannot be undone. All messages in this conversation will be permanently deleted.",
+    "conversationGroups": {
+      "older": "Older"
+    },
+    "thread": {
+      "welcome": "LiverBird AI",
+      "welcomeSubtitle": "Your AI companion for all things Liverpool FC",
+      "welcomeDescription": "Ask about match results, player stats, transfer rumours, club history, tactical analysis, and everything Red. Powered by AI, built for the Kop.",
+      "instruction": "I can help with LFC history, player stats, match info, transfer news, and more. YNWA!",
+      "scrollToBottom": "Scroll to bottom",
+      "inputPlaceholder": "Ask about Liverpool FC...",
+      "sendMessage": "Send message",
+      "generating": "Generating...",
+      "error": "Something went wrong",
+      "copy": "Copy",
+      "exportMarkdown": "Export as Markdown",
+      "refresh": "Regenerate",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "update": "Update",
+      "previous": "Previous",
+      "next": "Next",
+      "suggestions": {
+        "topScorer": {
+          "title": "Who is Liverpool's",
+          "label": "all-time top scorer?",
+          "prompt": "Who is Liverpool FC's all-time top scorer and how many goals did they score?"
+        },
+        "istanbul": {
+          "title": "Tell me about",
+          "label": "the Istanbul miracle",
+          "prompt": "Tell me about the 2005 Champions League final in Istanbul. What happened?"
+        },
+        "salahLegends": {
+          "title": "Compare Salah",
+          "label": "with other LFC legends",
+          "prompt": "How does Mohamed Salah compare to other Liverpool FC legends in terms of goals and achievements?"
+        },
+        "trophies": {
+          "title": "What is",
+          "label": "this website?",
+          "prompt": "What is this website? What can I do here?"
+        }
+      }
+    }
+  },
+  "history": {
+    "dateRange": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7Days": "Last 7 Days"
+    }
+  },
+  "common": {
+    "delete": "Delete",
+    "search": "Search...",
+    "cancel": "Cancel",
+    "noResults": "No results found",
+    "loading": "Loading...",
+    "back": "Back"
+  },
+  "errors": {
+    "notFound": "No results found"
+  },
+  "nav": {
+    "history": "Chat History"
+  },
+  "auth": {
+    "pleaseLogin": "Please log in to continue"
+  }
+}

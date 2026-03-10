@@ -3,6 +3,7 @@
 // ISR cache shared with fpl-provider.ts (same URL = same cache entry).
 
 import "server-only";
+import { cache } from "react";
 
 const FPL_BASE = "https://fantasy.premierleague.com/api";
 const FETCH_TIMEOUT_MS = 10_000;
@@ -21,17 +22,24 @@ interface FplElementRaw {
   first_name: string;
   second_name: string;
   web_name: string;
+  known_name: string;
   team: number;
   team_code: number;
   element_type: number; // 1=GK, 2=DEF, 3=MID, 4=FWD
   status: string;
   news: string;
   chance_of_playing_next_round: number | null;
+  chance_of_playing_this_round: number | null;
   squad_number: number | null;
   code: number;
   now_cost: number;
+  cost_change_start: number;
   form: string;
   total_points: number;
+  event_points: number;
+  points_per_game: string;
+  ep_next: string;
+  value_season: string;
   minutes: number;
   goals_scored: number;
   assists: number;
@@ -49,11 +57,17 @@ interface FplElementRaw {
   expected_goals: string;
   expected_assists: string;
   expected_goal_involvements: string;
+  expected_goals_conceded: string;
   influence: string;
   creativity: string;
   threat: string;
   ict_index: string;
   selected_by_percent: string;
+  dreamteam_count: number;
+  transfers_in_event: number;
+  transfers_out_event: number;
+  birth_date: string;
+  team_join_date: string;
 }
 
 interface FplBootstrapRaw {
@@ -169,6 +183,29 @@ export interface FplPastSeason {
   cleanSheets: number;
 }
 
+/** Enhanced LFC player row with extra FPL fields for Liverpool-only views */
+export interface LfcFplPlayer extends FplPlayerRow {
+  squadNumber: number | null;
+  knownName: string;
+  pointsPerGame: number;
+  expectedPointsNext: number;
+  valueSeason: number;
+  dreamteamCount: number;
+  costChange: number;
+  eventPoints: number;
+  chanceNextRound: number | null;
+  birthDate: string;
+  joinDate: string;
+  starts: number;
+  saves: number;
+  bonus: number;
+  bps: number;
+  goalsConceded: number;
+  xGConceded: number;
+  transfersInEvent: number;
+  transfersOutEvent: number;
+}
+
 export interface FplPlayerDetail extends FplPlayerRow {
   squadNumber: number | null;
   saves: number;
@@ -192,7 +229,7 @@ export interface FplPlayerDetail extends FplPlayerRow {
 const POS_MAP: Record<number, FplPosition> = { 1: "GK", 2: "DEF", 3: "MID", 4: "FWD" };
 
 function photoUrl(code: number): string {
-  return `https://resources.premierleague.com/premierleague/photos/players/250x250/p${code}.png`;
+  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${code}.png`;
 }
 
 function badgeUrl(code: number): string {
@@ -244,11 +281,11 @@ function mapElementToRow(el: FplElementRaw, team: FplTeamRaw | undefined): FplPl
 
 // ─── Data fetchers ──────────────────────────────────────────────────────────────
 
-/** Get all PL players + team list for the players page */
-export async function getAllFplPlayers(): Promise<{
+/** Get all PL players + team list */
+export const getAllFplPlayers = cache(async (): Promise<{
   players: FplPlayerRow[];
   teams: FplTeamOption[];
-}> {
+}> => {
   const data = await fplFetch<FplBootstrapRaw>("/bootstrap-static/", 1800);
 
   const teamMap = new Map<number, FplTeamRaw>();
@@ -268,10 +305,45 @@ export async function getAllFplPlayers(): Promise<{
   );
 
   return { players, teams };
-}
+});
+
+/** Get only Liverpool players with enhanced FPL data for the /players page */
+export const getLfcFplPlayers = cache(async (): Promise<LfcFplPlayer[]> => {
+  const data = await fplFetch<FplBootstrapRaw>("/bootstrap-static/", 1800);
+
+  const teamMap = new Map<number, FplTeamRaw>();
+  for (const t of data.teams) teamMap.set(t.id, t);
+
+  const lfcTeam = teamMap.get(FPL_LFC_TEAM_ID);
+
+  return data.elements
+    .filter((el) => el.team === FPL_LFC_TEAM_ID)
+    .map((el) => ({
+      ...mapElementToRow(el, lfcTeam),
+      squadNumber: el.squad_number,
+      knownName: el.known_name || `${el.first_name} ${el.second_name}`,
+      pointsPerGame: parseFloat(el.points_per_game) || 0,
+      expectedPointsNext: parseFloat(el.ep_next) || 0,
+      valueSeason: parseFloat(el.value_season) || 0,
+      dreamteamCount: el.dreamteam_count,
+      costChange: el.cost_change_start / 10,
+      eventPoints: el.event_points,
+      chanceNextRound: el.chance_of_playing_next_round,
+      birthDate: el.birth_date,
+      joinDate: el.team_join_date,
+      starts: el.starts,
+      saves: el.saves,
+      bonus: el.bonus,
+      bps: el.bps,
+      goalsConceded: el.goals_conceded,
+      xGConceded: parseFloat(el.expected_goals_conceded) || 0,
+      transfersInEvent: el.transfers_in_event,
+      transfersOutEvent: el.transfers_out_event,
+    }));
+});
 
 /** Get player detail + match history */
-export async function getFplPlayerDetail(playerId: number): Promise<FplPlayerDetail | null> {
+export const getFplPlayerDetail = cache(async (playerId: number): Promise<FplPlayerDetail | null> => {
   const [bootstrap, summary] = await Promise.all([
     fplFetch<FplBootstrapRaw>("/bootstrap-static/", 1800),
     fplFetch<FplElementSummaryRaw>(`/element-summary/${playerId}/`, 3600),
@@ -336,5 +408,5 @@ export async function getFplPlayerDetail(playerId: number): Promise<FplPlayerDet
     matchHistory,
     pastSeasons,
   };
-}
+});
 

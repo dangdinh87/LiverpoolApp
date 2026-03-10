@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liverpool FC — Homepage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0D0D0D; --surface: #1A1A1A; --surface2: #252525;
+    --red: #C8102E; --red-dark: #A00E24; --red-glow: rgba(200,16,46,0.25);
+    --gold: #F6EB61; --white: #fff; --muted: #A0A0A0; --border: #2A2A2A;
+  }
+  body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+
+  /* NAVBAR */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    background: rgba(26,26,26,0.95); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 64px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; }
+  .nav-logo svg { width: 36px; height: 36px; }
+  .nav-logo span { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; color: var(--white); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a { font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.2s; padding-bottom: 2px; }
+  .nav-links a:hover, .nav-links a.active { color: var(--white); }
+  .nav-links a.active { border-bottom: 2px solid var(--red); }
+  .nav-cta { background: var(--red); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 20px; border: none; cursor: pointer; transition: background 0.2s; }
+  .nav-cta:hover { background: var(--red-dark); }
+
+  /* HERO */
+  .hero {
+    height: 100vh; position: relative; display: flex; align-items: flex-end;
+    background: linear-gradient(135deg, #1a0a0d 0%, #0d0d0d 40%, #0a0810 100%);
+    overflow: hidden;
+  }
+  .hero-stadium-bg {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 120% 60% at 60% 30%, rgba(200,16,46,0.08) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px),
+      repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.015) 80px, rgba(255,255,255,0.015) 81px);
+  }
+  .hero-lights { position: absolute; top: 0; left: 0; right: 0; height: 50%; background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,16,46,0.12) 0%, transparent 70%); }
+  .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to top, #0D0D0D 0%, rgba(13,13,13,0.65) 45%, transparent 100%); }
+  .hero-content { position: relative; z-index: 10; padding: 0 2rem 5rem; max-width: 900px; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(200,16,46,0.15); border: 1px solid var(--red);
+    padding: 6px 14px; margin-bottom: 1.5rem;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase; color: var(--red);
+  }
+  .hero-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse-red 1.5s ease-in-out infinite; }
+  .hero-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 10vw, 9rem); line-height: 0.92; letter-spacing: 0.02em; color: var(--white); margin-bottom: 1rem; }
+  .hero-title .red { color: var(--red); }
+  .hero-subtitle { font-size: 1.1rem; color: var(--muted); max-width: 460px; line-height: 1.6; margin-bottom: 2rem; }
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .btn-primary { background: var(--red); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 14px 32px; border: none; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-primary:hover { background: var(--red-dark); box-shadow: 0 0 28px var(--red-glow); }
+  .btn-ghost { background: transparent; color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 13px 32px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+  .btn-ghost:hover { border-color: var(--red); color: var(--red); }
+  .hero-stat-bar { position: absolute; right: 2rem; bottom: 5rem; z-index: 10; display: flex; flex-direction: column; gap: 1rem; }
+  .hero-stat { text-align: right; }
+  .hero-stat .n { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; color: var(--white); line-height: 1; }
+  .hero-stat .l { font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+  /* LIVE MATCH BANNER */
+  .live-banner {
+    background: var(--surface); border-top: 1px solid var(--border); border-bottom: 2px solid var(--red);
+    padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+  }
+  .live-match-info { display: flex; align-items: center; gap: 1.5rem; }
+  .live-tag { display: flex; align-items: center; gap: 6px; background: var(--red); padding: 4px 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; }
+  .live-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--white); animation: pulse-red 1.5s ease-in-out infinite; }
+  .match-teams { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.05em; }
+  .match-score { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--gold); }
+  .match-minute { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; color: var(--muted); }
+
+  /* SECTION */
+  section { padding: 5rem 2rem; max-width: 1280px; margin: 0 auto; }
+  .section-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 0.5rem; }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: 0.02em; margin-bottom: 2.5rem; }
+
+  /* BENTO GRID */
+  .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem; }
+  .b-card { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 1.5rem; transition: border-color 0.2s; overflow: hidden; position: relative; cursor: pointer; }
+  .b-card:hover { border-color: var(--surface2); }
+  .b-card.span-8 { grid-column: span 8; }
+  .b-card.span-4 { grid-column: span 4; }
+  .b-card.span-5 { grid-column: span 5; }
+  .b-card.span-7 { grid-column: span 7; }
+  .b-card.span-6 { grid-column: span 6; }
+  .b-card.span-3 { grid-column: span 3; }
+  .b-card.red-accent { border-left: 3px solid var(--red); }
+  .card-tag { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 0.75rem; }
+  .card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+
+  /* Next Match widget */
+  .match-widget { display: flex; flex-direction: column; gap: 1.2rem; }
+  .match-countdown { display: flex; gap: 1rem; }
+  .countdown-block { text-align: center; }
+  .countdown-block .n { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; line-height: 1; color: var(--white); }
+  .countdown-block .l { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .colon { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--red); align-self: flex-start; padding-top: 4px; }
+  .teams-row { display: flex; align-items: center; justify-content: space-between; }
+  .team-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .team-badge .crest { width: 48px; height: 48px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--red); }
+  .team-badge .name { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .vs { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--muted); }
+
+  /* Form dots */
+  .form-dots { display: flex; gap: 6px; margin-top: 0.5rem; }
+  .form-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; font-weight: 700; }
+  .form-dot.W { background: rgba(34,197,94,0.2); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+  .form-dot.D { background: rgba(234,179,8,0.2); color: #eab308; border: 1px solid rgba(234,179,8,0.3); }
+  .form-dot.L { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+
+  /* Standings mini */
+  .standing-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .standing-row:last-child { border-bottom: none; }
+  .pos { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; width: 24px; text-align: center; }
+  .team-name { font-size: 0.85rem; flex: 1; }
+  .pts-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .pts-fill { height: 100%; border-radius: 2px; background: var(--muted); }
+  .pts-fill.lfc { background: var(--red); }
+  .pts { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700; width: 28px; text-align: right; }
+  .lfc-row { background: rgba(200,16,46,0.07); border-radius: 2px; padding: 8px 6px !important; border-bottom: none !important; }
+
+  /* Squad carousel */
+  .player-scroll { display: flex; gap: 0.75rem; overflow-x: auto; scrollbar-width: none; padding-bottom: 0.5rem; }
+  .player-mini { min-width: 110px; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 0.75rem; position: relative; overflow: hidden; }
+  .player-mini:hover { border-color: var(--red); }
+  .player-num { position: absolute; right: 4px; bottom: 0; font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; line-height: 1; color: rgba(255,255,255,0.05); }
+  .player-pos { font-family: 'Barlow Condensed', sans-serif; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); }
+  .player-name { font-family: 'Bebas Neue', sans-serif; font-size: 0.95rem; letter-spacing: 0.03em; margin-top: 2px; }
+  .player-stat { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* News card */
+  .news-img { width: 100%; height: 120px; background: linear-gradient(135deg, #1a0a0d, #0d0d0d); border-radius: 1px; margin-bottom: 0.75rem; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .news-img .label { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: rgba(200,16,46,0.4); }
+  .news-category { font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); }
+  .news-headline { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; letter-spacing: 0.03em; line-height: 1.2; margin-top: 4px; }
+  .news-time { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+  /* BIG STAT NUMBERS */
+  .stats-section { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4rem 2rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; max-width: 1280px; margin: 0 auto; }
+  .stat-item { text-align: center; }
+  .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem, 6vw, 6rem); line-height: 1; color: var(--white); }
+  .stat-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); margin-top: 4px; }
+  .stat-sub { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* FOOTER */
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 3rem 2rem; }
+  .footer-inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
+  .footer-brand p { font-size: 0.85rem; color: var(--muted); line-height: 1.7; max-width: 280px; margin-top: 0.75rem; }
+  .footer-col h4 { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 1rem; }
+  .footer-col a { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem; text-decoration: none; }
+  .footer-col a:hover { color: var(--white); }
+  .footer-bottom { max-width: 1280px; margin: 2rem auto 0; padding-top: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .footer-bottom p { font-size: 0.75rem; color: var(--muted); }
+  .disclaimer { font-size: 0.7rem; color: var(--border); }
+
+  @keyframes pulse-red { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; } }
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-logo">
+    <svg viewBox="0 0 36 36" fill="none">
+      <circle cx="18" cy="18" r="17" fill="#C8102E" stroke="#A00E24" stroke-width="2"/>
+      <text x="18" y="24" text-anchor="middle" fill="white" font-family="'Bebas Neue',sans-serif" font-size="14">LFC</text>
+    </svg>
+    <span>Liverpool FC</span>
+  </div>
+  <div class="nav-links">
+    <a href="#" class="active">Home</a>
+    <a href="#">Squad</a>
+    <a href="#">Fixtures</a>
+    <a href="#">Standings</a>
+    <a href="#">News</a>
+  </div>
+  <button class="nav-cta">Sign In</button>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-stadium-bg"></div>
+  <div class="hero-lights"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      2024/25 Season · Premier League
+    </div>
+    <h1 class="hero-title">
+      You'll<br>Never<br><span class="red">Walk</span><br>Alone
+    </h1>
+    <p class="hero-subtitle">The official fan hub for Liverpool FC. Live scores, squad news, fixtures and more — all in one place.</p>
+    <div class="hero-actions">
+      <button class="btn-primary">Explore Squad &#8250;</button>
+      <button class="btn-ghost">View Fixtures</button>
+    </div>
+  </div>
+  <div class="hero-stat-bar">
+    <div class="hero-stat"><div class="n">1st</div><div class="l">PL Position</div></div>
+    <div class="hero-stat"><div class="n">19</div><div class="l">League Titles</div></div>
+    <div class="hero-stat"><div class="n">6</div><div class="l">UCL Trophies</div></div>
+  </div>
+</div>
+
+<!-- LIVE BANNER -->
+<div class="live-banner">
+  <div class="live-match-info">
+    <div class="live-tag"><span class="dot"></span> Live · 67'</div>
+    <span class="match-teams">Liverpool</span>
+    <span class="match-score">2 — 1</span>
+    <span class="match-teams">Manchester City</span>
+    <span class="match-minute">Premier League · Anfield</span>
+  </div>
+  <button class="btn-primary" style="font-size:0.75rem;padding:8px 18px;">Watch Live &#8250;</button>
+</div>
+
+<!-- BENTO SECTION -->
+<section>
+  <div class="section-label">Dashboard</div>
+  <div class="section-title">This Week</div>
+  <div class="bento">
+
+    <!-- Next Match — span 5 -->
+    <div class="b-card span-5 red-accent">
+      <div class="card-tag">Next Match · Premier League</div>
+      <div class="card-title">Matchday 30</div>
+      <div class="match-widget">
+        <div class="teams-row">
+          <div class="team-badge">
+            <div class="crest">LFC</div>
+            <div class="name">Liverpool</div>
+          </div>
+          <div class="vs">VS</div>
+          <div class="team-badge">
+            <div class="crest" style="color:#63B3ED;">MCI</div>
+            <div class="name">Man City</div>
+          </div>
+        </div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;color:var(--muted);letter-spacing:0.08em;">SAT 8 MAR · 17:30 · ANFIELD</div>
+        <div class="match-countdown">
+          <div class="countdown-block"><div class="n">02</div><div class="l">Days</div></div>
+          <div class="colon">:</div>
+          <div class="countdown-block"><div class="n">14</div><div class="l">Hrs</div></div>
+          <div class="colon">:</div>
+          <div class="countdown-block"><div class="n">33</div><div class="l">Min</div></div>
+        </div>
+        <button class="btn-primary" style="font-size:0.78rem;padding:10px 20px;width:100%;justify-content:center;">Match Preview</button>
+      </div>
+    </div>
+
+    <!-- Form + Standings — span 7 -->
+    <div class="b-card span-7">
+      <div class="card-tag">Premier League Standings</div>
+      <div class="standing-row lfc-row">
+        <div class="pos" style="color:var(--red);">1</div>
+        <div class="team-name" style="font-weight:600;color:var(--red);">Liverpool</div>
+        <div class="pts-bar"><div class="pts-fill lfc" style="width:88%;"></div></div>
+        <div class="pts" style="color:var(--red);">66</div>
+      </div>
+      <div class="standing-row">
+        <div class="pos">2</div><div class="team-name">Arsenal</div>
+        <div class="pts-bar"><div class="pts-fill" style="width:76%;"></div></div>
+        <div class="pts">60</div>
+      </div>
+      <div class="standing-row">
+        <div class="pos">3</div><div class="team-name">Man City</div>
+        <div class="pts-bar"><div class="pts-fill" style="width:72%;"></div></div>
+        <div class="pts">56</div>
+      </div>
+      <div class="standing-row">
+        <div class="pos">4</div><div class="team-name">Chelsea</div>
+        <div class="pts-bar"><div class="pts-fill" style="width:65%;"></div></div>
+        <div class="pts">52</div>
+      </div>
+      <div class="standing-row">
+        <div class="pos">5</div><div class="team-name">Tottenham</div>
+        <div class="pts-bar"><div class="pts-fill" style="width:60%;"></div></div>
+        <div class="pts">48</div>
+      </div>
+    </div>
+
+    <!-- Form Widget — span 3 -->
+    <div class="b-card span-3">
+      <div class="card-tag">Recent Form</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--muted);margin-bottom:8px;">Last 5 Matches</div>
+      <div class="form-dots">
+        <div class="form-dot W">W</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot D">D</div>
+        <div class="form-dot W">W</div>
+        <div class="form-dot W">W</div>
+      </div>
+      <div style="margin-top:1rem;display:flex;justify-content:space-between;">
+        <div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#22c55e;">4</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">Wins</div></div>
+        <div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#eab308;">1</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">Draw</div></div>
+        <div style="text-align:center;"><div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--muted);">0</div><div style="font-family:'Barlow Condensed',sans-serif;font-size:0.6rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);">Loss</div></div>
+      </div>
+    </div>
+
+    <!-- News — span 3 -->
+    <div class="b-card span-3">
+      <div class="news-img"><div class="label">BREAKING</div></div>
+      <div class="news-category">Transfer News</div>
+      <div class="news-headline">Slot confirms Salah contract extension in final stages</div>
+      <div class="news-time">2 hours ago</div>
+    </div>
+
+    <!-- News 2 — span 3 -->
+    <div class="b-card span-3">
+      <div class="news-img" style="background:linear-gradient(135deg,#0a0d1a,#0d0d0d);"><div class="label">PREVIEW</div></div>
+      <div class="news-category">Match Preview</div>
+      <div class="news-headline">Five things to watch vs Man City at Anfield</div>
+      <div class="news-time">4 hours ago</div>
+    </div>
+
+    <!-- Squad Carousel — span 6 -->
+    <div class="b-card span-6">
+      <div class="card-tag">Key Players</div>
+      <div class="player-scroll">
+        <div class="player-mini"><div class="player-pos">Forward</div><div class="player-name">Salah</div><div class="player-stat">22 Goals · 13 Ast</div><div class="player-num">11</div></div>
+        <div class="player-mini"><div class="player-pos">Forward</div><div class="player-name">Nunez</div><div class="player-stat">12 Goals · 7 Ast</div><div class="player-num">9</div></div>
+        <div class="player-mini"><div class="player-pos">Midfielder</div><div class="player-name">Mac Allister</div><div class="player-stat">8 Goals · 9 Ast</div><div class="player-num">10</div></div>
+        <div class="player-mini"><div class="player-pos">Defender</div><div class="player-name">Van Dijk</div><div class="player-stat">4 Goals · 2 Ast</div><div class="player-num">4</div></div>
+        <div class="player-mini"><div class="player-pos">Midfielder</div><div class="player-name">Szoboszlai</div><div class="player-stat">6 Goals · 5 Ast</div><div class="player-num">8</div></div>
+        <div class="player-mini"><div class="player-pos">Goalkeeper</div><div class="player-name">Alisson</div><div class="player-stat">18 Clean sheets</div><div class="player-num">1</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-section">
+  <div class="stats-grid">
+    <div class="stat-item"><div class="stat-num">82</div><div class="stat-label">Goals Scored</div><div class="stat-sub">Season 2024/25</div></div>
+    <div class="stat-item"><div class="stat-num">19</div><div class="stat-label">League Titles</div><div class="stat-sub">All time</div></div>
+    <div class="stat-item"><div class="stat-num">6</div><div class="stat-label">European Cups</div><div class="stat-sub">Champions League</div></div>
+    <div class="stat-item"><div class="stat-num">+38</div><div class="stat-label">Goal Difference</div><div class="stat-sub">PL 2024/25</div></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:0.08em;">Liverpool FC Fan</div>
+      <p>The ultimate destination for Liverpool FC fans. Unofficial fan site. All data sourced from public APIs.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Club</h4>
+      <a href="#">Squad</a><a href="#">Fixtures</a><a href="#">Results</a><a href="#">Standings</a>
+    </div>
+    <div class="footer-col">
+      <h4>Fan Zone</h4>
+      <a href="#">News</a><a href="#">History</a><a href="#">Trophies</a><a href="#">Community</a>
+    </div>
+    <div class="footer-col">
+      <h4>Account</h4>
+      <a href="#">Sign In</a><a href="#">Register</a><a href="#">Profile</a><a href="#">Settings</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>Fan site · Not affiliated with Liverpool FC · 2025</p>
+    <p class="disclaimer">You'll Never Walk Alone</p>
+  </div>
+</footer>
+
+</body>
+</html>

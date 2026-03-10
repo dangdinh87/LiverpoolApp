@@ -56,7 +56,7 @@ const CustomTooltip = ({
 }) => {
   if (active && payload?.length) {
     return (
-      <div className="bg-stadium-surface border border-stadium-border rounded-lg px-3 py-2">
+      <div className="bg-stadium-surface border border-stadium-border rounded-none px-3 py-2">
         <p className="font-inter text-xs text-white font-semibold">{label}</p>
         <p className="font-bebas text-xl text-lfc-red">{payload[0].value}</p>
       </div>

@@ -1,54 +1,87 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { PlayerCard } from "./player-card";
-import type { Player } from "@/lib/types/football";
+import type { PlayerPosition } from "@/lib/squad-data";
+import { POSITION_DISPLAY, POSITION_ORDER } from "@/lib/squad-data";
 import { cn } from "@/lib/utils";
 
-type PositionFilter = "All" | "Goalkeeper" | "Defender" | "Midfielder" | "Attacker";
-
-const FILTERS: { label: string; value: PositionFilter }[] = [
-  { label: "All", value: "All" },
-  { label: "GK", value: "Goalkeeper" },
-  { label: "DEF", value: "Defender" },
-  { label: "MID", value: "Midfielder" },
-  { label: "FWD", value: "Attacker" },
-];
-
-// Module-scope constant — not recreated on every render
-const POSITION_ORDER: Record<Exclude<PositionFilter, "All">, number> = {
-  Goalkeeper: 0,
-  Defender: 1,
-  Midfielder: 2,
-  Attacker: 3,
-};
-
-interface SquadGridProps {
-  players: Player[];
+// Serializable player type for client component (matches LfcPlayer shape)
+interface ClientPlayer {
+  id: number;
+  name: string;
+  shirtNumber: number;
+  shirtName: string;
+  slug: string;
+  position: PlayerPosition;
+  nationality: string;
+  dateOfBirth: string;
+  onLoan: boolean;
+  forever: boolean;
+  photo: string;
+  photoLg: string;
+  bodyShot: string;
+  localPhoto: string;
+  localBodyShot: string;
+  bio: string;
+  honors: string[];
+  metaDescription: string;
 }
 
-export function SquadGrid({ players }: SquadGridProps) {
+type PositionFilter = "All" | PlayerPosition;
+
+interface SquadGridProps {
+  players: ClientPlayer[];
+  /** Optional slot rendered after position filters (e.g. injury widget) */
+  actionSlot?: React.ReactNode;
+}
+
+export function SquadGrid({ players, actionSlot }: SquadGridProps) {
   const [filter, setFilter] = useState<PositionFilter>("All");
+  const [search, setSearch] = useState("");
+  const t = useTranslations("Squad");
 
-  const filtered =
-    filter === "All" ? players : players.filter((p) => p.position === filter);
+  const FILTERS: { label: string; value: PositionFilter }[] = [
+    { label: t("positions.all"), value: "All" },
+    { label: t("positions.GK"), value: "goalkeeper" },
+    { label: t("positions.DEF"), value: "defender" },
+    { label: t("positions.MID"), value: "midfielder" },
+    { label: t("positions.FWD"), value: "forward" },
+  ];
 
-  const sorted = [...filtered].sort((a, b) => {
-    const posOrder = POSITION_ORDER[a.position] - POSITION_ORDER[b.position];
-    if (posOrder !== 0) return posOrder;
-    return (a.number ?? 99) - (b.number ?? 99);
-  });
+  const sorted = useMemo(() => {
+    let list = filter === "All" ? players : players.filter((p) => p.position === filter);
+
+    // Search by name or number
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          String(p.shirtNumber).includes(q)
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      const posOrder = POSITION_ORDER[a.position] - POSITION_ORDER[b.position];
+      if (posOrder !== 0) return posOrder;
+      return (a.shirtNumber ?? 99) - (b.shirtNumber ?? 99);
+    });
+  }, [players, filter, search]);
 
   return (
     <div>
-      {/* Position filter tabs */}
-      <div className="flex gap-2 mb-8 flex-wrap">
+      {/* Toolbar: filters + search + action slot */}
+      <div className="flex flex-wrap items-center gap-2 mb-8">
+        {/* Position filter tabs */}
         {FILTERS.map(({ label, value }) => (
           <button
             key={value}
             onClick={() => setFilter(value)}
             className={cn(
-              "px-4 py-2 rounded-lg font-barlow font-semibold text-sm uppercase tracking-wider transition-all duration-200",
+              "px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider transition-all duration-200",
               filter === value
                 ? "bg-lfc-red text-white"
                 : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
@@ -62,6 +95,21 @@ export function SquadGrid({ players }: SquadGridProps) {
             </span>
           </button>
         ))}
+
+        {/* Search input */}
+        <div className="relative ml-auto">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stadium-muted pointer-events-none" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("search")}
+            className="pl-8 pr-3 py-2 w-44 rounded-none bg-stadium-surface border border-stadium-border text-white text-sm font-inter placeholder:text-stadium-muted/60 focus:outline-none focus:border-lfc-red/50 transition-colors"
+          />
+        </div>
+
+        {/* Action slot (injury widget) */}
+        {actionSlot}
       </div>
 
       {/* Player grid */}
@@ -73,7 +121,7 @@ export function SquadGrid({ players }: SquadGridProps) {
 
       {sorted.length === 0 && (
         <p className="text-stadium-muted text-center py-12 font-inter">
-          No players found for this filter.
+          {search ? t("noPlayers", { search }) : t("noPlayersFilter")}
         </p>
       )}
     </div>

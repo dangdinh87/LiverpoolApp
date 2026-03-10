@@ -10,7 +10,7 @@ export default function FixturesLoading() {
         </div>
         <div className="flex flex-col gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+            <Skeleton key={i} className="h-24 w-full rounded-none" />
           ))}
         </div>
       </div>

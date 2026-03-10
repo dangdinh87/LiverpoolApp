@@ -1,0 +1,39 @@
+diff --git a/node_modules/ai/dist/index.js b/node_modules/ai/dist/index.js
+index 7651bc7..46fcc85 100644
+--- a/node_modules/ai/dist/index.js
++++ b/node_modules/ai/dist/index.js
+@@ -13272,7 +13272,7 @@ var AbstractChat = class {
+     } finally {
+       try {
+         (_b = this.onFinish) == null ? void 0 : _b.call(this, {
+-          message: this.activeResponse.state.message,
++          message: this.activeResponse?.state?.message,
+           messages: this.state.messages,
+           isAbort,
+           isDisconnect,
+diff --git a/node_modules/ai/dist/index.mjs b/node_modules/ai/dist/index.mjs
+index 3d9c238..bda8f2f 100644
+--- a/node_modules/ai/dist/index.mjs
++++ b/node_modules/ai/dist/index.mjs
+@@ -13239,7 +13239,7 @@ var AbstractChat = class {
+     } finally {
+       try {
+         (_b = this.onFinish) == null ? void 0 : _b.call(this, {
+-          message: this.activeResponse.state.message,
++          message: this.activeResponse?.state?.message,
+           messages: this.state.messages,
+           isAbort,
+           isDisconnect,
+diff --git a/node_modules/ai/src/ui/chat.ts b/node_modules/ai/src/ui/chat.ts
+index 5a6d0c2..0a2babf 100644
+--- a/node_modules/ai/src/ui/chat.ts
++++ b/node_modules/ai/src/ui/chat.ts
+@@ -723,7 +723,7 @@ export abstract class AbstractChat<UI_MESSAGE extends UIMessage> {
+     } finally {
+       try {
+         this.onFinish?.({
+-          message: this.activeResponse!.state.message,
++          message: this.activeResponse?.state?.message as any,
+           messages: this.state.messages,
+           isAbort,
+           isDisconnect,

@@ -1,0 +1,797 @@
+{
+  "Common": {
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "nav": {
+      "home": "Trang chủ",
+      "squad": "Đội hình",
+      "fixtures": "Lịch thi đấu",
+      "season": "Mùa giải",
+      "news": "Tin tức",
+      "history": "Câu lạc bộ",
+      "about": "Giới thiệu",
+      "stats": "Thống kê",
+      "login": "Đăng nhập",
+      "logout": "Đăng xuất",
+      "profile": "Hồ sơ",
+      "members": "Thành viên",
+      "memberArea": "Khu vực thành viên",
+      "auth": "Đăng nhập / Đăng ký"
+    },
+    "labels": {
+      "opponent": "Đối thủ",
+      "score": "Tỷ số",
+      "minutes": "Phút",
+      "bonus": "Thưởng",
+      "points": "Điểm",
+      "season": "Mùa giải",
+      "allTeams": "Tất cả đội",
+      "last5": "5 trận gần nhất",
+      "halftime": "H1",
+      "player": "Cầu thủ",
+      "pos": "Vị trí",
+      "search": "Tìm kiếm cầu thủ...",
+      "pageOf": "Trang {page} / {total}"
+    }
+  },
+  "Hero": {
+    "tagline": "Câu lạc bộ bóng đá Liverpool · Thành lập 1892",
+    "title": "Chào mừng đến với Anfield",
+    "subtitle": "Ứng dụng fan chính thức của Liverpool FC",
+    "description": "Trung tâm dành cho người hâm mộ về mọi thứ về Liverpool FC — kết quả, số liệu, đội hình và hơn thế nữa.",
+    "cta": "Khám phá đội hình",
+    "badge": "Tạo bởi fan, dành cho fan — Không chính thức",
+    "scroll": "Cuộn",
+    "fixtures": "Lịch thi đấu & Kết quả",
+    "standings": "Bảng xếp hạng"
+  },
+  "Bento": {
+    "season": "Mùa giải 2025/26",
+    "title": "Tổng quan câu lạc bộ",
+    "gameweekComplete": "Hoàn tất",
+    "deadline": "Hạn chót"
+  },
+  "News": {
+    "metadata": {
+      "title": "Tin tức mới nhất",
+      "description": "Tin tức Liverpool FC từ 10 nguồn bao gồm LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield và hơn thế nữa"
+    },
+    "tagline": "Đa nguồn tin",
+    "title": "Tin mới nhất",
+    "heroDesc": "Tổng hợp tin tức Liverpool FC mới nhất từ các nguồn uy tín trong và ngoài nước.",
+    "description": "Tin tức Liverpool FC từ 10 nguồn bao gồm LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield và hơn thế nữa",
+    "summary": "{total} bài viết — {en} quốc tế, {vi} Việt Nam",
+    "search": "Tìm kiếm tin tức...",
+    "filter": "Lọc",
+    "langAll": "Tất cả",
+    "langLocal": "Việt Nam",
+    "langGlobal": "Quốc tế",
+    "viewAll": "Tất cả tin tức →",
+    "attribution": "Tin tức được tổng hợp từ {sources}. Tất cả bản quyền thuộc về chủ sở hữu tương ứng.",
+    "categories": {
+      "all": "Tất cả",
+      "official": "Chính thức",
+      "match-report": "Báo cáo trận đấu",
+      "transfer": "Chuyển nhượng",
+      "injury": "Chấn thương",
+      "team-news": "Tin đội hình",
+      "analysis": "Phân tích",
+      "opinion": "Góc nhìn"
+    },
+    "comments": {
+      "title": "Bình luận",
+      "count": "({count})",
+      "placeholder": "Viết bình luận...",
+      "send": "Gửi",
+      "login": "Đăng nhập để bình luận",
+      "loginBtn": "Đăng nhập",
+      "empty": "Chưa có bình luận nào. Hãy là người đầu tiên!",
+      "deleteConfirm": "Bạn có chắc muốn xóa bình luận này?",
+      "justNow": "vừa xong",
+      "minutesAgo": "{n} phút trước",
+      "hoursAgo": "{n} giờ trước",
+      "daysAgo": "{n} ngày trước",
+      "charCount": "{n}/1000",
+      "totalArticle": "{count} bình luận"
+    },
+    "article": {
+      "backToNews": "Quay lại Tin tức",
+      "contentUnavailable": "Không thể tải nội dung",
+      "contentUnavailableDesc": "Bài viết này không thể tải để đọc trong ứng dụng. Bạn có thể đọc trên trang gốc.",
+      "readOriginal": "Đọc bản gốc",
+      "readFullOn": "Đọc đầy đủ trên {source}",
+      "thinContentMsg": "Bài viết này nên xem trên trang gốc để có trải nghiệm đọc tốt nhất.",
+      "sourcedFrom": "Nội dung từ <source>{sourceName}</source>. Bản quyền thuộc về nhà xuất bản gốc."
+    },
+    "feed": {
+      "all": "Tất cả",
+      "local": "Báo Việt",
+      "global": "Báo nước ngoài",
+      "moreStories": "Thêm tin tức",
+      "loadMore": "Xem thêm (còn {count} bài)",
+      "noArticles": "Không tìm thấy bài viết",
+      "noArticlesDesc": "Hãy thử bộ lọc khác hoặc quay lại sau.",
+      "translateBadge": "Bản dịch AI"
+    }
+  },
+  "NextMatch": {
+    "title": "Trận tiếp theo",
+    "live": "Trực tiếp",
+    "noMatch": "Không có trận đấu sắp tới"
+  },
+  "Squad": {
+    "metadata": {
+      "title": "Đội hình & Thống kê cầu thủ",
+      "description": "Đội hình một Liverpool FC và thống kê cầu thủ cho mùa giải 2025/26."
+    },
+    "title": "Đội hình",
+    "season": "Mùa giải {season}",
+    "players": "Cầu thủ",
+    "club": "Câu lạc bộ bóng đá Liverpool",
+    "search": "Tìm cầu thủ...",
+    "noPlayers": "Không tìm thấy cầu thủ khớp với \"{search}\"",
+    "noPlayersFilter": "Không tìm thấy cầu thủ cho bộ lọc này.",
+    "count": "{count} cầu thủ",
+    "tabs": {
+      "squad": "Đội hình",
+      "stats": "Thống kê cầu thủ",
+      "fpl": "FPL"
+    },
+    "dataSource": "Dữ liệu: {source}",
+    "positions": {
+      "all": "Tất cả",
+      "goalkeeper": "Thủ môn",
+      "defender": "Hậu vệ",
+      "midfielder": "Tiền vệ",
+      "forward": "Tiền đạo",
+      "GK": "GK",
+      "DEF": "DEF",
+      "MID": "MID",
+      "FWD": "FWD"
+    },
+    "status": {
+      "onLoan": "Cho mượn",
+      "forever": "Huyền thoại",
+      "unavailable": "Không sẵn sàng",
+      "injured": "Chấn thương",
+      "suspended": "Treo giò",
+      "doubtful": "Bỏ ngỏ"
+    },
+    "injuries": {
+      "label": "Chấn thương",
+      "title": "Phòng y tế",
+      "out": "{count} vắng mặt",
+      "doubtful": "{count} bỏ ngỏ",
+      "statuses": {
+        "OUT": "OUT",
+        "DOUBT": "DOUBT",
+        "5050": "50/50"
+      },
+      "descriptions": {
+        "out": "Xác nhận vắng mặt",
+        "doubtful": "Ít khả năng ra sân",
+        "questionable": "Cần kiểm tra thể lực"
+      }
+    },
+    "glossary": {
+      "title": "Giải thích chỉ số",
+      "subtitle": "Ý nghĩa của từng chỉ số?",
+      "description": "Tất cả số liệu được cung cấp bởi Fantasy Premier League (FPL) — Mùa giải 2025/26.",
+      "items": {
+        "Pts": {
+          "name": "Tổng điểm",
+          "desc": "Tổng điểm FPL giành được mùa này. Tích lũy từ bàn thắng, kiến tạo, giữ sạch lưới, điểm thưởng và số phút thi đấu."
+        },
+        "Min": {
+          "name": "Phút thi đấu",
+          "desc": "Tổng số phút thi đấu tại Ngoại hạng Anh mùa này."
+        },
+        "St": {
+          "name": "Đội hình chính",
+          "desc": "Số trận cầu thủ đá chính trong đội hình xuất phát."
+        },
+        "G": {
+          "name": "Bàn thắng",
+          "desc": "Tổng số bàn thắng tại Ngoại hạng Anh mùa này."
+        },
+        "A": {
+          "name": "Kiến tạo",
+          "desc": "Tổng số kiến tạo — đường chuyền cuối cùng dẫn trực tiếp đến bàn thắng."
+        },
+        "xG": {
+          "name": "Bàn thắng kỳ vọng",
+          "desc": "Chỉ số đo lường chất lượng các cơ hội. xG 0.5 nghĩa là có 50% xác suất ghi bàn từ vị trí đó."
+        },
+        "xA": {
+          "name": "Kiến tạo kỳ vọng",
+          "desc": "Chỉ số đo lường chất lượng các cơ hội tạo ra cho đồng đội."
+        },
+        "CS": {
+          "name": "Giữ sạch lưới",
+          "desc": "Số trận đội không để thủng lưới khi cầu thủ có mặt trên sân ít nhất 60 phút."
+        },
+        "Bon": {
+          "name": "Điểm thưởng",
+          "desc": "Điểm FPL cộng thêm cho 3 cầu thủ xuất sắc nhất mỗi trận dựa trên hệ thống BPS."
+        },
+        "Form": {
+          "name": "Phong độ",
+          "desc": "Điểm FPL trung bình mỗi trận trong 30 ngày qua. Số cao hơn cho thấy phong độ gần đây tốt hơn."
+        },
+        "PPG": {
+          "name": "Điểm/Trận",
+          "desc": "Điểm FPL trung bình giành được mỗi trận trong cả mùa giải."
+        },
+        "xP": {
+          "name": "Điểm kỳ vọng tới",
+          "desc": "Dự đoán điểm FPL cho vòng đấu tiếp theo dựa trên độ khó lịch thi đấu, phong độ và dữ liệu lịch sử."
+        },
+        "Price": {
+          "name": "Giá trị",
+          "desc": "Giá trị FPL hiện tại (triệu bảng). Giá tăng khi nhiều người mua và giảm khi bị bán đi."
+        },
+        "DT": {
+          "name": "Đội hình tiêu biểu",
+          "desc": "Số lần cầu thủ lọt vào Đội hình tiêu biểu của vòng đấu FPL (Dream Team)."
+        }
+      }
+    }
+  },
+  "PlayerDetail": {
+    "back": "Thống kê cầu thủ",
+    "backSquad": "Quay lại đội hình",
+    "viewOnLfc": "Xem trên liverpoolfc.com",
+    "status": {
+      "available": "Sẵn sàng",
+      "injured": "Chấn thương",
+      "suspended": "Treo giò",
+      "doubtful": "Nghi ngờ",
+      "unavailable": "Không khả dụng",
+      "onLoan": "Cho mượn",
+      "forever": "Huyền thoại",
+      "active": "Đang thi đấu"
+    },
+    "quickStats": {
+      "points": "Điểm",
+      "goals": "Bàn thắng",
+      "assists": "Kiến tạo",
+      "form": "Phong độ",
+      "ppg": "Đ/Trận",
+      "price": "Giá"
+    },
+    "sections": {
+      "seasonStats": "Thống kê mùa 2025/26",
+      "matchHistory": "Lịch sử thi đấu",
+      "pastSeasons": "Các mùa trước",
+      "playerInfo": "Thông tin cầu thủ",
+      "honours": "Danh hiệu tại Liverpool FC",
+      "biography": "Tiểu sử"
+    },
+    "info": {
+      "fullName": "Họ tên đầy đủ",
+      "shirtName": "Tên trên áo",
+      "nationality": "Quốc tịch",
+      "dob": "Ngày sinh",
+      "age": "Tuổi",
+      "ageYears": "{age} tuổi",
+      "position": "Vị trí",
+      "shirtNumber": "Số áo",
+      "status": "Trạng thái",
+      "honours": "Danh hiệu"
+    },
+    "stats": {
+      "attack": "Tấn công",
+      "defence": "Phòng ngự",
+      "general": "Tổng quát",
+      "fpl": "FPL",
+      "ictIndex": "Chỉ số ICT",
+      "goals": "Bàn thắng",
+      "assists": "Kiến tạo",
+      "xG": "xG",
+      "xA": "xA",
+      "pensMissed": "Hỏng pen",
+      "cleanSheets": "Sạch lưới",
+      "goalsConceded": "Bàn thua",
+      "saves": "Cứu thua",
+      "pensSaved": "Cản phá pen",
+      "minutes": "Phút thi đấu",
+      "starts": "Đá chính",
+      "yellowCards": "Thẻ vàng",
+      "redCards": "Thẻ đỏ",
+      "ownGoals": "Phản lưới",
+      "totalPoints": "Tổng điểm",
+      "form": "Phong độ",
+      "bonus": "Thưởng",
+      "bps": "BPS",
+      "selectedBy": "Tỷ lệ sở hữu",
+      "price": "Giá",
+      "influence": "Ảnh hưởng",
+      "creativity": "Sáng tạo",
+      "threat": "Đe dọa",
+      "ictIndexStat": "Chỉ số ICT"
+    },
+    "statsDesc": {
+      "goals": "Bàn thắng ghi được tại Ngoại hạng Anh mùa này",
+      "assists": "Đường chuyền cuối cùng dẫn trực tiếp đến bàn thắng",
+      "xG": "Bàn thắng kỳ vọng — chất lượng cơ hội. 0.5 = 50% xác suất ghi bàn",
+      "xA": "Kiến tạo kỳ vọng — chất lượng cơ hội tạo ra cho đồng đội",
+      "pensMissed": "Quả phạt đền sút hỏng hoặc bị cản phá",
+      "cleanSheets": "Trận giữ sạch lưới (thi đấu trên 60 phút)",
+      "goalsConceded": "Tổng số bàn thua khi đang trên sân",
+      "saves": "Các pha cứu thua của thủ môn",
+      "pensSaved": "Quả phạt đền được thủ môn cản phá",
+      "minutes": "Tổng thời gian thi đấu tại Ngoại hạng Anh",
+      "starts": "Số trận đá chính trong đội hình xuất phát",
+      "yellowCards": "Số thẻ vàng nhận được",
+      "redCards": "Số thẻ đỏ (trực tiếp hoặc hai thẻ vàng)",
+      "ownGoals": "Bàn thắng vô tình đưa vào lưới nhà",
+      "totalPoints": "Tổng điểm FPL từ bàn thắng, kiến tạo, sạch lưới, thưởng & phút thi đấu",
+      "form": "Điểm FPL trung bình mỗi trận trong 30 ngày qua",
+      "bonus": "Điểm thưởng FPL cho 3 cầu thủ xuất sắc nhất mỗi trận",
+      "bps": "Hệ thống điểm thưởng — điểm hiệu suất thô dùng để trao thưởng",
+      "selectedBy": "Tỷ lệ phần trăm người chơi FPL sở hữu cầu thủ này",
+      "price": "Giá FPL hiện tại. Tăng/giảm dựa trên hoạt động chuyển nhượng",
+      "influence": "Tác động lên trận đấu — bàn thắng, kiến tạo, tắc bóng, cứu thua",
+      "creativity": "Tạo cơ hội — đường chuyền then chốt, tạt bóng, chuyền xuyên tuyến",
+      "threat": "Đe dọa khung thành — sút trúng đích, chạm bóng trong vòng cấm, phạt đền",
+      "ictIndexStat": "Tổng hợp Ảnh hưởng + Sáng tạo + Đe dọa"
+    },
+    "matchLog": {
+      "noHistory": "Chưa có lịch sử thi đấu.",
+      "showAll": "Xem tất cả {count} vòng đấu"
+    },
+    "positions": {
+      "goalkeeper": "Thủ môn",
+      "defender": "Hậu vệ",
+      "midfielder": "Tiền vệ",
+      "forward": "Tiền đạo"
+    }
+  },
+  "Season": {
+    "metadata": {
+      "title": "Mùa giải {season}",
+      "description": "Liverpool FC Ngoại hạng Anh {season} — lịch thi đấu, kết quả, bảng xếp hạng và số liệu."
+    },
+    "title": "Mùa giải",
+    "stats": {
+      "goals": "Bàn thắng LFC",
+      "assists": "Kiến tạo LFC",
+      "topScorer": "Ghi bàn hàng đầu"
+    },
+    "charts": {
+      "scorers": "Vua phá lưới",
+      "assists": "Vua kiến tạo",
+      "lfcScorers": "Cầu thủ ghi bàn Liverpool",
+      "legend": "Ngoại hạng Anh {season} · Đỏ = Liverpool"
+    },
+    "table": {
+      "title": "Cầu thủ ghi bàn",
+      "goals": "Bàn thắng",
+      "assists": "Kiến tạo",
+      "apps": "Trận"
+    },
+    "chips": {
+      "pos": "Hạng",
+      "pts": "Điểm",
+      "form": "Phong độ"
+    },
+    "next": "Tiếp theo: ",
+    "vs": "vs ",
+    "at": "tại "
+  },
+  "Stats": {
+    "metadata": {
+      "title": "Thống kê",
+      "description": "Thống kê Ngoại hạng Anh của Liverpool FC 2025/26 — vua phá lưới, kiến tạo và nhiều hơn nữa."
+    },
+    "hero": {
+      "season": "Ngoại hạng Anh · 2025/26",
+      "title": "Thống kê"
+    },
+    "headlines": {
+      "goals": "Bàn thắng LFC",
+      "assists": "Kiến tạo LFC",
+      "topScorerGoals": "Bàn thắng Vua phá lưới"
+    },
+    "charts": {
+      "scorers": "Vua phá lưới",
+      "assists": "Vua kiến tạo",
+      "legend": "Ngoại hạng Anh 2025/26 · Đỏ = Cầu thủ Liverpool"
+    },
+    "table": {
+      "title": "Cầu thủ ghi bàn Liverpool",
+      "goalsShort": "BT",
+      "assistsShort": "KT",
+      "appsShort": "Trận"
+    }
+  },
+  "History": {
+    "metadata": {
+      "title": "Câu lạc bộ",
+      "description": "Liverpool FC — 20 chức vô địch Anh, 6 Cúp C1. Khám phá lịch sử, sân vận động, huyền thoại, truyền thống và hơn thế nữa."
+    },
+    "hero": {
+      "est": "Thành lập 1892",
+      "trophies": "Danh hiệu lớn",
+      "foundingStory": "Liverpool FC ra đời từ một cuộc tranh chấp gay gắt. Năm 1892, Everton FC rời Anfield vì bất đồng về tiền thuê mặt bằng với chủ đất John Houlding. Bị bỏ lại với một sân vận động nhưng không có đội bóng, Houlding đã thành lập Câu lạc bộ Bóng đá Liverpool vào ngày 15 tháng 3 năm 1892. Câu lạc bộ được nhận vào Football League vào năm sau và giành chức vô địch quốc gia đầu tiên vào năm 1901. Những gì bắt đầu từ sự quyết tâm của một người đàn ông để lấp đầy một sân vận động trống đã phát triển thành một trong những câu lạc bộ bóng đá thành công và được yêu mến nhất thế giới."
+    },
+    "sections": {
+      "profile": "Hồ sơ CLB",
+      "facts": "Thông tin chính",
+      "culture": "Văn hóa",
+      "traditions": "Truyền thống",
+      "allTime": "Mọi thời đại",
+      "records": "Kỷ lục CLB",
+      "layout": "Sơ đồ sân",
+      "stands": "4 Khán đài",
+      "iconic": "Địa danh biểu tượng",
+      "anfield": "Quanh Anfield",
+      "glory": "Vinh quang",
+      "cabinet": "Phòng truyền thống",
+      "history": "Lịch sử",
+      "timeline": "Dòng thời gian",
+      "masterminds": "Bộ não chiến lược",
+      "managers": "Huấn luyện viên vĩ đại",
+      "immortals": "Những người bất tử",
+      "legends": "Huyền thoại"
+    },
+    "facts": {
+      "fullName": "Tên đầy đủ",
+      "founded": "Thành lập",
+      "founder": "Người sáng lập",
+      "nickname": "Biệt danh",
+      "captain": "Đội trưởng",
+      "manager": "HLV trưởng",
+      "owner": "Chủ sở hữu",
+      "chairman": "Chủ tịch",
+      "league": "Giải đấu",
+      "kitManufacturer": "Nhà tài trợ áo",
+      "website": "Website",
+      "colours": "Màu sắc",
+      "white": "Trắng"
+    },
+    "tradition": {
+      "listen": "Nghe"
+    },
+    "records": {
+      "topScorer": "Cầu thủ ghi bàn nhiều nhất",
+      "goalsCount": "{count} bàn thắng",
+      "appearances": "Ra sân nhiều nhất",
+      "appsCount": "{count} trận",
+      "signing": "Hợp đồng kỷ lục (Mùa)",
+      "sale": "Bán cầu thủ kỷ lục"
+    },
+    "legends": {
+      "appearances": "Ra sân",
+      "goals": "Bàn thắng"
+    },
+    "stadium": {
+      "fortress": "Pháo đài",
+      "capacity": "Sức chứa",
+      "opened": "Khánh thành",
+      "pitch": "Mặt sân",
+      "record": "Kỷ lục",
+      "seats": "Ghế"
+    },
+    "tabs": {
+      "overview": "Tổng quan",
+      "anfield": "Anfield",
+      "honours": "Vinh quang",
+      "timeline": "Dòng thời gian",
+      "legends": "Huyền thoại"
+    }
+  },
+  "About": {
+    "metadata": {
+      "title": "Giới thiệu | Liverpool FC Fan Site",
+      "description": "Tìm hiểu về dự án, tính năng, công nghệ và người đứng sau ứng dụng fan Liverpool FC này."
+    },
+    "label": "Giới thiệu",
+    "title": "Câu chuyện đằng sau",
+    "disclaimer": "Đây là một dự án <status>do fan thực hiện & không chính thức</status>. Không được xác nhận bởi hoặc liên kết với Liverpool Football Club, Fenway Sports Group, hoặc Premier League. Tất cả các nhãn hiệu thuộc về chủ sở hữu tương ứng.",
+    "whatIs": {
+      "title": "Trang web này là gì?",
+      "description": "Nền tảng fan Liverpool FC tất-cả-trong-một, tổng hợp dữ liệu bóng đá thời gian thực, tin tức đa ngôn ngữ và lịch sử câu lạc bộ — thiết kế cho The Reds toàn cầu.",
+      "featuresTitle": "Tính năng",
+      "features": {
+        "squad": "Đội hình đầy đủ với thống kê FPL — phong độ, giá, xG/xA, tỷ lệ chọn, cập nhật chấn thương",
+        "season": "Dashboard mùa giải với lịch thi đấu, BXH Ngoại hạng Anh & Champions League, biểu đồ ghi bàn & kiến tạo",
+        "fixtures": "Lịch thi đấu 4 giải — Ngoại hạng Anh, Champions League, FA Cup, EFL Cup",
+        "news": "Tin tức từ 10+ nguồn tiếng Anh & tiếng Việt, phân loại thông minh, đọc ngay trong app",
+        "history": "Di sản câu lạc bộ — sân Anfield, tủ danh hiệu, dòng thời gian lịch sử, huyền thoại & HLV",
+        "profile": "Tài khoản cá nhân với avatar, cầu thủ yêu thích và tùy chỉnh"
+      },
+      "dataTitle": "Nguồn dữ liệu",
+      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS từ BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, và các trang Việt Nam (Bóng Đá, 24h). Nội dung được xử lý với Mozilla Readability.",
+      "techTitle": "Công nghệ",
+      "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
+    },
+    "creator": {
+      "title": "Người sáng tạo",
+      "role": "Lập trình viên & fan trung thành",
+      "bio": "Một kỹ sư phần mềm theo nghề nghiệp, một fan Liverpool bằng trái tim. Xây dựng ứng dụng này như một người bạn đồng hành cá nhân và quyết định chia sẻ nó với cộng đồng LFC toàn cầu."
+    },
+    "contact": {
+      "title": "Liên hệ",
+      "description": "Phản hồi, báo lỗi, ý tưởng hợp tác, hay chỉ muốn chào — mình rất vui được nghe từ bạn.",
+      "email": "Email",
+      "github": "GitHub",
+      "githubUrl": "https://github.com/nguyendangdinh",
+      "phone": "Điện thoại"
+    },
+    "support": {
+      "title": "Hỗ trợ dự án",
+      "description": "Miễn phí mãi mãi. Một đóng góp nhỏ giúp trang trải chi phí API và máy chủ.",
+      "buyCoffee": "Mua cho tôi một ly cà phê",
+      "momoAlt": "QR MoMo - Nguyễn Đăng Định"
+    }
+  },
+  "Standings": {
+    "metadata": {
+      "title": "Bảng xếp hạng",
+      "description": "Bảng xếp hạng Ngoại hạng Anh mùa giải 2024/25."
+    },
+    "hero": {
+      "season": "Ngoại hạng Anh · 2024/25",
+      "title": "Bảng xếp hạng",
+      "lfcPosition": "Liverpool FC · Hạng {rank}",
+      "points": "{count} điểm",
+      "suffixes": {
+        "st": "",
+        "nd": "",
+        "rd": "",
+        "th": ""
+      }
+    },
+    "rank": "Hạng",
+    "club": "CLB",
+    "played": "Trận",
+    "win": "T",
+    "draw": "H",
+    "lose": "B",
+    "gf": "BT",
+    "ga": "SBT",
+    "gd": "HS",
+    "pts": "Điểm",
+    "form": "Phong độ",
+    "progressBar": {
+      "label": "Liverpool"
+    },
+    "zones": {
+      "cl": "Champions League",
+      "el": "Europa League",
+      "ecl": "Conference League",
+      "rel": "Xuống hạng",
+      "r16": "Vòng 1/8",
+      "playoff": "Vòng Play-off",
+      "elim": "Bị loại",
+      "win": "Thắng",
+      "draw": "Hòa",
+      "loss": "Thua"
+    }
+  },
+  "Fixtures": {
+    "metadata": {
+      "title": "Lịch thi đấu & Kết quả",
+      "description": "Lịch thi đấu và kết quả Liverpool FC mùa giải 2024/25."
+    },
+    "hero": {
+      "season": "Mùa giải 2024/25",
+      "title": "Lịch thi đấu & Kết quả",
+      "subtitle": "{count} trận đấu · Liverpool FC"
+    },
+    "timeline": {
+      "filter": {
+        "all": "Tất cả các giải"
+      },
+      "sections": {
+        "upcoming": "Sắp tới",
+        "results": "Kết quả"
+      },
+      "noFixtures": "Không tìm thấy trận đấu cho giải đấu này."
+    }
+  },
+  "Legal": {
+    "metadata": {
+      "title": "Pháp lý",
+      "description": "Thông tin pháp lý, chính sách bảo mật và điều khoản sử dụng."
+    },
+    "title": "Thông tin pháp lý",
+    "lastUpdated": "Cập nhật lần cuối: {date}",
+    "contact": "Nếu có câu hỏi hoặc thắc mắc, vui lòng liên hệ {email}",
+    "labels": {
+      "privacy": "Chính sách bảo mật",
+      "terms": "Điều khoản sử dụng",
+      "cookies": "Chính sách Cookie"
+    },
+    "sections": {
+      "privacy": {
+        "title": "Chính sách bảo mật",
+        "content": "Đây là trang web do người hâm mộ thực hiện và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba."
+      },
+      "terms": {
+        "title": "Điều khoản sử dụng",
+        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ API Fantasy Premier League và Football-Data.org. Nội dung tin tức được tổng hợp từ các nguồn tin của BBC Sport RSS. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
+      },
+      "cookies": {
+        "title": "Chính sách Cookie",
+        "content": "Trang web này sử dụng các cookie thiết yếu để xác thực và lưu tùy chọn giao diện. Không sử dụng cookie theo dõi hoặc quảng cáo. Bằng cách tiếp tục sử dụng trang web này, bạn đồng ý với việc sử dụng các cookie thiết yếu của chúng tôi."
+      },
+      "sources": {
+        "title": "Nguồn dữ liệu",
+        "content": "Dữ liệu trận đấu, lịch thi đấu và thống kê cầu thủ được cung cấp bởi API Fantasy Premier League (fantasy.premierleague.com). Bảng xếp hạng các giải đấu được cung cấp bởi Football-Data.org. Các bài báo tin tức được tổng hợp từ RSS feeds của BBC Sport. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên trang web dựa trên các bản ghi công khai có sẵn."
+      }
+    }
+  },
+  "Auth": {
+    "login": {
+      "title": "Chào mừng trở lại",
+      "subtitle": "Đăng nhập vào tài khoản của bạn",
+      "email": "Địa chỉ Email",
+      "password": "Mật khẩu",
+      "button": "Đăng nhập",
+      "loading": "Đang đăng nhập...",
+      "noAccount": "Chưa có tài khoản?",
+      "register": "Đăng ký tại đây",
+      "error": "Thông tin đăng nhập không hợp lệ",
+      "google": "Tiếp tục với Google",
+      "or": "hoặc"
+    },
+    "register": {
+      "title": "Gia nhập The Reds",
+      "subtitle": "Tạo tài khoản người hâm mộ",
+      "username": "Tên người dùng",
+      "email": "Địa chỉ Email",
+      "password": "Mật khẩu",
+      "button": "Tạo tài khoản",
+      "loading": "Đang tạo tài khoản...",
+      "hasAccount": "Đã có tài khoản?",
+      "login": "Đăng nhập tại đây",
+      "error": "Tạo tài khoản thất bại",
+      "confirm": "Xác nhận mật khẩu",
+      "confirmMismatch": "Mật khẩu không khớp",
+      "passwordShort": "Mật khẩu phải có ít nhất 6 ký tự"
+    }
+  },
+  "Profile": {
+    "title": "Cài đặt hồ sơ",
+    "username": "Biệt danh",
+    "username_placeholder": "Biệt danh của bạn",
+    "bio": "Tiểu sử",
+    "bio_placeholder": "Giới thiệu về bạn...",
+    "email": "Địa chỉ Email",
+    "update": "Lưu thay đổi",
+    "saving": "Đang lưu...",
+    "success": "Cập nhật hồ sơ thành công!",
+    "memberSince": "Thành viên từ {date}",
+    "signOut": "Đăng xuất",
+    "favouritePlayers": "Cầu thủ yêu thích",
+    "favouritePlayersEmpty": "Chưa có cầu thủ yêu thích. Hãy vào trang cầu thủ để thêm.",
+    "removeFav": "Bỏ",
+    "avatar": {
+      "title": "Ảnh đại diện",
+      "upload": "Tải lên",
+      "change": "Thay đổi",
+      "removing": "Đang xóa...",
+      "error": "Không thể tải ảnh lên",
+      "clickToChange": "Nhấn để đổi ảnh đại diện (tối đa 2MB)",
+      "uploading": "Đang tải lên..."
+    }
+  },
+  "Match": {
+    "live": "TRỰC TIẾP",
+    "win": "THẮNG",
+    "draw": "HÒA",
+    "loss": "THUA",
+    "home": "Sân nhà",
+    "away": "Sân khách",
+    "aet": "Sau hiệp phụ",
+    "pen": "Luân lưu",
+    "kickoff": "Giao bóng {time}",
+    "halftimeShort": "H1",
+    "locale_code": "vi-VN",
+    "countdown": {
+      "inMins": "sau {n} phút",
+      "inHours": "sau {n} giờ {m} phút",
+      "inDays": "sau {n} ngày {h} giờ",
+      "inMonths": "sau {n} tháng"
+    }
+  },
+  "Footer": {
+    "about": "Trang web dành cho người hâm mộ Liverpool FC. Đội hình, lịch thi đấu, bảng xếp hạng, số liệu và lịch sử — tất cả ở một nơi.",
+    "quickLinks": "Liên kết nhanh",
+    "legal": "Pháp lý",
+    "contact": "Liên hệ",
+    "rights": "Bảo lưu mọi quyền.",
+    "disclaimer": "Đây là trang web do người hâm mộ tạo ra và không liên kết với Liverpool FC.",
+    "legalLinks": {
+      "privacy": "Chính sách bảo mật",
+      "terms": "Điều khoản sử dụng",
+      "cookie": "Chính sách Cookie",
+      "about": "Giới thiệu"
+    }
+  },
+  "Language": {
+    "aria": {
+      "toggle": "Thay đổi ngôn ngữ"
+    }
+  },
+  "chat": {
+    "thinking": "Đang suy nghĩ...",
+    "searching": "Đang tìm kiếm trên web...",
+    "newChat": "Cuộc trò chuyện mới",
+    "subtitle": "Trợ lý AI",
+    "historyTitle": "Lịch sử trò chuyện",
+    "noConversations": "Chưa có cuộc trò chuyện nào. Bắt đầu trò chuyện mới!",
+    "deleteConfirmTitle": "Xóa cuộc trò chuyện?",
+    "deleteConfirmDescription": "Hành động này không thể hoàn tác. Tất cả tin nhắn trong cuộc trò chuyện này sẽ bị xóa vĩnh viễn.",
+    "conversationGroups": {
+      "older": "Cũ hơn"
+    },
+    "thread": {
+      "welcome": "LiverBird AI",
+      "welcomeSubtitle": "Trợ lý AI cho mọi thông tin về Liverpool FC",
+      "welcomeDescription": "Hỏi về kết quả trận đấu, thống kê cầu thủ, tin chuyển nhượng, lịch sử CLB, phân tích chiến thuật và tất cả về The Reds. AI tạo ra cho người hâm mộ Kop.",
+      "instruction": "Mình có thể giúp về lịch sử LFC, thống kê cầu thủ, thông tin trận đấu, tin chuyển nhượng và hơn thế nữa. YNWA!",
+      "scrollToBottom": "Cuộn xuống cuối",
+      "inputPlaceholder": "Hỏi về Liverpool FC...",
+      "sendMessage": "Gửi tin nhắn",
+      "generating": "Đang tạo...",
+      "error": "Đã xảy ra lỗi",
+      "copy": "Sao chép",
+      "exportMarkdown": "Xuất Markdown",
+      "refresh": "Tạo lại",
+      "edit": "Chỉnh sửa",
+      "cancel": "Hủy",
+      "update": "Cập nhật",
+      "previous": "Trước",
+      "next": "Sau",
+      "suggestions": {
+        "topScorer": {
+          "title": "Ai là chân sút",
+          "label": "vĩ đại nhất Liverpool?",
+          "prompt": "Ai là chân sút vĩ đại nhất mọi thời đại của Liverpool FC và họ ghi được bao nhiêu bàn?"
+        },
+        "istanbul": {
+          "title": "Kể về đêm",
+          "label": "kỳ diệu Istanbul",
+          "prompt": "Kể về trận chung kết Champions League 2005 tại Istanbul. Chuyện gì đã xảy ra?"
+        },
+        "salahLegends": {
+          "title": "So sánh Salah",
+          "label": "với các huyền thoại LFC",
+          "prompt": "Mohamed Salah so sánh thế nào với các huyền thoại Liverpool FC về số bàn thắng và thành tích?"
+        },
+        "trophies": {
+          "title": "Website này",
+          "label": "là gì?",
+          "prompt": "Website này là gì? Tôi có thể làm gì ở đây?"
+        }
+      }
+    }
+  },
+  "history": {
+    "dateRange": {
+      "today": "Hôm nay",
+      "yesterday": "Hôm qua",
+      "last7Days": "7 ngày qua"
+    }
+  },
+  "common": {
+    "delete": "Xóa",
+    "search": "Tìm kiếm...",
+    "cancel": "Hủy",
+    "noResults": "Không tìm thấy kết quả",
+    "loading": "Đang tải...",
+    "back": "Quay lại"
+  },
+  "errors": {
+    "notFound": "Không tìm thấy kết quả"
+  },
+  "nav": {
+    "history": "Lịch sử trò chuyện"
+  },
+  "auth": {
+    "pleaseLogin": "Vui lòng đăng nhập để tiếp tục"
+  }
+}

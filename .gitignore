@@ -41,6 +41,13 @@ supabase/.temp/
 # vercel
 .vercel
 
+# IDE / editor
+.vscode/
+.idea/
+
+# MCP config (contains local tool paths)
+.mcp.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

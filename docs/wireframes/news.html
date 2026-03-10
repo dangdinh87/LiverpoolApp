@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Liverpool FC — Latest News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --black: #0D0D0D; --surface: #1A1A1A; --surface2: #252525;
+    --red: #C8102E; --red-dark: #A00E24; --red-glow: rgba(200,16,46,0.25);
+    --gold: #F6EB61; --white: #fff; --muted: #A0A0A0; --border: #2A2A2A;
+    /* Source badge colors */
+    --bbc-orange: #FF671F; --sky-blue: #0072C9;
+    --the-athletic-navy: #1B3A6B; --guardian-teal: #00897B;
+    --mirror-red: #E40027;
+  }
+  body { background: var(--black); color: var(--white); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  /* ─── NAV ─────────────────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; width: 100%; z-index: 100;
+    background: rgba(26,26,26,0.96); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 64px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--white); }
+  .nav-logo svg { width: 36px; height: 36px; flex-shrink: 0; }
+  .nav-logo span { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.1em; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+    font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none; transition: color 0.2s;
+  }
+  .nav-links a.active { color: var(--white); border-bottom: 2px solid var(--red); padding-bottom: 2px; }
+  .nav-links a:hover { color: var(--white); }
+  .nav-cta {
+    background: var(--red); color: var(--white);
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 8px 20px; border: none; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .nav-cta:hover { background: var(--red-dark); }
+
+  /* ─── PAGE HEADER ──────────────────────────────────────────────────────── */
+  .page-header { padding: 96px 2rem 2.5rem; max-width: 1280px; margin: 0 auto; }
+  .breadcrumb {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 0.75rem;
+  }
+  .breadcrumb span { color: var(--red); }
+  .header-row { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; }
+  .page-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 6vw, 5rem); letter-spacing: 0.02em; line-height: 1; }
+
+  /* Source filter pills */
+  .source-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .source-filters-label {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);
+    margin-right: 0.25rem;
+  }
+  .source-pill {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 12px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--muted);
+    cursor: pointer; transition: all 0.15s; border-radius: 2px;
+  }
+  .source-pill:hover { color: var(--white); border-color: var(--muted); }
+  .source-pill.active-bbc { border-color: var(--bbc-orange); color: var(--bbc-orange); background: rgba(255,103,31,0.08); }
+  .source-pill.active-sky { border-color: var(--sky-blue); color: var(--sky-blue); background: rgba(0,114,201,0.08); }
+  .source-pill.active-all { border-color: var(--red); color: var(--red); background: rgba(200,16,46,0.08); }
+  .source-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  /* Category filter bar */
+  .category-bar {
+    background: var(--surface); border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border); padding: 0 2rem;
+  }
+  .category-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; gap: 0; }
+  .cat-tab {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 14px 20px; color: var(--muted); cursor: pointer;
+    border-bottom: 2px solid transparent; border: none; background: none;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .cat-tab:hover { color: var(--white); }
+  .cat-tab.active { color: var(--red); border-bottom: 2px solid var(--red); }
+
+  /* ─── MAIN CONTENT ─────────────────────────────────────────────────────── */
+  .main-content { max-width: 1280px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+
+  /* ─── FEATURED ARTICLE ────────────────────────────────────────────────── */
+  .featured-card {
+    position: relative; overflow: hidden; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 3px;
+    margin-bottom: 3rem;
+    transition: border-color 0.3s;
+  }
+  .featured-card:hover { border-color: var(--red); }
+  .featured-card:hover .featured-overlay { background: linear-gradient(to top, #0D0D0D 0%, rgba(13,13,13,0.85) 45%, rgba(13,13,13,0.2) 100%); }
+  .featured-img-placeholder {
+    width: 100%; height: 460px;
+    background:
+      linear-gradient(135deg, rgba(200,16,46,0.12) 0%, transparent 50%),
+      linear-gradient(to bottom, #1A1A1A 0%, #111 100%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  /* Subtle texture via SVG noise pattern */
+  .featured-img-placeholder::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    opacity: 0.6;
+  }
+  .featured-img-placeholder::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(200,16,46,0.08) 0%, transparent 60%);
+  }
+  /* Wireframe label */
+  .img-label {
+    position: relative; z-index: 1;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem;
+    letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.15);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .img-label::before, .img-label::after {
+    content: ''; display: block; width: 40px; height: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+  .featured-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, #0D0D0D 0%, rgba(13,13,13,0.8) 40%, rgba(13,13,13,0.15) 100%);
+    transition: background 0.3s;
+  }
+  .featured-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 2.5rem 2rem; z-index: 2;
+  }
+  .featured-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .featured-headline {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2;
+    margin-bottom: 0.75rem; color: var(--white);
+  }
+  .featured-excerpt {
+    font-size: 0.95rem; line-height: 1.6; color: rgba(255,255,255,0.72);
+    max-width: 680px; margin-bottom: 1.25rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .featured-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; }
+  .article-date { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .read-more {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--red); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: gap 0.2s;
+  }
+  .read-more:hover { gap: 9px; }
+  .read-more svg { width: 14px; height: 14px; }
+
+  /* ─── SOURCE BADGES ───────────────────────────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 2px;
+  }
+  .badge-bbc { background: rgba(255,103,31,0.15); color: var(--bbc-orange); border: 1px solid rgba(255,103,31,0.3); }
+  .badge-sky { background: rgba(0,114,201,0.15); color: #4BA8E8; border: 1px solid rgba(0,114,201,0.3); }
+  .badge-athletic { background: rgba(27,58,107,0.3); color: #7EADDD; border: 1px solid rgba(27,58,107,0.5); }
+  .badge-guardian { background: rgba(0,137,123,0.15); color: #4DB6AC; border: 1px solid rgba(0,137,123,0.3); }
+  .badge-mirror { background: rgba(228,0,39,0.12); color: #FF6B6B; border: 1px solid rgba(228,0,39,0.25); }
+
+  /* ─── CATEGORY TAGS ───────────────────────────────────────────────────── */
+  .cat-tag {
+    display: inline-block;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 1px;
+  }
+  .cat-transfer { background: rgba(246,235,97,0.12); color: var(--gold); border: 1px solid rgba(246,235,97,0.25); }
+  .cat-match-report { background: rgba(200,16,46,0.12); color: #F87171; border: 1px solid rgba(200,16,46,0.25); }
+  .cat-analysis { background: rgba(160,160,160,0.1); color: var(--muted); border: 1px solid rgba(160,160,160,0.2); }
+  .cat-interview { background: rgba(100,180,255,0.1); color: #93C5FD; border: 1px solid rgba(100,180,255,0.2); }
+  .cat-injury { background: rgba(251,191,36,0.1); color: #FCD34D; border: 1px solid rgba(251,191,36,0.2); }
+
+  /* ─── ARTICLE GRID ────────────────────────────────────────────────────── */
+  .section-divider {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .section-divider h2 {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem;
+    letter-spacing: 0.06em; color: var(--muted); white-space: nowrap;
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .article-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem; margin-bottom: 3.5rem;
+  }
+
+  .news-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 3px; overflow: hidden; cursor: pointer;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    display: flex; flex-direction: column;
+  }
+  .news-card:hover {
+    border-color: var(--red);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(200,16,46,0.15);
+  }
+
+  /* Card image placeholder */
+  .card-img {
+    width: 100%; height: 180px; position: relative; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .card-img-bg {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #1A1A1A 0%, #111 100%);
+  }
+  /* Subtle diagonal texture */
+  .card-img-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+  /* Colored accent per card — set via inline style */
+  .card-img-accent {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 60%;
+    pointer-events: none;
+  }
+  .card-img-label {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.65rem;
+    letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.12);
+  }
+
+  /* Card body */
+  .card-body { padding: 1rem 1.125rem 1.125rem; display: flex; flex-direction: column; flex: 1; }
+  .card-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 0.6rem; flex-wrap: wrap; }
+  .card-headline {
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 0.95rem; line-height: 1.35; color: var(--white);
+    margin-bottom: 0.5rem;
+    /* Clamp to 3 lines */
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .news-card:hover .card-headline { color: #fff; }
+  .card-excerpt {
+    font-size: 0.8rem; line-height: 1.55; color: var(--muted);
+    flex: 1; margin-bottom: 0.875rem;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 0.75rem; border-top: 1px solid var(--border);
+  }
+  .card-date {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.7rem;
+    letter-spacing: 0.08em; text-transform: uppercase; color: rgba(160,160,160,0.6);
+  }
+
+  /* ─── PAGINATION ──────────────────────────────────────────────────────── */
+  .pagination-wrapper { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 1rem 0 2rem; }
+  .page-btn {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.8rem; letter-spacing: 0.08em;
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; transition: all 0.15s; border-radius: 2px;
+  }
+  .page-btn:hover { border-color: var(--muted); color: var(--white); }
+  .page-btn.active { background: var(--red); border-color: var(--red); color: var(--white); }
+  .page-btn.ellipsis { background: none; border-color: transparent; cursor: default; }
+  .page-arrow {
+    display: flex; align-items: center; gap: 5px;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0 14px; height: 38px; background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; transition: all 0.15s; border-radius: 2px;
+  }
+  .page-arrow:hover { border-color: var(--red); color: var(--white); }
+  .page-arrow svg { width: 14px; height: 14px; }
+
+  /* ─── ANNOTATION LAYER ────────────────────────────────────────────────── */
+  .annotation-panel {
+    position: fixed; right: 20px; top: 80px;
+    width: 220px; background: rgba(26,26,26,0.97); backdrop-filter: blur(8px);
+    border: 1px solid rgba(200,16,46,0.3); border-radius: 4px;
+    padding: 14px; z-index: 50;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .annotation-panel h4 { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--red); margin-bottom: 10px; }
+  .annot-item { display: flex; gap: 8px; margin-bottom: 8px; }
+  .annot-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); flex-shrink: 0; margin-top: 3px; }
+  .annot-text { font-size: 0.7rem; line-height: 1.4; color: rgba(255,255,255,0.7); }
+
+  /* ─── WIREFRAME NOTICE ─────────────────────────────────────────────────── */
+  .wireframe-notice {
+    background: rgba(200,16,46,0.07); border: 1px dashed rgba(200,16,46,0.3);
+    padding: 10px 16px; margin: 0 2rem 0;
+    max-width: 1280px; margin: 0 auto 0;
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(200,16,46,0.7);
+  }
+  .wireframe-notice svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    .article-grid { grid-template-columns: repeat(2, 1fr); }
+    .annotation-panel { display: none; }
+  }
+  @media (max-width: 768px) {
+    .nav-links, .nav-cta { display: none; }
+    .article-grid { grid-template-columns: 1fr; }
+    .header-row { flex-direction: column; align-items: flex-start; }
+    .featured-content { padding: 1.5rem; }
+    .featured-headline { font-size: 1.3rem; }
+    .featured-img-placeholder { height: 280px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── NAVBAR ─────────────────────────────────────────────────────────────── -->
+<nav aria-label="Primary navigation">
+  <a class="nav-logo" href="#" aria-label="Liverpool FC Home">
+    <!-- LFC Crest (simplified SVG) -->
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="18" cy="18" r="17" fill="#C8102E" stroke="#2A2A2A" stroke-width="0.5"/>
+      <text x="18" y="23" text-anchor="middle" font-family="'Bebas Neue',sans-serif" font-size="13" fill="#fff" letter-spacing="0.5">LFC</text>
+      <path d="M9 26 Q18 30 27 26" stroke="#F6EB61" stroke-width="1" fill="none"/>
+    </svg>
+    <span>Liverpool FC</span>
+  </a>
+  <ul class="nav-links" role="list">
+    <li><a href="#">Home</a></li>
+    <li><a href="#" class="active">News</a></li>
+    <li><a href="#">Squad</a></li>
+    <li><a href="#">Fixtures</a></li>
+    <li><a href="#">Standings</a></li>
+  </ul>
+  <button class="nav-cta" type="button">Join The Kop</button>
+</nav>
+
+<!-- ─── WIREFRAME NOTICE ────────────────────────────────────────────────────── -->
+<div style="padding-top: 64px; max-width:1280px; margin: 0 auto; padding-left: 2rem; padding-right: 2rem;">
+  <div class="wireframe-notice" style="margin: 0; margin-top: 0;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>
+    </svg>
+    Wireframe — News Page · Dark Stadium Theme · Images are placeholders
+  </div>
+</div>
+
+<!-- ─── PAGE HEADER ───────────────────────────────────────────────────────── -->
+<header class="page-header">
+  <p class="breadcrumb">Home <span>/</span> News</p>
+  <div class="header-row">
+    <h1 class="page-title">Latest News</h1>
+    <!-- Source filter badges -->
+    <div class="source-filters" role="group" aria-label="Filter by source">
+      <span class="source-filters-label">Source:</span>
+      <button class="source-pill active-all" type="button" aria-pressed="true">
+        <span class="source-dot" style="background: var(--red);"></span> All
+      </button>
+      <button class="source-pill active-bbc" type="button" aria-pressed="false">
+        <span class="source-dot" style="background: var(--bbc-orange);"></span> BBC Sport
+      </button>
+      <button class="source-pill active-sky" type="button" aria-pressed="false">
+        <span class="source-dot" style="background: var(--sky-blue);"></span> Sky Sports
+      </button>
+      <button class="source-pill" type="button" aria-pressed="false">
+        <span class="source-dot" style="background: #7EADDD;"></span> The Athletic
+      </button>
+      <button class="source-pill" type="button" aria-pressed="false">
+        <span class="source-dot" style="background: #4DB6AC;"></span> Guardian
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ─── CATEGORY FILTER BAR ───────────────────────────────────────────────── -->
+<div class="category-bar" role="navigation" aria-label="News categories">
+  <div class="category-inner">
+    <button class="cat-tab active" type="button">All News</button>
+    <button class="cat-tab" type="button">Match Reports</button>
+    <button class="cat-tab" type="button">Transfers</button>
+    <button class="cat-tab" type="button">Analysis</button>
+    <button class="cat-tab" type="button">Interviews</button>
+    <button class="cat-tab" type="button">Injuries</button>
+  </div>
+</div>
+
+<!-- ─── MAIN CONTENT ──────────────────────────────────────────────────────── -->
+<main id="main" class="main-content">
+
+  <!-- ─── FEATURED ARTICLE ─────────────────────────────────────────────── -->
+  <article class="featured-card" tabindex="0" aria-label="Featured article">
+
+    <!-- Image placeholder -->
+    <div class="featured-img-placeholder" role="img" aria-label="Featured article image placeholder">
+      <span class="img-label">Featured Image · 1280 × 460</span>
+    </div>
+
+    <!-- Dark overlay -->
+    <div class="featured-overlay" aria-hidden="true"></div>
+
+    <!-- Content over image -->
+    <div class="featured-content">
+      <div class="featured-meta">
+        <span class="badge badge-bbc" aria-label="Source: BBC Sport">
+          <!-- BBC icon approximation -->
+          <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><rect width="8" height="8" rx="1"/></svg>
+          BBC Sport
+        </span>
+        <span class="cat-tag cat-match-report">Match Report</span>
+      </div>
+
+      <h2 class="featured-headline">
+        Salah Scores Hat-Trick in Anfield Thriller as Liverpool Demolish Arsenal 4–1
+      </h2>
+
+      <p class="featured-excerpt">
+        Mohamed Salah was unstoppable on a magical night at Anfield, netting a perfect hat-trick
+        as Arne Slot's side produced one of the most complete performances of the season to
+        dismantle title rivals Arsenal and extend their lead at the top of the Premier League.
+      </p>
+
+      <div class="featured-footer">
+        <time class="article-date" datetime="2026-03-01">1 March 2026 · 22:47</time>
+        <a class="read-more" href="#" aria-label="Read full article about Salah hat-trick">
+          Read Full Report
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </article>
+
+  <!-- ─── ARTICLE GRID ──────────────────────────────────────────────────── -->
+  <div class="section-divider" aria-hidden="true">
+    <h2>Latest Stories</h2>
+  </div>
+
+  <div class="article-grid" role="list">
+
+    <!-- Card 1 — Transfer / Sky Sports -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(0,114,201,0.1) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-sky">Sky Sports</span>
+          <span class="cat-tag cat-transfer">Transfer</span>
+        </div>
+        <h3 class="card-headline">Liverpool Set to Secure Bundesliga Starlet in £55m Summer Deal</h3>
+        <p class="card-excerpt">The Reds have reportedly agreed personal terms with the 21-year-old midfielder ahead of a formal bid to his club next month.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-03-02">2 Mar 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about Liverpool transfer news">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 2 — Analysis / The Athletic -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(27,58,107,0.12) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-athletic">The Athletic</span>
+          <span class="cat-tag cat-analysis">Analysis</span>
+        </div>
+        <h3 class="card-headline">Slot's High Press: How Liverpool Have Dominated the Midfield Battle This Season</h3>
+        <p class="card-excerpt">A deep tactical breakdown of how Arne Slot has retooled Liverpool's pressing structure to suffocate opponents in central areas.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-03-02">2 Mar 2026</time>
+          <a class="read-more" href="#" aria-label="Read more tactical analysis">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 3 — Match Report / BBC Sport -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(255,103,31,0.08) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-bbc">BBC Sport</span>
+          <span class="cat-tag cat-match-report">Match Report</span>
+        </div>
+        <h3 class="card-headline">Slot Praises Resilience After Gritty Away Win at Villa Park</h3>
+        <p class="card-excerpt">Liverpool dug deep to claim three crucial points with a late Diaz winner, keeping pace at the Premier League summit despite a nervy second half.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-03-01">1 Mar 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about Aston Villa match">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 4 — Transfer / Sky Sports -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(0,114,201,0.1) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-sky">Sky Sports</span>
+          <span class="cat-tag cat-transfer">Transfer</span>
+        </div>
+        <h3 class="card-headline">Nunez Future Uncertain as Real Madrid Circle with £90m Offer</h3>
+        <p class="card-excerpt">Liverpool face a significant decision over Darwin Nunez with the La Liga giants reportedly ready to test the Reds' resolve this summer.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-28">28 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about Darwin Nunez transfer rumours">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 5 — Analysis / Guardian -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(0,137,123,0.1) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-guardian">Guardian</span>
+          <span class="cat-tag cat-analysis">Analysis</span>
+        </div>
+        <h3 class="card-headline">Why Liverpool's Academy Pipeline Could Define the Club's Next Decade</h3>
+        <p class="card-excerpt">With three Academy graduates starting at Anfield this season, the long-term investment in youth development is finally paying dividends.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-27">27 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more Liverpool academy analysis">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 6 — Match Report / Mirror -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(228,0,39,0.08) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-mirror">Mirror</span>
+          <span class="cat-tag cat-match-report">Match Report</span>
+        </div>
+        <h3 class="card-headline">Mac Allister Masterclass Steers Liverpool Past PSG in Champions League Last 16</h3>
+        <p class="card-excerpt">A commanding midfield display from Alexis Mac Allister pulled the strings as the Reds delivered a statement European result at the Parc des Princes.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-26">26 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about Champions League win vs PSG">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 7 — Transfer / BBC Sport -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(255,103,31,0.08) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-bbc">BBC Sport</span>
+          <span class="cat-tag cat-transfer">Transfer</span>
+        </div>
+        <h3 class="card-headline">Liverpool Renew Contract Talks with Trent Alexander-Arnold</h3>
+        <p class="card-excerpt">FSG have opened fresh negotiations over a new long-term deal for the homegrown right-back amid continued interest from European heavyweights.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-25">25 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about Trent contract talks">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 8 — Analysis / The Athletic -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(27,58,107,0.12) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-athletic">The Athletic</span>
+          <span class="cat-tag cat-analysis">Analysis</span>
+        </div>
+        <h3 class="card-headline">Set-Piece Secrets: The Data Behind Liverpool's Deadly Dead-Ball Routine</h3>
+        <p class="card-excerpt">Liverpool lead Europe's top five leagues for set-piece goals this season. We break down the elaborate movement patterns making them so difficult to defend.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-24">24 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more Liverpool set-piece analysis">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 9 — Match Report / Sky Sports -->
+    <article class="news-card" tabindex="0" role="listitem">
+      <div class="card-img">
+        <div class="card-img-bg"></div>
+        <div class="card-img-accent" style="background: linear-gradient(to top, rgba(0,114,201,0.1) 0%, transparent 100%);" aria-hidden="true"></div>
+        <span class="card-img-label">Image · 420 × 180</span>
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-sky">Sky Sports</span>
+          <span class="cat-tag cat-match-report">Match Report</span>
+        </div>
+        <h3 class="card-headline">Gakpo Doubles Down as Liverpool Ease Past Wolves in League Cup Final</h3>
+        <p class="card-excerpt">Cody Gakpo bagged a brace at Wembley as Liverpool lifted the Carabao Cup for the tenth time, with Slot becoming the fastest Reds manager to win silverware.</p>
+        <div class="card-footer">
+          <time class="card-date" datetime="2026-02-23">23 Feb 2026</time>
+          <a class="read-more" href="#" aria-label="Read more about League Cup Final win">
+            Read more
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </article>
+
+  </div><!-- /.article-grid -->
+
+  <!-- ─── PAGINATION ───────────────────────────────────────────────────── -->
+  <nav class="pagination-wrapper" aria-label="News pagination">
+    <button class="page-arrow" type="button" aria-label="Previous page" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+      </svg>
+      Prev
+    </button>
+    <button class="page-btn active" type="button" aria-current="page" aria-label="Page 1">1</button>
+    <button class="page-btn" type="button" aria-label="Page 2">2</button>
+    <button class="page-btn" type="button" aria-label="Page 3">3</button>
+    <button class="page-btn ellipsis" type="button" aria-hidden="true">...</button>
+    <button class="page-btn" type="button" aria-label="Page 8">8</button>
+    <button class="page-arrow" type="button" aria-label="Next page">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+      </svg>
+    </button>
+  </nav>
+
+</main>
+
+<!-- ─── ANNOTATION PANEL ──────────────────────────────────────────────────── -->
+<aside class="annotation-panel" aria-label="Design annotations">
+  <h4>Design Notes</h4>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Featured card: full-width, 460px height, gradient overlay covers bottom 55%</p>
+  </div>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Source badges: color-coded per outlet — BBC=orange, Sky=blue, Athletic=navy, Guardian=teal, Mirror=red</p>
+  </div>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Card headlines clamped to 3 lines; excerpts clamped to 2 lines</p>
+  </div>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Grid: 3-col desktop → 2-col tablet → 1-col mobile</p>
+  </div>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Card hover: lift 3px + red border + subtle shadow</p>
+  </div>
+  <div class="annot-item">
+    <div class="annot-dot"></div>
+    <p class="annot-text">Pagination: active page uses lfc-red fill</p>
+  </div>
+</aside>
+
+</body>
+</html>

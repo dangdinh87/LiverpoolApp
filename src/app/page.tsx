@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
 import { getFixtures, getStandings, getGameweekInfo } from "@/lib/football";
-import { getNews } from "@/lib/rss-parser";
+import { getNewsFromDB } from "@/lib/news";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
 import { NewsSection } from "@/components/home/news-section";
@@ -16,31 +17,34 @@ export const metadata: Metadata = {
 export const revalidate = 1800; // 30min
 
 export default async function HomePage() {
-  const [fixtures, standings, news, gameweek] = await Promise.all([
+  const [fixtures, standings, allNews, gameweek, locale] = await Promise.all([
     getFixtures(),
     getStandings(),
-    getNews(6),
+    getNewsFromDB(20),
     getGameweekInfo(),
+    getLocale(),
   ]);
 
-  // First upcoming match
+  // Show locale-matching articles on home, fallback to all if too few
+  const userLang = locale === "vi" ? "vi" : "en";
+  const localNews = allNews.filter((a) => a.language === userLang);
+  const news = localNews.length >= 3 ? localNews.slice(0, 6) : allNews.slice(0, 6);
+
+  // Earliest upcoming match (sorted by date)
   const nextMatch: Fixture | null =
-    fixtures.find((f) => f.fixture.status.short === "NS") ?? null;
+    [...fixtures]
+      .filter((f) => f.fixture.status.short === "NS")
+      .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
 
   return (
     <>
-      {/* Section 1: Hero — full viewport */}
       <Hero />
-
-      {/* Section 2: Overview */}
-      <div className="min-h-screen flex items-center snap-start">
+      <section className="py-10">
         <BentoGrid nextMatch={nextMatch} standings={standings} gameweek={gameweek} />
-      </div>
-
-      {/* Section 3: News */}
-      <div className="min-h-screen flex items-start pt-20 snap-start">
+      </section>
+      <section className="py-10 pb-16">
         <NewsSection articles={news} />
-      </div>
+      </section>
     </>
   );
 }
