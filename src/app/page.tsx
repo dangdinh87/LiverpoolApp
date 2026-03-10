@@ -17,13 +17,23 @@ export const metadata: Metadata = {
 export const revalidate = 1800; // 30min
 
 export default async function HomePage() {
-  const [fixtures, standings, allNews, gameweek, locale] = await Promise.all([
-    getFixtures(),
-    getStandings(),
-    getNewsFromDB(20),
-    getGameweekInfo(),
-    getLocale(),
-  ]);
+  let fixtures: Fixture[] = [];
+  let standings: Awaited<ReturnType<typeof getStandings>> = [];
+  let allNews: Awaited<ReturnType<typeof getNewsFromDB>> = [];
+  let gameweek: Awaited<ReturnType<typeof getGameweekInfo>> = null;
+  let locale = "en";
+
+  try {
+    [fixtures, standings, allNews, gameweek, locale] = await Promise.all([
+      getFixtures(),
+      getStandings(),
+      getNewsFromDB(20),
+      getGameweekInfo(),
+      getLocale(),
+    ]);
+  } catch (err) {
+    console.error("[homepage] Data fetch error:", err);
+  }
 
   // Show locale-matching articles on home, fallback to all if too few
   const userLang = locale === "vi" ? "vi" : "en";
