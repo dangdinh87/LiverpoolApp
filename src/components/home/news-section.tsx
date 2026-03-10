@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Newspaper, Clock } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
@@ -33,16 +33,24 @@ function Badge({ source }: { source: NewsSource }) {
 
 export function NewsSection({ articles }: NewsSectionProps) {
   const t = useTranslations("News");
+  const locale = useLocale();
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setReadSet(getReadArticles());
   }, []);
 
-  if (articles.length === 0) return null;
+  // Filter by user locale on the client (avoids cookies() on server → enables ISR)
+  const filtered = useMemo(() => {
+    const lang = locale === "vi" ? "vi" : "en";
+    const localNews = articles.filter((a) => a.language === lang);
+    return localNews.length >= 3 ? localNews.slice(0, 6) : articles.slice(0, 6);
+  }, [articles, locale]);
 
-  const featured = articles[0];
-  const rest = articles.slice(1, 6);
+  if (filtered.length === 0) return null;
+
+  const featured = filtered[0];
+  const rest = filtered.slice(1, 6);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
