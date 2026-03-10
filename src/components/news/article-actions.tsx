@@ -2,28 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { Heart, Bookmark, Share2, ExternalLink, Check } from "lucide-react";
-import { getSavedArticles, toggleSave } from "@/lib/news/read-history";
+import { useTranslations } from "next-intl";
+import { toggleSavedArticle } from "@/app/actions/profile";
+import {
+  getSavedArticles as getLocalSaved,
+  toggleSave as toggleLocalSave,
+} from "@/lib/news/read-history";
 
 interface ArticleActionsProps {
   articleUrl: string;
   articleTitle: string;
   articleSlugUrl: string;
+  /** Optional metadata for DB save */
+  articleMeta?: {
+    snippet?: string;
+    thumbnail?: string;
+    source?: string;
+    language?: string;
+    publishedAt?: string;
+  };
 }
 
 export function ArticleActions({
   articleUrl,
   articleTitle,
   articleSlugUrl,
+  articleMeta,
 }: ArticleActionsProps) {
+  const t = useTranslations("Profile");
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [shared, setShared] = useState(false);
 
-  // Fetch like state from DB
+  // Fetch like state from DB + saved state from localStorage
   useEffect(() => {
-    setSaved(getSavedArticles().has(articleUrl));
+    setSaved(getLocalSaved().has(articleUrl));
 
     fetch(`/api/news/like?url=${encodeURIComponent(articleUrl)}`)
       .then((r) => r.json())
@@ -32,13 +48,20 @@ export function ArticleActions({
         setLiked(data.userLiked);
       })
       .catch(() => {});
+
+    // Check DB saved state
+    fetch(`/api/saved-articles/check?url=${encodeURIComponent(articleUrl)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.saved) setSaved(true);
+      })
+      .catch(() => {});
   }, [articleUrl]);
 
   async function handleLike() {
     if (likeLoading) return;
     setLikeLoading(true);
 
-    // Optimistic update
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikeCount((prev) => prev + (wasLiked ? -1 : 1));
@@ -51,7 +74,6 @@ export function ArticleActions({
       });
 
       if (res.status === 401) {
-        // Not logged in — revert
         setLiked(wasLiked);
         setLikeCount((prev) => prev + (wasLiked ? 1 : -1));
       } else if (res.ok) {
@@ -60,7 +82,6 @@ export function ArticleActions({
         setLiked(data.userLiked);
       }
     } catch {
-      // Revert on error
       setLiked(wasLiked);
       setLikeCount((prev) => prev + (wasLiked ? 1 : -1));
     } finally {
@@ -68,9 +89,39 @@ export function ArticleActions({
     }
   }
 
-  function handleSave() {
-    const result = toggleSave(articleUrl);
-    setSaved(result);
+  async function handleSave() {
+    if (saveLoading) return;
+    setSaveLoading(true);
+
+    const wasSaved = saved;
+    setSaved(!wasSaved);
+
+    // Always keep localStorage in sync
+    toggleLocalSave(articleUrl);
+
+    try {
+      const result = await toggleSavedArticle({
+        url: articleUrl,
+        title: articleTitle,
+        snippet: articleMeta?.snippet,
+        thumbnail: articleMeta?.thumbnail,
+        source: articleMeta?.source,
+        language: articleMeta?.language,
+        publishedAt: articleMeta?.publishedAt,
+      });
+
+      if (result.error) {
+        // If not authenticated, localStorage save is enough
+        if (result.error === "Not authenticated") return;
+        // Revert on real error
+        setSaved(wasSaved);
+        toggleLocalSave(articleUrl);
+      }
+    } catch {
+      // Keep localStorage state, don't revert
+    } finally {
+      setSaveLoading(false);
+    }
   }
 
   async function handleShare() {
@@ -106,8 +157,9 @@ export function ArticleActions({
         {/* Save */}
         <button
           onClick={handleSave}
+          disabled={saveLoading}
           className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={saved ? "Unsave" : "Save"}
+          aria-label={saved ? t("unsave") : "Save"}
         >
           <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${saved ? "bg-amber-500/20" : "hover:bg-white/10"}`}>
             <Bookmark

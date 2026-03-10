@@ -48,20 +48,17 @@ export default async function NewsPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 pt-10 w-full">
-          <p className="font-barlow text-lfc-red uppercase tracking-widest text-xs font-semibold mb-1">
-            {t("tagline")}
-          </p>
           <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-wider leading-none mb-2">
             {t("title")}
           </h1>
-          <p className="font-inter text-stadium-muted text-sm max-w-lg">
+          <p className="font-inter text-stadium-muted text-sm max-w-2xl">
             {t("heroDesc")}
           </p>
         </div>
       </div>
 
       {/* News Feed */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
         <NewsFeed
           localArticles={localArticles}
           globalArticles={globalArticles}

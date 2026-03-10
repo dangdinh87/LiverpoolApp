@@ -43,9 +43,6 @@ export function LegendCard({ legend }: LegendCardProps) {
 
       {/* Profile Header */}
       <div className="relative p-6 pb-2 border-b border-stadium-border/30">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-stadium-surface to-stadium-surface2 border border-stadium-border/50 flex items-center justify-center mb-4 transition-all duration-500 group-hover:border-lfc-red/50 group-hover:shadow-[0_0_15px_rgba(200,16,46,0.1)]">
-          <span className="font-bebas text-2xl text-lfc-red">{getInitials(legend.name)}</span>
-        </div>
         <h3 className="font-bebas text-3xl text-white tracking-widest leading-none mb-1 group-hover:text-lfc-red transition-colors duration-500">
           {legend.name}
         </h3>
@@ -79,7 +76,7 @@ export function LegendCard({ legend }: LegendCardProps) {
           </div>
         )}
 
-        <p className="font-inter text-xs text-stadium-muted leading-relaxed opacity-80 line-clamp-4 group-hover:opacity-100 transition-opacity duration-500 border-l border-white/5 pl-4">
+        <p className="font-inter text-xs text-stadium-muted leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity duration-500 border-l border-white/5 pl-4">
           {legend.bio}
         </p>
       </div>

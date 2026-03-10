@@ -326,16 +326,8 @@ export default async function HistoryPage({
           {clubInfo.managers.map((mgr) => (
             <div
               key={mgr.name}
-              className="bg-stadium-surface border border-stadium-border p-6 flex items-center gap-6 hover:border-lfc-red/30 transition-all group"
+              className="bg-stadium-surface border border-stadium-border p-6 hover:border-lfc-red/30 transition-all group"
             >
-              <div className="w-16 h-16 rounded-full bg-stadium-surface2 flex items-center justify-center shrink-0 border border-stadium-border group-hover:border-lfc-red/50 transition-colors">
-                <span className="font-bebas text-lfc-red text-2xl">
-                  {mgr.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </span>
-              </div>
               <div>
                 <p className="font-bebas text-2xl text-white tracking-wider mb-1">
                   {mgr.name}

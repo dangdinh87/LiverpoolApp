@@ -58,10 +58,10 @@ const LANG_OPTIONS: { value: FeedFilter; icon: LucideIcon; labelKey: string }[] 
 
 const CATEGORY_OPTIONS: { value: CategoryFilter; icon: LucideIcon; labelKey: string }[] = [
   { value: "all", icon: Layers, labelKey: "catAll" },
-  { value: "match-report", icon: Target, labelKey: "catMatch" },
-  { value: "transfer", icon: CircleDollarSign, labelKey: "catTransfer" },
-  { value: "injury", icon: HeartPulse, labelKey: "catInjury" },
   { value: "team-news", icon: Users, labelKey: "catTeamNews" },
+  { value: "transfer", icon: CircleDollarSign, labelKey: "catTransfer" },
+  { value: "match-report", icon: Target, labelKey: "catMatch" },
+  { value: "injury", icon: HeartPulse, labelKey: "catInjury" },
   { value: "analysis", icon: BarChart3, labelKey: "catAnalysis" },
   { value: "opinion", icon: MessageSquareQuote, labelKey: "catOpinion" },
 ];
@@ -78,13 +78,24 @@ function Badge({ source }: { source: NewsSource }) {
   );
 }
 
+const CATEGORY_LABEL_KEY: Record<string, string> = {
+  "match-report": "catMatch",
+  transfer: "catTransfer",
+  injury: "catInjury",
+  "team-news": "catTeamNews",
+  analysis: "catAnalysis",
+  opinion: "catOpinion",
+};
+
 function CategoryBadge({ category }: { category?: ArticleCategory }) {
+  const t = useTranslations("News.feed");
   if (!category || category === "general") return null;
   const cfg = CATEGORY_CONFIG[category];
   if (!cfg) return null;
+  const labelKey = CATEGORY_LABEL_KEY[category];
   return (
     <span className={`font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 ${cfg.color}`}>
-      {cfg.label}
+      {labelKey ? t(labelKey) : cfg.label}
     </span>
   );
 }
@@ -124,10 +135,12 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Badge source={article.source} />
           <CategoryBadge category={article.category} />
-          <span className="font-inter text-xs text-white/50 flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {formatRelativeDate(article.pubDate, article.language)}
-          </span>
+          {formatRelativeDate(article.pubDate, article.language) && (
+            <span className="font-inter text-xs text-white/50 flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {formatRelativeDate(article.pubDate, article.language)}
+            </span>
+          )}
         </div>
         <h2 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug line-clamp-2">
           {article.title}
@@ -175,9 +188,11 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         <h3 className="font-inter text-sm font-semibold text-white leading-snug line-clamp-3 min-h-[3.6em]">
           {article.title}
         </h3>
-        <span className="font-inter text-[11px] text-stadium-muted mt-2 block">
-          {formatRelativeDate(article.pubDate, article.language)}
-        </span>
+        {formatRelativeDate(article.pubDate, article.language) && (
+          <span className="font-inter text-[11px] text-stadium-muted mt-2 block">
+            {formatRelativeDate(article.pubDate, article.language)}
+          </span>
+        )}
       </div>
     </Link>
   );
@@ -225,9 +240,11 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
         <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2">
           {article.title}
         </p>
-        <span className="font-inter text-[11px] text-stadium-muted">
-          {formatRelativeDate(article.pubDate, article.language)}
-        </span>
+        {formatRelativeDate(article.pubDate, article.language) && (
+          <span className="font-inter text-[11px] text-stadium-muted">
+            {formatRelativeDate(article.pubDate, article.language)}
+          </span>
+        )}
       </div>
     </Link>
   );

@@ -50,7 +50,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
   if (filtered.length === 0) return null;
 
   const featured = filtered[0];
-  const rest = filtered.slice(1, 6);
+  const rest = filtered.slice(1, 5);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 w-full">
@@ -90,7 +90,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
         >
           <Link
             href={getArticleUrl(featured.link)}
-            className={`group block relative overflow-hidden rounded-xl cursor-pointer ${readSet.has(featured.link) ? "opacity-70" : ""}`}
+            className={`group block relative overflow-hidden cursor-pointer ${readSet.has(featured.link) ? "opacity-70" : ""}`}
           >
             <div className="relative aspect-16/10 w-full">
               {featured.thumbnail ? (
@@ -113,10 +113,12 @@ export function NewsSection({ articles }: NewsSectionProps) {
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Badge source={featured.source} />
-                <span className="font-inter text-xs text-white/50 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {formatRelativeDate(featured.pubDate, featured.language)}
-                </span>
+                {formatRelativeDate(featured.pubDate, featured.language) && (
+                  <span className="font-inter text-xs text-white/50 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {formatRelativeDate(featured.pubDate, featured.language)}
+                  </span>
+                )}
               </div>
               <h3 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug group-hover:text-lfc-gold transition-colors line-clamp-2">
                 {featured.title}
@@ -142,10 +144,10 @@ export function NewsSection({ articles }: NewsSectionProps) {
             >
               <Link
                 href={getArticleUrl(article.link)}
-                className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 rounded-2xl overflow-hidden hover:border-lfc-red/30 transition-all duration-300 ${readSet.has(article.link) ? "opacity-60" : ""}`}
+                className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden hover:border-lfc-red/30 transition-all duration-300 ${readSet.has(article.link) ? "opacity-60" : ""}`}
               >
                 {/* Thumbnail */}
-                <div className="relative w-24 h-20 shrink-0 rounded-lg overflow-hidden">
+                <div className="relative w-24 h-20 shrink-0 overflow-hidden">
                   {article.thumbnail ? (
                     <Image
                       src={article.thumbnail}
@@ -170,9 +172,11 @@ export function NewsSection({ articles }: NewsSectionProps) {
                   <p className="font-inter text-sm text-white font-medium leading-snug group-hover:text-lfc-red transition-colors line-clamp-2">
                     {article.title}
                   </p>
-                  <span className="font-inter text-[11px] text-stadium-muted">
-                    {formatRelativeDate(article.pubDate, article.language)}
-                  </span>
+                  {formatRelativeDate(article.pubDate, article.language) && (
+                    <span className="font-inter text-[11px] text-stadium-muted">
+                      {formatRelativeDate(article.pubDate, article.language)}
+                    </span>
+                  )}
                 </div>
               </Link>
             </motion.div>

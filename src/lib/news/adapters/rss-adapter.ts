@@ -82,7 +82,7 @@ export class RssAdapter implements FeedAdapter {
       return items.map((item) => ({
         title: item.title ?? "Untitled",
         link: sanitizeUrl(item.link) ?? "#",
-        pubDate: item.pubDate ?? new Date().toISOString(),
+        pubDate: item.pubDate ?? "",
         contentSnippet: item.contentSnippet ?? item.content ?? "",
         thumbnail: sanitizeUrl(
           extractImageFromItem(item as unknown as Record<string, unknown>)

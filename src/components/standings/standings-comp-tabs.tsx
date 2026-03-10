@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { StandingsTable } from "./standings-table";
 import type { Standing } from "@/lib/types/football";
@@ -15,7 +14,6 @@ export function StandingsCompTabs({
   plStandings,
   uclStandings,
 }: StandingsCompTabsProps) {
-  const t = useTranslations("Standings.comp");
   const [comp, setComp] = useState<"pl" | "ucl">("pl");
 
   return (
@@ -30,7 +28,7 @@ export function StandingsCompTabs({
               : "bg-stadium-surface text-stadium-muted border-stadium-border hover:border-white/30 hover:text-white"
           )}
         >
-          {t("pl")}
+          Premier League
         </button>
         {uclStandings.length > 0 && (
           <button
@@ -42,7 +40,7 @@ export function StandingsCompTabs({
                 : "bg-stadium-surface text-stadium-muted border-stadium-border hover:border-white/30 hover:text-white"
             )}
           >
-            {t("ucl")}
+            Champions League
           </button>
         )}
       </div>

@@ -1,6 +1,21 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Coffee, Heart, Users, Calendar, Newspaper, Trophy, UserCircle, Mail, Github, Phone } from "lucide-react";
+import {
+  Coffee,
+  Heart,
+  Users,
+  Calendar,
+  Newspaper,
+  Trophy,
+  UserCircle,
+  Mail,
+  Github,
+  Phone,
+  Zap,
+  Globe,
+  Bot,
+  Shield,
+} from "lucide-react";
 import { MomoModal } from "./momo-modal";
 import { makePageMeta } from "@/lib/seo";
 
@@ -14,28 +29,42 @@ export async function generateMetadata(): Promise<Metadata> {
 const FEATURE_ICONS: Record<string, React.ReactNode> = {
   squad: <Users size={18} className="text-lfc-red" />,
   season: <Calendar size={18} className="text-lfc-red" />,
-  fixtures: <Calendar size={18} className="text-lfc-red" />,
+  fixtures: <Zap size={18} className="text-lfc-red" />,
   news: <Newspaper size={18} className="text-lfc-red" />,
   history: <Trophy size={18} className="text-lfc-red" />,
   profile: <UserCircle size={18} className="text-lfc-red" />,
+  ai: <Bot size={18} className="text-lfc-red" />,
+  i18n: <Globe size={18} className="text-lfc-red" />,
 };
 
-const FEATURE_KEYS = ["squad", "season", "fixtures", "news", "history", "profile"] as const;
+const FEATURE_KEYS = [
+  "squad",
+  "season",
+  "fixtures",
+  "news",
+  "history",
+  "profile",
+  "ai",
+  "i18n",
+] as const;
 
 export default async function AboutPage() {
   const t = await getTranslations("About");
 
   return (
     <main className="min-h-screen bg-stadium-bg text-white pt-24 pb-32">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         {/* ── Header ── */}
         <div>
           <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-xs font-bold mb-2">
             {t("label")}
           </p>
-          <h1 className="font-bebas text-6xl md:text-7xl text-white tracking-wider leading-none">
+          <h1 className="font-bebas text-6xl md:text-7xl text-white tracking-wider leading-none mb-4">
             {t("title")}
           </h1>
+          <p className="font-inter text-stadium-muted text-base leading-relaxed max-w-2xl">
+            {t("whatIs.description")}
+          </p>
         </div>
 
         {/* ── Disclaimer ── */}
@@ -43,42 +72,66 @@ export default async function AboutPage() {
           <Heart size={20} className="text-lfc-red shrink-0 mt-0.5" />
           <p className="font-inter text-stadium-muted text-sm leading-relaxed">
             {t.rich("disclaimer", {
-              status: (chunks) => <strong className="text-white">{chunks}</strong>
+              status: (chunks) => (
+                <strong className="text-white">{chunks}</strong>
+              ),
             })}
           </p>
         </div>
 
-        {/* ── What is this site ── */}
-        <section className="space-y-8">
-          <div className="space-y-4">
-            <h2 className="font-bebas text-3xl text-white tracking-wider">{t("whatIs.title")}</h2>
-            <p className="font-inter text-stadium-muted text-[15px] leading-relaxed">
-              {t("whatIs.description")}
+        {/* ── Features grid ── */}
+        <section className="space-y-6">
+          <div>
+            <h2 className="font-bebas text-3xl text-white tracking-wider">
+              {t("whatIs.title")}
+            </h2>
+            <p className="font-barlow text-lfc-red uppercase tracking-[0.2em] text-xs font-bold mt-1">
+              {t("whatIs.featuresTitle")}
             </p>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {FEATURE_KEYS.map((key) => (
+              <div
+                key={key}
+                className="flex items-start gap-3 bg-stadium-surface/50 border border-stadium-border/50 p-4 hover:border-lfc-red/30 transition-colors"
+              >
+                <span className="shrink-0 mt-0.5">{FEATURE_ICONS[key]}</span>
+                <p className="font-inter text-stadium-muted text-sm leading-relaxed">
+                  {t(`whatIs.features.${key}`)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-          {/* Features grid */}
-          <div>
-            <h3 className="font-barlow text-lfc-red uppercase tracking-[0.2em] text-xs font-bold mb-4">
-              {t("whatIs.featuresTitle")}
-            </h3>
-            <div className="grid gap-3">
-              {FEATURE_KEYS.map((key) => (
-                <div key={key} className="flex items-start gap-3 bg-stadium-surface/50 border border-stadium-border/50 p-4">
-                  <span className="shrink-0 mt-0.5">{FEATURE_ICONS[key]}</span>
-                  <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-                    {t(`whatIs.features.${key}`)}
-                  </p>
-                </div>
-              ))}
+        {/* ── Creator ── */}
+        <section className="space-y-6">
+          <h2 className="font-bebas text-3xl text-white tracking-wider">
+            {t("creator.title")}
+          </h2>
+          <div className="flex flex-col sm:flex-row items-start gap-6 bg-stadium-surface/50 border border-stadium-border/50 p-6">
+            <div className="w-16 h-16 rounded-full bg-lfc-red/20 border border-lfc-red/30 flex items-center justify-center shrink-0">
+              <Shield size={28} className="text-lfc-red" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bebas text-xl text-white tracking-wider">
+                Nguyễn Đăng Định
+              </h3>
+              <p className="font-barlow text-lfc-red uppercase tracking-[0.15em] text-xs font-bold">
+                {t("creator.role")}
+              </p>
+              <p className="font-inter text-stadium-muted text-sm leading-relaxed">
+                {t("creator.bio")}
+              </p>
             </div>
           </div>
-
         </section>
 
         {/* ── Contact ── */}
         <section className="space-y-4">
-          <h2 className="font-bebas text-3xl text-white tracking-wider">{t("contact.title")}</h2>
+          <h2 className="font-bebas text-3xl text-white tracking-wider">
+            {t("contact.title")}
+          </h2>
           <p className="font-inter text-stadium-muted text-sm leading-relaxed">
             {t("contact.description")}
           </p>
@@ -112,7 +165,9 @@ export default async function AboutPage() {
         {/* ── Support ── */}
         <section className="border-t border-stadium-border pt-12 text-center space-y-6">
           <Coffee size={32} className="text-lfc-gold mx-auto" />
-          <h2 className="font-bebas text-3xl text-white tracking-wider">{t("support.title")}</h2>
+          <h2 className="font-bebas text-3xl text-white tracking-wider">
+            {t("support.title")}
+          </h2>
           <p className="font-inter text-stadium-muted text-sm max-w-md mx-auto">
             {t("support.description")}
           </p>

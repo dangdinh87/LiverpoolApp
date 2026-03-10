@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { ProfileLayout } from "@/components/profile/profile-layout";
-import type { UserProfile, FavouritePlayer } from "@/lib/supabase";
+import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
 
 export const metadata: Metadata = {
   title: "My Profile",
@@ -19,7 +19,7 @@ export default async function ProfilePage() {
 
   if (!user) redirect("/auth/login?redirect=/profile");
 
-  const [{ data: profile }, { data: favourites }] = await Promise.all([
+  const [{ data: profile }, { data: favourites }, { data: savedArticles }] = await Promise.all([
     supabase
       .from("user_profiles")
       .select("*")
@@ -30,6 +30,11 @@ export default async function ProfilePage() {
       .select("*")
       .eq("user_id", user.id)
       .order("added_at", { ascending: false }),
+    supabase
+      .from("saved_articles")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false }),
   ]);
 
   return (
@@ -37,6 +42,7 @@ export default async function ProfilePage() {
       user={{ id: user.id, email: user.email ?? null, createdAt: user.created_at }}
       profile={profile ?? null}
       favourites={(favourites ?? []) as FavouritePlayer[]}
+      savedArticles={(savedArticles ?? []) as SavedArticle[]}
     />
   );
 }

@@ -9,7 +9,7 @@ import { RSS_FEEDS } from "./config";
 import type { NewsArticle } from "./types";
 
 const ARTICLE_COLUMNS =
-  "url, title, snippet, thumbnail, source, language, category, relevance, published_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
+  "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
 // Sync threshold: 15 minutes
 const STALE_MS = 15 * 60 * 1000;
@@ -26,6 +26,7 @@ interface ArticleRow {
   category: string;
   relevance: number;
   published_at: string | null;
+  fetched_at: string | null;
   author: string | null;
   hero_image: string | null;
   word_count: number | null;
@@ -38,7 +39,7 @@ function rowToArticle(row: ArticleRow): NewsArticle {
   return {
     title: row.title,
     link: row.url,
-    pubDate: row.published_at ?? new Date().toISOString(),
+    pubDate: row.published_at ?? row.fetched_at ?? "",
     contentSnippet: row.snippet,
     thumbnail: row.thumbnail ?? undefined,
     source: row.source as NewsArticle["source"],
@@ -98,11 +99,26 @@ async function syncArticles(): Promise<void> {
       updated_at: new Date().toISOString(),
     }));
 
-    const { error } = await supabase
-      .from("articles")
-      .upsert(rows, { onConflict: "url", ignoreDuplicates: false });
+    // Retry once on transient errors (502/503/timeout)
+    let retries = 1;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const { error } = await supabase
+        .from("articles")
+        .upsert(rows, { onConflict: "url", ignoreDuplicates: false });
 
-    if (error) console.error(`[sync] Batch ${i} error:`, error.message);
+      if (!error) break;
+
+      const msg = error.message?.includes("<!DOCTYPE")
+        ? `HTTP error (likely 502/503)`
+        : error.message;
+
+      if (attempt < retries) {
+        console.warn(`[sync] Batch ${i} failed (${msg}), retrying...`);
+        await new Promise((r) => setTimeout(r, 2000));
+      } else {
+        console.error(`[sync] Batch ${i} error: ${msg}`);
+      }
+    }
   }
 
   lastSyncTime = Date.now();
@@ -185,20 +201,32 @@ export const getNewsFromDB = cache(
         return [...local, ...global].slice(0, limit);
       }
 
-      const { data, error } = await supabase
-        .from("articles")
-        .select(ARTICLE_COLUMNS)
-        .eq("is_active", true)
-        .order("relevance", { ascending: false })
-        .order("published_at", { ascending: false })
-        .limit(limit);
+      // Balanced fetch: get top articles per language so both EN & VI are represented
+      // (relevance scores differ across languages, pure relevance sort excludes VI)
+      const perLang = Math.ceil(limit / 2);
+      const [enRes, viRes] = await Promise.all([
+        supabase
+          .from("articles")
+          .select(ARTICLE_COLUMNS)
+          .eq("is_active", true)
+          .eq("language", "en")
+          .order("published_at", { ascending: false })
+          .limit(perLang),
+        supabase
+          .from("articles")
+          .select(ARTICLE_COLUMNS)
+          .eq("is_active", true)
+          .eq("language", "vi")
+          .order("published_at", { ascending: false })
+          .limit(perLang),
+      ]);
 
-      if (error) {
-        console.error("[news/db] Query error:", error.message);
-        return [];
-      }
+      if (enRes.error) console.error("[news/db] EN error:", enRes.error.message);
+      if (viRes.error) console.error("[news/db] VI error:", viRes.error.message);
 
-      return ((data ?? []) as ArticleRow[]).map(rowToArticle);
+      const enArticles = ((enRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+      const viArticles = ((viRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+      return [...enArticles, ...viArticles].slice(0, limit);
     } catch (err) {
       console.error("[news/db] Fatal:", err);
       return [];

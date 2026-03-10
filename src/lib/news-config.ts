@@ -125,8 +125,9 @@ export function getArticleUrl(articleLink: string): string {
 }
 
 export function formatRelativeDate(dateStr: string, lang?: "en" | "vi"): string {
+  if (!dateStr) return "";
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return lang === "vi" ? "Vừa cập nhật" : "Recently";
+  if (isNaN(date.getTime())) return "";
 
   const now = Date.now();
   const diff = now - date.getTime();

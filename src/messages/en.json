@@ -62,9 +62,9 @@
     "tagline": "Liverpool Football Club · Est. 1892",
     "title": "Welcome to Anfield",
     "subtitle": "LFCVN — Liverpool FC Vietnam",
-    "description": "Your all-in-one Liverpool FC hub — results, stats, squad, news, and more.",
+    "description": "Stay connected to The Reds — matches, squad, news, and the pursuit of glory.",
     "cta": "Explore the Squad",
-    "badge": "LFCVN — Unofficial",
+    "badge": "Liverpool FC Vietnam Fan Community",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings"
@@ -101,10 +101,10 @@
     "categories": {
       "all": "All",
       "official": "Official",
-      "match-report": "Match Reports",
-      "transfer": "Transfers",
-      "injury": "Injuries",
       "team-news": "Team News",
+      "transfer": "Transfers",
+      "match-report": "Match Reports",
+      "injury": "Injuries",
       "analysis": "Analysis",
       "opinion": "Opinion"
     },
@@ -159,10 +159,10 @@
       "chipVietnamese": "Vietnamese",
       "chipInternational": "International",
       "catAll": "All",
-      "catMatch": "Match",
-      "catTransfer": "Transfer",
-      "catInjury": "Injury",
       "catTeamNews": "Team News",
+      "catTransfer": "Transfer",
+      "catMatch": "Match Report",
+      "catInjury": "Injury",
       "catAnalysis": "Analysis",
       "catOpinion": "Opinion"
     }
@@ -171,6 +171,11 @@
     "title": "Next Match",
     "live": "Live",
     "noMatch": "No upcoming match"
+  },
+  "LiveBanner": {
+    "live": "LIVE",
+    "watchNow": "Live Score",
+    "fixtures": "Fixtures"
   },
   "Squad": {
     "metadata": {
@@ -558,7 +563,9 @@
         "fixtures": "Match timeline across 4 competitions — Premier League, Champions League, FA Cup, EFL Cup",
         "news": "News from 10+ sources in English & Vietnamese with smart categorisation and in-app reading",
         "history": "Club heritage — Anfield stadium, trophy cabinet, historical timeline, legends & managers",
-        "profile": "Personal account with avatar, favourite players, and saved preferences"
+        "profile": "Personal account with avatar, favourite players, and saved preferences",
+        "ai": "LiverBird AI — ask about match results, player stats, transfer rumours, club history & more",
+        "i18n": "Full bilingual support — English & Vietnamese with automatic locale detection"
       },
       "dataTitle": "Data Sources",
       "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS feeds from BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, and Vietnamese outlets (Bóng Đá, 24h). Content enriched with Mozilla Readability.",
@@ -572,10 +579,10 @@
     },
     "contact": {
       "title": "Get in Touch",
-      "description": "Feedback, bug reports, collaboration ideas, or just want to say hi — I'd love to hear from you.",
+      "description": "Have a feature request, found a bug, need support, or want to collaborate? Feel free to reach out — all feedback is welcome.",
       "email": "Email",
       "github": "GitHub",
-      "githubUrl": "https://github.com/nguyendangdinh",
+      "githubUrl": "https://github.com/dangdinh87",
       "phone": "Phone"
     },
     "support": {
@@ -652,6 +659,14 @@
         "results": "Results"
       },
       "noFixtures": "No fixtures found for this competition."
+    },
+    "detail": {
+      "back": "Season",
+      "matchTimeline": "Match Timeline",
+      "statistics": "Statistics",
+      "lineups": "Lineups",
+      "substitutes": "Substitutes",
+      "coach": "Coach"
     }
   },
   "Legal": {
@@ -734,7 +749,15 @@
       "error": "Failed to upload avatar",
       "clickToChange": "Click to change avatar (max 2MB)",
       "uploading": "Uploading..."
-    }
+    },
+    "savedArticles": "Saved Articles",
+    "savedArticlesEmpty": "No saved articles yet. Bookmark articles from the News page and they'll appear here.",
+    "unsave": "Remove",
+    "savedAt": "Saved {date}",
+    "viewArticle": "Read",
+    "saveSuccess": "Article saved!",
+    "unsaveSuccess": "Article removed from saved.",
+    "loginToSave": "Log in to save articles"
   },
   "Match": {
     "live": "LIVE",

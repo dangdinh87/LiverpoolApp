@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import type { SavedArticle } from "@/lib/supabase";
 
 const MAX_USERNAME_LENGTH = 30;
 const MAX_BIO_LENGTH = 200;
@@ -96,4 +97,70 @@ export async function toggleFavouritePlayer(
     revalidatePath(`/player/${playerId}`);
     return { favourited: true };
   }
+}
+
+/* ── Saved Articles ── */
+
+export async function toggleSavedArticle(article: {
+  url: string;
+  title: string;
+  snippet?: string;
+  thumbnail?: string;
+  source?: string;
+  language?: string;
+  publishedAt?: string;
+}) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: existing } = await supabase
+    .from("saved_articles")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("article_url", article.url)
+    .single();
+
+  if (existing) {
+    const { error } = await supabase
+      .from("saved_articles")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("article_url", article.url);
+
+    if (error) return { error: "Failed to unsave" };
+    revalidatePath("/profile");
+    return { saved: false };
+  } else {
+    const { error } = await supabase.from("saved_articles").insert({
+      user_id: user.id,
+      article_url: article.url,
+      article_title: article.title,
+      article_snippet: article.snippet ?? null,
+      article_thumbnail: article.thumbnail ?? null,
+      article_source: article.source ?? null,
+      article_language: article.language ?? "en",
+      article_published_at: article.publishedAt ?? null,
+    });
+
+    if (error) return { error: "Failed to save" };
+    revalidatePath("/profile");
+    return { saved: true };
+  }
+}
+
+export async function unsaveArticle(articleUrl: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("saved_articles")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("article_url", articleUrl);
+
+  if (error) return { error: "Failed to unsave" };
+  revalidatePath("/profile");
+  return { success: true };
 }

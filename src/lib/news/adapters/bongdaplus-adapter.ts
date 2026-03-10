@@ -53,10 +53,16 @@ export class BongdaplusAdapter implements FeedAdapter {
 
             const fullLink = href.startsWith("http") ? href : `https://bongdaplus.vn${href}`;
 
+            // Try to extract publish date from the element
+            const timeEl = $el.find("time, .time, .date, span.created-date").first();
+            const rawDate = timeEl.attr("datetime") || timeEl.text().trim();
+            const parsed = rawDate ? new Date(rawDate) : null;
+            const pubDate = parsed && !isNaN(parsed.getTime()) ? parsed.toISOString() : "";
+
             pageArticles.push({
               title,
               link: sanitizeUrl(fullLink) ?? "#",
-              pubDate: new Date().toISOString(),
+              pubDate,
               contentSnippet: "",
               thumbnail: sanitizeUrl(thumbnail),
               source: "bongdaplus" as NewsSource,

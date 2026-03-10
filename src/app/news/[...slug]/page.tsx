@@ -256,6 +256,12 @@ export default async function ArticlePage({
         articleTitle={content.title}
         articleSlugUrl={articleSlugUrl}
         nextMatch={nextMatch}
+        articleMeta={{
+          snippet: content.description,
+          thumbnail: content.heroImage,
+          language: VI_SOURCES.has(source) ? "vi" : "en",
+          publishedAt: content.publishedAt,
+        }}
       />
     </aside>
   );

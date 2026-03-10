@@ -2,8 +2,39 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
+
+/* Locale-aware date formatting */
+function formatMatchDate(date: Date, locale: string): string {
+  const loc = locale === "vi" ? "vi-VN" : "en-GB";
+  const weekday = date.toLocaleDateString(loc, { weekday: "short" });
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const time = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+
+  if (locale === "vi") {
+    return `${weekday}, ${day}/${month} · ${time}`;
+  }
+  const monthName = date.toLocaleDateString("en-GB", { month: "short" });
+  return `${weekday}, ${day} ${monthName} · ${time}`;
+}
+
+function formatShortDate(date: Date, locale: string): string {
+  const loc = locale === "vi" ? "vi-VN" : "en-GB";
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+
+  if (locale === "vi") {
+    return `${day}/${month}`;
+  }
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function formatTime(date: Date, locale: string): string {
+  const loc = locale === "vi" ? "vi-VN" : "en-GB";
+  return date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+}
 
 interface NextMatchWidgetProps {
   fixture: Fixture | null;
@@ -31,6 +62,7 @@ function calcTimeLeft(targetDate: string) {
 
 export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
   const t = useTranslations("NextMatch");
+  const locale = useLocale();
   const countdown = useCountdown(fixture?.fixture.date ?? "");
 
   if (!fixture) {
@@ -43,11 +75,9 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
 
   const { teams, league, fixture: f } = fixture;
   const date = new Date(f.date);
-  const isLive =
-    f.status.short === "1H" ||
-    f.status.short === "HT" ||
-    f.status.short === "2H" ||
-    f.status.short === "ET";
+  const isLive = ["1H", "HT", "2H", "ET", "P", "BT", "LIVE"].includes(f.status.short);
+  const elapsed = f.status.elapsed;
+  const isHT = f.status.short === "HT";
 
   return (
     <div className="flex flex-col gap-4 p-5 h-full">
@@ -80,34 +110,47 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
           </span>
         </div>
 
-        {/* VS / Countdown */}
+        {/* Center: live score OR VS/countdown */}
         <div className="flex flex-col items-center gap-1.5 px-3">
-          <span className="font-bebas text-3xl text-stadium-muted/60">VS</span>
-          {!isLive && countdown ? (
-            <div className="flex items-center gap-1.5 text-center">
-              {countdown.days > 0 && (
-                <div className="flex flex-col items-center">
-                  <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.days}</span>
-                  <span className="font-barlow text-[9px] text-stadium-muted uppercase">d</span>
-                </div>
-              )}
-              <div className="flex flex-col items-center">
-                <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.hours}</span>
-                <span className="font-barlow text-[9px] text-stadium-muted uppercase">h</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.mins}</span>
-                <span className="font-barlow text-[9px] text-stadium-muted uppercase">m</span>
-              </div>
-            </div>
+          {isLive ? (
+            <>
+              <span className="font-bebas text-4xl text-white leading-none">
+                {fixture.goals.home ?? 0} - {fixture.goals.away ?? 0}
+              </span>
+              <span className={`font-barlow text-xs font-semibold uppercase ${isHT ? "text-lfc-gold" : "text-lfc-red"}`}>
+                {isHT ? "HT" : elapsed != null ? `${elapsed}'` : t("live")}
+              </span>
+            </>
           ) : (
             <>
-              <span className="font-barlow text-xs text-lfc-red font-semibold">
-                {date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-              </span>
-              <span className="font-inter text-[11px] text-stadium-muted">
-                {date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-              </span>
+              <span className="font-bebas text-3xl text-stadium-muted/60">VS</span>
+              {countdown ? (
+                <div className="flex items-center gap-1.5 text-center">
+                  {countdown.days > 0 && (
+                    <div className="flex flex-col items-center">
+                      <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.days}</span>
+                      <span className="font-barlow text-[9px] text-stadium-muted uppercase">d</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col items-center">
+                    <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.hours}</span>
+                    <span className="font-barlow text-[9px] text-stadium-muted uppercase">h</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.mins}</span>
+                    <span className="font-barlow text-[9px] text-stadium-muted uppercase">m</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <span className="font-barlow text-xs text-lfc-red font-semibold">
+                    {formatShortDate(date, locale)}
+                  </span>
+                  <span className="font-inter text-[11px] text-stadium-muted">
+                    {formatTime(date, locale)}
+                  </span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -146,8 +189,7 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
           </span>
         </div>
         <span className="font-inter text-[11px] text-stadium-muted">
-          {date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}{" "}
-          {date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+          {formatMatchDate(date, locale)}
         </span>
       </div>
     </div>

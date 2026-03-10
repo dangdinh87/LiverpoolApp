@@ -63,9 +63,9 @@
     "tagline": "Câu lạc bộ bóng đá Liverpool · Thành lập 1892",
     "title": "Chào mừng đến với Anfield",
     "subtitle": "LFCVN — Liverpool FC Việt Nam",
-    "description": "Tất cả về Liverpool FC — kết quả, số liệu, đội hình, tin tức và hơn thế nữa.",
+    "description": "Đồng hành cùng The Reds — trận đấu, đội hình, tin tức và hơn thế nữa.",
     "cta": "Khám phá đội hình",
-    "badge": "LFCVN — Không chính thức",
+    "badge": "Cộng đồng CĐV Liverpool Việt Nam",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng"
@@ -102,12 +102,12 @@
     "categories": {
       "all": "Tất cả",
       "official": "Chính thức",
-      "match-report": "Báo cáo trận đấu",
+      "team-news": "Tin đội bóng",
       "transfer": "Chuyển nhượng",
+      "match-report": "Kết quả",
       "injury": "Chấn thương",
-      "team-news": "Tin đội hình",
       "analysis": "Phân tích",
-      "opinion": "Góc nhìn"
+      "opinion": "Bình luận"
     },
     "comments": {
       "title": "Bình luận",
@@ -160,18 +160,23 @@
       "chipVietnamese": "Việt Nam",
       "chipInternational": "Quốc tế",
       "catAll": "Tất cả",
-      "catMatch": "Trận đấu",
+      "catTeamNews": "Tin đội",
       "catTransfer": "Chuyển nhượng",
+      "catMatch": "Kết quả",
       "catInjury": "Chấn thương",
-      "catTeamNews": "Đội hình",
       "catAnalysis": "Phân tích",
-      "catOpinion": "Góc nhìn"
+      "catOpinion": "Bình luận"
     }
   },
   "NextMatch": {
     "title": "Trận tiếp theo",
     "live": "Trực tiếp",
     "noMatch": "Không có trận đấu sắp tới"
+  },
+  "LiveBanner": {
+    "live": "TRỰC TIẾP",
+    "watchNow": "Xem tỷ số trực tiếp",
+    "fixtures": "Lịch đấu"
   },
   "Squad": {
     "metadata": {
@@ -559,7 +564,9 @@
         "fixtures": "Lịch thi đấu 4 giải — Ngoại hạng Anh, Champions League, FA Cup, EFL Cup",
         "news": "Tin tức từ 10+ nguồn tiếng Anh & tiếng Việt, phân loại thông minh, đọc ngay trong app",
         "history": "Di sản câu lạc bộ — sân Anfield, tủ danh hiệu, dòng thời gian lịch sử, huyền thoại & HLV",
-        "profile": "Tài khoản cá nhân với avatar, cầu thủ yêu thích và tùy chỉnh"
+        "profile": "Tài khoản cá nhân với avatar, cầu thủ yêu thích và tùy chỉnh",
+        "ai": "LiverBird AI — hỏi về kết quả trận đấu, thống kê cầu thủ, tin chuyển nhượng, lịch sử CLB & hơn nữa",
+        "i18n": "Hỗ trợ song ngữ đầy đủ — Tiếng Anh & Tiếng Việt với tự động phát hiện ngôn ngữ"
       },
       "dataTitle": "Nguồn dữ liệu",
       "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS từ BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, và các trang Việt Nam (Bóng Đá, 24h). Nội dung được xử lý với Mozilla Readability.",
@@ -573,10 +580,10 @@
     },
     "contact": {
       "title": "Liên hệ",
-      "description": "Phản hồi, báo lỗi, ý tưởng hợp tác, hay chỉ muốn chào — mình rất vui được nghe từ bạn.",
+      "description": "Bạn muốn đề xuất tính năng, báo lỗi, cần hỗ trợ, hay muốn hợp tác phát triển? Hãy liên hệ — mọi phản hồi đều được chào đón.",
       "email": "Email",
       "github": "GitHub",
-      "githubUrl": "https://github.com/nguyendangdinh",
+      "githubUrl": "https://github.com/dangdinh87",
       "phone": "Điện thoại"
     },
     "support": {
@@ -653,6 +660,14 @@
         "results": "Kết quả"
       },
       "noFixtures": "Không tìm thấy trận đấu cho giải đấu này."
+    },
+    "detail": {
+      "back": "Mùa giải",
+      "matchTimeline": "Diễn biến trận đấu",
+      "statistics": "Thống kê",
+      "lineups": "Đội hình",
+      "substitutes": "Cầu thủ dự bị",
+      "coach": "HLV"
     }
   },
   "Legal": {
@@ -735,7 +750,15 @@
       "error": "Không thể tải ảnh lên",
       "clickToChange": "Nhấn để đổi ảnh đại diện (tối đa 2MB)",
       "uploading": "Đang tải lên..."
-    }
+    },
+    "savedArticles": "Bài viết đã lưu",
+    "savedArticlesEmpty": "Chưa có bài viết nào được lưu. Hãy đánh dấu bài viết từ trang Tin tức.",
+    "unsave": "Bỏ lưu",
+    "savedAt": "Đã lưu {date}",
+    "viewArticle": "Đọc",
+    "saveSuccess": "Đã lưu bài viết!",
+    "unsaveSuccess": "Đã bỏ lưu bài viết.",
+    "loginToSave": "Đăng nhập để lưu bài viết"
   },
   "Match": {
     "live": "TRỰC TIẾP",

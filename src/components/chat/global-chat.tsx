@@ -8,8 +8,7 @@ import { Thread } from "@/components/assistant-ui/thread";
 import { useAuthStore } from "@/stores/auth-store";
 
 import { Button } from "@/components/ui/button";
-import { X, Minus, Maximize2 } from "lucide-react";
-import Image from "next/image";
+import { X, Minus, Maximize2, MessageCircle } from "lucide-react";
 import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -165,23 +164,17 @@ function GlobalChatInner() {
 					onClick={() => setIsOpen(!isOpen)}
 					className={cn(
 						"relative flex items-center justify-center rounded-full transition-all duration-300",
-						"size-14 text-white hover:scale-110 active:scale-95",
+						"size-14 hover:scale-110 active:scale-95",
 						isOpen
-							? "bg-stadium-surface border border-stadium-border shadow-lg"
-							: "bg-linear-to-br from-stadium-surface to-stadium-bg border-2 border-lfc-red/50 shadow-[0_0_24px_rgba(200,16,46,0.35)]"
+							? "bg-stadium-surface border border-stadium-border text-white shadow-lg"
+							: "bg-lfc-red text-white shadow-[0_0_24px_rgba(200,16,46,0.4)]"
 					)}
 					aria-label="Toggle chat"
 				>
 					{isOpen ? (
 						<Minus className="size-6" />
 					) : (
-						<Image
-							src="/assets/lfc/liverbird-ai.svg"
-							alt="LiverBird AI"
-							width={36}
-							height={36}
-							className="size-9 object-contain drop-shadow-[0_0_8px_rgba(200,16,46,0.5)]"
-						/>
+						<MessageCircle className="size-7" />
 					)}
 				</button>
 			</div>

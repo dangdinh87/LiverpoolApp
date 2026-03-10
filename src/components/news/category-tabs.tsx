@@ -15,10 +15,10 @@ import {
 
 const CATEGORIES: { value: string; icon: LucideIcon }[] = [
   { value: "all", icon: Layers },
-  { value: "match-report", icon: Target },
-  { value: "transfer", icon: CircleDollarSign },
-  { value: "injury", icon: HeartPulse },
   { value: "team-news", icon: Users },
+  { value: "transfer", icon: CircleDollarSign },
+  { value: "match-report", icon: Target },
+  { value: "injury", icon: HeartPulse },
   { value: "analysis", icon: BarChart3 },
   { value: "opinion", icon: MessageSquareQuote },
 ];

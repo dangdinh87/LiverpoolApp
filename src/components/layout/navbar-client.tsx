@@ -86,11 +86,12 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md",
+        "fixed left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md",
         scrolled
           ? "bg-stadium-bg/95 border-b border-stadium-border"
           : "bg-stadium-bg/40"
       )}
+      style={{ top: "var(--live-banner-h, 0px)" }}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={cn(

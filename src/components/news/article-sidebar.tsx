@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, User, BookOpen } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
 import { ArticleActions } from "./article-actions";
 import type { Fixture } from "@/lib/types/football";
@@ -18,6 +18,13 @@ interface ArticleSidebarProps {
   articleTitle: string;
   articleSlugUrl: string;
   nextMatch?: Fixture | null;
+  /** Optional metadata for DB bookmark */
+  articleMeta?: {
+    snippet?: string;
+    thumbnail?: string;
+    language?: string;
+    publishedAt?: string;
+  };
 }
 
 export function ArticleSidebar({
@@ -30,6 +37,7 @@ export function ArticleSidebar({
   articleTitle,
   articleSlugUrl,
   nextMatch,
+  articleMeta,
 }: ArticleSidebarProps) {
   const cfg = SOURCE_CONFIG[source];
 
@@ -83,6 +91,7 @@ export function ArticleSidebar({
         articleUrl={sourceUrl}
         articleTitle={articleTitle}
         articleSlugUrl={articleSlugUrl}
+        articleMeta={{ source, ...articleMeta }}
       />
 
       {/* Next Match */}
@@ -97,8 +106,10 @@ const LFC_CREST = "/assets/lfc/crest.webp";
 /** Next-match card for sidebar */
 function NextMatchCard({ fixture }: { fixture: Fixture }) {
   const t = useTranslations("NextMatch");
+  const locale = useLocale();
   const { teams, league, fixture: f } = fixture;
   const date = new Date(f.date);
+  const loc = locale === "vi" ? "vi-VN" : "en-GB";
 
   return (
     <Link
@@ -131,10 +142,12 @@ function NextMatchCard({ fixture }: { fixture: Fixture }) {
         <div className="flex flex-col items-center gap-0.5 px-2">
           <span className="font-bebas text-2xl text-stadium-muted">VS</span>
           <span className="font-barlow text-xs text-lfc-red font-semibold">
-            {date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+            {locale === "vi"
+              ? `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`
+              : date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
           </span>
           <span className="font-inter text-xs text-stadium-muted">
-            {date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+            {date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
 

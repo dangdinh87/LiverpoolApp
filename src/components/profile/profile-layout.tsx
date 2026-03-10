@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Heart,
+  Bookmark,
   Flame,
   LogOut,
   Settings,
@@ -16,17 +17,19 @@ import { logout } from "@/app/actions/auth";
 import { ProfileForm } from "./profile-form";
 import { AvatarUpload } from "./avatar-upload";
 import { FavouriteList } from "./favourite-list";
-import type { UserProfile, FavouritePlayer } from "@/lib/supabase";
+import { SavedArticlesList } from "./saved-articles-list";
+import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
 
-type TabId = "profile" | "players";
+type TabId = "profile" | "articles" | "players";
 
 interface ProfileLayoutProps {
   user: { id: string; email: string | null; createdAt: string };
   profile: UserProfile | null;
   favourites: FavouritePlayer[];
+  savedArticles: SavedArticle[];
 }
 
-export function ProfileLayout({ user, profile, favourites }: ProfileLayoutProps) {
+export function ProfileLayout({ user, profile, favourites, savedArticles }: ProfileLayoutProps) {
   const t = useTranslations("Profile");
   const [activeTab, setActiveTab] = useState<TabId>("profile");
   const [streak, setStreak] = useState(0);
@@ -47,6 +50,7 @@ export function ProfileLayout({ user, profile, favourites }: ProfileLayoutProps)
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode; count?: number }[] = [
     { id: "profile", label: t("title"), icon: <Settings size={16} /> },
+    { id: "articles", label: t("savedArticles"), icon: <Bookmark size={16} />, count: savedArticles.length },
     { id: "players", label: t("favouritePlayers"), icon: <Heart size={16} />, count: favourites.length },
   ];
 
@@ -168,6 +172,21 @@ export function ProfileLayout({ user, profile, favourites }: ProfileLayoutProps)
                         <ProfileForm profile={profile ?? null} />
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {activeTab === "articles" && (
+                  <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
+                    <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
+                      <Bookmark size={16} className="text-lfc-red" />
+                      {t("savedArticles")}
+                      {savedArticles.length > 0 && (
+                        <span className="font-inter text-sm text-stadium-muted font-normal">
+                          ({savedArticles.length})
+                        </span>
+                      )}
+                    </h2>
+                    <SavedArticlesList articles={savedArticles} />
                   </div>
                 )}
 

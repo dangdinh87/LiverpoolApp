@@ -6,6 +6,7 @@ import {
   ArrowLeft, MapPin, Calendar, Clock, Users,
   CircleDot, ArrowUpFromLine, ArrowDownToLine, ChevronDown,
 } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
 import {
   getFixtures,
   getFixtureEvents,
@@ -44,10 +45,16 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const { id } = await params;
   const fixtureId = Number(id);
 
-  const fixtures = await getFixtures();
+  const [fixtures, tDetail, tMatch, locale] = await Promise.all([
+    getFixtures(),
+    getTranslations("Fixtures.detail"),
+    getTranslations("Match"),
+    getLocale(),
+  ]);
   const match = fixtures.find((f) => f.fixture.id === fixtureId);
   if (!match) notFound();
 
+  const loc = locale === "vi" ? "vi-VN" : "en-GB";
   const { fixture: f, league, teams, goals, score } = match;
   const result = getMatchResult(match);
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
@@ -61,8 +68,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   ]);
 
   const date = new Date(f.date);
-  const dateStr = date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  const timeStr = date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = date.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
 
   const matchStats = espnDetail?.stats?.length ? espnDetail.stats : providerStats;
   const homeStats = matchStats.find((s) =>
@@ -113,11 +120,11 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     <div className="min-h-screen pt-24 pb-16">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <Link
-          href="/fixtures"
+          href="/season"
           className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm transition-colors group mb-6"
         >
           <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-          Fixtures
+          {tDetail("back")}
         </Link>
 
         {/* ─── Match Header ─── */}
@@ -140,7 +147,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           )}
           {isLive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lfc-red animate-pulse" />}
 
-          {/* Top bar: comp name + result badge (matches card style) */}
+          {/* Top bar: comp name + result badge */}
           <div className="relative flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <span className="font-bebas text-base uppercase tracking-wider text-white/60">
@@ -157,14 +164,14 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               <span className="inline-flex items-center gap-1.5">
                 <span className={cn("w-2 h-2 rounded-full", result === "W" && "bg-green-500", result === "D" && "bg-yellow-500", result === "L" && "bg-red-500")} />
                 <span className={cn("text-xs font-bebas tracking-widest leading-none", result === "W" && "text-green-400", result === "D" && "text-yellow-400", result === "L" && "text-red-400")}>
-                  {result === "W" ? "WIN" : result === "D" ? "DRAW" : "LOSS"}
+                  {result === "W" ? tMatch("win") : result === "D" ? tMatch("draw") : tMatch("loss")}
                 </span>
               </span>
             )}
             {isLive && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-lfc-red/15 border border-lfc-red/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-lfc-red animate-pulse" />
-                <span className="text-lfc-red text-[11px] font-bebas tracking-wider leading-none">LIVE {f.status.elapsed}&apos;</span>
+                <span className="text-lfc-red text-[11px] font-bebas tracking-wider leading-none">{tMatch("live")} {f.status.elapsed}&apos;</span>
               </span>
             )}
           </div>
@@ -202,10 +209,10 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                     <span className="text-stadium-muted font-bebas text-3xl leading-none">:</span>
                     <span className={cn("font-bebas text-4xl sm:text-5xl tracking-wider leading-none", teams.away.winner ? "text-white" : "text-white/50")}>{goals.away}</span>
                   </div>
-                  {isFinished && hasHt && <p className="text-stadium-muted text-[10px] font-inter mt-1">HT {htHome} – {htAway}</p>}
+                  {isFinished && hasHt && <p className="text-stadium-muted text-[10px] font-inter mt-1">{tMatch("halftimeShort")} {htHome} – {htAway}</p>}
                   {(f.status.short === "AET" || f.status.short === "PEN") && (
                     <p className="text-stadium-muted text-[9px] font-barlow font-semibold uppercase tracking-wider">
-                      {f.status.short === "AET" ? "After Extra Time" : "Penalties"}
+                      {f.status.short === "AET" ? tMatch("aet") : tMatch("pen")}
                     </p>
                   )}
                 </>
@@ -238,7 +245,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Bottom info bar — always shown */}
+          {/* Bottom info bar */}
           <div className="relative border-t border-stadium-border/50 pt-3 mt-4">
             <div className="flex items-center justify-center gap-4 flex-wrap text-[11px] font-inter">
               <span className="flex items-center gap-1.5 text-stadium-muted">
@@ -251,7 +258,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               )}
               {attendance && attendance > 0 && (
                 <span className="flex items-center gap-1.5 text-stadium-muted">
-                  <Users size={11} className="opacity-60" />{attendance.toLocaleString()}
+                  <Users size={11} className="opacity-60" />{attendance.toLocaleString(loc)}
                 </span>
               )}
               {referee && (
@@ -266,7 +273,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
         {/* ─── Match Timeline (collapsible) ─── */}
         {resolvedEvents.length > 0 && (
-          <DetailSection title="Match Timeline">
+          <DetailSection title={tDetail("matchTimeline")}>
             <div>
               {resolvedEvents.map((event, i) => (
                 <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
@@ -277,17 +284,17 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
         {/* ─── Match Statistics (collapsible) ─── */}
         {homeStats && awayStats && (
-          <DetailSection title="Statistics">
+          <DetailSection title={tDetail("statistics")}>
             <StatsComparison home={homeStats} away={awayStats} />
           </DetailSection>
         )}
 
         {/* ─── Lineups (collapsible) ─── */}
         {(homeLineup || awayLineup) && (
-          <DetailSection title="Lineups">
+          <DetailSection title={tDetail("lineups")}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {homeLineup && <LineupSection lineup={homeLineup} />}
-              {awayLineup && <LineupSection lineup={awayLineup} />}
+              {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+              {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
             </div>
           </DetailSection>
         )}
@@ -334,7 +341,7 @@ function TimelineRow({ event, homeTeamId }: { event: FixtureEvent; homeTeamId: n
           <span className="text-stadium-muted text-xs font-inter">({event.assist.name})</span>
         )}
         {event.type === "subst" && event.assist.name && (
-          <span className="text-stadium-muted text-xs font-inter">for {event.assist.name}</span>
+          <span className="text-stadium-muted text-xs font-inter">← {event.assist.name}</span>
         )}
       </div>
 
@@ -392,20 +399,16 @@ function StatsComparison({ home, away }: { home: FixtureTeamStats; away: Fixture
 
         return (
           <div key={type}>
-            {/* Label centered */}
             <p className="text-stadium-muted text-[11px] font-inter text-center mb-1">{type}</p>
-            {/* Values + bars */}
             <div className="flex items-center gap-2">
               <span className={cn("font-inter text-sm font-semibold w-14 text-right", hWins ? "text-white" : "text-stadium-muted")}>{hStr}</span>
               <div className="flex-1 flex h-2 gap-0.5">
-                {/* Home bar (grows right-to-left) */}
                 <div className="flex-1 flex justify-end bg-stadium-surface2 rounded-l-sm overflow-hidden">
                   <div
                     className={cn("h-full rounded-l-sm transition-all", hWins ? "bg-lfc-red" : "bg-stadium-muted/50")}
                     style={{ width: `${hPct}%` }}
                   />
                 </div>
-                {/* Away bar (grows left-to-right) */}
                 <div className="flex-1 bg-stadium-surface2 rounded-r-sm overflow-hidden">
                   <div
                     className={cn("h-full rounded-r-sm transition-all", aWins ? "bg-sky-500" : "bg-stadium-muted/50")}
@@ -424,7 +427,7 @@ function StatsComparison({ home, away }: { home: FixtureTeamStats; away: Fixture
 
 // ─── Lineups ────────────────────────────────────────────────────────────────
 
-function LineupSection({ lineup }: { lineup: FixtureLineup }) {
+function LineupSection({ lineup, subsLabel, coachLabel }: { lineup: FixtureLineup; subsLabel: string; coachLabel: string }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -450,7 +453,7 @@ function LineupSection({ lineup }: { lineup: FixtureLineup }) {
 
       {lineup.substitutes.length > 0 && (
         <>
-          <p className="font-barlow text-stadium-muted text-[10px] uppercase tracking-wider mb-0.5">Substitutes</p>
+          <p className="font-barlow text-stadium-muted text-[10px] uppercase tracking-wider mb-0.5">{subsLabel}</p>
           <div className="space-y-0.5">
             {lineup.substitutes.map(({ player: p }) => (
               <div key={p.id} className="flex items-center gap-2 text-sm font-inter py-0.5">
@@ -463,7 +466,7 @@ function LineupSection({ lineup }: { lineup: FixtureLineup }) {
       )}
 
       <p className="mt-2 text-xs font-inter text-stadium-muted">
-        Coach: <span className="text-white">{lineup.coach.name}</span>
+        {coachLabel}: <span className="text-white">{lineup.coach.name}</span>
       </p>
     </div>
   );

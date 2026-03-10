@@ -26,15 +26,35 @@ interface LetterProps {
 
 function AnimatedLetter({ char, globalIdx, isRed }: LetterProps) {
   const hover = HOVER_EFFECTS[globalIdx % HOVER_EFFECTS.length];
+  // Stagger the continuous bounce so letters ripple in sequence
+  const bounceDelay = 1.2 + globalIdx * 0.15;
 
   return (
     <motion.span
       initial={{ opacity: 0, y: 50, rotateX: 90, scale: 0.5 }}
-      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+      animate={{
+        opacity: 1,
+        y: [0, -6, 0],
+        rotateX: 0,
+        scale: [1, 1.05, 1],
+      }}
       transition={{
-        duration: 0.4,
-        delay: 0.3 + globalIdx * 0.04,
-        ease: [0.16, 1, 0.3, 1],
+        opacity: { duration: 0.4, delay: 0.3 + globalIdx * 0.04 },
+        rotateX: { duration: 0.4, delay: 0.3 + globalIdx * 0.04 },
+        y: {
+          duration: 0.6,
+          delay: bounceDelay,
+          repeat: Infinity,
+          repeatDelay: 3,
+          ease: "easeInOut",
+        },
+        scale: {
+          duration: 0.6,
+          delay: bounceDelay,
+          repeat: Infinity,
+          repeatDelay: 3,
+          ease: "easeInOut",
+        },
       }}
       whileHover={{
         y: hover.y,
