@@ -18,9 +18,10 @@ export default getRequestConfig(async () => {
   const headerStore = await headers();
 
   // 1. Cookie (user explicitly chose) → 2. Browser Accept-Language
-  const locale =
+  const raw =
     cookieStore.get('NEXT_LOCALE')?.value ||
     detectLocaleFromHeader(headerStore.get('accept-language'));
+  const locale = SUPPORTED_LOCALES.includes(raw) ? raw : 'en';
 
   return {
     locale,

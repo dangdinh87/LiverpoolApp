@@ -1,7 +1,6 @@
 import "server-only";
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
@@ -155,7 +154,8 @@ export const getNewsFromDB = cache(
       // Sync if stale — blocks until done
       await syncIfStale();
 
-      const supabase = await createServerSupabaseClient();
+      // Use service client for public article reads (no auth needed, avoids cookie issues in ISR)
+      const supabase = getServiceClient();
 
       if (preferLang) {
         const [localRes, globalRes] = await Promise.all([
@@ -212,7 +212,7 @@ export const getNewsFromDB = cache(
 export const searchArticles = cache(
   async (query: string, limit = 20): Promise<NewsArticle[]> => {
     try {
-      const supabase = await createServerSupabaseClient();
+      const supabase = getServiceClient();
       const tsQuery = query.trim().split(/\s+/).join(" & ");
 
       const { data, error } = await supabase
