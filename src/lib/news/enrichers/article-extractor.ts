@@ -487,7 +487,7 @@ export const scrapeArticle = cache(
       const html = await res.text();
 
       // 1. Try Readability first (works best for English sites)
-      const readable = extractWithReadability(html, url);
+      const readable = await extractWithReadability(html, url);
       if (readable && readable.length > 300) {
         const $ = cheerio.load(html);
 

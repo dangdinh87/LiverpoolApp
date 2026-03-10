@@ -1,5 +1,4 @@
 import { Readability } from "@mozilla/readability";
-import { JSDOM } from "jsdom";
 import sanitize from "sanitize-html";
 
 const SANITIZE_OPTS: sanitize.IOptions = {
@@ -22,11 +21,13 @@ export interface ReadabilityResult {
   length: number;
 }
 
-export function extractWithReadability(
+export async function extractWithReadability(
   html: string,
   url: string
-): ReadabilityResult | null {
+): Promise<ReadabilityResult | null> {
   try {
+    // Dynamic import to avoid ESM/CJS incompatibility with jsdom on Vercel
+    const { JSDOM } = await import("jsdom");
     const dom = new JSDOM(html, { url });
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
