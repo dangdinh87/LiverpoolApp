@@ -5,7 +5,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
-import { SplashScreen } from "@/components/layout/splash-screen";
 import { GlobalChat } from "@/components/chat/global-chat";
 import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
@@ -72,12 +71,10 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <NextIntlClientProvider messages={messages}>
-              <SplashScreen>
-                <NavbarAuth />
-                <main>{children}</main>
-                <Footer />
-                <GlobalChat />
-              </SplashScreen>
+              <NavbarAuth />
+              <main>{children}</main>
+              <Footer />
+              <GlobalChat />
             </NextIntlClientProvider>
           </QueryProvider>
         </ThemeProvider>
