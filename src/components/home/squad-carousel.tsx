@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { POSITION_DISPLAY } from "@/lib/squad-data";
@@ -28,6 +29,7 @@ interface SquadCarouselProps {
 }
 
 export function SquadCarousel({ players }: SquadCarouselProps) {
+  const t = useTranslations("Bento");
   const scrollRef = useRef<HTMLDivElement>(null);
   const featured = players.slice(0, 10);
 
@@ -40,7 +42,7 @@ export function SquadCarousel({ players }: SquadCarouselProps) {
     <div className="flex flex-col gap-3 p-5 h-full">
       <div className="flex items-center justify-between">
         <span className="font-barlow text-stadium-muted text-xs uppercase tracking-widest font-semibold">
-          Squad
+          {t("squad")}
         </span>
         <div className="flex gap-1">
           <button

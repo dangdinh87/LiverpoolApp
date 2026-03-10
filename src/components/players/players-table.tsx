@@ -96,13 +96,13 @@ export function PlayersTable({ players, teams }: Props) {
   const COLUMNS_LOCAL: { key: SortKey; label: string; shortLabel: string }[] = [
     { key: "totalPoints", label: t("points"), shortLabel: t("points") },
     { key: "minutes", label: t("minutes"), shortLabel: t("minutes") },
-    { key: "goals", label: "Goals", shortLabel: "G" },
-    { key: "assists", label: "Assists", shortLabel: "A" },
+    { key: "goals", label: t("goals"), shortLabel: t("goalsShort") },
+    { key: "assists", label: t("assists"), shortLabel: t("assistsShort") },
     { key: "xG", label: "xG", shortLabel: "xG" },
     { key: "xA", label: "xA", shortLabel: "xA" },
-    { key: "cleanSheets", label: "Clean Sheets", shortLabel: "CS" },
-    { key: "yellowCards", label: "Yellow Cards", shortLabel: "YC" },
-    { key: "price", label: "Price", shortLabel: "£" },
+    { key: "cleanSheets", label: t("cleanSheets"), shortLabel: t("cleanSheetsShort") },
+    { key: "yellowCards", label: t("yellowCards"), shortLabel: t("yellowCardsShort") },
+    { key: "price", label: t("price"), shortLabel: t("priceShort") },
   ];
 
   return (
@@ -156,7 +156,7 @@ export function PlayersTable({ players, teams }: Props) {
 
       {/* Results count */}
       <p className="text-stadium-muted text-xs font-inter">
-        {filtered.length} {filtered.length === 1 ? "player" : "players"}
+        {filtered.length} {filtered.length === 1 ? t("playerSingular") : t("playerPlural")}
         {position !== "ALL" && ` · ${posT(position)}`}
         {teamFilter !== "ALL" && ` · ${teams.find((t) => t.id === teamFilter)?.name}`}
       </p>
@@ -278,7 +278,7 @@ export function PlayersTable({ players, teams }: Props) {
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-stadium-muted text-xs font-inter">
-            Page {page + 1} of {totalPages}
+            {t("pageOf", { page: page + 1, total: totalPages })}
           </p>
           <div className="flex items-center gap-1">
             <button

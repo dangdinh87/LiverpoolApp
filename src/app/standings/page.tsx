@@ -1,13 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { getStandings } from "@/lib/football";
 import { StandingsTable } from "@/components/standings/standings-table";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata() {
   const t = await getTranslations("Standings.metadata");
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  const title = t("title");
+  const description = t("description");
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 export const dynamic = "force-dynamic";

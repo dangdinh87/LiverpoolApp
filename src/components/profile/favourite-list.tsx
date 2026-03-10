@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { toggleFavouritePlayer } from "@/app/actions/profile";
 import type { FavouritePlayer } from "@/lib/supabase";
 
@@ -13,11 +14,12 @@ interface FavouriteListProps {
 
 export function FavouriteList({ favourites }: FavouriteListProps) {
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("Profile");
 
   if (favourites.length === 0) {
     return (
       <p className="font-inter text-stadium-muted text-sm py-8 text-center">
-        No favourite players yet. Visit a player&apos;s page to add them.
+        {t("favouritePlayersEmpty")}
       </p>
     );
   }
@@ -65,7 +67,7 @@ export function FavouriteList({ favourites }: FavouriteListProps) {
               aria-label="Remove favourite"
             >
               <Heart size={12} className="fill-lfc-red" />
-              Remove
+              {t("removeFav")}
             </button>
           </div>
         </div>

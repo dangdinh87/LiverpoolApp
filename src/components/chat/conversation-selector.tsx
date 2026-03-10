@@ -180,7 +180,7 @@ export function ConversationSelector({
 					<ChevronsUpDown className={cn("shrink-0 opacity-50", compact ? "h-3 w-3" : "ml-2 h-4 w-4")} />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[280px] p-0 z-80" align="start">
+			<PopoverContent className="w-[280px] p-0 z-80 font-barlow" align="start">
 				<div className="p-2">
 					<div className="relative">
 						<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -193,7 +193,7 @@ export function ConversationSelector({
 					</div>
 				</div>
 				<div
-					className="flex items-center gap-2 px-3 py-2 hover:bg-accent cursor-pointer text-primary"
+					className="flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer text-primary"
 					onClick={(e: React.MouseEvent) => {
 						onNewChat();
 						setOpen(false);

@@ -21,12 +21,13 @@ export function FormWidget({ standing }: FormWidgetProps) {
   const losses = last5.filter((r) => r === "L").length;
 
   const t = useTranslations("Common.labels");
+  const bt = useTranslations("Bento");
 
   return (
     <div className="flex flex-col gap-4 p-5 h-full">
       <div className="flex items-center justify-between">
         <span className="font-barlow text-stadium-muted text-xs uppercase tracking-widest font-semibold">
-          Recent Form
+          {bt("recentForm")}
         </span>
         <span className="font-barlow text-[10px] text-stadium-muted/70 uppercase tracking-wider">{t("last5")}</span>
       </div>

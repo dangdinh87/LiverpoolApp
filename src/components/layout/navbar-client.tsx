@@ -46,6 +46,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -65,6 +66,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
     if (!user) return;
     fetch("/api/streak").then((r) => r.json()).then((d) => setStreak(d.streak ?? 0)).catch(() => {});
   }, [user]);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -104,8 +107,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               className={cn("w-auto transition-all duration-300", scrolled ? "h-7" : "h-9")}
               priority
             />
-            <span className={cn("font-bebas text-white tracking-widest hidden sm:block transition-all duration-300", scrolled ? "text-lg" : "text-xl")}>
-              Liverpool FC
+            <span className={cn("font-barlow font-bold uppercase text-white tracking-[0.2em] hidden sm:block transition-all duration-300", scrolled ? "text-sm" : "text-base")}>
+              LFCVN
             </span>
           </Link>
 
@@ -137,14 +140,13 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     href={href}
                     className={cn(
                       "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
-                      isActive ? "text-white" : "text-stadium-muted hover:text-white",
-                      highlight && !isActive && "text-lfc-red hover:text-lfc-red/80"
+                      isActive ? "text-white" : "text-stadium-muted hover:text-white"
                     )}
                   >
                     {label}
                     {highlight && (
                       <span className="absolute -top-1 -right-1 px-1 py-px text-[8px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase">
-                        Hot
+                        {t("hot")}
                       </span>
                     )}
                     {isActive && (
@@ -161,10 +163,9 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
             {/* Chat AI button */}
             <Link
               href="/chat"
-              className="ai-btn group relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95"
+              className="ai-btn group relative hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95"
             >
-              {/* TODO: add liverbird-ai.svg icon when ready */}
-              <span className="ai-btn-text hidden sm:inline">LiverBird AI</span>
+              <span className="ai-btn-text">LiverBird AI</span>
             </Link>
             <LanguageSwitcher />
             {/* Auth: member button with avatar or Members CTA */}
@@ -246,14 +247,14 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                         <div className="flex items-center gap-1.5">
                           <Flame size={14} className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
                           <span className="font-barlow text-xs uppercase tracking-wider text-stadium-muted">
-                            Streak
+                            {t("streak")}
                           </span>
                         </div>
                         <span className={cn(
                           "font-bebas text-lg leading-none",
                           streak > 0 ? "text-orange-400" : "text-stadium-muted"
                         )}>
-                          {streak} {streak === 1 ? "day" : "days"}
+                          {streak} {streak === 1 ? t("day") : t("days")}
                         </span>
                       </div>
 
@@ -290,11 +291,19 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                 className="hidden md:flex bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm group relative overflow-hidden cursor-pointer"
               >
                 <Shield size={14} className="transition-transform group-hover:scale-110" />
-                Members
+                {t("members")}
               </Button>
             )}
 
-            {/* Mobile hamburger */}
+            {/* Mobile hamburger — only mount Sheet after hydration to avoid Radix ID mismatch */}
+            {!mounted ? (
+              <button
+                className="md:hidden p-2 text-stadium-muted hover:text-white transition-colors"
+                aria-label={t("auth")}
+              >
+                <Menu size={22} />
+              </button>
+            ) : (
             <Sheet>
               <SheetTrigger asChild>
                 <button
@@ -357,7 +366,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                           className="mt-4 px-4 py-3 border border-stadium-border text-white rounded-none font-barlow font-bold uppercase tracking-[0.12em] text-center hover:bg-stadium-surface transition-colors flex items-center justify-center gap-2"
                         >
                           <Shield size={14} className="text-lfc-red" />
-                          Member Area
+                          {t("memberArea")}
                         </Link>
                       </SheetClose>
                       <form action={() => startTransition(() => logout())}>
@@ -376,13 +385,14 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                         className="mt-4 px-4 py-3 bg-lfc-red text-white rounded-none font-barlow font-bold uppercase tracking-[0.12em] text-center hover:bg-lfc-red-dark transition-colors flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Shield size={14} />
-                        Members
+                        {t("members")}
                       </button>
                     </SheetClose>
                   )}
                 </div>
               </SheetContent>
             </Sheet>
+            )}
           </div>
         </div>
       </nav>
@@ -394,7 +404,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
             className="bg-transparent border-none shadow-none p-0 sm:max-w-sm"
             showCloseButton={false}
           >
-            <DialogTitle className="sr-only">Member Login</DialogTitle>
+            <DialogTitle className="sr-only">{t("memberLogin")}</DialogTitle>
             <LoginForm />
           </DialogContent>
         </Dialog>

@@ -11,7 +11,7 @@ export async function generateMetadata() {
 export default async function LegalPage() {
   const t = await getTranslations("Legal");
 
-  const sectionKeys = ["privacy", "terms", "cookies", "sources"] as const;
+  const sectionKeys = ["privacy", "terms", "sources"] as const;
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -41,12 +41,12 @@ export default async function LegalPage() {
             {t.rich("contact", {
               email: (chunks) => (
                 <a
-                  href="mailto:contactus@liverpoolfc.com"
+                  href={`mailto:${chunks}`}
                   className="text-lfc-red hover:text-lfc-gold transition-colors"
                 >
                   {chunks}
                 </a>
-              )
+              ),
             })}
           </p>
         </div>

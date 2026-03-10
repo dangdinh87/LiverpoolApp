@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
-import { getFixtures, getStandings, getGameweekInfo } from "@/lib/football";
+import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
 import { NewsSection } from "@/components/home/news-section";
+import { makePageMeta } from "@/lib/seo";
 import type { Fixture } from "@/lib/types/football";
 
 export const metadata: Metadata = {
-  title: "Liverpool FC — You'll Never Walk Alone",
+  title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
   description:
-    "The home of Liverpool FC — live results, squad, fixtures, Premier League standings and more.",
+    "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+  ...makePageMeta(
+    "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
+    "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+  ),
 };
 
 // ISR: revalidate every 30 min (no cookies() call — locale filtering moved to client)
@@ -19,14 +24,11 @@ export default async function HomePage() {
   let fixtures: Fixture[] = [];
   let standings: Awaited<ReturnType<typeof getStandings>> = [];
   let allNews: Awaited<ReturnType<typeof getNewsFromDB>> = [];
-  let gameweek: Awaited<ReturnType<typeof getGameweekInfo>> = null;
-
   try {
-    [fixtures, standings, allNews, gameweek] = await Promise.all([
+    [fixtures, standings, allNews] = await Promise.all([
       getFixtures(),
       getStandings(),
       getNewsFromDB(20),
-      getGameweekInfo(),
     ]);
   } catch (err) {
     console.error("[homepage] Data fetch error:", err);
@@ -42,7 +44,7 @@ export default async function HomePage() {
     <>
       <Hero />
       <section className="py-10">
-        <BentoGrid nextMatch={nextMatch} standings={standings} gameweek={gameweek} />
+        <BentoGrid nextMatch={nextMatch} standings={standings} />
       </section>
       <section className="py-10 pb-16">
         <NewsSection articles={allNews.slice(0, 12)} />

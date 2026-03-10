@@ -8,6 +8,7 @@ import {
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { SeasonTabs } from "@/components/season/season-tabs";
+import { makePageMeta } from "@/lib/seo";
 
 /** Derive season label from current date. Aug-Dec → YYYY/(YY+1), Jan-Jul → (YYYY-1)/YY */
 function getCurrentSeason(): string {
@@ -22,10 +23,9 @@ const SEASON_LABEL = getCurrentSeason();
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Season.metadata");
-  return {
-    title: t("title", { season: SEASON_LABEL }),
-    description: t("description", { season: SEASON_LABEL }),
-  };
+  const title = t("title", { season: SEASON_LABEL });
+  const description = t("description", { season: SEASON_LABEL });
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 export const dynamic = "force-dynamic";

@@ -4,13 +4,13 @@ import { getTranslations } from "next-intl/server";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { getLfcFplPlayers } from "@/lib/fpl-data";
 import { SquadTabs } from "@/components/squad/squad-tabs";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Squad.metadata");
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  const title = t("title");
+  const description = t("description");
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 export const dynamic = "force-dynamic";

@@ -55,7 +55,7 @@ export function Footer() {
   const QUICK_LINKS = [
     { href: "/squad", label: navT("squad") },
     { href: "/season", label: navT("season") },
-    { href: "/season?tab=standings", label: navT("stats") },
+    { href: "/season?tab=standings", label: navT("standings") },
     { href: "/season?tab=stats", label: navT("stats") },
     { href: "/news", label: navT("news") },
     { href: "/history", label: navT("history") },
@@ -79,8 +79,8 @@ export function Footer() {
                   height={40}
                   className="h-10 w-auto opacity-80 group-hover:opacity-100 transition-opacity"
                 />
-                <span className="font-bebas text-xl text-white tracking-wider">
-                  Liverpool FC
+                <span className="font-barlow font-bold uppercase text-base text-white tracking-[0.2em]">
+                  LFCVN
                 </span>
               </Link>
               <p className="font-inter text-sm text-stadium-muted leading-relaxed">
@@ -142,7 +142,6 @@ export function Footer() {
                 {[
                   { href: "/legal", label: t("legalLinks.privacy") },
                   { href: "/legal", label: t("legalLinks.terms") },
-                  { href: "/legal", label: t("legalLinks.cookie") },
                   { href: "/about", label: t("legalLinks.about") },
                 ].map(({ href, label }) => (
                   <li key={label}>
@@ -191,7 +190,7 @@ export function Footer() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="font-bebas text-base text-lfc-red/80 tracking-widest">
-              You&apos;ll Never Walk Alone
+              {t("ynwa")}
             </p>
             <div className="flex flex-col items-center sm:items-end gap-1">
               <p className="text-stadium-muted text-xs font-inter">

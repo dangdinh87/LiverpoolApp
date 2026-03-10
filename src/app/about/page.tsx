@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { Coffee, Heart, Users, Calendar, Newspaper, Trophy, UserCircle, Database, Code, Mail, Github, Phone } from "lucide-react";
+import { Coffee, Heart, Users, Calendar, Newspaper, Trophy, UserCircle, Mail, Github, Phone } from "lucide-react";
 import { MomoModal } from "./momo-modal";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("About.metadata");
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  const title = t("title");
+  const description = t("description");
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 const FEATURE_ICONS: Record<string, React.ReactNode> = {
@@ -74,46 +74,6 @@ export default async function AboutPage() {
             </div>
           </div>
 
-          {/* Data sources */}
-          <div>
-            <h3 className="flex items-center gap-2 font-barlow text-lfc-red uppercase tracking-[0.2em] text-xs font-bold mb-3">
-              <Database size={14} />
-              {t("whatIs.dataTitle")}
-            </h3>
-            <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-              {t("whatIs.dataSources")}
-            </p>
-          </div>
-
-          {/* Tech stack */}
-          <div>
-            <h3 className="flex items-center gap-2 font-barlow text-lfc-red uppercase tracking-[0.2em] text-xs font-bold mb-3">
-              <Code size={14} />
-              {t("whatIs.techTitle")}
-            </h3>
-            <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-              {t("whatIs.techStack")}
-            </p>
-          </div>
-        </section>
-
-        {/* ── Creator ── */}
-        <section className="space-y-4">
-          <h2 className="font-bebas text-3xl text-white tracking-wider">{t("creator.title")}</h2>
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-full bg-stadium-surface2 border border-lfc-red flex items-center justify-center shrink-0">
-              <span className="font-bebas text-2xl text-lfc-red">NDD</span>
-            </div>
-            <div>
-              <p className="font-bebas text-2xl text-white tracking-wider">Nguyen Dang Dinh</p>
-              <p className="font-barlow text-lfc-red text-xs font-bold uppercase tracking-[0.2em]">
-                {t("creator.role")}
-              </p>
-            </div>
-          </div>
-          <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-            {t("creator.bio")}
-          </p>
         </section>
 
         {/* ── Contact ── */}

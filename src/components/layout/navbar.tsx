@@ -48,8 +48,8 @@ export function Navbar() {
             <div className="w-8 h-8 bg-lfc-red rounded-full flex items-center justify-center font-bebas text-white text-sm group-hover:bg-lfc-red-dark transition-colors">
               LFC
             </div>
-            <span className="font-bebas text-xl text-white tracking-wider hidden sm:block">
-              Liverpool FC
+            <span className="font-barlow font-bold uppercase text-base text-white tracking-[0.2em] hidden sm:block">
+              LFCVN
             </span>
           </Link>
 

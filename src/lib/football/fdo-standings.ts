@@ -107,7 +107,7 @@ function mapEntry(
     team: {
       id: canonicalId,
       name: total.team.name,
-      logo: total.team.crest,
+      logo: canonicalId === CANONICAL_LFC_ID ? "/assets/lfc/crest.webp" : total.team.crest,
     },
     points: total.points,
     goalsDiff: total.goalDifference,

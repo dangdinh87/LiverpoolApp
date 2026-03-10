@@ -78,18 +78,21 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 					{sources.map((s, i) => (
 						<a
 							key={i}
+							id={`citation-${i + 1}`}
 							href={s.url}
 							target="_blank"
 							rel="noopener noreferrer"
 							className="flex items-start gap-2 rounded-md p-1.5 hover:bg-white/5 transition-colors group"
 						>
-							<ExternalLink className="size-3 mt-0.5 text-stadium-muted shrink-0 group-hover:text-lfc-red" />
+							<span className="inline-flex items-center justify-center size-4 rounded-full bg-lfc-red/20 text-lfc-red text-[10px] font-bold shrink-0 mt-0.5">
+								{i + 1}
+							</span>
 							<div className="min-w-0">
 								<p className="text-xs font-medium truncate group-hover:text-lfc-red transition-colors">
 									{s.title || new URL(s.url).hostname}
 								</p>
 								{s.snippet && (
-									<p className="text-[11px] text-stadium-muted line-clamp-1 mt-0.5">
+									<p className="text-[11px] text-stadium-muted line-clamp-2 mt-0.5">
 										{s.snippet}
 									</p>
 								)}

@@ -9,14 +9,13 @@ import {
   type KeyboardEvent,
 } from "react";
 import { Calendar, TableProperties } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-  { id: "fixtures", label: "Fixtures", icon: Calendar },
-  { id: "standings", label: "Table", icon: TableProperties },
-] as const;
+const TAB_IDS = ["fixtures", "standings"] as const;
+const TAB_ICONS = { fixtures: Calendar, standings: TableProperties } as const;
 
-type TabId = (typeof TABS)[number]["id"];
+type TabId = (typeof TAB_IDS)[number];
 
 interface SeasonTabsProps {
   fixturesPanel: ReactNode;
@@ -33,7 +32,14 @@ export function SeasonTabs({
   matchCount,
   teamCount,
 }: SeasonTabsProps) {
-  const validDefault = TABS.some((t) => t.id === defaultTab)
+  const t = useTranslations("Season.tabs");
+  const TABS = TAB_IDS.map((id) => ({
+    id,
+    label: t(id),
+    icon: TAB_ICONS[id],
+  }));
+
+  const validDefault = TAB_IDS.includes(defaultTab as TabId)
     ? (defaultTab as TabId)
     : "fixtures";
   const [activeTab, setActiveTab] = useState<TabId>(validDefault);
@@ -41,7 +47,6 @@ export function SeasonTabs({
   const tabBarRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [indicator, setIndicator] = useState({ left: 0, width: 0 });
-  const isInitialRender = useRef(true);
 
   const badges: Record<TabId, string> = {
     fixtures: `${matchCount}`,
@@ -77,18 +82,6 @@ export function SeasonTabs({
       window.removeEventListener("resize", updateIndicator);
     };
   }, [updateIndicator]);
-
-  /* ---- scroll to content on tab switch ---- */
-  useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
-    // scroll tab bar to top of viewport
-    tabBarRef.current
-      ?.closest("[class*='sticky']")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [activeTab]);
 
   /* ---- URL sync (shallow) ---- */
   useEffect(() => {
@@ -132,7 +125,7 @@ export function SeasonTabs({
   return (
     <>
       {/* ── Sticky tab bar ── */}
-      <div className="sticky top-12 z-40 scroll-mt-12 bg-stadium-bg/95 backdrop-blur-md border-b border-stadium-border">
+      <div className="sticky top-16 z-40 bg-stadium-bg/95 backdrop-blur-md border-b border-stadium-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div
             ref={tabBarRef}
@@ -161,9 +154,9 @@ export function SeasonTabs({
                 {badges[id] && (
                   <span
                     className={cn(
-                      "text-[10px] rounded-full px-1.5 py-0.5 leading-none transition-colors",
+                      "text-[10px] font-bold tabular-nums leading-none rounded-full h-[18px] inline-flex items-center justify-center px-2 transition-colors",
                       activeTab === id
-                        ? "bg-lfc-red/20 text-lfc-red"
+                        ? "bg-lfc-red text-white"
                         : "bg-stadium-surface2 text-stadium-muted"
                     )}
                   >

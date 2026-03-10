@@ -110,13 +110,26 @@ export async function generateMetadata({
   const content = await scrapeArticle(url);
   if (!content) return { title: "Article Not Found" };
 
+  const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
+  const images = content.heroImage ? [{ url: content.heroImage, width: 1200, height: 630 }] : [];
+
   return {
     title: content.title,
-    description: content.description || content.paragraphs[0]?.slice(0, 160),
+    description,
     openGraph: {
+      type: "article",
       title: content.title,
-      description: content.description,
-      images: content.heroImage ? [content.heroImage] : [],
+      description,
+      images,
+      ...(content.publishedAt && { publishedTime: content.publishedAt }),
+      ...(content.author && { authors: [content.author] }),
+      siteName: "Liverpool FC Fan Site",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: content.title,
+      description,
+      ...(content.heroImage && { images: [content.heroImage] }),
     },
   };
 }

@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Shirt, Trophy } from "lucide-react";
-import { getTranslations } from "next-intl/server";
-import { getAllPlayers, getPlayerBySlug, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
+import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
+import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { makePageMeta } from "@/lib/seo";
 
 // ─── Country flag emoji mapping ──────────────────────────────────────────────
 
@@ -81,9 +82,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const player = getPlayerBySlug(id);
   if (!player) return { title: "Player" };
+  const description = player.metaDescription || `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
+  const images = player.photoLg ? [{ url: player.photoLg, width: 400, height: 400 }] : [];
   return {
     title: player.name,
-    description: player.metaDescription || `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`,
+    description,
+    openGraph: {
+      title: player.name,
+      description,
+      type: "profile",
+      ...(images.length > 0 && { images }),
+      siteName: "Liverpool FC Fan Site",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: player.name,
+      description,
+      ...(player.photoLg && { images: [player.photoLg] }),
+    },
   };
 }
 
@@ -95,9 +111,10 @@ export default async function PlayerPage({ params }: PageProps) {
   if (!player) notFound();
 
   const t = await getTranslations("PlayerDetail");
+  const locale = await getLocale();
 
   const age = calculateAge(player.dateOfBirth);
-  const dob = new Date(player.dateOfBirth).toLocaleDateString("en-GB", {
+  const dob = new Date(player.dateOfBirth).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -106,8 +123,9 @@ export default async function PlayerPage({ params }: PageProps) {
   const heroImage = player.localBodyShot || player.localPhoto;
   const flag = getFlag(player.nationality);
 
-  const bioParagraphs = player.bio
-    ? player.bio.split(/\n{2,}|(?<=\.)(?=\s[A-Z])/).filter(Boolean).slice(0, 6)
+  const bio = getPlayerBio(player.slug, locale);
+  const bioParagraphs = bio
+    ? bio.split(/\n{2,}|(?<=\.)(?=\s[A-Z])/).filter(Boolean).slice(0, 6)
     : [];
 
   return (
@@ -196,6 +214,8 @@ export default async function PlayerPage({ params }: PageProps) {
               <InfoPill icon={<span className="text-base">{flag}</span>} label={player.nationality} />
               <InfoPill icon={<Calendar size={14} />} label={`${dob} (${age})`} />
               <InfoPill icon={<Shirt size={14} />} label={`#${player.shirtNumber}`} />
+              {player.height && <InfoPill icon={<Ruler size={14} />} label={player.height} />}
+              {player.weight && <InfoPill icon={<Weight size={14} />} label={player.weight} />}
             </div>
           </div>
 
@@ -239,6 +259,8 @@ export default async function PlayerPage({ params }: PageProps) {
               <InfoRow label={t("info.nationality")} value={`${flag} ${player.nationality}`} />
               <InfoRow label={t("info.dob")} value={dob} />
               <InfoRow label={t("info.age")} value={t("info.ageYears", { age })} />
+              {player.height && <InfoRow label={t("info.height")} value={player.height} />}
+              {player.weight && <InfoRow label={t("info.weight")} value={player.weight} />}
               <InfoRow label={t("info.position")} value={t(`positions.${player.position}`)} />
               <InfoRow label={t("info.shirtNumber")} value={`#${player.shirtNumber}`} />
               <InfoRow
@@ -325,7 +347,7 @@ export default async function PlayerPage({ params }: PageProps) {
         )}
 
         {/* ─── Biography ─── */}
-        {player.bio && (
+        {bio && (
           <section className="bg-stadium-surface border border-stadium-border rounded-none p-6 md:p-8">
             <h2 className="font-bebas text-3xl text-white tracking-wider mb-6">
               {t("sections.biography")}

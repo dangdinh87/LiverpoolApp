@@ -2,6 +2,12 @@
   "Common": {
     "loading": "Loading...",
     "error": "Something went wrong",
+    "errorTitle": "Error",
+    "errorMessage": "Unable to load data. Please try again later.",
+    "tryAgain": "Try Again",
+    "notFoundTitle": "Offside!",
+    "notFoundMessage": "The page you're looking for doesn't exist or has been moved.",
+    "backHome": "Back to Home",
     "nav": {
       "home": "Home",
       "squad": "Squad",
@@ -15,7 +21,14 @@
       "profile": "Profile",
       "members": "Members",
       "memberArea": "Member Area",
-      "auth": "Login / Register"
+      "auth": "Login / Register",
+      "hot": "Hot",
+      "streak": "Streak",
+      "day": "day",
+      "days": "days",
+      "memberLogin": "Member Login",
+      "standings": "Standings",
+      "fixtures": "Fixtures"
     },
     "labels": {
       "opponent": "Opponent",
@@ -30,16 +43,28 @@
       "player": "Player",
       "pos": "Pos",
       "search": "Search players...",
-      "pageOf": "Page {page} of {total}"
+      "pageOf": "Page {page} of {total}",
+      "goals": "Goals",
+      "goalsShort": "G",
+      "assists": "Assists",
+      "assistsShort": "A",
+      "cleanSheets": "Clean Sheets",
+      "cleanSheetsShort": "CS",
+      "yellowCards": "Yellow Cards",
+      "yellowCardsShort": "YC",
+      "price": "Price",
+      "priceShort": "£",
+      "playerSingular": "player",
+      "playerPlural": "players"
     }
   },
   "Hero": {
     "tagline": "Liverpool Football Club · Est. 1892",
     "title": "Welcome to Anfield",
-    "subtitle": "The Official Fan App for Liverpool FC",
-    "description": "A fan-made hub for everything Liverpool FC — results, stats, squad, and more.",
+    "subtitle": "LFCVN — Liverpool FC Vietnam",
+    "description": "Your all-in-one Liverpool FC hub — results, stats, squad, news, and more.",
     "cta": "Explore the Squad",
-    "badge": "Made by fans, for fans — Unofficial",
+    "badge": "LFCVN — Unofficial",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings"
@@ -48,7 +73,13 @@
     "season": "Season 2025/26",
     "title": "Club Overview",
     "gameweekComplete": "Complete",
-    "deadline": "Deadline"
+    "deadline": "Deadline",
+    "recentForm": "Recent Form",
+    "latestNews": "Latest News",
+    "allNews": "All News",
+    "squad": "Squad",
+    "premierLeague": "Premier League",
+    "fullTable": "Full Table"
   },
   "News": {
     "metadata": {
@@ -110,7 +141,30 @@
       "loadMore": "Load More ({count} remaining)",
       "noArticles": "No Articles Found",
       "noArticlesDesc": "Try a different filter or check back later.",
-      "translateBadge": "AI Translation"
+      "translateBadge": "AI Translation",
+      "read": "Read",
+      "filterBtn": "Filter",
+      "filtersTitle": "Filters",
+      "sortLabel": "Sort",
+      "sourceLabel": "Source",
+      "categoryLabel": "Category",
+      "resetFilters": "Reset filters",
+      "searchPlaceholder": "Search...",
+      "resultsFor": "results for",
+      "sortTrending": "Trending",
+      "sortLatest": "Latest",
+      "langAll": "All",
+      "langLocal": "Local",
+      "langGlobal": "International",
+      "chipVietnamese": "Vietnamese",
+      "chipInternational": "International",
+      "catAll": "All",
+      "catMatch": "Match",
+      "catTransfer": "Transfer",
+      "catInjury": "Injury",
+      "catTeamNews": "Team News",
+      "catAnalysis": "Analysis",
+      "catOpinion": "Opinion"
     }
   },
   "NextMatch": {
@@ -276,7 +330,9 @@
       "position": "Position",
       "shirtNumber": "Shirt Number",
       "status": "Status",
-      "honours": "Honours"
+      "honours": "Honours",
+      "height": "Height",
+      "weight": "Weight"
     },
     "stats": {
       "attack": "Attack",
@@ -376,7 +432,11 @@
     },
     "next": "Next: ",
     "vs": "vs ",
-    "at": "@ "
+    "at": "@ ",
+    "tabs": {
+      "fixtures": "Fixtures",
+      "standings": "Table"
+    }
   },
   "Stats": {
     "metadata": {
@@ -482,15 +542,15 @@
   },
   "About": {
     "metadata": {
-      "title": "About | Liverpool FC Fan Site",
-      "description": "Learn more about the project, features, tech stack, and the creator behind this fan-made Liverpool FC application."
+      "title": "About | LFCVN",
+      "description": "Learn more about LFCVN — features, tech stack, and the creator behind this Liverpool FC community project."
     },
     "label": "About",
     "title": "The Story Behind",
-    "disclaimer": "This is a <status>fan-made & unofficial</status> project. Not endorsed by or affiliated with Liverpool Football Club, Fenway Sports Group, or the Premier League. All trademarks belong to their respective owners.",
+    "disclaimer": "LFCVN is an <status>unofficial & independent</status> project. Not endorsed by or affiliated with Liverpool Football Club, Fenway Sports Group, or the Premier League. All trademarks belong to their respective owners.",
     "whatIs": {
       "title": "What is this site?",
-      "description": "An all-in-one Liverpool FC fan hub that brings together real-time football data, multilingual news, and rich club history — designed for Reds worldwide.",
+      "description": "LFCVN is an all-in-one Liverpool FC platform that brings together real-time football data, multilingual news, and rich club history — designed for Reds worldwide.",
       "featuresTitle": "Features",
       "features": {
         "squad": "Full squad with FPL stats — form, price, xG/xA, selection %, injury updates",
@@ -508,7 +568,7 @@
     "creator": {
       "title": "Creator",
       "role": "Developer & Lifelong Red",
-      "bio": "A software engineer by trade, a Liverpool fan by heart. Built this as a personal companion app and decided to share it with the global LFC community."
+      "bio": "A software engineer by trade, a Liverpool fan by heart. Built LFCVN as a passion project and decided to share it with the global LFC community."
     },
     "contact": {
       "title": "Get in Touch",
@@ -567,6 +627,10 @@
       "win": "Win",
       "draw": "Draw",
       "loss": "Loss"
+    },
+    "comp": {
+      "pl": "Premier League",
+      "ucl": "Champions League"
     }
   },
   "Fixtures": {
@@ -597,24 +661,19 @@
     },
     "title": "Legal Information",
     "lastUpdated": "Last updated: {date}",
-    "contact": "For questions or concerns, contact {email}",
+    "contact": "For questions or concerns, contact <email>contactus@liverpoolfc.com</email>",
     "labels": {
       "privacy": "Privacy Policy",
-      "terms": "Terms of Use",
-      "cookies": "Cookie Policy"
+      "terms": "Terms of Use"
     },
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "This is a fan-made website and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. We do not sell or share your data with third parties."
+        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. We do not sell or share your data with third parties."
       },
       "terms": {
         "title": "Terms of Use",
         "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from the Fantasy Premier League API and Football-Data.org. News content is aggregated from BBC Sport RSS feeds. Use of this site constitutes acceptance of these terms."
-      },
-      "cookies": {
-        "title": "Cookie Policy",
-        "content": "This site uses essential cookies for authentication and theme preferences. No tracking or advertising cookies are used. By continuing to use this site, you consent to our use of essential cookies."
       },
       "sources": {
         "title": "Data Sources",
@@ -697,16 +756,16 @@
     }
   },
   "Footer": {
-    "about": "A fan-made hub for everything Liverpool FC — results, stats, squad, and more.",
+    "about": "LFCVN — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
     "quickLinks": "Quick Links",
     "legal": "Legal",
     "contact": "Contact",
     "rights": "All rights reserved.",
-    "disclaimer": "This is a fan-made site and is not affiliated with Liverpool FC.",
+    "disclaimer": "LFCVN is an unofficial site and is not affiliated with Liverpool FC.",
+    "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
       "privacy": "Privacy Policy",
       "terms": "Terms of Use",
-      "cookie": "Cookie Policy",
       "about": "About"
     }
   },

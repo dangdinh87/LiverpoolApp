@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { Standing } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
@@ -8,19 +11,20 @@ interface StandingsPreviewProps {
 }
 
 export function StandingsPreview({ standings }: StandingsPreviewProps) {
+  const t = useTranslations("Bento");
   const top5 = standings.slice(0, 5);
 
   return (
     <div className="flex flex-col h-full p-5 gap-3">
       <div className="flex items-center justify-between">
         <span className="font-barlow text-stadium-muted text-xs uppercase tracking-widest font-semibold">
-          Premier League
+          {t("premierLeague")}
         </span>
         <Link
           href="/standings"
           className="font-barlow text-[10px] text-lfc-red hover:underline uppercase tracking-wider font-semibold"
         >
-          Full Table
+          {t("fullTable")}
         </Link>
       </div>
 

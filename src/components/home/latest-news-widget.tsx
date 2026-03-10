@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { formatRelativeDate } from "@/lib/news-config";
 
@@ -7,19 +10,20 @@ interface LatestNewsWidgetProps {
 }
 
 export function LatestNewsWidget({ articles }: LatestNewsWidgetProps) {
+  const t = useTranslations("Bento");
   const top3 = articles.slice(0, 3);
 
   return (
     <div className="flex flex-col gap-3 p-5 h-full">
       <div className="flex items-center justify-between">
         <span className="font-barlow text-stadium-muted text-xs uppercase tracking-widest font-semibold">
-          Latest News
+          {t("latestNews")}
         </span>
         <Link
           href="/news"
           className="font-barlow text-xs text-lfc-red hover:underline uppercase tracking-wider font-semibold"
         >
-          All News
+          {t("allNews")}
         </Link>
       </div>
 

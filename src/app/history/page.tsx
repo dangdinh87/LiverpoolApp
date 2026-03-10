@@ -13,13 +13,13 @@ import { LegendCard } from "@/components/history/legend-card";
 import { ClubTabs } from "@/components/history/club-tabs";
 import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("History.metadata");
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  const title = t("title");
+  const description = t("description");
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 export const dynamic = "force-dynamic";
@@ -367,7 +367,7 @@ export default async function HistoryPage({
   return (
     <div className="min-h-screen bg-stadium-bg text-white">
       {/* ── Hero ── */}
-      <div className="relative h-[400px] pt-20 flex items-end overflow-hidden">
+      <div className="relative h-[520px] md:h-[560px] pt-28 flex items-end overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center animate-[subtleZoom_20s_infinite_alternate]"
           style={{

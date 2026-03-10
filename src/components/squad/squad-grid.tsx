@@ -25,6 +25,8 @@ interface ClientPlayer {
   bodyShot: string;
   localPhoto: string;
   localBodyShot: string;
+  height: string;
+  weight: string;
   bio: string;
   honors: string[];
   metaDescription: string;

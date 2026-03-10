@@ -9,6 +9,7 @@ import {
   useIsMarkdownCodeBlock,
 } from "@assistant-ui/react-markdown";
 import remarkGfm from "remark-gfm";
+import { remarkCitations } from "@/lib/chat/remark-citations";
 import { type FC, memo, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 
@@ -18,7 +19,7 @@ import { cn } from "@/lib/utils";
 const MarkdownTextImpl = () => {
   return (
     <MarkdownTextPrimitive
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkCitations]}
       className="aui-md"
       components={defaultComponents}
     />
@@ -130,15 +131,36 @@ const defaultComponents = memoizeMarkdownComponents({
       {...props}
     />
   ),
-  a: ({ className, ...props }) => (
-    <a
-      className={cn(
-        "aui-md-a font-medium text-primary underline underline-offset-4",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  a: ({ className, href, children, ...props }) => {
+    // Citation badge: [N] → small superscript circle
+    if (href?.startsWith("#citation-")) {
+      return (
+        <sup className="aui-md-citation-sup">
+          <a
+            href={href}
+            className="inline-flex items-center justify-center size-[18px] rounded-full bg-lfc-red/20 text-lfc-red text-[10px] font-bold no-underline hover:bg-lfc-red/40 transition-colors align-super ml-0.5"
+            title={`Source ${href.replace("#citation-", "")}`}
+            {...props}
+          >
+            {children}
+          </a>
+        </sup>
+      );
+    }
+    // Regular link
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={cn(
+          "aui-md-a font-medium text-primary underline underline-offset-4",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
   blockquote: ({ className, ...props }) => (
     <blockquote
       className={cn("aui-md-blockquote border-l-2 pl-6 italic", className)}

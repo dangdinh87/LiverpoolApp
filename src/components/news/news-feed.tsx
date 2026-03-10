@@ -10,6 +10,7 @@ import {
   Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
   type LucideIcon,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
@@ -44,25 +45,25 @@ function getSavedFilter(): FeedFilter {
 
 /* ── Filter config ── */
 
-const SORT_OPTIONS: { value: SortMode; icon: LucideIcon; vi: string; en: string }[] = [
-  { value: "trending", icon: TrendingUp, vi: "Nổi bật", en: "Trending" },
-  { value: "newest", icon: ArrowDownWideNarrow, vi: "Mới nhất", en: "Latest" },
+const SORT_OPTIONS: { value: SortMode; icon: LucideIcon; labelKey: string }[] = [
+  { value: "trending", icon: TrendingUp, labelKey: "sortTrending" },
+  { value: "newest", icon: ArrowDownWideNarrow, labelKey: "sortLatest" },
 ];
 
-const LANG_OPTIONS: { value: FeedFilter; icon: LucideIcon; vi: string; en: string }[] = [
-  { value: "all", icon: Globe, vi: "Tất cả", en: "All" },
-  { value: "local", icon: Flag, vi: "Báo Việt", en: "Local" },
-  { value: "global", icon: Earth, vi: "Quốc tế", en: "International" },
+const LANG_OPTIONS: { value: FeedFilter; icon: LucideIcon; labelKey: string }[] = [
+  { value: "all", icon: Globe, labelKey: "langAll" },
+  { value: "local", icon: Flag, labelKey: "langLocal" },
+  { value: "global", icon: Earth, labelKey: "langGlobal" },
 ];
 
-const CATEGORY_OPTIONS: { value: CategoryFilter; icon: LucideIcon; vi: string; en: string }[] = [
-  { value: "all", icon: Layers, vi: "Tất cả", en: "All" },
-  { value: "match-report", icon: Target, vi: "Trận đấu", en: "Match" },
-  { value: "transfer", icon: CircleDollarSign, vi: "Chuyển nhượng", en: "Transfer" },
-  { value: "injury", icon: HeartPulse, vi: "Chấn thương", en: "Injury" },
-  { value: "team-news", icon: Users, vi: "Đội hình", en: "Team News" },
-  { value: "analysis", icon: BarChart3, vi: "Phân tích", en: "Analysis" },
-  { value: "opinion", icon: MessageSquareQuote, vi: "Góc nhìn", en: "Opinion" },
+const CATEGORY_OPTIONS: { value: CategoryFilter; icon: LucideIcon; labelKey: string }[] = [
+  { value: "all", icon: Layers, labelKey: "catAll" },
+  { value: "match-report", icon: Target, labelKey: "catMatch" },
+  { value: "transfer", icon: CircleDollarSign, labelKey: "catTransfer" },
+  { value: "injury", icon: HeartPulse, labelKey: "catInjury" },
+  { value: "team-news", icon: Users, labelKey: "catTeamNews" },
+  { value: "analysis", icon: BarChart3, labelKey: "catAnalysis" },
+  { value: "opinion", icon: MessageSquareQuote, labelKey: "catOpinion" },
 ];
 
 /* ── Sub-components ── */
@@ -89,6 +90,7 @@ function CategoryBadge({ category }: { category?: ArticleCategory }) {
 }
 
 function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
+  const t = useTranslations("News.feed");
   return (
     <Link
       href={getArticleUrl(article.link)}
@@ -114,7 +116,7 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         {isRead && (
           <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm">
             <CheckCheck className="w-3.5 h-3.5 text-green-400" />
-            <span className="font-barlow text-[10px] uppercase tracking-wider text-green-400">Đã đọc</span>
+            <span className="font-barlow text-[10px] uppercase tracking-wider text-green-400">{t("read")}</span>
           </div>
         )}
       </div>
@@ -136,6 +138,7 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
 }
 
 function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
+  const t = useTranslations("News.feed");
   return (
     <Link
       href={getArticleUrl(article.link)}
@@ -160,7 +163,7 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         {isRead && (
           <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm">
             <CheckCheck className="w-3 h-3 text-green-400" />
-            <span className="font-barlow text-[9px] uppercase tracking-wider text-green-400">Đã đọc</span>
+            <span className="font-barlow text-[9px] uppercase tracking-wider text-green-400">{t("read")}</span>
           </div>
         )}
       </div>
@@ -181,6 +184,7 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
 }
 
 function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
+  const t = useTranslations("News.feed");
   return (
     <Link
       href={getArticleUrl(article.link)}
@@ -214,7 +218,7 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
           <CategoryBadge category={article.category} />
           {isRead && (
             <span className="inline-flex items-center gap-1 font-barlow text-[9px] uppercase tracking-wider text-green-400">
-              <CheckCheck className="w-3 h-3" /> Đã đọc
+              <CheckCheck className="w-3 h-3" /> {t("read")}
             </span>
           )}
         </div>
@@ -233,13 +237,11 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
 /* ── Filter Sheet (slides in from right) ── */
 
 function FilterSheet({
-  locale,
   sortMode, setSortMode,
   langFilter, setLangFilter,
   category, setCategory,
   activeCount,
 }: {
-  locale: "en" | "vi";
   sortMode: SortMode;
   setSortMode: (v: SortMode) => void;
   langFilter: FeedFilter;
@@ -248,7 +250,7 @@ function FilterSheet({
   setCategory: (v: CategoryFilter) => void;
   activeCount: number;
 }) {
-  const t = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const t = useTranslations("News.feed");
 
   const chipClass = (active: boolean) =>
     `inline-flex items-center gap-1.5 px-3 py-2 text-xs font-barlow uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap ${
@@ -263,7 +265,7 @@ function FilterSheet({
         <button className="relative flex items-center gap-1.5 px-3 py-1.5 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0">
           <SlidersHorizontal className="w-3.5 h-3.5" />
           <span className="font-barlow text-xs font-semibold uppercase tracking-wider">
-            {locale === "vi" ? "Lọc" : "Filter"}
+            {t("filterBtn")}
           </span>
           {activeCount > 0 && (
             <span className="w-4 h-4 bg-lfc-red text-white text-[9px] font-bold flex items-center justify-center">
@@ -275,7 +277,7 @@ function FilterSheet({
       <SheetContent side="right" className="w-80 bg-stadium-bg border-l border-stadium-border p-0">
         <SheetHeader className="px-5 pt-5 pb-4 border-b border-stadium-border/50">
           <SheetTitle className="font-bebas text-2xl text-white tracking-wider">
-            {t("Bộ lọc", "Filters")}
+            {t("filtersTitle")}
           </SheetTitle>
         </SheetHeader>
 
@@ -283,17 +285,17 @@ function FilterSheet({
           {/* Sort */}
           <div>
             <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("Sắp xếp", "Sort")}
+              {t("sortLabel")}
             </p>
             <div className="flex gap-2">
-              {SORT_OPTIONS.map(({ value, icon: Icon, vi, en }) => (
+              {SORT_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
                 <button
                   key={value}
                   onClick={() => setSortMode(value)}
                   className={chipClass(sortMode === value)}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {t(vi, en)}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -302,17 +304,17 @@ function FilterSheet({
           {/* Language */}
           <div>
             <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("Nguồn tin", "Source")}
+              {t("sourceLabel")}
             </p>
             <div className="flex flex-wrap gap-2">
-              {LANG_OPTIONS.map(({ value, icon: Icon, vi, en }) => (
+              {LANG_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
                 <button
                   key={value}
                   onClick={() => setLangFilter(value)}
                   className={chipClass(langFilter === value)}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {t(vi, en)}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -321,17 +323,17 @@ function FilterSheet({
           {/* Category */}
           <div>
             <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("Chủ đề", "Category")}
+              {t("categoryLabel")}
             </p>
             <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map(({ value, icon: Icon, vi, en }) => (
+              {CATEGORY_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
                 <button
                   key={value}
                   onClick={() => setCategory(value)}
                   className={chipClass(category === value)}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {t(vi, en)}
+                  {t(labelKey)}
                 </button>
               ))}
             </div>
@@ -347,7 +349,7 @@ function FilterSheet({
               }}
               className="w-full font-barlow text-xs uppercase tracking-wider text-stadium-muted hover:text-white py-2.5 border-t border-stadium-border/40 pt-4 cursor-pointer transition-colors"
             >
-              {t("Đặt lại bộ lọc", "Reset filters")}
+              {t("resetFilters")}
             </button>
           )}
         </div>
@@ -364,7 +366,8 @@ interface NewsFeedProps {
   locale: "en" | "vi";
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
+  const t = useTranslations("News.feed");
   const [langFilter, setLangFilter] = useState<FeedFilter>("local");
   const [sortMode, setSortMode] = useState<SortMode>("trending");
   const [category, setCategory] = useState<CategoryFilter>("all");
@@ -393,10 +396,10 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
     setVisibleCount(INITIAL_COUNT);
   };
 
-  // Count active non-default filters
+  // Count active non-default filters (default: trending + local + all categories)
   const activeFilterCount =
     (sortMode !== "trending" ? 1 : 0) +
-    (langFilter !== "all" ? 1 : 0) +
+    (langFilter !== "local" ? 1 : 0) +
     (category !== "all" ? 1 : 0);
 
   // Pipeline: lang → category → sort → search
@@ -435,10 +438,10 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
       {/* Language quick-filter chips */}
       <div className="flex items-center gap-2">
         {([
-          { value: "all" as FeedFilter, label: locale === "vi" ? "Tất cả" : "All" },
-          { value: "local" as FeedFilter, label: locale === "vi" ? "Việt Nam" : "Vietnamese", flag: "🇻🇳" },
-          { value: "global" as FeedFilter, label: locale === "vi" ? "Quốc tế" : "International", flag: "🌍" },
-        ]).map(({ value, label, flag }) => (
+          { value: "all" as FeedFilter, labelKey: "all" },
+          { value: "local" as FeedFilter, labelKey: "chipVietnamese", flag: "\u{1F1FB}\u{1F1F3}" },
+          { value: "global" as FeedFilter, labelKey: "chipInternational", flag: "\u{1F30D}" },
+        ]).map(({ value, labelKey, flag }) => (
           <button
             key={value}
             onClick={() => handleLangFilter(value)}
@@ -449,7 +452,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
             }`}
           >
             {flag && <span className="text-sm">{flag}</span>}
-            {label}
+            {t(labelKey)}
           </button>
         ))}
       </div>
@@ -462,7 +465,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(INITIAL_COUNT); }}
-            placeholder={locale === "vi" ? "Tìm kiếm..." : "Search..."}
+            placeholder={t("searchPlaceholder")}
             className="w-full bg-stadium-surface border border-stadium-border/60 pl-8 pr-7 py-1.5 text-xs font-inter text-white placeholder:text-stadium-muted/50 focus:outline-none focus:border-lfc-red/50 transition-colors"
           />
           {search && (
@@ -476,7 +479,6 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
         </div>
 
         <FilterSheet
-          locale={locale}
           sortMode={sortMode}
           setSortMode={handleSortMode}
           langFilter={langFilter}
@@ -492,24 +494,24 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
         <div className="flex items-center gap-2 flex-wrap">
           {search && (
             <span className="font-inter text-xs text-stadium-muted">
-              {articles.length} {locale === "vi" ? "kết quả cho" : "results for"} &ldquo;{search}&rdquo;
+              {articles.length} {t("resultsFor")} &ldquo;{search}&rdquo;
             </span>
           )}
-          {langFilter !== "all" && (
+          {langFilter !== "local" && (
             <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {LANG_OPTIONS.find((o) => o.value === langFilter)?.[locale === "vi" ? "vi" : "en"]}
-              <button onClick={() => handleLangFilter("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
+              {LANG_OPTIONS.find((o) => o.value === langFilter)?.labelKey && t(LANG_OPTIONS.find((o) => o.value === langFilter)!.labelKey)}
+              <button onClick={() => handleLangFilter("local")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
           {category !== "all" && (
             <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {CATEGORY_OPTIONS.find((o) => o.value === category)?.[locale === "vi" ? "vi" : "en"]}
+              {CATEGORY_OPTIONS.find((o) => o.value === category)?.labelKey && t(CATEGORY_OPTIONS.find((o) => o.value === category)!.labelKey)}
               <button onClick={() => handleCategory("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
           {sortMode !== "trending" && (
             <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {SORT_OPTIONS.find((o) => o.value === sortMode)?.[locale === "vi" ? "vi" : "en"]}
+              {SORT_OPTIONS.find((o) => o.value === sortMode)?.labelKey && t(SORT_OPTIONS.find((o) => o.value === sortMode)!.labelKey)}
               <button onClick={() => handleSortMode("trending")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
@@ -521,10 +523,10 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
         <div className="text-center py-20">
           <Newspaper className="w-12 h-12 text-stadium-muted mx-auto mb-4" />
           <p className="font-bebas text-3xl text-stadium-muted mb-2">
-            {locale === "vi" ? "Không tìm thấy bài viết" : "No Articles Found"}
+            {t("noArticles")}
           </p>
           <p className="font-inter text-stadium-muted text-sm">
-            {locale === "vi" ? "Thử từ khoá khác hoặc quay lại sau." : "Try a different search or check back later."}
+            {t("noArticlesDesc")}
           </p>
         </div>
       ) : (
@@ -553,7 +555,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
                 {compact.length > 0 && (
                   <div className="space-y-3">
                     <p className="font-barlow text-xs text-stadium-muted uppercase tracking-widest font-semibold">
-                      {locale === "vi" ? "Thêm tin tức" : "More Stories"}
+                      {t("moreStories")}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {compact.map((article) => (
@@ -573,7 +575,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
                       }
                       className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer"
                     >
-                      Load More ({articles.length - visibleCount} remaining)
+                      {t("loadMore", { count: articles.length - visibleCount })}
                     </button>
                   </div>
                 )}

@@ -1,13 +1,13 @@
 import { getTranslations } from "next-intl/server";
 import { getFixtures } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata() {
   const t = await getTranslations("Fixtures.metadata");
-  return {
-    title: t("title"),
-    description: t("description"),
-  };
+  const title = t("title");
+  const description = t("description");
+  return { title, description, ...makePageMeta(title, description) };
 }
 
 export const dynamic = "force-dynamic";

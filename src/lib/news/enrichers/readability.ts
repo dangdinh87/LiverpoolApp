@@ -27,8 +27,10 @@ export async function extractWithReadability(
 ): Promise<ReadabilityResult | null> {
   try {
     // Dynamic import to avoid ESM/CJS incompatibility with jsdom on Vercel
-    const { JSDOM } = await import("jsdom");
-    const dom = new JSDOM(html, { url });
+    const { JSDOM, VirtualConsole } = await import("jsdom");
+    // Suppress "Could not parse CSS stylesheet" errors from jsdom
+    const virtualConsole = new VirtualConsole();
+    const dom = new JSDOM(html, { url, virtualConsole });
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
     if (!article || (article.length ?? 0) < 200) return null;

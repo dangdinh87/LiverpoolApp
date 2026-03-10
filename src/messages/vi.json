@@ -2,6 +2,12 @@
   "Common": {
     "loading": "Đang tải...",
     "error": "Đã xảy ra lỗi",
+    "errorTitle": "Lỗi",
+    "errorMessage": "Không thể tải dữ liệu. Vui lòng thử lại sau.",
+    "tryAgain": "Thử lại",
+    "notFoundTitle": "Việt vị!",
+    "notFoundMessage": "Trang bạn tìm không tồn tại hoặc đã được di chuyển.",
+    "backHome": "Về trang chủ",
     "nav": {
       "home": "Trang chủ",
       "squad": "Đội hình",
@@ -16,7 +22,14 @@
       "profile": "Hồ sơ",
       "members": "Thành viên",
       "memberArea": "Khu vực thành viên",
-      "auth": "Đăng nhập / Đăng ký"
+      "auth": "Đăng nhập / Đăng ký",
+      "hot": "Hot",
+      "streak": "Chuỗi",
+      "day": "ngày",
+      "days": "ngày",
+      "memberLogin": "Đăng nhập thành viên",
+      "standings": "Bảng xếp hạng",
+      "fixtures": "Lịch thi đấu"
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -31,16 +44,28 @@
       "player": "Cầu thủ",
       "pos": "Vị trí",
       "search": "Tìm kiếm cầu thủ...",
-      "pageOf": "Trang {page} / {total}"
+      "pageOf": "Trang {page} / {total}",
+      "goals": "Bàn thắng",
+      "goalsShort": "BT",
+      "assists": "Kiến tạo",
+      "assistsShort": "KT",
+      "cleanSheets": "Giữ sạch lưới",
+      "cleanSheetsShort": "SL",
+      "yellowCards": "Thẻ vàng",
+      "yellowCardsShort": "TV",
+      "price": "Giá",
+      "priceShort": "£",
+      "playerSingular": "cầu thủ",
+      "playerPlural": "cầu thủ"
     }
   },
   "Hero": {
     "tagline": "Câu lạc bộ bóng đá Liverpool · Thành lập 1892",
     "title": "Chào mừng đến với Anfield",
-    "subtitle": "Ứng dụng fan chính thức của Liverpool FC",
-    "description": "Trung tâm dành cho người hâm mộ về mọi thứ về Liverpool FC — kết quả, số liệu, đội hình và hơn thế nữa.",
+    "subtitle": "LFCVN — Liverpool FC Việt Nam",
+    "description": "Tất cả về Liverpool FC — kết quả, số liệu, đội hình, tin tức và hơn thế nữa.",
     "cta": "Khám phá đội hình",
-    "badge": "Tạo bởi fan, dành cho fan — Không chính thức",
+    "badge": "LFCVN — Không chính thức",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng"
@@ -49,7 +74,13 @@
     "season": "Mùa giải 2025/26",
     "title": "Tổng quan câu lạc bộ",
     "gameweekComplete": "Hoàn tất",
-    "deadline": "Hạn chót"
+    "deadline": "Hạn chót",
+    "recentForm": "Phong độ gần đây",
+    "latestNews": "Tin mới nhất",
+    "allNews": "Xem tất cả",
+    "squad": "Đội hình",
+    "premierLeague": "Ngoại hạng Anh",
+    "fullTable": "Xem đầy đủ"
   },
   "News": {
     "metadata": {
@@ -111,7 +142,30 @@
       "loadMore": "Xem thêm (còn {count} bài)",
       "noArticles": "Không tìm thấy bài viết",
       "noArticlesDesc": "Hãy thử bộ lọc khác hoặc quay lại sau.",
-      "translateBadge": "Bản dịch AI"
+      "translateBadge": "Bản dịch AI",
+      "read": "Đã đọc",
+      "filterBtn": "Lọc",
+      "filtersTitle": "Bộ lọc",
+      "sortLabel": "Sắp xếp",
+      "sourceLabel": "Nguồn tin",
+      "categoryLabel": "Chủ đề",
+      "resetFilters": "Đặt lại bộ lọc",
+      "searchPlaceholder": "Tìm kiếm...",
+      "resultsFor": "kết quả cho",
+      "sortTrending": "Nổi bật",
+      "sortLatest": "Mới nhất",
+      "langAll": "Tất cả",
+      "langLocal": "Báo Việt",
+      "langGlobal": "Quốc tế",
+      "chipVietnamese": "Việt Nam",
+      "chipInternational": "Quốc tế",
+      "catAll": "Tất cả",
+      "catMatch": "Trận đấu",
+      "catTransfer": "Chuyển nhượng",
+      "catInjury": "Chấn thương",
+      "catTeamNews": "Đội hình",
+      "catAnalysis": "Phân tích",
+      "catOpinion": "Góc nhìn"
     }
   },
   "NextMatch": {
@@ -163,8 +217,8 @@
       "out": "{count} vắng mặt",
       "doubtful": "{count} bỏ ngỏ",
       "statuses": {
-        "OUT": "OUT",
-        "DOUBT": "DOUBT",
+        "OUT": "VẮNG",
+        "DOUBT": "NGHI VẤN",
         "5050": "50/50"
       },
       "descriptions": {
@@ -277,7 +331,9 @@
       "position": "Vị trí",
       "shirtNumber": "Số áo",
       "status": "Trạng thái",
-      "honours": "Danh hiệu"
+      "honours": "Danh hiệu",
+      "height": "Chiều cao",
+      "weight": "Cân nặng"
     },
     "stats": {
       "attack": "Tấn công",
@@ -377,7 +433,11 @@
     },
     "next": "Tiếp theo: ",
     "vs": "vs ",
-    "at": "tại "
+    "at": "tại ",
+    "tabs": {
+      "fixtures": "Lịch đấu",
+      "standings": "Bảng xếp hạng"
+    }
   },
   "Stats": {
     "metadata": {
@@ -446,7 +506,7 @@
       "chairman": "Chủ tịch",
       "league": "Giải đấu",
       "kitManufacturer": "Nhà tài trợ áo",
-      "website": "Website",
+      "website": "Trang web",
       "colours": "Màu sắc",
       "white": "Trắng"
     },
@@ -483,15 +543,15 @@
   },
   "About": {
     "metadata": {
-      "title": "Giới thiệu | Liverpool FC Fan Site",
-      "description": "Tìm hiểu về dự án, tính năng, công nghệ và người đứng sau ứng dụng fan Liverpool FC này."
+      "title": "Giới thiệu | LFCVN",
+      "description": "Tìm hiểu về LFCVN — tính năng, công nghệ và người đứng sau dự án cộng đồng Liverpool FC này."
     },
     "label": "Giới thiệu",
     "title": "Câu chuyện đằng sau",
-    "disclaimer": "Đây là một dự án <status>do fan thực hiện & không chính thức</status>. Không được xác nhận bởi hoặc liên kết với Liverpool Football Club, Fenway Sports Group, hoặc Premier League. Tất cả các nhãn hiệu thuộc về chủ sở hữu tương ứng.",
+    "disclaimer": "LFCVN là dự án <status>độc lập & không chính thức</status>. Không được xác nhận bởi hoặc liên kết với Liverpool Football Club, Fenway Sports Group, hoặc Premier League. Tất cả các nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
       "title": "Trang web này là gì?",
-      "description": "Nền tảng fan Liverpool FC tất-cả-trong-một, tổng hợp dữ liệu bóng đá thời gian thực, tin tức đa ngôn ngữ và lịch sử câu lạc bộ — thiết kế cho The Reds toàn cầu.",
+      "description": "LFCVN là nền tảng Liverpool FC tất-cả-trong-một, tổng hợp dữ liệu bóng đá thời gian thực, tin tức đa ngôn ngữ và lịch sử câu lạc bộ — thiết kế cho The Reds toàn cầu.",
       "featuresTitle": "Tính năng",
       "features": {
         "squad": "Đội hình đầy đủ với thống kê FPL — phong độ, giá, xG/xA, tỷ lệ chọn, cập nhật chấn thương",
@@ -509,7 +569,7 @@
     "creator": {
       "title": "Người sáng tạo",
       "role": "Lập trình viên & fan trung thành",
-      "bio": "Một kỹ sư phần mềm theo nghề nghiệp, một fan Liverpool bằng trái tim. Xây dựng ứng dụng này như một người bạn đồng hành cá nhân và quyết định chia sẻ nó với cộng đồng LFC toàn cầu."
+      "bio": "Một kỹ sư phần mềm theo nghề nghiệp, một fan Liverpool bằng trái tim. Xây dựng LFCVN từ đam mê và quyết định chia sẻ với cộng đồng LFC toàn cầu."
     },
     "contact": {
       "title": "Liên hệ",
@@ -558,9 +618,9 @@
       "label": "Liverpool"
     },
     "zones": {
-      "cl": "Champions League",
-      "el": "Europa League",
-      "ecl": "Conference League",
+      "cl": "Cúp C1 Châu Âu",
+      "el": "Cúp C2 Châu Âu",
+      "ecl": "Cúp C3 Châu Âu",
       "rel": "Xuống hạng",
       "r16": "Vòng 1/8",
       "playoff": "Vòng Play-off",
@@ -568,6 +628,10 @@
       "win": "Thắng",
       "draw": "Hòa",
       "loss": "Thua"
+    },
+    "comp": {
+      "pl": "Ngoại hạng Anh",
+      "ucl": "Cúp C1 Châu Âu"
     }
   },
   "Fixtures": {
@@ -598,24 +662,19 @@
     },
     "title": "Thông tin pháp lý",
     "lastUpdated": "Cập nhật lần cuối: {date}",
-    "contact": "Nếu có câu hỏi hoặc thắc mắc, vui lòng liên hệ {email}",
+    "contact": "Nếu có câu hỏi hoặc thắc mắc, vui lòng liên hệ <email>contactus@liverpoolfc.com</email>",
     "labels": {
       "privacy": "Chính sách bảo mật",
-      "terms": "Điều khoản sử dụng",
-      "cookies": "Chính sách Cookie"
+      "terms": "Điều khoản sử dụng"
     },
     "sections": {
       "privacy": {
         "title": "Chính sách bảo mật",
-        "content": "Đây là trang web do người hâm mộ thực hiện và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba."
+        "content": "LFCVN là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba."
       },
       "terms": {
         "title": "Điều khoản sử dụng",
         "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ API Fantasy Premier League và Football-Data.org. Nội dung tin tức được tổng hợp từ các nguồn tin của BBC Sport RSS. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
-      },
-      "cookies": {
-        "title": "Chính sách Cookie",
-        "content": "Trang web này sử dụng các cookie thiết yếu để xác thực và lưu tùy chọn giao diện. Không sử dụng cookie theo dõi hoặc quảng cáo. Bằng cách tiếp tục sử dụng trang web này, bạn đồng ý với việc sử dụng các cookie thiết yếu của chúng tôi."
       },
       "sources": {
         "title": "Nguồn dữ liệu",
@@ -698,16 +757,16 @@
     }
   },
   "Footer": {
-    "about": "Trang web dành cho người hâm mộ Liverpool FC. Đội hình, lịch thi đấu, bảng xếp hạng, số liệu và lịch sử — tất cả ở một nơi.",
+    "about": "LFCVN — tất cả về Liverpool FC. Đội hình, lịch thi đấu, bảng xếp hạng, tin tức và lịch sử — tất cả ở một nơi.",
     "quickLinks": "Liên kết nhanh",
     "legal": "Pháp lý",
     "contact": "Liên hệ",
     "rights": "Bảo lưu mọi quyền.",
-    "disclaimer": "Đây là trang web do người hâm mộ tạo ra và không liên kết với Liverpool FC.",
+    "disclaimer": "LFCVN là trang web không chính thức và không liên kết với Liverpool FC.",
+    "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
       "privacy": "Chính sách bảo mật",
       "terms": "Điều khoản sử dụng",
-      "cookie": "Chính sách Cookie",
       "about": "Giới thiệu"
     }
   },

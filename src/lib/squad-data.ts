@@ -1,5 +1,6 @@
 // Local squad data from liverpoolfc.com (replaces API-Football for squad/player)
 import squadJson from "@/data/squad.json";
+import playerBiosVi from "@/data/player-bios.vi.json";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,8 @@ export interface LfcPlayer {
   bodyShot: string;       // remote body shot
   localPhoto: string;     // local headshot path
   localBodyShot: string;  // local body shot path
+  height: string;         // e.g. "191 cm"
+  weight: string;         // e.g. "91 kg"
   bio: string;            // plain text biography
   honors: string[];
   metaDescription: string;
@@ -89,6 +92,16 @@ export function getPlayerBySlug(slug: string): LfcPlayer | null {
 /** Get the head coach */
 export function getCoach(): LfcCoach {
   return data.coach;
+}
+
+/** Get player bio by locale (falls back to English) */
+export function getPlayerBio(slug: string, locale: string): string {
+  if (locale === "vi") {
+    const viBio = (playerBiosVi as Record<string, string>)[slug];
+    if (viBio) return viBio;
+  }
+  const player = getPlayerBySlug(slug);
+  return player?.bio ?? "";
 }
 
 /** Calculate age from date of birth */

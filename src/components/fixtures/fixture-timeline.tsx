@@ -84,7 +84,7 @@ export function FixtureTimeline({ fixtures }: FixtureTimelineProps) {
               : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
           )}
         >
-          All Comps
+          {t("filter.all")}
         </button>
         {availableComps.map((comp) => (
           <button

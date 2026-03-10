@@ -4,7 +4,9 @@ import { type NextRequest } from 'next/server';
 import { createGroq } from '@ai-sdk/groq';
 import { streamText } from 'ai';
 import { DEFAULT_CHAT_AI_MODEL } from '@/config/constants';
-import { webSearch, needsWebSearch, type WebSearchResult } from '@/lib/tools/web-search';
+import { webSearch, type WebSearchResult } from '@/lib/tools/web-search';
+import { classifyIntent } from '@/lib/chat/intent-classifier';
+import { buildFallbackChain, isRateLimitError } from '@/lib/chat/model-fallback';
 import { BRO_AI_SYSTEM_PROMPT } from '@/lib/prompts/bro-ai-system';
 
 export const maxDuration = 60;
@@ -34,24 +36,35 @@ function normalizeMessages(
     .filter((msg) => msg.content.length > 0);
 }
 
-// Build system prompt with optional search context
+// Build system prompt with numbered sources for citation references
 function buildSystemPrompt(searchResult: WebSearchResult | null): string {
   if (!searchResult) return BRO_AI_SYSTEM_PROMPT;
 
-  // Groq browser search returns a full answer with inline citations
+  const numberedSources = searchResult.sources
+    .map((s, i) => `[${i + 1}] ${s.title || new URL(s.url).hostname}`)
+    .join('\n');
+
   return `${BRO_AI_SYSTEM_PROMPT}
 
 ## Web Search Results for: "${searchResult.query}"
 
 ${searchResult.answer}
 
-IMPORTANT: Use the search results above to provide accurate, up-to-date information. Preserve source citations/URLs from the search results in your response.`;
+### Available Sources
+${numberedSources}
+
+CITATION RULES (MUST follow):
+- Cite sources using numbered brackets: [1], [2], etc.
+- NEVER paste raw URLs or full links in your text.
+- Sources with clickable links are displayed separately to the user.
+- Example: "Liverpool đang dẫn đầu BXH [1] với phong độ ấn tượng [2]."`;
 }
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
+  const apiKey = process.env.GROQ_API_KEY;
 
-  if (!process.env.GROQ_API_KEY) {
+  if (!apiKey) {
     console.error('[Chat API - Groq] GROQ_API_KEY is not set');
     return new Response(
       JSON.stringify({ error: 'Groq API key not configured' }),
@@ -59,7 +72,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
+  const groq = createGroq({ apiKey });
 
   try {
     const {
@@ -68,10 +81,6 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      console.warn(
-        '[Chat API - Groq] Auth failed:',
-        authError?.message ?? 'No user',
-      );
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -85,18 +94,16 @@ export async function POST(req: NextRequest) {
     const selectedModel = model || DEFAULT_CHAT_AI_MODEL;
 
     console.log(
-      `[Chat API - Groq] User=${user.id} model=${selectedModel} messages=${messages.length} convId=${conversationId || 'new'}`,
+      `[Chat API - Groq] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || 'new'}`,
     );
 
     const isNewConversation = !conversationId;
     let actualConversationId = conversationId;
     let conversationTitle = 'New Conversation';
 
-    // Persistence: Create Conversation if it's new
+    // Create conversation if new
     if (isNewConversation && messages.length > 0) {
-      const firstMessage = messages[0].content;
-      conversationTitle = firstMessage;
-
+      conversationTitle = messages[0].content;
       const { data: convData, error: convError } = await supabase
         .from('conversations')
         .insert({
@@ -107,21 +114,16 @@ export async function POST(req: NextRequest) {
         .select()
         .single();
 
-      if (convError) {
-        console.error(
-          '[Chat API - Groq] Error creating conversation:',
-          convError,
-        );
-      } else if (convData) {
+      if (!convError && convData) {
         actualConversationId = convData.id;
+      } else {
+        console.error('[Chat API - Groq] Error creating conversation:', convError);
       }
     }
 
-    // Persistence: Save User Message
+    // Save user message
     if (actualConversationId && messages.length > 0) {
-      const lastUserMessage = [...messages]
-        .reverse()
-        .find((m) => m.role === 'user');
+      const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
       if (lastUserMessage) {
         await supabase.from('messages').insert({
           conversation_id: actualConversationId,
@@ -131,9 +133,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Web Search: Check if the latest user message needs real-time data
+    // AI-powered intent classification (replaces keyword matching)
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
-    const shouldSearch = lastUserMsg ? needsWebSearch(lastUserMsg.content) : false;
+    const { needsSearch, searchQuery } = lastUserMsg
+      ? await classifyIntent(lastUserMsg.content, apiKey)
+      : { needsSearch: false, searchQuery: '' };
 
     const messageId = `msg-${Date.now()}`;
     const toolCallId = `search-${Date.now()}`;
@@ -160,10 +164,8 @@ export async function POST(req: NextRequest) {
 
             writer.write({ type: 'start-step' });
 
-            // Web search: emit as tool call so UI shows progress
-            if (shouldSearch && lastUserMsg) {
-              const searchQuery = lastUserMsg.content;
-
+            // Web search if AI classifier determined it's needed
+            if (needsSearch) {
               writer.write({
                 type: 'tool-input-start',
                 toolCallId,
@@ -184,13 +186,12 @@ export async function POST(req: NextRequest) {
               try {
                 searchResult = await webSearch(searchQuery);
                 console.log(
-                  `[Chat API - Groq] Web search completed: ${searchResult.sources.length} sources`,
+                  `[Chat API - Groq] Web search done: ${searchResult.sources.length} sources`,
                 );
               } catch (err) {
                 console.error('[Chat API - Groq] Web search failed:', err);
               }
 
-              // Emit tool result (sources for UI display)
               writer.write({
                 type: 'tool-output-available',
                 toolCallId,
@@ -202,27 +203,47 @@ export async function POST(req: NextRequest) {
 
             writer.write({ type: 'text-start', id: messageId });
 
-            // Stream from Groq with search context in system prompt
-            const result = streamText({
-              model: groq(selectedModel),
-              system: buildSystemPrompt(searchResult),
-              messages,
-            });
+            // Stream with model fallback on rate limit
+            const fallbackChain = buildFallbackChain(selectedModel);
+            let usedModel = selectedModel;
 
-            for await (const textPart of result.textStream) {
-              fullAssistantContent += textPart;
-              writer.write({
-                type: 'text-delta',
-                id: messageId,
-                delta: textPart,
-              });
+            for (const tryModel of fallbackChain) {
+              try {
+                const result = streamText({
+                  model: groq(tryModel),
+                  system: buildSystemPrompt(searchResult),
+                  messages,
+                });
+
+                for await (const textPart of result.textStream) {
+                  fullAssistantContent += textPart;
+                  writer.write({
+                    type: 'text-delta',
+                    id: messageId,
+                    delta: textPart,
+                  });
+                }
+
+                usedModel = tryModel;
+                break; // Success — exit fallback loop
+              } catch (error) {
+                if (isRateLimitError(error)) {
+                  console.warn(`[Chat API - Groq] Rate limited on ${tryModel}, trying next...`);
+                  continue;
+                }
+                throw error; // Non-rate-limit error — bubble up
+              }
+            }
+
+            if (usedModel !== selectedModel) {
+              console.log(`[Chat API - Groq] Fell back from ${selectedModel} → ${usedModel}`);
             }
 
             writer.write({ type: 'text-end', id: messageId });
             writer.write({ type: 'finish-step' });
             writer.write({ type: 'finish' });
 
-            // Persistence: Save Assistant Message
+            // Save assistant message
             if (actualConversationId && fullAssistantContent) {
               await supabase.from('messages').insert({
                 conversation_id: actualConversationId,

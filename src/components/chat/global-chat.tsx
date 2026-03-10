@@ -8,7 +8,8 @@ import { Thread } from "@/components/assistant-ui/thread";
 import { useAuthStore } from "@/stores/auth-store";
 
 import { Button } from "@/components/ui/button";
-import { MessageCircle, X, Minus, Maximize2 } from "lucide-react";
+import { X, Minus, Maximize2 } from "lucide-react";
+import Image from "next/image";
 import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -154,29 +155,41 @@ function GlobalChatInner() {
 	return (
 		<>
 			{/* FAB trigger button — bottom right */}
-			<button
-				type="button"
-				onClick={() => setIsOpen(!isOpen)}
-				className={cn(
-					"fixed bottom-5 right-5 z-[70] flex items-center justify-center rounded-full shadow-lg transition-all duration-300",
-					"size-14 text-white hover:scale-110 active:scale-95",
-					isOpen
-						? "bg-stadium-surface border border-stadium-border"
-						: "bg-lfc-red animate-pulse-red"
+			<div className="fixed bottom-5 right-5 z-[70]">
+				{/* Pulse ring when closed */}
+				{!isOpen && (
+					<span className="absolute inset-0 rounded-full animate-ping bg-lfc-red/20" />
 				)}
-				aria-label="Toggle chat"
-			>
-				{isOpen ? (
-					<Minus className="size-6" />
-				) : (
-					<MessageCircle className="size-6 ai-btn-icon" />
-				)}
-			</button>
+				<button
+					type="button"
+					onClick={() => setIsOpen(!isOpen)}
+					className={cn(
+						"relative flex items-center justify-center rounded-full transition-all duration-300",
+						"size-14 text-white hover:scale-110 active:scale-95",
+						isOpen
+							? "bg-stadium-surface border border-stadium-border shadow-lg"
+							: "bg-linear-to-br from-stadium-surface to-stadium-bg border-2 border-lfc-red/50 shadow-[0_0_24px_rgba(200,16,46,0.35)]"
+					)}
+					aria-label="Toggle chat"
+				>
+					{isOpen ? (
+						<Minus className="size-6" />
+					) : (
+						<Image
+							src="/assets/lfc/liverbird-ai.svg"
+							alt="LiverBird AI"
+							width={36}
+							height={36}
+							className="size-9 object-contain drop-shadow-[0_0_8px_rgba(200,16,46,0.5)]"
+						/>
+					)}
+				</button>
+			</div>
 
 			{/* Chat popup */}
 			<div
 				className={cn(
-					"fixed bottom-24 right-5 z-[70] flex flex-col rounded-2xl border border-stadium-border bg-stadium-bg shadow-2xl shadow-black/40 transition-all duration-300 origin-bottom-right",
+					"fixed bottom-24 right-5 z-[70] flex flex-col rounded-2xl border border-stadium-border bg-stadium-bg shadow-2xl shadow-black/40 transition-all duration-300 origin-bottom-right font-barlow",
 					"w-[380px] h-[600px] max-h-[80vh]",
 					// Mobile: full width
 					"max-sm:bottom-0 max-sm:right-0 max-sm:left-0 max-sm:top-0 max-sm:w-full max-sm:h-full max-sm:max-h-full max-sm:rounded-none",
@@ -187,7 +200,7 @@ function GlobalChatInner() {
 			>
 				{/* Header */}
 				<div className="flex items-center gap-2 px-3 py-2.5 border-b border-stadium-border bg-stadium-surface/50 rounded-t-2xl max-sm:rounded-t-none shrink-0">
-					<span className="font-bebas text-sm tracking-wide text-gradient-red shrink-0">LiverBird AI</span>
+					<span className="font-barlow font-semibold text-sm uppercase tracking-[0.12em] text-gradient-red shrink-0">LiverBird AI</span>
 
 					<div className="flex-1 min-w-0">
 						<ConversationSelector

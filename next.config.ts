@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
   images: {
     qualities: [75, 85],
     remotePatterns: [
+      // Google user content (OAuth avatars)
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       // Premier League (FPL player photos + team badges)
       { protocol: 'https', hostname: 'resources.premierleague.com' },
       // Unsplash (hero backgrounds)

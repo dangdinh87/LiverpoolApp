@@ -44,7 +44,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
   const filtered = useMemo(() => {
     const lang = locale === "vi" ? "vi" : "en";
     const localNews = articles.filter((a) => a.language === lang);
-    return localNews.length >= 3 ? localNews.slice(0, 6) : articles.slice(0, 6);
+    return localNews.length > 0 ? localNews.slice(0, 6) : articles.slice(0, 6);
   }, [articles, locale]);
 
   if (filtered.length === 0) return null;
