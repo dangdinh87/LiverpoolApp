@@ -367,7 +367,7 @@ export default async function HistoryPage({
   return (
     <div className="min-h-screen bg-stadium-bg text-white">
       {/* ── Hero ── */}
-      <div className="relative h-[400px] flex items-end overflow-hidden">
+      <div className="relative h-[400px] pt-20 flex items-end overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center animate-[subtleZoom_20s_infinite_alternate]"
           style={{

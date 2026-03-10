@@ -23,8 +23,9 @@ export default async function NewsPage() {
 
   // Fetch from DB — preferred language first, then global
   const allArticles = await getNewsFromDB(300, userLang);
-  const localArticles = allArticles.filter((a) => a.language === userLang);
-  const globalArticles = allArticles.filter((a) => a.language !== userLang);
+  // Always split by Vietnamese vs International (not relative to user locale)
+  const localArticles = allArticles.filter((a) => a.language === "vi");
+  const globalArticles = allArticles.filter((a) => a.language !== "vi");
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",

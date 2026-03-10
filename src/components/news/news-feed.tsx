@@ -36,10 +36,10 @@ type CategoryFilter = "all" | ArticleCategory;
 const STORAGE_KEY = "lfc-news-filter";
 
 function getSavedFilter(): FeedFilter {
-  if (typeof window === "undefined") return "all";
+  if (typeof window === "undefined") return "local";
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === "all" || saved === "local" || saved === "global") return saved;
-  return "all";
+  return "local";
 }
 
 /* ── Filter config ── */
@@ -365,7 +365,7 @@ interface NewsFeedProps {
 }
 
 export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProps) {
-  const [langFilter, setLangFilter] = useState<FeedFilter>("all");
+  const [langFilter, setLangFilter] = useState<FeedFilter>("local");
   const [sortMode, setSortMode] = useState<SortMode>("trending");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [search, setSearch] = useState("");

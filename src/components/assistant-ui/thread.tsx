@@ -201,7 +201,7 @@ const Composer: FC = () => {
 				<ComposerAttachments />
 				<ComposerPrimitive.Input
 					placeholder={t("chat.thread.inputPlaceholder")}
-					className="aui-composer-input mb-1 max-h-28 min-h-10 w-full resize-none bg-transparent px-4 py-2 text-[15px] outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+					className="aui-composer-input mb-1 max-h-28 min-h-10 w-full resize-none bg-transparent px-4 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-0"
 					rows={1}
 					autoFocus
 					aria-label="Message input"
@@ -290,7 +290,7 @@ const ToolRouter: typeof ToolFallback = (props) => {
 // Renders message content; web search progress shows via WebSearchTool component
 const AssistantMessageContent: FC = () => {
 	return (
-		<div className="aui-assistant-message-content wrap-break-word px-2 text-foreground text-[15px] leading-relaxed">
+		<div className="aui-assistant-message-content wrap-break-word px-2 text-foreground text-base leading-relaxed">
 			<MessagePrimitive.Parts
 				components={{
 					Text: MarkdownText,
@@ -344,7 +344,7 @@ const UserMessage: FC = () => {
 			<UserMessageAttachments />
 
 			<div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
-				<div className="aui-user-message-content wrap-break-word rounded-2xl bg-muted px-4 py-2.5 text-foreground text-[15px]">
+				<div className="aui-user-message-content wrap-break-word rounded-2xl bg-muted px-4 py-2.5 text-foreground text-base">
 					<MessagePrimitive.Parts />
 				</div>
 				<div className="aui-user-action-bar-wrapper -translate-x-full -translate-y-1/2 absolute top-1/2 left-0 pr-2">
