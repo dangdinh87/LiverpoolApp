@@ -11,7 +11,7 @@ export async function generateMetadata() {
   };
 }
 
-export const revalidate = 21600; // 6h
+export const dynamic = "force-dynamic";
 
 export default async function StatsPage() {
   const t = await getTranslations("Stats");

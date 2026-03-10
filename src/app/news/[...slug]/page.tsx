@@ -21,8 +21,7 @@ import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
 
-// ISR: cache scraped articles for 1 hour
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 function detectSource(url: string): NewsSource {
   if (url.includes("liverpoolfc.com")) return "lfc";

@@ -10,8 +10,7 @@ export async function generateMetadata() {
   };
 }
 
-// ISR: revalidate standings every 6h
-export const revalidate = 21600;
+export const dynamic = "force-dynamic";
 
 export default async function StandingsPage() {
   const t = await getTranslations("Standings");

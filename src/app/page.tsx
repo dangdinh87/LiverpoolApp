@@ -13,8 +13,8 @@ export const metadata: Metadata = {
     "The home of Liverpool FC — live results, squad, fixtures, Premier League standings and more.",
 };
 
-// Driven by news feed (shortest TTL)
-export const revalidate = 1800; // 30min
+// Uses cookies() via getLocale() — must be dynamic
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let fixtures: Fixture[] = [];

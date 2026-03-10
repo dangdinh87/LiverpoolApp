@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 const STATUS_KEYS: Record<string, string> = {
   a: "available",

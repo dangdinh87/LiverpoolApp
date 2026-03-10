@@ -10,8 +10,7 @@ export async function generateMetadata() {
   };
 }
 
-// ISR: revalidate fixtures every 1h
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function FixturesPage() {
   const t = await getTranslations("Fixtures");

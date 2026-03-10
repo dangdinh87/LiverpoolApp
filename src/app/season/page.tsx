@@ -28,8 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const revalidate = 3600;
-
+export const dynamic = "force-dynamic";
 
 export default async function SeasonPage({
   searchParams,

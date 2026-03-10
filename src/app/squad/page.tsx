@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const revalidate = 1800; // 30min
+export const dynamic = "force-dynamic";
 
 export default async function SquadPage() {
   const t = await getTranslations("Squad");
