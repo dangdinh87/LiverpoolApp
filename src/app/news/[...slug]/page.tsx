@@ -12,6 +12,7 @@ import {
   formatRelativeDate,
   type NewsSource,
 } from "@/lib/news-config";
+import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
@@ -22,30 +23,6 @@ import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/
 import { CommentSection } from "@/components/news/comment-section";
 
 export const dynamic = "force-dynamic";
-
-function detectSource(url: string): NewsSource {
-  if (url.includes("liverpoolfc.com")) return "lfc";
-  if (url.includes("bbc.com") || url.includes("bbc.co.uk")) return "bbc";
-  if (url.includes("theguardian.com")) return "guardian";
-  if (url.includes("thisisanfield.com")) return "tia";
-  if (url.includes("liverpoolecho.co.uk")) return "echo";
-  if (url.includes("skysports.com")) return "sky";
-  if (url.includes("anfieldwatch.co.uk")) return "anfield-watch";
-  if (url.includes("empireofthekop.com")) return "eotk";
-  if (url.includes("bongda.com.vn")) return "bongda";
-  if (url.includes("24h.com.vn")) return "24h";
-  if (url.includes("bongdaplus.vn")) return "bongdaplus";
-  if (url.includes("dantri.com.vn")) return "dantri";
-  if (url.includes("zingnews.vn")) return "zingnews";
-  if (url.includes("vietnamnet.vn")) return "vietnamnet";
-  if (url.includes("webthethao.vn")) return "webthethao";
-  return "bbc";
-}
-
-const VI_SOURCES = new Set<NewsSource>([
-  "bongda", "24h", "bongdaplus", "vnexpress", "tuoitre", "thanhnien",
-  "dantri", "zingnews", "vietnamnet", "webthethao",
-]);
 
 function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
   const lang = VI_SOURCES.has(source) ? "vi" : "en";
@@ -184,7 +161,7 @@ export default async function ArticlePage({
     );
   }
 
-  const source = detectSource(url);
+  const source = detectArticleSource(url).id;
   const isEnglishArticle = !VI_SOURCES.has(source);
   const related = getRelatedArticles(url, content.title, allArticles, source);
   const publishDate = content.publishedAt

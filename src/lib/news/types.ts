@@ -2,7 +2,7 @@
 
 export type NewsSource =
   | "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus"
-  | "tia" | "echo" | "sky" | "anfield-watch" | "eotk"
+  | "echo" | "anfield-watch" | "eotk"
   | "vnexpress" | "tuoitre" | "thanhnien"
   | "dantri" | "zingnews" | "vietnamnet" | "webthethao";
 

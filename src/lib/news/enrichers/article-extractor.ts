@@ -23,7 +23,6 @@
 import "server-only";
 import { cache } from "react";
 import * as cheerio from "cheerio";
-import { createClient } from "@supabase/supabase-js";
 import type { ArticleContent } from "../types";
 import sanitize from "sanitize-html";
 import {
@@ -31,21 +30,16 @@ import {
   estimateReadingTime,
   sanitizeText,
 } from "./readability";
+import { detectSource } from "../source-detect";
+import { getServiceClient } from "../supabase-service";
 
 // --- Content cache helpers (DB-level, survives serverless cold starts) ---
 
 const CONTENT_CACHE_TTL_MS = 24 * 3600 * 1000; // 24 hours
 
-function getCacheClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase env vars");
-  return createClient(url, key);
-}
-
 async function getCachedContent(url: string): Promise<ArticleContent | null> {
   try {
-    const supabase = getCacheClient();
+    const supabase = getServiceClient();
     const { data } = await supabase
       .from("articles")
       .select("content_en, content_scraped_at")
@@ -65,7 +59,7 @@ async function getCachedContent(url: string): Promise<ArticleContent | null> {
 
 async function cacheContent(url: string, content: ArticleContent): Promise<void> {
   try {
-    const supabase = getCacheClient();
+    const supabase = getServiceClient();
     await supabase
       .from("articles")
       .update({ content_en: content, content_scraped_at: new Date().toISOString() })
@@ -89,6 +83,11 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
 type Extractor = ($: cheerio.CheerioAPI, url: string) => ArticleContent;
 
 // --- Common helpers ---
+
+/** O(1) dedup helper — replaces O(n) array.includes() checks */
+function pushUnique(arr: string[], seen: Set<string>, value: string) {
+  if (!seen.has(value)) { seen.add(value); arr.push(value); }
+}
 
 function extractAuthor($: cheerio.CheerioAPI): string | undefined {
   const raw =
@@ -114,26 +113,7 @@ function extractPublishedAt($: cheerio.CheerioAPI): string | undefined {
   );
 }
 
-function detectSourceName(url: string): string {
-  if (url.includes("liverpoolfc.com")) return "LiverpoolFC.com";
-  if (url.includes("bbc.com") || url.includes("bbc.co.uk")) return "BBC Sport";
-  if (url.includes("theguardian.com")) return "The Guardian";
-  if (url.includes("thisisanfield.com")) return "This Is Anfield";
-  if (url.includes("liverpoolecho.co.uk")) return "Liverpool Echo";
-  if (url.includes("skysports.com")) return "Sky Sports";
-  if (url.includes("anfieldwatch.co.uk")) return "Anfield Watch";
-  if (url.includes("empireofthekop.com")) return "Empire of the Kop";
-  if (url.includes("bongda.com.vn")) return "Bongda.com.vn";
-  if (url.includes("24h.com.vn")) return "24h.com.vn";
-  if (url.includes("bongdaplus.vn")) return "Bongdaplus.vn";
-  if (url.includes("znews.vn")) return "ZNews";
-  if (url.includes("vnexpress.net")) return "VnExpress";
-  if (url.includes("dantri.com.vn")) return "Dân Trí";
-  if (url.includes("vietnamnet.vn")) return "VietNamNet";
-  if (url.includes("tuoitre.vn")) return "Tuổi Trẻ";
-  if (url.includes("thanhnien.vn")) return "Thanh Niên";
-  return new URL(url).hostname;
-}
+// detectSourceName removed — use detectSource(url).name from source-detect.ts
 
 // --- Per-site extractors (cheerio fallbacks) ---
 
@@ -145,10 +125,8 @@ const extractors: Record<string, Extractor> = {
   "bongda.com.vn": extractBongda,
   "24h.com.vn": extractVietnamese,
   "bongdaplus.vn": extractBongdaplus,
-  // thisisanfield.com disabled — persistent redirect loop (ERR_TOO_MANY_REDIRECTS)
   "anfieldwatch.co.uk": extractWordPress,
   "liverpoolecho.co.uk": extractLiverpoolEcho,
-  "skysports.com": extractGenericEnglish,
   "empireofthekop.com": extractWordPress,
   "znews.vn": extractZnews,
   "vnexpress.net": extractVnexpress,
@@ -174,6 +152,8 @@ function extractLfcOfficial(
   const nextDataScript = $("#__NEXT_DATA__").html();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   if (nextDataScript) {
     try {
@@ -186,9 +166,9 @@ function extractLfcOfficial(
             typeof block.value === "string"
           ) {
             const text = block.value.replace(/<[^>]+>/g, "").trim();
-            if (text.length > 20) paragraphs.push(text);
+            if (text.length > 20) pushUnique(paragraphs, seenP, text);
           } else if (block.type === "image" && block.value?.url) {
-            images.push(block.value.url);
+            pushUnique(images, seenI, block.value.url);
           }
         }
       }
@@ -203,7 +183,7 @@ function extractLfcOfficial(
     ).first();
     container.find("p").each((_, el) => {
       const text = $(el).text().trim();
-      if (text.length > 20) paragraphs.push(text);
+      if (text.length > 20) pushUnique(paragraphs, seenP, text);
     });
   }
 
@@ -232,25 +212,27 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
   ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   // BBC uses data-component="text-block" for article paragraphs
   $("[data-component='text-block'] p, article p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   // Fallback: try container if specific selectors yield nothing
   if (paragraphs.length === 0) {
     container.find("p").each((_, el) => {
       const text = $(el).text().trim();
-      if (text.length > 20) paragraphs.push(text);
+      if (text.length > 20) pushUnique(paragraphs, seenP, text);
     });
   }
 
   container.find("img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (src && src.startsWith("http") && !src.includes("placeholder") && !src.includes("logo")) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -272,15 +254,17 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
   const container = $("article");
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img[src*='guim']").each((_, el) => {
     const src = $(el).attr("src");
-    if (src && !images.includes(src)) images.push(src);
+    if (src) pushUnique(images, seenI, src);
   });
 
   // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
@@ -315,11 +299,13 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   // Extract from <figcaption> (player ratings, image captions with article text)
   container.find("figcaption").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   // Also extract from <p> tags (some articles use standard paragraphs)
@@ -327,10 +313,9 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (
       text.length > 20 &&
-      !text.startsWith("BongDa.com.vn") &&
-      !paragraphs.includes(text)
+      !text.startsWith("BongDa.com.vn")
     ) {
-      paragraphs.push(text);
+      pushUnique(paragraphs, seenP, text);
     }
   });
 
@@ -344,7 +329,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
       !src.includes("team-logo") &&
       !src.includes("logo")
     ) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -381,6 +366,8 @@ function extractBongdaplus(
 
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   $(
     ".news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]"
@@ -388,7 +375,7 @@ function extractBongdaplus(
     .find("p, .sapo")
     .each((_, el) => {
       const text = $(el).text().trim();
-      if (text.length > 20) paragraphs.push(text);
+      if (text.length > 20) pushUnique(paragraphs, seenP, text);
     });
 
   if (paragraphs.length === 0) {
@@ -404,7 +391,7 @@ function extractBongdaplus(
         return;
       const text = $el.text().trim();
       if (text.length > 40 && !skipPatterns.test(text))
-        paragraphs.push(text);
+        pushUnique(paragraphs, seenP, text);
     });
   }
 
@@ -417,7 +404,7 @@ function extractBongdaplus(
       !src.includes("icon") &&
       !src.includes("_m.")
     ) {
-      images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -448,10 +435,12 @@ function extractVietnamese(
   ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img").each((_, el) => {
@@ -465,15 +454,9 @@ function extractVietnamese(
       !src.includes("logo") &&
       !src.includes("icon")
     ) {
-      images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
-
-  const sourceName = url.includes("24h")
-    ? "24h.com.vn"
-    : url.includes("bongdaplus")
-      ? "Bongdaplus.vn"
-      : "News";
 
   return {
     title,
@@ -484,7 +467,7 @@ function extractVietnamese(
     paragraphs,
     images,
     sourceUrl: url,
-    sourceName,
+    sourceName: detectSource(url).name,
   };
 }
 
@@ -499,16 +482,18 @@ function extractWordPress(
   const container = $(".entry-content, article, .post-content").first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (src && src.startsWith("http") && !src.includes("logo")) {
-      images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -521,7 +506,7 @@ function extractWordPress(
     paragraphs,
     images,
     sourceUrl: url,
-    sourceName: detectSourceName(url),
+    sourceName: detectSource(url).name,
   };
 }
 
@@ -537,6 +522,8 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
   ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
@@ -544,17 +531,16 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
       text.length > 20 &&
       !text.includes("Sign up") &&
       !text.includes("newsletter") &&
-      !text.includes("Follow us") &&
-      !paragraphs.includes(text)
+      !text.includes("Follow us")
     ) {
-      paragraphs.push(text);
+      pushUnique(paragraphs, seenP, text);
     }
   });
 
   container.find("img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (src && src.startsWith("http") && !src.includes("logo")) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -579,10 +565,11 @@ function extractGenericEnglish(
   const container = $("article, [role=main], .article-body, main").first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   return {
@@ -594,7 +581,7 @@ function extractGenericEnglish(
     paragraphs,
     images,
     sourceUrl: url,
-    sourceName: detectSourceName(url),
+    sourceName: detectSource(url).name,
   };
 }
 
@@ -615,23 +602,25 @@ function extractVietnameseGeneric(
   const container = $(containerSelectors).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   // Extract sapo/lead text
   if (opts?.sapoSelector) {
     const sapo = $(opts.sapoSelector).first().text().trim();
-    if (sapo && sapo.length > 20) paragraphs.push(sapo);
+    if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img, figure img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-original");
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -692,20 +681,22 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   // Extract lead/sapo text
   const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) paragraphs.push(sapo);
+  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img, figure img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -739,22 +730,24 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
 
   // Extract lead/sapo text
   const sapo = $("p.description").first().text().trim();
   if (sapo && sapo.length > 20 && sapo !== description) {
-    paragraphs.push(sapo);
+    pushUnique(paragraphs, seenP, sapo);
   }
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+    if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
   container.find("img, figure img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
-      if (!images.includes(src)) images.push(src);
+      pushUnique(images, seenI, src);
     }
   });
 
@@ -860,7 +853,7 @@ export const scrapeArticle = cache(
           htmlContent: readable.htmlContent,
           images: [],
           sourceUrl: url,
-          sourceName: detectSourceName(url),
+          sourceName: detectSource(url).name,
           readingTime: estimateReadingTime(readable.textContent),
         };
         console.log(

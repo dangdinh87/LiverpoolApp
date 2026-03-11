@@ -33,9 +33,7 @@ export const SOURCE_CONFIG: Record<
   lfc: { label: "Liverpool FC", color: "bg-lfc-red text-white", language: "en" },
   bbc: { label: "BBC Sport", color: "bg-[#BB1919] text-white", language: "en" },
   guardian: { label: "The Guardian", color: "bg-[#052962] text-[#9DBFFF]", language: "en" },
-  tia: { label: "This Is Anfield", color: "bg-amber-700 text-amber-100", language: "en" },
   echo: { label: "Liverpool Echo", color: "bg-purple-700 text-purple-100", language: "en" },
-  sky: { label: "Sky Sports", color: "bg-red-700 text-red-100", language: "en" },
   "anfield-watch": { label: "Anfield Watch", color: "bg-rose-700 text-rose-100", language: "en" },
   eotk: { label: "Empire of the Kop", color: "bg-red-800 text-red-100", language: "en" },
   bongda: { label: "Bóng Đá", color: "bg-emerald-700 text-emerald-100", language: "vi" },
@@ -56,19 +54,40 @@ export const BONGDAPLUS_URLS = [
   "https://bongdaplus.vn/champions-league-cup-c1",
 ];
 
-export const LFC_KEYWORDS = [
-  // Club identity — strict, unique to Liverpool
-  "liverpool", "anfield", "the kop", "lfc", "lữ đoàn đỏ",
-  // Manager — full name only (avoid "slot" alone)
-  "arne slot",
-  // Star players — unique names only (avoid common names like "jones", "elliott")
-  "salah", "van dijk", "virgil",
-  "alisson", "kelleher",
-  "robertson", "konate", "quansah",
-  "mac allister", "gravenberch", "szoboszlai",
-  "gakpo", "jota", "chiesa",
-  // New signings 2025/26
-  "florian wirtz", "alexander isak",
-  "kerkez", "frimpong", "ekitike",
-  "mamardashvili",
+/** Single source of truth for LFC keyword matching + relevance scoring */
+export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
+  // Club identity — highest weight
+  { term: "liverpool", weight: 3 },
+  { term: "anfield", weight: 3 },
+  { term: "lfc", weight: 3 },
+  { term: "the kop", weight: 2.5 },
+  { term: "lữ đoàn đỏ", weight: 2.5 },
+  // Manager — full name only
+  { term: "arne slot", weight: 2.5 },
+  // Star players
+  { term: "salah", weight: 2.5 },
+  { term: "van dijk", weight: 2.5 },
+  { term: "virgil", weight: 2 },
+  // New signings — high interest
+  { term: "florian wirtz", weight: 3 },
+  { term: "alexander isak", weight: 3 },
+  { term: "kerkez", weight: 2 },
+  { term: "frimpong", weight: 2 },
+  { term: "ekitike", weight: 2 },
+  { term: "mamardashvili", weight: 2 },
+  { term: "chiesa", weight: 2 },
+  // Core squad — unique names only
+  { term: "alisson", weight: 1.5 },
+  { term: "kelleher", weight: 1.5 },
+  { term: "robertson", weight: 1.5 },
+  { term: "konate", weight: 1.5 },
+  { term: "quansah", weight: 1 },
+  { term: "gakpo", weight: 1.5 },
+  { term: "mac allister", weight: 1.5 },
+  { term: "gravenberch", weight: 1.5 },
+  { term: "szoboszlai", weight: 1.5 },
+  { term: "jota", weight: 1.5 },
 ];
+
+/** Flat keyword list derived from weighted — used for RSS/adapter filtering */
+export const LFC_KEYWORDS = LFC_KEYWORDS_WEIGHTED.map((k) => k.term);

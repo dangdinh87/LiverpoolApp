@@ -1,11 +1,7 @@
 import "server-only";
 import { cache } from "react";
-import { createClient } from "@supabase/supabase-js";
-import { fetchAllNews } from "./pipeline";
-import { RssAdapter } from "./adapters/rss-adapter";
-import { LfcAdapter } from "./adapters/lfc-adapter";
-import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
-import { RSS_FEEDS } from "./config";
+import { syncPipeline } from "./sync";
+import { getServiceClient } from "./supabase-service";
 import type { NewsArticle } from "./types";
 
 const ARTICLE_COLUMNS =
@@ -56,77 +52,6 @@ function rowToArticle(row: ArticleRow): NewsArticle {
 }
 
 /**
- * Service role client for sync (bypasses RLS).
- */
-function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase env vars");
-  return createClient(url, key);
-}
-
-/**
- * Sync articles from RSS/scrapers → DB.
- * Called directly when data is stale. No HTTP, no cron, no secret.
- */
-async function syncArticles(): Promise<void> {
-  const adapters = [
-    new LfcAdapter(),
-    ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
-    new BongdaplusAdapter(),
-  ];
-
-  const articles = await fetchAllNews(adapters, 300);
-  console.log(`[sync] Fetched ${articles.length} articles from adapters`);
-
-  const supabase = getServiceClient();
-  const batchSize = 50;
-
-  for (let i = 0; i < articles.length; i += batchSize) {
-    const batch = articles.slice(i, i + batchSize);
-    const rows = batch.map((a) => ({
-      url: a.link,
-      title: a.title,
-      snippet: a.contentSnippet || "",
-      thumbnail: a.thumbnail || null,
-      source: a.source,
-      language: a.language,
-      category: a.category || "general",
-      relevance: a.relevanceScore ?? 0,
-      published_at: a.pubDate ? new Date(a.pubDate).toISOString() : null,
-      author: a.author || null,
-      hero_image: a.heroImage || a.thumbnail || null,
-      word_count: a.wordCount || null,
-      tags: a.tags || [],
-      updated_at: new Date().toISOString(),
-    }));
-
-    // Retry once on transient errors (502/503/timeout)
-    const retries = 1;
-    for (let attempt = 0; attempt <= retries; attempt++) {
-      const { error } = await supabase
-        .from("articles")
-        .upsert(rows, { onConflict: "url", ignoreDuplicates: false });
-
-      if (!error) break;
-
-      const msg = error.message?.includes("<!DOCTYPE")
-        ? `HTTP error (likely 502/503)`
-        : error.message;
-
-      if (attempt < retries) {
-        console.warn(`[sync] Batch ${i} failed (${msg}), retrying...`);
-        await new Promise((r) => setTimeout(r, 2000));
-      } else {
-        console.error(`[sync] Batch ${i} error: ${msg}`);
-      }
-    }
-  }
-
-  console.log(`[sync] Done — ${articles.length} articles upserted`);
-}
-
-/**
  * DB-level stale check. Survives serverless cold starts (unlike in-memory lastSyncTime).
  * Returns { fresh, empty } based on newest fetched_at in articles table.
  */
@@ -162,7 +87,7 @@ async function triggerSyncIfNeeded(): Promise<void> {
     syncInProgress = true;
     try {
       console.log("[news/db] Empty DB — bootstrap sync (blocking)...");
-      await syncArticles();
+      await syncPipeline();
     } finally {
       syncInProgress = false;
     }
@@ -171,7 +96,7 @@ async function triggerSyncIfNeeded(): Promise<void> {
 
   // Stale DB: fire-and-forget sync, serve stale data immediately
   syncInProgress = true;
-  syncArticles()
+  syncPipeline()
     .catch((err) => console.error("[news/db] Background sync failed:", err))
     .finally(() => { syncInProgress = false; });
 }
