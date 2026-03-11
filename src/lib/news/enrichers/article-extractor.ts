@@ -60,6 +60,8 @@ function detectSourceName(url: string): string {
   if (url.includes("bongda.com.vn")) return "Bongda.com.vn";
   if (url.includes("24h.com.vn")) return "24h.com.vn";
   if (url.includes("bongdaplus.vn")) return "Bongdaplus.vn";
+  if (url.includes("znews.vn")) return "ZNews";
+  if (url.includes("vnexpress.net")) return "VnExpress";
   return new URL(url).hostname;
 }
 
@@ -73,11 +75,13 @@ const extractors: Record<string, Extractor> = {
   "bongda.com.vn": extractBongda,
   "24h.com.vn": extractVietnamese,
   "bongdaplus.vn": extractBongdaplus,
-  "thisisanfield.com": extractWordPress,
+  // thisisanfield.com disabled — persistent redirect loop (ERR_TOO_MANY_REDIRECTS)
   "anfieldwatch.co.uk": extractWordPress,
   "liverpoolecho.co.uk": extractGenericEnglish,
   "skysports.com": extractGenericEnglish,
   "empireofthekop.com": extractWordPress,
+  "znews.vn": extractZnews,
+  "vnexpress.net": extractVnexpress,
 };
 
 function extractLfcOfficial(
@@ -466,6 +470,94 @@ function extractGenericEnglish(
     images,
     sourceUrl: url,
     sourceName: detectSourceName(url),
+  };
+}
+
+function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  // znews.vn uses .the-article-body as primary container (verified via DevTools)
+  const container = $(
+    ".the-article-body, .article-content, article, [role=main]"
+  ).first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+
+  // Extract lead/sapo text
+  const sapo = $(".the-article-summary").first().text().trim();
+  if (sapo && sapo.length > 20) paragraphs.push(sapo);
+
+  container.find("p").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+  });
+
+  container.find("img, figure img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src");
+    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+      if (!images.includes(src)) images.push(src);
+    }
+  });
+
+  // Build htmlContent for rich inline rendering if container has figures
+  const figureCount = container.find("figure").length;
+  const htmlContent = figureCount > 0
+    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    : undefined;
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, htmlContent, images,
+    sourceUrl: url,
+    sourceName: "ZNews",
+    isThinContent: paragraphs.length <= 2,
+  };
+}
+
+function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content") ||
+    $("p.description").first().text().trim();
+
+  // VnExpress uses .fck_detail as primary container (verified via DevTools)
+  const container = $(
+    ".fck_detail, article.fck_detail, .article-content, article, [role=main]"
+  ).first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+
+  // Extract lead/sapo text
+  const sapo = $("p.description").first().text().trim();
+  if (sapo && sapo.length > 20 && sapo !== description) {
+    paragraphs.push(sapo);
+  }
+
+  container.find("p").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+  });
+
+  container.find("img, figure img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src");
+    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+      if (!images.includes(src)) images.push(src);
+    }
+  });
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, images,
+    sourceUrl: url,
+    sourceName: "VnExpress",
   };
 }
 
