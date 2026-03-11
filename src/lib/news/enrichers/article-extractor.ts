@@ -202,25 +202,42 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
 }
 
 function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
-  const title = $("h1").first().text().trim();
+  const title = $("h1").first().text().trim() ||
+    $("article h2").first().text().trim();
   const heroImage = $('meta[property="og:image"]').attr("content");
   const description = $('meta[property="og:description"]').attr("content");
 
-  const container =
-    $("article").length > 0
+  // bongda.com.vn uses <section class="contentDetail"> with <figure>/<figcaption>
+  const contentDetail = $("section.contentDetail");
+  const container = contentDetail.length > 0
+    ? contentDetail
+    : $("article").length > 0
       ? $("article")
       : $(".detail-content, .cms-body, .entry-body, #main-content");
+
   const paragraphs: string[] = [];
   const images: string[] = [];
 
+  // Extract from <figcaption> (player ratings, image captions with article text)
+  container.find("figcaption").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20) paragraphs.push(text);
+  });
+
+  // Also extract from <p> tags (some articles use standard paragraphs)
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20 && !text.startsWith("BongDa.com.vn")) {
+    if (
+      text.length > 20 &&
+      !text.startsWith("BongDa.com.vn") &&
+      !paragraphs.includes(text)
+    ) {
       paragraphs.push(text);
     }
   });
 
-  container.find("img").each((_, el) => {
+  // Extract images from <figure> > <img> (player photos, article images)
+  container.find("figure img, img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
     if (
       src &&
@@ -229,7 +246,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
       !src.includes("team-logo") &&
       !src.includes("logo")
     ) {
-      images.push(src);
+      if (!images.includes(src)) images.push(src);
     }
   });
 
@@ -494,7 +511,7 @@ export const scrapeArticle = cache(
         // Parse htmlContent for proper paragraph separation
         const $article = cheerio.load(readable.htmlContent);
         const paragraphs: string[] = [];
-        $article("p, h2, h3, h4, li").each((_, el) => {
+        $article("p, h2, h3, h4, li, figcaption").each((_, el) => {
           const text = $article(el).text().trim();
           if (text.length > 20) paragraphs.push(text);
         });
