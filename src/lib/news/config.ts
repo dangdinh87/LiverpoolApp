@@ -20,7 +20,7 @@ export const RSS_FEEDS: FeedConfig[] = [
   { url: "https://thanhnien.vn/rss/the-thao.rss", source: "thanhnien", language: "vi", filter: "lfc" },
   // Vietnamese — 5 new sources
   { url: "https://dantri.com.vn/rss/the-thao/bong-da.rss", source: "dantri", language: "vi", filter: "lfc" },
-  { url: "https://zingnews.vn/the-thao.rss", source: "zingnews", language: "vi", filter: "lfc" },
+  { url: "https://znews.vn/rss/the-thao.rss", source: "zingnews", language: "vi", filter: "lfc" },
   { url: "https://vietnamnet.vn/rss/the-thao.rss", source: "vietnamnet", language: "vi", filter: "lfc" },
   { url: "https://bongdaso.com/rss/tin-moi-nhat.rss", source: "bongdaso", language: "vi", filter: "lfc" },
   { url: "https://webthethao.vn/rss/bong-da-quoc-te.rss", source: "webthethao", language: "vi", filter: "lfc" },
@@ -45,7 +45,7 @@ export const SOURCE_CONFIG: Record<
   tuoitre: { label: "Tuổi Trẻ", color: "bg-teal-700 text-teal-100", language: "vi" },
   thanhnien: { label: "Thanh Niên", color: "bg-amber-800 text-amber-100", language: "vi" },
   dantri: { label: "Dân Trí", color: "bg-cyan-700 text-cyan-100", language: "vi" },
-  zingnews: { label: "Zing News", color: "bg-violet-700 text-violet-100", language: "vi" },
+  zingnews: { label: "ZNews", color: "bg-violet-700 text-violet-100", language: "vi" },
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100", language: "vi" },
   bongdaso: { label: "Bóng Đá Số", color: "bg-green-800 text-green-100", language: "vi" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100", language: "vi" },
