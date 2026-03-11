@@ -5,19 +5,12 @@ import { createServerClient } from "@supabase/ssr";
 const PROTECTED_ROUTES = ["/profile"];
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (!isProtected) return NextResponse.next();
-
   // Create response to pass cookies through
   const response = NextResponse.next({
     request: { headers: request.headers },
   });
 
-  // Validate session via Supabase
+  // Refresh session on every route (prevents stale refresh token errors)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -36,10 +29,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users to login
-  if (!user) {
+  // Redirect unauthenticated users away from protected routes
+  const { pathname } = request.nextUrl;
+  const isProtected = PROTECTED_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isProtected && !user) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
@@ -49,5 +49,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/profile/:path*"],
+  matcher: [
+    // Run on all routes except static files and Next.js internals
+    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 };
