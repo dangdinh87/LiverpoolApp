@@ -17,16 +17,27 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
       headers: {
         "User-Agent": "Mozilla/5.0 (compatible; LiverpoolApp/1.0)",
         Accept: "text/html",
-        "Accept-Encoding": "gzip, deflate",
       },
       next: { revalidate: 86400 },
     });
     if (!res.ok) return {};
 
-    // Use res.text() which auto-decompresses gzip/brotli, then truncate
-    const full = await res.text();
-    const headEnd = full.indexOf("</head>");
-    const html = headEnd > 0 ? full.slice(0, headEnd + 7) : full.slice(0, 50000);
+    // Stream only the <head> section (max 50KB) instead of downloading full body
+    const reader = res.body?.getReader();
+    if (!reader) return {};
+
+    let html = "";
+    const decoder = new TextDecoder();
+    try {
+      while (html.length < 50_000) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        html += decoder.decode(value, { stream: true });
+        if (html.includes("</head>")) break;
+      }
+    } finally {
+      reader.cancel().catch(() => {});
+    }
 
     const imgMatch =
       html.match(/property="og:image"[^>]*content="([^"]+)"/) ||

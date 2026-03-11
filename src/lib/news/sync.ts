@@ -48,7 +48,7 @@ export async function syncPipeline(): Promise<SyncResult> {
     new BongdaplusAdapter(),
   ];
 
-  const articles = await fetchAllNews(adapters, 300);
+  const { articles, stats: sourceStats } = await fetchAllNews(adapters, 300);
   console.log(`[sync] Fetched ${articles.length} articles from adapters`);
 
   const supabase = getServiceClient();
@@ -122,13 +122,14 @@ export async function syncPipeline(): Promise<SyncResult> {
 
   const durationMs = Date.now() - start;
 
-  // Log sync result
+  // Log sync result with per-source stats
   await supabase.from("sync_logs").insert({
     inserted: upserted,
     updated: 0,
     failed,
     duration_ms: durationMs,
     errors: errors.length > 0 ? errors : null,
+    source_stats: sourceStats,
   });
 
   console.log(`[sync] Done in ${durationMs}ms: ${upserted} upserted, ${failed} failed`);

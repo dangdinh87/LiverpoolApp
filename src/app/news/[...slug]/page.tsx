@@ -121,7 +121,7 @@ export default async function ArticlePage({
 
   const [content, allArticles, fixtures, t] = await Promise.all([
     scrapeArticle(url),
-    getNewsFromDB(20),
+    getNewsFromDB(100),
     getFixtures(),
     getTranslations("News.article"),
   ]);

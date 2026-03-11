@@ -26,7 +26,8 @@ const adapters = [
 /** Fetch news directly from adapters (used by sync API). */
 export const getNews = cache(async (limit = 50): Promise<NewsArticle[]> => {
   try {
-    return await fetchAllNews(adapters, limit);
+    const { articles } = await fetchAllNews(adapters, limit);
+    return articles;
   } catch (err) {
     console.error("[news] Fatal error:", err);
     return [];

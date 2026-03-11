@@ -5,8 +5,9 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  // Auth: validate cron secret
-  const secret = req.nextUrl.searchParams.get("key");
+  // Auth: validate cron secret (query param or Vercel Cron header)
+  const secret = req.nextUrl.searchParams.get("key")
+    || req.headers.get("authorization")?.replace("Bearer ", "");
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

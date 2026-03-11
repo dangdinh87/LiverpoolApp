@@ -36,8 +36,8 @@ describe("fetchAllNews", () => {
     const a2 = mockAdapter("source-b", [
       makeArticle({ title: "Salah scores", link: "https://b.com/1" }),
     ]);
-    const result = await fetchAllNews([a1, a2], 10);
-    expect(result).toHaveLength(2);
+    const { articles } = await fetchAllNews([a1, a2], 10);
+    expect(articles).toHaveLength(2);
   });
 
   it("handles adapter failures gracefully", async () => {
@@ -45,9 +45,11 @@ describe("fetchAllNews", () => {
       makeArticle({ title: "Liverpool update", link: "https://ok.com/1" }),
     ]);
     const bad = failingAdapter("broken");
-    const result = await fetchAllNews([ok, bad], 10);
-    expect(result).toHaveLength(1);
-    expect(result[0].title).toBe("Liverpool update");
+    const { articles, stats } = await fetchAllNews([ok, bad], 10);
+    expect(articles).toHaveLength(1);
+    expect(articles[0].title).toBe("Liverpool update");
+    expect(stats["broken"].failed).toBe(1);
+    expect(stats["good"].fetched).toBe(1);
   });
 
   it("deduplicates across adapters", async () => {
@@ -57,8 +59,8 @@ describe("fetchAllNews", () => {
     const a2 = mockAdapter("src-b", [
       makeArticle({ title: "Same Liverpool story", link: "https://a.com/1" }),
     ]);
-    const result = await fetchAllNews([a1, a2], 10);
-    expect(result).toHaveLength(1);
+    const { articles } = await fetchAllNews([a1, a2], 10);
+    expect(articles).toHaveLength(1);
   });
 
   it("assigns categories and scores to articles", async () => {
@@ -68,9 +70,9 @@ describe("fetchAllNews", () => {
         link: "https://t.com/1",
       }),
     ]);
-    const result = await fetchAllNews([adapter], 10);
-    expect(result[0].category).toBe("transfer");
-    expect(result[0].relevanceScore).toBeGreaterThan(0);
+    const { articles } = await fetchAllNews([adapter], 10);
+    expect(articles[0].category).toBe("transfer");
+    expect(articles[0].relevanceScore).toBeGreaterThan(0);
   });
 
   it("sorts by relevance (higher scored first)", async () => {
@@ -88,8 +90,8 @@ describe("fetchAllNews", () => {
         pubDate: new Date().toISOString(),
       }),
     ]);
-    const result = await fetchAllNews([adapter], 10);
-    expect(result[0].title).toContain("Liverpool Salah");
+    const { articles } = await fetchAllNews([adapter], 10);
+    expect(articles[0].title).toContain("Liverpool Salah");
   });
 
   it("respects limit parameter", async () => {
@@ -105,19 +107,21 @@ describe("fetchAllNews", () => {
       "Dominik Szoboszlai masterclass in midfield domination",
       "Andrew Robertson delivers perfect crossing performance",
     ];
-    const articles = titles.map((t, i) =>
+    const testArticles = titles.map((t, i) =>
       makeArticle({ title: t, link: `https://t.com/${i}` })
     );
-    const adapter = mockAdapter("bulk", articles);
-    const result = await fetchAllNews([adapter], 5);
-    expect(result).toHaveLength(5);
+    const adapter = mockAdapter("bulk", testArticles);
+    const { articles } = await fetchAllNews([adapter], 5);
+    expect(articles).toHaveLength(5);
   });
 
-  it("returns empty array when all adapters fail", async () => {
-    const result = await fetchAllNews(
+  it("returns empty articles when all adapters fail", async () => {
+    const { articles, stats } = await fetchAllNews(
       [failingAdapter("a"), failingAdapter("b")],
       10
     );
-    expect(result).toEqual([]);
+    expect(articles).toEqual([]);
+    expect(stats["a"].failed).toBe(1);
+    expect(stats["b"].failed).toBe(1);
   });
 });

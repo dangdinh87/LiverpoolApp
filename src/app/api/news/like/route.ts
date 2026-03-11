@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 // GET /api/news/like?url=... — get like count + whether current user liked
 export async function GET(req: NextRequest) {
@@ -36,6 +37,12 @@ export async function GET(req: NextRequest) {
 
 // POST /api/news/like — toggle like
 export async function POST(req: NextRequest) {
+  // Rate limit: 30 likes per hour per IP
+  const { allowed } = checkRateLimit(`like:${getClientIP(req)}`, 30, 3_600_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 // GET /api/news/comments?url=... — list comments for an article
 export async function GET(req: NextRequest) {
@@ -43,6 +44,12 @@ function getDisplayName(username: string | null, email: string | null): string {
 
 // POST /api/news/comments — create a comment
 export async function POST(req: NextRequest) {
+  // Rate limit: 20 comments per hour per IP
+  const { allowed } = checkRateLimit(`comment:${getClientIP(req)}`, 20, 3_600_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -1,17 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { scrapeArticle } from "@/lib/news";
+import { getServiceClient } from "@/lib/news/supabase-service";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
-
-function getServiceClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase env vars");
-  return createClient(url, key);
-}
 
 const TRANSLATE_PROMPT = `You are a senior Vietnamese sports journalist who writes for a top football news site. Translate the following English football article into natural, fluent Vietnamese that reads like it was originally written in Vietnamese.
 
@@ -40,6 +34,12 @@ Format rules:
 - Return ONLY the Vietnamese translation, no commentary`;
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 10 translations per hour per IP
+  const { allowed } = checkRateLimit(`translate:${getClientIP(req)}`, 10, 3_600_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
+
   if (!process.env.GROQ_API_KEY) {
     return NextResponse.json(
       { error: "Translation service unavailable" },

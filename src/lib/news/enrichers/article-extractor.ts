@@ -134,6 +134,7 @@ const extractors: Record<string, Extractor> = {
   "vietnamnet.vn": extractVietnamnet,
   "tuoitre.vn": extractTuoitre,
   "thanhnien.vn": extractThanhnien,
+  "webthethao.vn": extractWebthethao,
 };
 
 function extractLfcOfficial(
@@ -666,6 +667,13 @@ function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
     ".detail-content, .detail__content, .article-body, article, [role=main]",
     "Thanh Niên",
     { sapoSelector: ".detail-sapo" }
+  );
+}
+
+function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".detail-content, .article-content, article, [role=main]",
+    "Webthethao"
   );
 }
 
