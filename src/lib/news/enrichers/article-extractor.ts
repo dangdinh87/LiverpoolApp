@@ -62,6 +62,10 @@ function detectSourceName(url: string): string {
   if (url.includes("bongdaplus.vn")) return "Bongdaplus.vn";
   if (url.includes("znews.vn")) return "ZNews";
   if (url.includes("vnexpress.net")) return "VnExpress";
+  if (url.includes("dantri.com.vn")) return "Dân Trí";
+  if (url.includes("vietnamnet.vn")) return "VietNamNet";
+  if (url.includes("tuoitre.vn")) return "Tuổi Trẻ";
+  if (url.includes("thanhnien.vn")) return "Thanh Niên";
   return new URL(url).hostname;
 }
 
@@ -82,6 +86,10 @@ const extractors: Record<string, Extractor> = {
   "empireofthekop.com": extractWordPress,
   "znews.vn": extractZnews,
   "vnexpress.net": extractVnexpress,
+  "dantri.com.vn": extractDantri,
+  "vietnamnet.vn": extractVietnamnet,
+  "tuoitre.vn": extractTuoitre,
+  "thanhnien.vn": extractThanhnien,
 };
 
 function extractLfcOfficial(
@@ -471,6 +479,88 @@ function extractGenericEnglish(
     sourceUrl: url,
     sourceName: detectSourceName(url),
   };
+}
+
+// --- Shared Vietnamese extractor helper (DRY for dantri, vietnamnet, tuoitre, thanhnien) ---
+
+function extractVietnameseGeneric(
+  $: cheerio.CheerioAPI,
+  url: string,
+  containerSelectors: string,
+  sourceName: string,
+  opts?: { sapoSelector?: string }
+): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  const container = $(containerSelectors).first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+
+  // Extract sapo/lead text
+  if (opts?.sapoSelector) {
+    const sapo = $(opts.sapoSelector).first().text().trim();
+    if (sapo && sapo.length > 20) paragraphs.push(sapo);
+  }
+
+  // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
+  container.find("p, figcaption").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
+  });
+
+  container.find("img, figure img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-original");
+    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+      if (!images.includes(src)) images.push(src);
+    }
+  });
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, images,
+    sourceUrl: url,
+    sourceName,
+  };
+}
+
+// Verified via DevTools: `article` tag (11p, 2fig), sapo in h2 tag
+function extractDantri($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    "article, .singular-content, .e-magazine__body, [role=main]",
+    "Dân Trí",
+    { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo" }
+  );
+}
+
+// Verified via DevTools: `.maincontent` (17p, 2fig), figcaption for photo galleries
+function extractVietnamnet($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".maincontent, .content-detail, article, [role=main]",
+    "VietNamNet"
+  );
+}
+
+// Verified via DevTools: `.detail-cmain` (20p, 2fig), sapo in `h2.detail-sapo`
+function extractTuoitre($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".detail-cmain, .detail-content, article, [role=main]",
+    "Tuổi Trẻ",
+    { sapoSelector: "h2.detail-sapo" }
+  );
+}
+
+// Verified via DevTools: `.detail-content` (15p, 3fig), sapo in `.detail-sapo`
+function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".detail-content, .detail__content, .article-body, article, [role=main]",
+    "Thanh Niên",
+    { sapoSelector: ".detail-sapo" }
+  );
 }
 
 function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
