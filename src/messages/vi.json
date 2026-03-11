@@ -188,6 +188,17 @@
       "share": "Chia sẻ",
       "copied": "Đã sao chép",
       "original": "Bản gốc"
+    },
+    "digest": {
+      "badge": "Bản tin AI hàng ngày",
+      "dismiss": "Ẩn",
+      "expand": "Đọc tóm tắt",
+      "collapse": "Thu gọn",
+      "readFull": "Đọc đầy đủ",
+      "articleCount": "Từ {count} bài viết",
+      "backToNews": "Quay lại Tin tức",
+      "sourceArticle": "Nguồn #{n}",
+      "generatedBy": "Tạo bởi {model}"
     }
   },
   "NextMatch": {

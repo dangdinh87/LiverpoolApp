@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, getLocale } from "next-intl/server";
 import { getNewsFromDB } from "@/lib/news";
+import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
+import { DigestCard } from "@/components/news/digest-card";
 import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +24,10 @@ export default async function NewsPage() {
   const userLang = locale === "vi" ? "vi" : "en";
 
   // Fetch from DB — preferred language first, then global
-  const allArticles = await getNewsFromDB(30, userLang);
+  const [allArticles, digest] = await Promise.all([
+    getNewsFromDB(30, userLang),
+    getLatestDigest(),
+  ]);
   // Always split by Vietnamese vs International (not relative to user locale)
   const localArticles = allArticles.filter((a) => a.language === "vi");
   const globalArticles = allArticles.filter((a) => a.language !== "vi");
@@ -59,6 +64,17 @@ export default async function NewsPage() {
 
       {/* News Feed */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+        {digest && (
+          <div className="mb-6">
+            <DigestCard
+              date={digest.digest_date}
+              title={digest.title}
+              summary={digest.summary}
+              articleCount={digest.article_count}
+            />
+          </div>
+        )}
+
         <NewsFeed
           localArticles={localArticles}
           globalArticles={globalArticles}
