@@ -139,6 +139,7 @@
       "global": "International",
       "moreStories": "More Stories",
       "loadMore": "Load More ({count} remaining)",
+      "loading": "Loading...",
       "noArticles": "No Articles Found",
       "noArticlesDesc": "Try a different filter or check back later.",
       "translateBadge": "AI Translation",

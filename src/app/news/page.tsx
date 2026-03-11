@@ -22,7 +22,7 @@ export default async function NewsPage() {
   const userLang = locale === "vi" ? "vi" : "en";
 
   // Fetch from DB — preferred language first, then global
-  const allArticles = await getNewsFromDB(300, userLang);
+  const allArticles = await getNewsFromDB(30, userLang);
   // Always split by Vietnamese vs International (not relative to user locale)
   const localArticles = allArticles.filter((a) => a.language === "vi");
   const globalArticles = allArticles.filter((a) => a.language !== "vi");

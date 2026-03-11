@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,6 +8,7 @@ import {
   SlidersHorizontal, TrendingUp, ArrowDownWideNarrow,
   Globe, Flag, Earth,
   Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -24,9 +25,10 @@ import { getReadArticles } from "@/lib/news/read-history";
 import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
+import { loadMoreNews } from "@/app/news/actions";
 
 const INITIAL_COUNT = 12;
-const LOAD_MORE_COUNT = 8;
+const LOAD_MORE_COUNT = 20;
 
 /* ── Filter types ── */
 
@@ -383,7 +385,7 @@ interface NewsFeedProps {
   locale: "en" | "vi";
 }
 
-export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProps) {
   const t = useTranslations("News.feed");
   const [langFilter, setLangFilter] = useState<FeedFilter>("local");
   const [sortMode, setSortMode] = useState<SortMode>("trending");
@@ -391,6 +393,10 @@ export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  // Server-side load-more state
+  const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
+  const [serverHasMore, setServerHasMore] = useState(true);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setLangFilter(getSavedFilter());
@@ -419,11 +425,24 @@ export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
     (langFilter !== "local" ? 1 : 0) +
     (category !== "all" ? 1 : 0);
 
+  // Merge initial + server-loaded extra articles
+  const allLocal = useMemo(() => {
+    const extra = extraArticles.filter((a) => a.language === "vi");
+    return [...localArticles, ...extra];
+  }, [localArticles, extraArticles]);
+
+  const allGlobal = useMemo(() => {
+    const extra = extraArticles.filter((a) => a.language !== "vi");
+    return [...globalArticles, ...extra];
+  }, [globalArticles, extraArticles]);
+
   // Pipeline: lang → category → sort → search
-  const langFiltered =
-    langFilter === "local" ? localArticles
-    : langFilter === "global" ? globalArticles
-    : [...localArticles, ...globalArticles];
+  const langFiltered = useMemo(
+    () => langFilter === "local" ? allLocal
+      : langFilter === "global" ? allGlobal
+      : [...allLocal, ...allGlobal],
+    [langFilter, allLocal, allGlobal]
+  );
 
   const catFiltered = useMemo(
     () => category === "all" ? langFiltered : langFiltered.filter((a) => a.category === category),
@@ -550,7 +569,7 @@ export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
         <>
           {(() => {
             const visible = articles.slice(0, visibleCount);
-            const hasMore = visibleCount < articles.length;
+            const hasMore = visibleCount < articles.length || serverHasMore;
             const hero = visible[0];
             const grid = visible.slice(1, 7);
             const compact = visible.slice(7);
@@ -585,14 +604,35 @@ export function NewsFeed({ localArticles, globalArticles }: NewsFeedProps) {
                 {hasMore && (
                   <div className="text-center pt-4">
                     <button
-                      onClick={() =>
-                        setVisibleCount((prev) =>
-                          Math.min(prev + LOAD_MORE_COUNT, articles.length)
-                        )
-                      }
-                      className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer"
+                      onClick={() => {
+                        // First exhaust client-side articles
+                        if (visibleCount < articles.length) {
+                          setVisibleCount((prev) =>
+                            Math.min(prev + LOAD_MORE_COUNT, articles.length)
+                          );
+                        } else if (serverHasMore) {
+                          // Fetch more from server
+                          const currentTotal = localArticles.length + globalArticles.length + extraArticles.length;
+                          startTransition(async () => {
+                            const { articles: newArticles, hasMore: more } =
+                              await loadMoreNews(currentTotal, LOAD_MORE_COUNT, langFilter === "local" ? "vi" : langFilter === "global" ? "en" : undefined);
+                            setExtraArticles((prev) => [...prev, ...newArticles]);
+                            setServerHasMore(more);
+                            setVisibleCount((prev) => prev + newArticles.length);
+                          });
+                        }
+                      }}
+                      disabled={isPending}
+                      className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
                     >
-                      {t("loadMore", { count: articles.length - visibleCount })}
+                      {isPending ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {t("loading")}
+                        </span>
+                      ) : (
+                        t("loadMore", { count: Math.max(articles.length - visibleCount, LOAD_MORE_COUNT) })
+                      )}
                     </button>
                   </div>
                 )}

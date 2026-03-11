@@ -140,6 +140,7 @@
       "global": "Báo nước ngoài",
       "moreStories": "Thêm tin tức",
       "loadMore": "Xem thêm (còn {count} bài)",
+      "loading": "Đang tải...",
       "noArticles": "Không tìm thấy bài viết",
       "noArticlesDesc": "Hãy thử bộ lọc khác hoặc quay lại sau.",
       "translateBadge": "Bản dịch AI",

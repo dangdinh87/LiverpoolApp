@@ -23,6 +23,7 @@
 import "server-only";
 import { cache } from "react";
 import * as cheerio from "cheerio";
+import { createClient } from "@supabase/supabase-js";
 import type { ArticleContent } from "../types";
 import sanitize from "sanitize-html";
 import {
@@ -30,6 +31,49 @@ import {
   estimateReadingTime,
   sanitizeText,
 } from "./readability";
+
+// --- Content cache helpers (DB-level, survives serverless cold starts) ---
+
+const CONTENT_CACHE_TTL_MS = 24 * 3600 * 1000; // 24 hours
+
+function getCacheClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env vars");
+  return createClient(url, key);
+}
+
+async function getCachedContent(url: string): Promise<ArticleContent | null> {
+  try {
+    const supabase = getCacheClient();
+    const { data } = await supabase
+      .from("articles")
+      .select("content_en, content_scraped_at")
+      .eq("url", url)
+      .single();
+
+    if (!data?.content_en) return null;
+
+    const scrapedAt = new Date(data.content_scraped_at).getTime();
+    if (Date.now() - scrapedAt > CONTENT_CACHE_TTL_MS) return null;
+
+    return data.content_en as ArticleContent;
+  } catch {
+    return null;
+  }
+}
+
+async function cacheContent(url: string, content: ArticleContent): Promise<void> {
+  try {
+    const supabase = getCacheClient();
+    await supabase
+      .from("articles")
+      .update({ content_en: content, content_scraped_at: new Date().toISOString() })
+      .eq("url", url);
+  } catch (err) {
+    console.error("[article-extractor] Cache write failed:", err);
+  }
+}
 
 const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
   allowedTags: sanitize.defaults.allowedTags.concat([
@@ -755,6 +799,13 @@ function findExtractor(url: string): Extractor {
 export const scrapeArticle = cache(
   async (url: string): Promise<ArticleContent | null> => {
     try {
+      // 1. Check DB cache first (survives across requests, 24h TTL)
+      const cached = await getCachedContent(url);
+      if (cached) {
+        console.log(`[extractor] Cache hit for ${new URL(url).hostname}`);
+        return cached;
+      }
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -815,6 +866,8 @@ export const scrapeArticle = cache(
         console.log(
           `[extractor] ${result.sourceName} | method=readability | paragraphs=${paragraphs.length} | len=${readable.length}`
         );
+        // Cache result in DB (fire-and-forget)
+        cacheContent(url, result);
         return result;
       }
 
@@ -846,6 +899,8 @@ export const scrapeArticle = cache(
       console.log(
         `[extractor] ${content.sourceName} | method=cheerio | paragraphs=${content.paragraphs.length} | thin=${content.isThinContent ?? false}`
       );
+      // Cache result in DB (fire-and-forget)
+      cacheContent(url, content);
       return content;
     } catch (err) {
       console.warn(

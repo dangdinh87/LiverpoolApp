@@ -13,7 +13,9 @@ const ARTICLE_COLUMNS =
 
 // Sync threshold: 15 minutes
 const STALE_MS = 15 * 60 * 1000;
-let lastSyncTime = 0; // in-memory guard
+
+// Per-instance sync lock (prevents duplicate syncs within same serverless instance)
+let syncInProgress = false;
 
 // DB row → NewsArticle mapping
 interface ArticleRow {
@@ -100,7 +102,7 @@ async function syncArticles(): Promise<void> {
     }));
 
     // Retry once on transient errors (502/503/timeout)
-    let retries = 1;
+    const retries = 1;
     for (let attempt = 0; attempt <= retries; attempt++) {
       const { error } = await supabase
         .from("articles")
@@ -121,43 +123,57 @@ async function syncArticles(): Promise<void> {
     }
   }
 
-  lastSyncTime = Date.now();
   console.log(`[sync] Done — ${articles.length} articles upserted`);
 }
 
 /**
- * Check if DB data is stale and sync if needed.
- * Blocks until sync completes so user always sees fresh data.
+ * DB-level stale check. Survives serverless cold starts (unlike in-memory lastSyncTime).
+ * Returns { fresh, empty } based on newest fetched_at in articles table.
  */
-async function syncIfStale(): Promise<void> {
-  const now = Date.now();
+async function isDbFresh(): Promise<{ fresh: boolean; empty: boolean }> {
+  const supabase = getServiceClient();
+  const { data } = await supabase
+    .from("articles")
+    .select("fetched_at")
+    .order("fetched_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  // In-memory guard: don't sync more than once per STALE_MS
-  if (now - lastSyncTime < STALE_MS) return;
+  if (!data) return { fresh: false, empty: true };
+  if (!data.fetched_at) return { fresh: false, empty: false };
 
-  try {
-    const supabase = getServiceClient();
-    const { data } = await supabase
-      .from("articles")
-      .select("fetched_at")
-      .order("fetched_at", { ascending: false })
-      .limit(1)
-      .single();
+  const age = Date.now() - new Date(data.fetched_at).getTime();
+  return { fresh: age < STALE_MS, empty: false };
+}
 
-    if (data?.fetched_at) {
-      const lastFetch = new Date(data.fetched_at).getTime();
-      if (now - lastFetch < STALE_MS) {
-        lastSyncTime = now; // DB is fresh, update guard
-        return;
-      }
+/**
+ * Non-blocking sync: check DB freshness, trigger background sync if stale.
+ * Only blocks on truly empty DB (first-ever visit).
+ */
+async function triggerSyncIfNeeded(): Promise<void> {
+  if (syncInProgress) return;
+
+  const { fresh, empty } = await isDbFresh();
+
+  if (fresh) return;
+
+  if (empty) {
+    // Empty DB: block once to bootstrap
+    syncInProgress = true;
+    try {
+      console.log("[news/db] Empty DB — bootstrap sync (blocking)...");
+      await syncArticles();
+    } finally {
+      syncInProgress = false;
     }
-
-    // Data is stale or empty — sync now
-    console.log("[news/db] Data stale, syncing...");
-    await syncArticles();
-  } catch (err) {
-    console.error("[news/db] Sync check failed:", err);
+    return;
   }
+
+  // Stale DB: fire-and-forget sync, serve stale data immediately
+  syncInProgress = true;
+  syncArticles()
+    .catch((err) => console.error("[news/db] Background sync failed:", err))
+    .finally(() => { syncInProgress = false; });
 }
 
 /**
@@ -165,10 +181,10 @@ async function syncIfStale(): Promise<void> {
  * Always returns fresh data.
  */
 export const getNewsFromDB = cache(
-  async (limit = 300, preferLang?: string): Promise<NewsArticle[]> => {
+  async (limit = 30, preferLang?: string): Promise<NewsArticle[]> => {
     try {
-      // Sync if stale — blocks until done
-      await syncIfStale();
+      // Trigger sync in background if stale (only blocks on empty DB)
+      await triggerSyncIfNeeded();
 
       // Use service client for public article reads (no auth needed, avoids cookie issues in ISR)
       const supabase = getServiceClient();
@@ -263,3 +279,39 @@ export const searchArticles = cache(
     }
   }
 );
+
+/**
+ * Paginated article query for load-more. No sync trigger.
+ */
+export async function getNewsPaginated(
+  offset: number,
+  limit: number,
+  language?: "en" | "vi"
+): Promise<{ articles: NewsArticle[]; hasMore: boolean }> {
+  try {
+    const supabase = getServiceClient();
+
+    let query = supabase
+      .from("articles")
+      .select(ARTICLE_COLUMNS)
+      .eq("is_active", true)
+      .order("published_at", { ascending: false })
+      .range(offset, offset + limit); // fetch limit+1 to check hasMore
+
+    if (language) query = query.eq("language", language);
+
+    const { data, error } = await query;
+    if (error) {
+      console.error("[news/db] Paginate error:", error.message);
+      return { articles: [], hasMore: false };
+    }
+
+    const rows = (data ?? []) as ArticleRow[];
+    const hasMore = rows.length > limit;
+    const articles = (hasMore ? rows.slice(0, limit) : rows).map(rowToArticle);
+    return { articles, hasMore };
+  } catch (err) {
+    console.error("[news/db] Paginate fatal:", err);
+    return { articles: [], hasMore: false };
+  }
+}

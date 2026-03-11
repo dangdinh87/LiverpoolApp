@@ -14,7 +14,7 @@ export type { NewsArticle, ArticleContent, NewsSource, NewsLanguage, ArticleCate
 export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 
 // Re-export DB query helpers
-export { getNewsFromDB, searchArticles } from "./db";
+export { getNewsFromDB, searchArticles, getNewsPaginated } from "./db";
 
 // Build adapter list
 const adapters = [
