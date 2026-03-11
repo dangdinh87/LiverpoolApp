@@ -359,20 +359,28 @@ export default async function ArticlePage({
           {/* 2-column grid */}
           <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
             <div>
-              <div id="article-body" className="space-y-6">
-                {content.paragraphs.map((p, i) => (
-                  <p
-                    key={i}
-                    className={
-                      i === 0
-                        ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
-                        : "font-inter text-[17px] text-white/80 leading-[1.85]"
-                    }
-                  >
-                    {p}
-                  </p>
-                ))}
-              </div>
+              {content.htmlContent ? (
+                <div
+                  id="article-body"
+                  className="article-html-content space-y-6"
+                  dangerouslySetInnerHTML={{ __html: content.htmlContent }}
+                />
+              ) : (
+                <div id="article-body" className="space-y-6">
+                  {content.paragraphs.map((p, i) => (
+                    <p
+                      key={i}
+                      className={
+                        i === 0
+                          ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
+                          : "font-inter text-[17px] text-white/80 leading-[1.85]"
+                      }
+                    >
+                      {p}
+                    </p>
+                  ))}
+                </div>
+              )}
               {renderExtras()}
             </div>
             {renderSidebar()}

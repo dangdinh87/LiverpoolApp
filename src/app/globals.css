@@ -362,3 +362,39 @@
     transform: scale(1.12);
   }
 }
+
+/* ─── Article HTML Content (bongda.com.vn figure/img/figcaption) ─── */
+.article-html-content figure {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+  background: #1a1a1a;
+}
+
+.article-html-content figure img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.article-html-content figcaption {
+  padding: 1rem 1.25rem;
+  font-family: var(--font-inter);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.article-html-content p {
+  font-family: var(--font-inter);
+  font-size: 1.0625rem;
+  line-height: 1.85;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.article-html-content > p:first-child {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}

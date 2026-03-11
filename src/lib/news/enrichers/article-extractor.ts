@@ -2,11 +2,23 @@ import "server-only";
 import { cache } from "react";
 import * as cheerio from "cheerio";
 import type { ArticleContent } from "../types";
+import sanitize from "sanitize-html";
 import {
   extractWithReadability,
   estimateReadingTime,
   sanitizeText,
 } from "./readability";
+
+const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
+  allowedTags: sanitize.defaults.allowedTags.concat([
+    "img", "figure", "figcaption", "h1", "h2", "h3", "h4",
+  ]),
+  allowedAttributes: {
+    ...sanitize.defaults.allowedAttributes,
+    img: ["src", "alt", "width", "height", "loading"],
+  },
+  allowedSchemes: ["https", "http"],
+};
 
 type Extractor = ($: cheerio.CheerioAPI, url: string) => ArticleContent;
 
@@ -250,6 +262,11 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  // Build htmlContent preserving figure/img/figcaption structure for inline rendering
+  const htmlContent = contentDetail.length > 0
+    ? sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS)
+    : undefined;
+
   return {
     title,
     heroImage,
@@ -257,6 +274,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "Bongda.com.vn",
