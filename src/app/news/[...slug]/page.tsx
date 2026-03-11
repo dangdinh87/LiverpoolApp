@@ -38,14 +38,13 @@ function detectSource(url: string): NewsSource {
   if (url.includes("dantri.com.vn")) return "dantri";
   if (url.includes("zingnews.vn")) return "zingnews";
   if (url.includes("vietnamnet.vn")) return "vietnamnet";
-  if (url.includes("bongdaso.com")) return "bongdaso";
   if (url.includes("webthethao.vn")) return "webthethao";
   return "bbc";
 }
 
 const VI_SOURCES = new Set<NewsSource>([
   "bongda", "24h", "bongdaplus", "vnexpress", "tuoitre", "thanhnien",
-  "dantri", "zingnews", "vietnamnet", "bongdaso", "webthethao",
+  "dantri", "zingnews", "vietnamnet", "webthethao",
 ]);
 
 function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
@@ -195,7 +194,8 @@ export default async function ArticlePage({
 
   const renderExtras = () => (
     <>
-      {(() => {
+      {/* Skip extra image grid when htmlContent has inline images */}
+      {!content.htmlContent && (() => {
         const extraImages = content.images.filter(
           (img) => img !== content.heroImage
         ).slice(0, 3);
