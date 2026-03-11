@@ -1,3 +1,25 @@
+/**
+ * Extractor Selector Reference (verified via Chrome DevTools 2026-03-11)
+ * ┌─────────────────────┬──────────────────────────────────────────────────┐
+ * │ Source               │ Container Selectors (priority order)             │
+ * ├─────────────────────┼──────────────────────────────────────────────────┤
+ * │ liverpoolfc.com      │ #__NEXT_DATA__ (JSON) → article, main           │
+ * │ bbc.com              │ [data-component=text-block] → article, main     │
+ * │ theguardian.com      │ article                                          │
+ * │ empireofthekop.com   │ .entry-content → article                        │
+ * │ anfieldwatch.co.uk   │ .entry-content → article                        │
+ * │ liverpoolecho.co.uk  │ [data-article-body] → .article-body → article  │
+ * │ bongda.com.vn        │ section.contentDetail → article                 │
+ * │ 24h.com.vn           │ article → .detail-content → .cms-body          │
+ * │ bongdaplus.vn        │ .news-detail → .detail-body → .content-news    │
+ * │ vnexpress.net        │ .fck_detail → .article-content                  │
+ * │ znews.vn             │ .the-article-body → .article-content            │
+ * │ dantri.com.vn        │ article → .singular-content                     │
+ * │ tuoitre.vn           │ .detail-cmain → .detail-content                 │
+ * │ thanhnien.vn         │ .detail-content → .detail__content              │
+ * │ vietnamnet.vn        │ .maincontent → .content-detail                  │
+ * └─────────────────────┴──────────────────────────────────────────────────┘
+ */
 import "server-only";
 import { cache } from "react";
 import * as cheerio from "cheerio";
@@ -777,7 +799,7 @@ export const scrapeArticle = cache(
           );
         }
 
-        return {
+        const result = {
           title: readable.title,
           heroImage: $('meta[property="og:image"]').attr("content"),
           description: readable.excerpt?.replace(/\.{2,}$/, "") || undefined,
@@ -790,6 +812,10 @@ export const scrapeArticle = cache(
           sourceName: detectSourceName(url),
           readingTime: estimateReadingTime(readable.textContent),
         };
+        console.log(
+          `[extractor] ${result.sourceName} | method=readability | paragraphs=${paragraphs.length} | len=${readable.length}`
+        );
+        return result;
       }
 
       // 2. Fallback: per-site cheerio extractor
@@ -817,6 +843,9 @@ export const scrapeArticle = cache(
         content.paragraphs = [content.description];
       }
 
+      console.log(
+        `[extractor] ${content.sourceName} | method=cheerio | paragraphs=${content.paragraphs.length} | thin=${content.isThinContent ?? false}`
+      );
       return content;
     } catch (err) {
       console.warn(
