@@ -81,7 +81,7 @@ const extractors: Record<string, Extractor> = {
   "bongdaplus.vn": extractBongdaplus,
   // thisisanfield.com disabled — persistent redirect loop (ERR_TOO_MANY_REDIRECTS)
   "anfieldwatch.co.uk": extractWordPress,
-  "liverpoolecho.co.uk": extractGenericEnglish,
+  "liverpoolecho.co.uk": extractLiverpoolEcho,
   "skysports.com": extractGenericEnglish,
   "empireofthekop.com": extractWordPress,
   "znews.vn": extractZnews,
@@ -155,39 +155,44 @@ function extractLfcOfficial(
 }
 
 function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
-  const title = $("h1").first().text().trim();
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
   const heroImage = $('meta[property="og:image"]').attr("content");
   const description = $('meta[property="og:description"]').attr("content");
 
-  const container =
-    $("article").length > 0 ? $("article") : $("[role=main]");
+  // BBC Sport uses multiple container patterns including data-component blocks
+  const container = $(
+    "article, [data-component='text-block'], #main-content, [role=main], main"
+  ).first();
   const paragraphs: string[] = [];
   const images: string[] = [];
 
-  container.find("p").each((_, el) => {
+  // BBC uses data-component="text-block" for article paragraphs
+  $("[data-component='text-block'] p, article p").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) paragraphs.push(text);
+    if (text.length > 20 && !paragraphs.includes(text)) paragraphs.push(text);
   });
+
+  // Fallback: try container if specific selectors yield nothing
+  if (paragraphs.length === 0) {
+    container.find("p").each((_, el) => {
+      const text = $(el).text().trim();
+      if (text.length > 20) paragraphs.push(text);
+    });
+  }
 
   container.find("img").each((_, el) => {
     const src = $(el).attr("src") || $(el).attr("data-src");
-    if (
-      src &&
-      src.startsWith("http") &&
-      !src.includes("placeholder")
-    ) {
-      images.push(src);
+    if (src && src.startsWith("http") && !src.includes("placeholder") && !src.includes("logo")) {
+      if (!images.includes(src)) images.push(src);
     }
   });
 
   return {
-    title,
-    heroImage,
-    description,
+    title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs,
-    images,
+    paragraphs, images,
     sourceUrl: url,
     sourceName: "BBC Sport",
   };
@@ -209,17 +214,20 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   container.find("img[src*='guim']").each((_, el) => {
     const src = $(el).attr("src");
-    if (src) images.push(src);
+    if (src && !images.includes(src)) images.push(src);
   });
 
+  // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
+  const figureCount = container.find("figure").length;
+  const htmlContent = figureCount >= 2
+    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    : undefined;
+
   return {
-    title,
-    heroImage,
-    description,
+    title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs,
-    images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "The Guardian",
   };
@@ -448,6 +456,49 @@ function extractWordPress(
     images,
     sourceUrl: url,
     sourceName: detectSourceName(url),
+  };
+}
+
+// Liverpool Echo uses Reach CMS (shared with Mirror, Express, etc.)
+function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  const container = $(
+    "[data-article-body], .article-body, article, [role=main], main"
+  ).first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+
+  container.find("p").each((_, el) => {
+    const text = $(el).text().trim();
+    if (
+      text.length > 20 &&
+      !text.includes("Sign up") &&
+      !text.includes("newsletter") &&
+      !text.includes("Follow us") &&
+      !paragraphs.includes(text)
+    ) {
+      paragraphs.push(text);
+    }
+  });
+
+  container.find("img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src");
+    if (src && src.startsWith("http") && !src.includes("logo")) {
+      if (!images.includes(src)) images.push(src);
+    }
+  });
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, images,
+    sourceUrl: url,
+    sourceName: "Liverpool Echo",
   };
 }
 
