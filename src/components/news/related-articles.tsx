@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Newspaper, CheckCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
@@ -17,6 +18,7 @@ interface RelatedArticlesProps {
 }
 
 export function RelatedArticles({ articles }: RelatedArticlesProps) {
+  const t = useTranslations("News.related");
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
       <div className="flex items-center gap-3 mb-6">
         <div className="w-1 h-6 bg-lfc-red" />
         <h2 className="font-bebas text-3xl text-white tracking-wider">
-          Related News
+          {t("title")}
         </h2>
       </div>
       {/* Vertical cards: image on top + text below */}

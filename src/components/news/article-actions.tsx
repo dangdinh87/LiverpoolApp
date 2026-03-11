@@ -29,7 +29,7 @@ export function ArticleActions({
   articleSlugUrl,
   articleMeta,
 }: ArticleActionsProps) {
-  const t = useTranslations("Profile");
+  const t = useTranslations("News.actions");
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -142,7 +142,7 @@ export function ArticleActions({
         <button
           onClick={handleLike}
           className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={liked ? "Unlike" : "Like"}
+          aria-label={t("like")}
         >
           <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${liked ? "bg-rose-500/20" : "hover:bg-white/10"}`}>
             <Heart
@@ -150,7 +150,7 @@ export function ArticleActions({
             />
           </div>
           <span className={`font-barlow text-[9px] uppercase tracking-wider ${liked ? "text-rose-400" : "text-white/40"}`}>
-            {likeCount > 0 ? likeCount : "Like"}
+            {likeCount > 0 ? likeCount : t("like")}
           </span>
         </button>
 
@@ -159,7 +159,7 @@ export function ArticleActions({
           onClick={handleSave}
           disabled={saveLoading}
           className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={saved ? t("unsave") : "Save"}
+          aria-label={t("save")}
         >
           <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${saved ? "bg-amber-500/20" : "hover:bg-white/10"}`}>
             <Bookmark
@@ -167,7 +167,7 @@ export function ArticleActions({
             />
           </div>
           <span className={`font-barlow text-[9px] uppercase tracking-wider ${saved ? "text-amber-400" : "text-white/40"}`}>
-            Save
+            {t("save")}
           </span>
         </button>
 
@@ -175,7 +175,7 @@ export function ArticleActions({
         <button
           onClick={handleShare}
           className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label="Share"
+          aria-label={t("share")}
         >
           <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${shared ? "bg-green-500/20" : "hover:bg-white/10"}`}>
             {shared ? (
@@ -185,7 +185,7 @@ export function ArticleActions({
             )}
           </div>
           <span className={`font-barlow text-[9px] uppercase tracking-wider ${shared ? "text-green-400" : "text-white/40"}`}>
-            {shared ? "Copied" : "Share"}
+            {shared ? t("copied") : t("share")}
           </span>
         </button>
 
@@ -200,7 +200,7 @@ export function ArticleActions({
             <ExternalLink className="w-[18px] h-[18px] text-white/50 group-hover:text-lfc-red transition-colors" />
           </div>
           <span className="font-barlow text-[9px] uppercase tracking-wider text-white/40">
-            Original
+            {t("original")}
           </span>
         </a>
       </div>

@@ -31,7 +31,7 @@ export default async function NewsPage() {
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
     "Liverpool Echo", "Sky Sports", "Anfield Watch",
     "Bóng Đá", "Bóng Đá+", "24h", "VnExpress", "Tuổi Trẻ", "Thanh Niên",
-    "Dân Trí", "Zing News", "VietNamNet", "Bóng Đá Số", "Webthethao",
+    "Dân Trí", "Zing News", "VietNamNet", "Webthethao",
   ].join(", ");
 
   return (

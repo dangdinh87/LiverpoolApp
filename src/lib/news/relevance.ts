@@ -52,7 +52,6 @@ const SOURCE_PRIORITY: Record<NewsSource, number> = {
   dantri: 3,
   zingnews: 3,
   vietnamnet: 3,
-  bongdaso: 2,
   webthethao: 2,
 };
 

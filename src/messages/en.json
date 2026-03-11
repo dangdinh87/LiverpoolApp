@@ -165,6 +165,27 @@
       "catInjury": "Injury",
       "catAnalysis": "Analysis",
       "catOpinion": "Opinion"
+    },
+    "sidebar": {
+      "source": "Source",
+      "details": "Details",
+      "minRead": "{n} min read"
+    },
+    "related": {
+      "title": "Related News"
+    },
+    "translate": {
+      "aiDisclaimer": "Auto-translated by AI — may not be 100% accurate",
+      "translating": "Translating...",
+      "showOriginal": "English",
+      "showTranslated": "Tiếng Việt"
+    },
+    "actions": {
+      "like": "Like",
+      "save": "Save",
+      "share": "Share",
+      "copied": "Copied",
+      "original": "Original"
     }
   },
   "NextMatch": {

@@ -166,6 +166,27 @@
       "catInjury": "Chấn thương",
       "catAnalysis": "Phân tích",
       "catOpinion": "Bình luận"
+    },
+    "sidebar": {
+      "source": "Nguồn tin",
+      "details": "Chi tiết",
+      "minRead": "{n} phút đọc"
+    },
+    "related": {
+      "title": "Tin liên quan"
+    },
+    "translate": {
+      "aiDisclaimer": "Dịch tự động bởi AI — có thể không chính xác 100%",
+      "translating": "Đang dịch...",
+      "showOriginal": "English",
+      "showTranslated": "Tiếng Việt"
+    },
+    "actions": {
+      "like": "Thích",
+      "save": "Lưu",
+      "share": "Chia sẻ",
+      "copied": "Đã sao chép",
+      "original": "Bản gốc"
     }
   },
   "NextMatch": {

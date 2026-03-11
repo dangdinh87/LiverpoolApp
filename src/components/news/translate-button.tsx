@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { Languages, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   getCachedTranslation,
   setCachedTranslation,
@@ -208,6 +209,7 @@ export function TranslateHeader({
 export function TranslateBody() {
   const { mode, loading, error, displayParagraphs, handleTranslate } =
     useTranslate();
+  const t = useTranslations("News.translate");
   const isTranslated = mode === "translated";
 
   return (
@@ -216,7 +218,7 @@ export function TranslateBody() {
       <div className="flex items-center justify-between gap-3 mb-8">
         {isTranslated && (
           <p className="font-inter text-[11px] text-amber-400/70">
-            Dịch tự động bởi AI — có thể không chính xác 100%
+            {t("aiDisclaimer")}
           </p>
         )}
         {error && (
@@ -233,10 +235,10 @@ export function TranslateBody() {
             <Languages className="w-3.5 h-3.5" />
           )}
           {loading
-            ? "Đang dịch..."
+            ? t("translating")
             : isTranslated
-              ? "English"
-              : "Tiếng Việt"}
+              ? t("showOriginal")
+              : t("showTranslated")}
         </button>
       </div>
 

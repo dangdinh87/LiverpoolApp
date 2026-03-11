@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ShareButtonProps {
   title: string;
@@ -9,6 +10,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ title, url }: ShareButtonProps) {
+  const t = useTranslations("News.actions");
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
@@ -34,12 +36,12 @@ export function ShareButton({ title, url }: ShareButtonProps) {
       {copied ? (
         <>
           <Check className="w-3.5 h-3.5 text-green-400" />
-          Copied
+          {t("copied")}
         </>
       ) : (
         <>
           <Share2 className="w-3.5 h-3.5" />
-          Share
+          {t("share")}
         </>
       )}
     </button>

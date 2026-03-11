@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Clock, User, BookOpen } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
+
 import { ArticleActions } from "./article-actions";
 import type { Fixture } from "@/lib/types/football";
 
@@ -40,13 +41,14 @@ export function ArticleSidebar({
   articleMeta,
 }: ArticleSidebarProps) {
   const cfg = SOURCE_CONFIG[source];
+  const t = useTranslations("News.sidebar");
 
   return (
     <div className="sticky top-20 space-y-4">
       {/* Source card */}
       <div className="bg-stadium-surface border border-stadium-border p-5 space-y-3">
         <p className="font-barlow text-xs text-stadium-muted uppercase tracking-widest">
-          Source
+          {t("source")}
         </p>
         <a
           href={sourceUrl}
@@ -62,7 +64,7 @@ export function ArticleSidebar({
       {/* Metadata card */}
       <div className="bg-stadium-surface border border-stadium-border p-5 space-y-3">
         <p className="font-barlow text-xs text-stadium-muted uppercase tracking-widest">
-          Details
+          {t("details")}
         </p>
         <div className="space-y-3">
           {author && (
@@ -80,7 +82,7 @@ export function ArticleSidebar({
           {readingTime && (
             <div className="flex items-center gap-2.5 text-white/70">
               <BookOpen className="w-4 h-4 shrink-0" />
-              <span className="font-inter text-sm">{readingTime} min read</span>
+              <span className="font-inter text-sm">{t("minRead", { n: readingTime })}</span>
             </div>
           )}
         </div>

@@ -23,7 +23,6 @@ export const SOURCE_CONFIG: Record<
   dantri: { label: "Dân Trí", color: "bg-cyan-700 text-cyan-100" },
   zingnews: { label: "ZNews", color: "bg-violet-700 text-violet-100" },
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100" },
-  bongdaso: { label: "Bóng Đá Số", color: "bg-green-800 text-green-100" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100" },
   eotk: { label: "Empire of the Kop", color: "bg-yellow-700 text-yellow-100" },
 };
@@ -59,7 +58,6 @@ const SOURCE_HOSTS: Record<string, string> = {
   dantri: "dantri.com.vn",
   zingnews: "znews.vn",
   vietnamnet: "vietnamnet.vn",
-  bongdaso: "bongdaso.com",
   webthethao: "webthethao.vn",
   eotk: "www.empireofthekop.com",
 };

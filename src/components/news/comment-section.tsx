@@ -10,7 +10,7 @@ import {
   LogIn,
   Loader2,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase";
 
 interface Comment {
@@ -29,6 +29,7 @@ interface CommentSectionProps {
 
 export function CommentSection({ articleUrl }: CommentSectionProps) {
   const t = useTranslations("News.comments");
+  const locale = useLocale();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
@@ -117,7 +118,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     if (diffH < 24) return t("hoursAgo", { n: diffH });
     const diffD = Math.floor(diffH / 24);
     if (diffD < 7) return t("daysAgo", { n: diffD });
-    return date.toLocaleDateString("vi-VN", {
+    return date.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-GB", {
       day: "numeric",
       month: "short",
     });
