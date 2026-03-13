@@ -32,6 +32,7 @@ export async function refreshDigest(): Promise<{
     console.log("[refreshDigest] Generated:", digest.title, "sections:", digest.sections.length);
     const supabase = getServiceClient();
     const today = new Date().toISOString().split("T")[0];
+    const generatedAt = new Date().toISOString();
     const { error: dbError } = await supabase.from("news_digests").upsert(
       {
         digest_date: today,
@@ -40,70 +41,44 @@ export async function refreshDigest(): Promise<{
         sections: digest.sections,
         article_ids: digest.sections.flatMap((s) => s.articleUrls),
         article_count: digest.articleCount,
-        model: "llama-3.3-70b-versatile",
+        model: digest.model,
         tokens_used: digest.tokensUsed,
+        generated_at: generatedAt,
       },
       { onConflict: "digest_date" }
     );
     if (dbError) {
       console.error("[refreshDigest] DB upsert error:", dbError);
-      return { ok: false, error: dbError.message };
+      return { ok: false, error: "Database error" };
     }
     revalidatePath("/");
     revalidatePath("/news");
-    console.log("[refreshDigest] Done — revalidated");
+    console.log("[refreshDigest] Done — model:", digest.model);
     return {
       ok: true,
       title: digest.title,
       summary: digest.summary,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Digest failed";
     console.error("[refreshDigest]", msg);
-    return { ok: false, error: msg };
+    // Show user-friendly error, not raw API errors
+    const isRateLimit = msg.includes("Rate limit") || msg.includes("429");
+    return { ok: false, error: isRateLimit ? "AI models busy, try again later" : "Digest generation failed" };
   }
 }
 
-/** Manual refresh: sync news + regenerate AI digest + revalidate pages. */
-export async function refreshNews(): Promise<{ ok: boolean; upserted: number; error?: string }> {
+/** Sync articles from all sources (no digest regeneration). */
+export async function syncNews(): Promise<{ ok: boolean; error?: string }> {
   try {
-    // 1. Sync articles from all sources
-    const result = await syncPipeline();
-
-    // 2. Regenerate today's AI digest with fresh articles
-    if (process.env.GROQ_API_KEY) {
-      try {
-        const digest = await generateDailyDigest();
-        const supabase = getServiceClient();
-        const today = new Date().toISOString().split("T")[0];
-        await supabase.from("news_digests").upsert(
-          {
-            digest_date: today,
-            title: digest.title,
-            summary: digest.summary,
-            sections: digest.sections,
-            article_ids: digest.sections.flatMap((s) => s.articleUrls),
-            article_count: digest.articleCount,
-            model: "llama-3.3-70b-versatile",
-            tokens_used: digest.tokensUsed,
-          },
-          { onConflict: "digest_date" }
-        );
-        console.log("[refreshNews] Digest regenerated");
-      } catch (err) {
-        console.error("[refreshNews] Digest failed:", err);
-      }
-    }
-
-    // 3. Revalidate cached pages
+    await syncPipeline();
     revalidatePath("/");
     revalidatePath("/news");
-
-    return { ok: true, upserted: result.upserted };
+    return { ok: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Sync failed";
-    console.error("[refreshNews]", msg);
-    return { ok: false, upserted: 0, error: msg };
+    console.error("[syncNews]", msg);
+    return { ok: false, error: msg };
   }
 }

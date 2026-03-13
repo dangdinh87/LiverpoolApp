@@ -46,8 +46,9 @@ export async function GET(req: NextRequest) {
         sections: digest.sections,
         article_ids: digest.sections.flatMap((s) => s.articleUrls),
         article_count: digest.articleCount,
-        model: "llama-3.3-70b-versatile",
+        model: digest.model,
         tokens_used: digest.tokensUsed,
+        generated_at: new Date().toISOString(),
       },
       { onConflict: "digest_date" }
     );
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
       sections: digest.sections.length,
       articleCount: digest.articleCount,
       tokensUsed: digest.tokensUsed,
+      model: digest.model,
     });
   } catch (err) {
     console.error("[digest] Generation failed:", err);

@@ -26,7 +26,7 @@ import { getReadArticles } from "@/lib/news/read-history";
 import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { loadMoreNews, refreshNews } from "@/app/news/actions";
+import { loadMoreNews, syncNews } from "@/app/news/actions";
 
 // hero(1) + grid(6) + compact(n) — keep compact divisible by 3 for clean grid rows
 // 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
@@ -579,7 +579,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
           onClick={async () => {
             setIsRefreshing(true);
             try {
-              await refreshNews();
+              await syncNews();
               window.location.reload();
             } finally {
               setIsRefreshing(false);

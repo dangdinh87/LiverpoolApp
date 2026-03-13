@@ -18,6 +18,7 @@ export interface DigestResult {
   sections: DigestSection[];
   articleCount: number;
   tokensUsed: number;
+  model: string;
 }
 
 export interface DigestRecord {
@@ -42,6 +43,15 @@ const CATEGORY_VI_MAP: Record<string, string> = {
   opinion: "Quan Điểm",
   general: "Tin Tổng Hợp",
 };
+
+// Model fallback chain — try each model in order until one succeeds.
+// Groq free tier has per-model daily token limits (TPD).
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",   // best quality, 100K TPD
+  "qwen/qwen3-32b",            // strong fallback, 500K TPD
+  "llama-3.1-8b-instant",      // fast fallback, 500K TPD
+  "openai/gpt-oss-20b",        // last resort, 200K TPD
+] as const;
 
 const DIGEST_SYSTEM_PROMPT = `You are a Vietnamese sports editor creating a comprehensive daily Liverpool FC news digest.
 
@@ -106,14 +116,33 @@ export async function generateDailyDigest(): Promise<DigestResult> {
 
   const prompt = `Today is ${today}.\n\nHere are the top ${articles.length} Liverpool FC articles from the last 24 hours:\n\n${articleList}`;
 
-  // Call Groq
+  // Call Groq with model fallback chain
   const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-  const result = await generateText({
-    model: groq("llama-3.3-70b-versatile"),
-    system: DIGEST_SYSTEM_PROMPT,
-    prompt,
-    maxOutputTokens: 4000,
-  });
+  let result: Awaited<ReturnType<typeof generateText>>;
+  let usedModel: string = GROQ_MODELS[0];
+
+  for (const modelId of GROQ_MODELS) {
+    try {
+      result = await generateText({
+        model: groq(modelId),
+        system: DIGEST_SYSTEM_PROMPT,
+        prompt,
+        maxOutputTokens: 4000,
+      });
+      usedModel = modelId;
+      break;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRateLimit = msg.includes("Rate limit") || msg.includes("429") || msg.includes("tokens per day");
+      if (isRateLimit && modelId !== GROQ_MODELS[GROQ_MODELS.length - 1]) {
+        console.warn(`[digest] ${modelId} rate limited, falling back...`);
+        continue;
+      }
+      throw err; // Non-rate-limit error or last model — rethrow
+    }
+  }
+  // result is guaranteed assigned because the loop either breaks or throws
+  result = result!;
 
   // Parse JSON response
   let parsed: { title: string; summary: string; sections: DigestSection[] };
@@ -147,6 +176,7 @@ export async function generateDailyDigest(): Promise<DigestResult> {
     sections: parsed.sections,
     articleCount: articles.length,
     tokensUsed: result.usage?.totalTokens ?? 0,
+    model: usedModel,
   };
 }
 
@@ -162,9 +192,9 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
     .limit(1)
     .maybeSingle();
 
-  // Auto-generate/refresh digest if missing, wrong date, or stale (>4h)
+  // Auto-generate/refresh digest if missing, wrong date, or stale (>2h)
   const today = new Date().toISOString().split("T")[0];
-  const DIGEST_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
+  const DIGEST_STALE_MS = 2 * 60 * 60 * 1000; // 2 hours
   const now = Date.now();
   const isStale = data?.generated_at
     ? now - new Date(data.generated_at).getTime() > DIGEST_STALE_MS
@@ -190,8 +220,9 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
           sections: digest.sections,
           article_ids: digest.sections.flatMap((s) => s.articleUrls),
           article_count: digest.articleCount,
-          model: "llama-3.3-70b-versatile",
+          model: digest.model,
           tokens_used: digest.tokensUsed,
+          generated_at: new Date().toISOString(),
         },
         { onConflict: "digest_date" }
       ).select("*").maybeSingle();
