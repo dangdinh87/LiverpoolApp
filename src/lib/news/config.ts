@@ -46,7 +46,13 @@ export const SOURCE_CONFIG: Record<
   zingnews: { label: "ZNews", color: "bg-violet-700 text-violet-100", language: "vi" },
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100", language: "vi" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100", language: "vi" },
+  vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100", language: "vi" },
 };
+
+// Vietnam.vn scraper config (no RSS, scrape sports category)
+export const VIETNAMVN_URLS = [
+  "https://www.vietnam.vn/category/the-thao",
+];
 
 // Bongdaplus scraper config
 export const BONGDAPLUS_URLS = [

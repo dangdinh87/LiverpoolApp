@@ -13,7 +13,7 @@ interface BentoGridProps {
 }
 
 const CARD_BASE =
-  "bg-stadium-surface/80 backdrop-blur-sm border border-stadium-border/60 rounded-xl overflow-hidden transition-all duration-300 hover:border-stadium-border";
+  "relative bg-stadium-surface/80 backdrop-blur-sm border-t-2 border-t-lfc-red border border-stadium-border/60 rounded-xl overflow-hidden transition-all duration-300 hover:border-lfc-red/30 hover:shadow-[0_4px_30px_rgba(0,0,0,0.4)]";
 
 function BentoCard({
   children,
@@ -53,7 +53,7 @@ export function BentoGrid({ nextMatch, standings }: BentoGridProps) {
         <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-1">
           {t("season")}
         </p>
-        <h2 className="font-bebas text-5xl md:text-6xl text-white tracking-wider">
+        <h2 className="font-bebas text-5xl md:text-6xl text-white tracking-wider drop-shadow-[0_0_20px_rgba(200,16,46,0.3)]">
           {t("title")}
         </h2>
       </motion.div>

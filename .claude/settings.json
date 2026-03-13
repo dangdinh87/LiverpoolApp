@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__get_logs",
+      "WebFetch(domain:upload.wikimedia.org)",
+      "WebFetch(domain:seeklogo.com)",
+      "WebFetch(domain:football-logos.cc)",
+      "WebFetch(domain:www.logo.wine)",
+      "mcp__supabase__get_advisors",
+      "WebFetch(domain:cdn.24h.com.vn)",
+      "WebFetch(domain:vnexpress.net)",
+      "WebFetch(domain:tuoitre.vn)",
+      "WebFetch(domain:thanhnien.vn)",
+      "WebFetch(domain:dantri.com.vn)",
+      "WebFetch(domain:znews.vn)",
+      "WebFetch(domain:vietnamnet.vn)",
+      "WebFetch(domain:bongdaso.com)",
+      "WebFetch(domain:webthethao.vn)",
+      "WebFetch(domain:www.bbc.com)",
+      "WebFetch(domain:feeds.bbci.co.uk)",
+      "WebFetch(domain:www.theguardian.com)",
+      "WebFetch(domain:www.thisisanfield.com)",
+      "WebFetch(domain:www.anfieldwatch.co.uk)",
+      "WebFetch(domain:www.empireofthekop.com)",
+      "WebFetch(domain:www.reddit.com)"
+    ]
+  }
+}

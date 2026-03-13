@@ -48,10 +48,10 @@ export function MatchCard({ fixture }: MatchCardProps) {
   const result = getMatchResult(fixture);
 
   const RESULT_CONFIG = {
-    W: { dot: "bg-green-500", text: "text-green-400", label: t("win"), bg: "bg-green-500" },
-    D: { dot: "bg-yellow-500", text: "text-yellow-400", label: t("draw"), bg: "bg-yellow-500" },
-    L: { dot: "bg-red-500", text: "text-red-400", label: t("loss"), bg: "bg-red-500" },
-    NS: { dot: "bg-stadium-border", text: "text-stadium-muted", label: "", bg: "bg-stadium-border" },
+    W: { dot: "bg-green-500", text: "text-green-400", label: t("win"), bg: "bg-green-500", glow: "shadow-[2px_0_12px_rgba(34,197,94,0.4)]" },
+    D: { dot: "bg-yellow-500", text: "text-yellow-400", label: t("draw"), bg: "bg-yellow-500", glow: "shadow-[2px_0_12px_rgba(234,179,8,0.3)]" },
+    L: { dot: "bg-red-500", text: "text-red-400", label: t("loss"), bg: "bg-red-500", glow: "shadow-[2px_0_12px_rgba(239,68,68,0.3)]" },
+    NS: { dot: "bg-stadium-border", text: "text-stadium-muted", label: "", bg: "bg-stadium-border", glow: "" },
   };
 
   const resultCfg = RESULT_CONFIG[result as keyof typeof RESULT_CONFIG] ?? RESULT_CONFIG.NS;
@@ -97,7 +97,7 @@ export function MatchCard({ fixture }: MatchCardProps) {
       className={cn(
         "group relative block overflow-hidden transition-all duration-300",
         "bg-stadium-surface border border-stadium-border rounded-none",
-        "hover:border-white/25 hover:bg-stadium-surface2",
+        "hover:border-white/25 hover:bg-stadium-surface2 hover:shadow-[0_4px_30px_rgba(0,0,0,0.4)]",
         isLive && "border-lfc-red/40 shadow-[0_0_30px_rgba(200,16,46,0.12)]",
         isFinished && compCfg.glow,
       )}
@@ -109,8 +109,8 @@ export function MatchCard({ fixture }: MatchCardProps) {
         </div>
       )}
 
-      {/* Result accent strip */}
-      {isFinished && <div className={cn("absolute left-0 top-0 bottom-0 w-1", resultCfg.bg)} />}
+      {/* Result accent strip — with colored glow */}
+      {isFinished && <div className={cn("absolute left-0 top-0 bottom-0 w-1", resultCfg.bg, resultCfg.glow)} />}
       {isLive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lfc-red animate-pulse" />}
 
       <div className="relative px-5 py-4">

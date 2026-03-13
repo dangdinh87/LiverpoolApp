@@ -3,12 +3,13 @@
 import { useState, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import {
   Newspaper, Clock, CheckCheck, Search, X,
   SlidersHorizontal, TrendingUp, ArrowDownWideNarrow,
   Globe, Flag, Earth,
   Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
-  Loader2,
+  Loader2, RefreshCw,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -25,10 +26,12 @@ import { getReadArticles } from "@/lib/news/read-history";
 import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { loadMoreNews } from "@/app/news/actions";
+import { loadMoreNews, refreshNews } from "@/app/news/actions";
 
-const INITIAL_COUNT = 12;
-const LOAD_MORE_COUNT = 20;
+// hero(1) + grid(6) + compact(n) — keep compact divisible by 3 for clean grid rows
+// 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
+const INITIAL_COUNT = 13;
+const LOAD_MORE_COUNT = 12;
 
 /* ── Filter types ── */
 
@@ -107,15 +110,15 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
   return (
     <Link
       href={getArticleUrl(article.link)}
-      className={`block relative overflow-hidden cursor-pointer ${isRead ? "opacity-50" : ""}`}
+      className={`group block relative overflow-hidden cursor-pointer ${isRead ? "opacity-50" : ""}`}
     >
-      <div className="relative aspect-16/10 sm:aspect-21/9 w-full">
+      <div className="relative aspect-16/10 sm:aspect-21/9 w-full overflow-hidden">
         {article.thumbnail ? (
           <Image
             src={article.thumbnail}
             alt={article.title}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
             sizes="(max-width: 768px) 100vw, 896px"
             priority
             unoptimized
@@ -125,7 +128,7 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
             <Newspaper className="w-12 h-12 text-stadium-muted" />
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
         {isRead && (
           <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm">
             <CheckCheck className="w-3.5 h-3.5 text-green-400" />
@@ -144,7 +147,7 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
             </span>
           )}
         </div>
-        <h2 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug line-clamp-2">
+        <h2 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug line-clamp-2 transition-colors duration-300 group-hover:text-lfc-gold">
           {article.title}
         </h2>
       </div>
@@ -157,7 +160,7 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
   return (
     <Link
       href={getArticleUrl(article.link)}
-      className={`block bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer ${isRead ? "opacity-50" : ""}`}
+      className={`group block bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${isRead ? "opacity-50" : ""}`}
     >
       <div className="relative aspect-video w-full overflow-hidden">
         {article.thumbnail ? (
@@ -165,7 +168,7 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
             src={article.thumbnail}
             alt={article.title}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
             unoptimized
@@ -205,7 +208,7 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
   return (
     <Link
       href={getArticleUrl(article.link)}
-      className={`flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden ${isRead ? "opacity-50" : ""}`}
+      className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:bg-stadium-surface ${isRead ? "opacity-50" : ""}`}
     >
       <div className="relative w-32 h-24 shrink-0 overflow-hidden">
         {article.thumbnail ? (
@@ -213,7 +216,7 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
             src={article.thumbnail}
             alt={article.title}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
             sizes="128px"
             loading="lazy"
             unoptimized
@@ -258,6 +261,8 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
 function FilterSheet({
   sortMode, setSortMode,
   langFilter, setLangFilter,
+  sourceFilter, setSourceFilter,
+  availableSources,
   category, setCategory,
   activeCount,
 }: {
@@ -265,6 +270,9 @@ function FilterSheet({
   setSortMode: (v: SortMode) => void;
   langFilter: FeedFilter;
   setLangFilter: (v: FeedFilter) => void;
+  sourceFilter: "all" | NewsSource;
+  setSourceFilter: (v: "all" | NewsSource) => void;
+  availableSources: NewsSource[];
   category: CategoryFilter;
   setCategory: (v: CategoryFilter) => void;
   activeCount: number;
@@ -281,9 +289,9 @@ function FilterSheet({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <button className="relative flex items-center gap-1.5 px-3 py-1.5 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0">
+        <button className="relative flex items-center gap-1.5 px-4 py-2 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0">
           <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span className="font-barlow text-xs font-semibold uppercase tracking-wider">
+          <span className="font-barlow text-sm font-bold uppercase tracking-wider">
             {t("filterBtn")}
           </span>
           {activeCount > 0 && (
@@ -339,6 +347,32 @@ function FilterSheet({
             </div>
           </div>
 
+          {/* News Source */}
+          {availableSources.length > 1 && (
+            <div>
+              <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
+                {t("newsSourceLabel")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSourceFilter("all")}
+                  className={chipClass(sourceFilter === "all")}
+                >
+                  {t("newsSourceAll")}
+                </button>
+                {availableSources.map((src) => (
+                  <button
+                    key={src}
+                    onClick={() => setSourceFilter(src)}
+                    className={chipClass(sourceFilter === src)}
+                  >
+                    {SOURCE_CONFIG[src]?.label ?? src}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Category */}
           <div>
             <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
@@ -364,6 +398,7 @@ function FilterSheet({
               onClick={() => {
                 setSortMode("trending");
                 setLangFilter("all");
+                setSourceFilter("all");
                 setCategory("all");
               }}
               className="w-full font-barlow text-xs uppercase tracking-wider text-stadium-muted hover:text-white py-2.5 border-t border-stadium-border/40 pt-4 cursor-pointer transition-colors"
@@ -390,6 +425,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
   const [langFilter, setLangFilter] = useState<FeedFilter>("local");
   const [sortMode, setSortMode] = useState<SortMode>("trending");
   const [category, setCategory] = useState<CategoryFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | NewsSource>("all");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
@@ -397,6 +433,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
   const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
   const [serverHasMore, setServerHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     setLangFilter(getSavedFilter());
@@ -405,6 +442,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
 
   const handleLangFilter = (f: FeedFilter) => {
     setLangFilter(f);
+    setSourceFilter("all");
     setVisibleCount(INITIAL_COUNT);
     localStorage.setItem(STORAGE_KEY, f);
   };
@@ -419,11 +457,16 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
     setVisibleCount(INITIAL_COUNT);
   };
 
-  // Count active non-default filters (default: trending + local + all categories)
+  const handleSourceFilter = (s: "all" | NewsSource) => {
+    setSourceFilter(s);
+    setVisibleCount(INITIAL_COUNT);
+  };
+
+  // Only count filters not visible as chips (sort + category + source)
   const activeFilterCount =
     (sortMode !== "trending" ? 1 : 0) +
-    (langFilter !== "local" ? 1 : 0) +
-    (category !== "all" ? 1 : 0);
+    (category !== "all" ? 1 : 0) +
+    (sourceFilter !== "all" ? 1 : 0);
 
   // Merge initial + server-loaded extra articles
   const allLocal = useMemo(() => {
@@ -436,7 +479,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
     return [...globalArticles, ...extra];
   }, [globalArticles, extraArticles]);
 
-  // Pipeline: lang → category → sort → search
+  // Pipeline: lang → source → category → sort → search
   const langFiltered = useMemo(
     () => langFilter === "local" ? allLocal
       : langFilter === "global" ? allGlobal
@@ -444,9 +487,19 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
     [langFilter, allLocal, allGlobal]
   );
 
+  const availableSources = useMemo(() => {
+    const sourceSet = new Set(langFiltered.map(a => a.source));
+    return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter(s => sourceSet.has(s));
+  }, [langFiltered]);
+
+  const sourceFiltered = useMemo(
+    () => sourceFilter === "all" ? langFiltered : langFiltered.filter(a => a.source === sourceFilter),
+    [langFiltered, sourceFilter]
+  );
+
   const catFiltered = useMemo(
-    () => category === "all" ? langFiltered : langFiltered.filter((a) => a.category === category),
-    [langFiltered, category]
+    () => category === "all" ? sourceFiltered : sourceFiltered.filter((a) => a.category === category),
+    [sourceFiltered, category]
   );
 
   const sorted = useMemo(
@@ -470,39 +523,47 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
   }, [sorted, search]);
 
   return (
-    <div className="space-y-4">
-      {/* Language quick-filter chips */}
-      <div className="flex items-center gap-2">
-        {([
-          { value: "all" as FeedFilter, labelKey: "all" },
-          { value: "local" as FeedFilter, labelKey: "chipVietnamese", flag: "\u{1F1FB}\u{1F1F3}" },
-          { value: "global" as FeedFilter, labelKey: "chipInternational", flag: "\u{1F30D}" },
-        ]).map(({ value, labelKey, flag }) => (
-          <button
-            key={value}
-            onClick={() => handleLangFilter(value)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-barlow font-semibold uppercase tracking-wider transition-colors cursor-pointer ${
-              langFilter === value
-                ? "bg-lfc-red text-white"
-                : "bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40"
-            }`}
-          >
-            {flag && <span className="text-sm">{flag}</span>}
-            {t(labelKey)}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-3">
+      {/* Toolbar: lang chips + search + filter — all one row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Segmented control — sliding red background via layoutId */}
+        <div className="flex items-stretch border border-stadium-border/60 overflow-hidden shrink-0 bg-stadium-surface">
+          {([
+            { value: "all" as FeedFilter, labelKey: "all" },
+            { value: "local" as FeedFilter, labelKey: "chipVietnamese", flag: "\u{1F1FB}\u{1F1F3}" },
+            { value: "global" as FeedFilter, labelKey: "chipInternational", flag: "\u{1F30D}" },
+          ]).map(({ value, labelKey, flag }, i, arr) => (
+            <motion.button
+              key={value}
+              onClick={() => handleLangFilter(value)}
+              whileTap={{ scale: 0.96 }}
+              className={`relative px-4 py-2 text-sm font-barlow font-bold uppercase tracking-wider cursor-pointer overflow-hidden transition-colors duration-150 ${
+                i < arr.length - 1 ? "border-r border-stadium-border/60" : ""
+              } ${langFilter === value ? "text-white" : "text-stadium-muted hover:text-white"}`}
+            >
+              {langFilter === value && (
+                <motion.div
+                  layoutId="lang-filter-bg"
+                  className="absolute inset-0 bg-lfc-red"
+                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1.5">
+                {flag && <span>{flag}</span>}
+                {t(labelKey)}
+              </span>
+            </motion.button>
+          ))}
+        </div>
 
-      {/* Toolbar: Search + Filter */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 min-w-[140px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stadium-muted pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(INITIAL_COUNT); }}
             placeholder={t("searchPlaceholder")}
-            className="w-full bg-stadium-surface border border-stadium-border/60 pl-8 pr-7 py-1.5 text-xs font-inter text-white placeholder:text-stadium-muted/50 focus:outline-none focus:border-lfc-red/50 transition-colors"
+            className="w-full bg-stadium-surface border border-stadium-border/60 pl-8 pr-7 py-2 text-sm font-inter text-white placeholder:text-stadium-muted/50 focus:outline-none focus:border-lfc-red/50 transition-colors"
           />
           {search && (
             <button
@@ -514,11 +575,34 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
           )}
         </div>
 
+        <button
+          onClick={async () => {
+            setIsRefreshing(true);
+            try {
+              await refreshNews();
+              window.location.reload();
+            } finally {
+              setIsRefreshing(false);
+            }
+          }}
+          disabled={isRefreshing}
+          className="flex items-center gap-1.5 px-3 py-2 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+          title={t("refreshNews")}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span className="font-barlow text-sm font-bold uppercase tracking-wider hidden sm:inline">
+            {isRefreshing ? t("refreshing") : t("refreshNews")}
+          </span>
+        </button>
+
         <FilterSheet
           sortMode={sortMode}
           setSortMode={handleSortMode}
           langFilter={langFilter}
           setLangFilter={handleLangFilter}
+          sourceFilter={sourceFilter}
+          setSourceFilter={handleSourceFilter}
+          availableSources={availableSources}
           category={category}
           setCategory={handleCategory}
           activeCount={activeFilterCount}
@@ -533,10 +617,10 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
               {articles.length} {t("resultsFor")} &ldquo;{search}&rdquo;
             </span>
           )}
-          {langFilter !== "local" && (
+          {sourceFilter !== "all" && (
             <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {LANG_OPTIONS.find((o) => o.value === langFilter)?.labelKey && t(LANG_OPTIONS.find((o) => o.value === langFilter)!.labelKey)}
-              <button onClick={() => handleLangFilter("local")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
+              {SOURCE_CONFIG[sourceFilter]?.label ?? sourceFilter}
+              <button onClick={() => handleSourceFilter("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
           {category !== "all" && (
@@ -631,7 +715,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
                           {t("loading")}
                         </span>
                       ) : (
-                        t("loadMore", { count: Math.max(articles.length - visibleCount, LOAD_MORE_COUNT) })
+                        t("loadMore")
                       )}
                     </button>
                   </div>

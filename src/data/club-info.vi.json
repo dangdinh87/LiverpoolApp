@@ -71,13 +71,13 @@
     "biggestWin": "11–0 vs Strømsgodset (1974, Cúp C2)",
     "biggestLeagueWin": "10–1 vs Rotherham United (1896)",
     "recordTransferIn": {
-      "name": "Darwin Núñez",
-      "fee": "£64 triệu (2022)",
-      "from": "Benfica"
+      "name": "Alexander Isak",
+      "fee": "£125 triệu (2025)",
+      "from": "Newcastle United"
     },
     "recordTransferOut": {
       "name": "Philippe Coutinho",
-      "fee": "£142 triệu (2018)",
+      "fee": "£145 triệu (2018)",
       "to": "Barcelona"
     }
   },
@@ -115,12 +115,14 @@
     {
       "name": "Bill Shankly",
       "years": "1959–1974",
-      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp UEFA"
+      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp UEFA",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Shankly_statue_out_front.jpg/300px-Shankly_statue_out_front.jpg"
     },
     {
       "name": "Bob Paisley",
       "years": "1974–1983",
-      "trophies": "6 Vô địch QG, 3 Cúp C1, 3 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA"
+      "trophies": "6 Vô địch QG, 3 Cúp C1, 3 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Bob_Paisley_statue%2C_Anfield_2.jpg/300px-Bob_Paisley_statue%2C_Anfield_2.jpg"
     },
     {
       "name": "Joe Fagan",
@@ -130,12 +132,14 @@
     {
       "name": "Kenny Dalglish",
       "years": "1985–1991, 2011–2012",
-      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp Liên đoàn"
+      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp Liên đoàn",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Kenny_Dalglish_2009_Singapore.jpg/330px-Kenny_Dalglish_2009_Singapore.jpg"
     },
     {
       "name": "Graeme Souness",
       "years": "1991–1994",
-      "trophies": "1 Cúp FA"
+      "trophies": "1 Cúp FA",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Souness_%28retouched%29.jpg/330px-Souness_%28retouched%29.jpg"
     },
     {
       "name": "Roy Evans",
@@ -160,8 +164,14 @@
     {
       "name": "Jürgen Klopp",
       "years": "2015–2024",
-      "trophies": "1 Vô địch QG, 1 Champions League, 1 Cúp FA, 2 Cúp Liên đoàn, 1 Club World Cup, 1 Siêu cúp"
+      "trophies": "1 Vô địch QG, 1 Champions League, 1 Cúp FA, 2 Cúp Liên đoàn, 1 Club World Cup, 1 Siêu cúp UEFA, 1 Community Shield",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/J%C3%BCrgen_Klopp%2C_Liverpool_vs._Chelsea%2C_UEFA_Super_Cup_2019-08-14_04.jpg/330px-J%C3%BCrgen_Klopp%2C_Liverpool_vs._Chelsea%2C_UEFA_Super_Cup_2019-08-14_04.jpg"
     },
-    { "name": "Arne Slot", "years": "2024–nay", "trophies": "1 Vô địch QG" }
+    {
+      "name": "Arne Slot",
+      "years": "2024–nay",
+      "trophies": "1 Vô địch QG",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Arne_Slot_in_2024.jpg/330px-Arne_Slot_in_2024.jpg"
+    }
   ]
 }

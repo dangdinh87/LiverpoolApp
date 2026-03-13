@@ -5,6 +5,7 @@
     "years": "1959–1974",
     "caps": null,
     "goals": null,
+    "image": "/assets/lfc/legends/bill-shankly.jpg",
     "bio": "Người xây dựng Liverpool hiện đại. Shankly biến một đội bóng Hạng Nhì đang chật vật thành thế lực hàng đầu Hạng Nhất, giành 3 chức vô địch quốc gia, 2 Cúp FA và Cúp UEFA. Triết lý của ông — 'bóng đá không chỉ là vấn đề sống chết, nó quan trọng hơn thế nhiều' — vẫn sống mãi tại Anfield."
   },
   {
@@ -13,14 +14,16 @@
     "years": "1974–1983",
     "caps": null,
     "goals": null,
+    "image": "/assets/lfc/legends/bob-paisley.jpg",
     "bio": "HLV giành nhiều danh hiệu nhất lịch sử Liverpool. Paisley giành 6 chức vô địch quốc gia, 3 Cúp C1, 3 Cúp Liên đoàn và 1 Cúp UEFA trong 9 mùa giải — một kỷ lục có lẽ không bao giờ bị phá. Khiêm tốn, lặng lẽ và tài giỏi về chiến thuật."
   },
   {
     "name": "Kenny Dalglish",
     "role": "Tiền đạo / HLV",
     "years": "1977–1990",
-    "caps": 355,
+    "caps": 515,
     "goals": 172,
+    "image": "/assets/lfc/legends/kenny-dalglish.jpg",
     "bio": "Được công nhận rộng rãi là cầu thủ vĩ đại nhất lịch sử Liverpool. Dalglish ghi bàn quyết định trong trận chung kết Cúp C1 năm 1978 và sau đó dẫn dắt câu lạc bộ với tư cách cầu thủ kiêm HLV đến cú đúp vô địch quốc gia và Cúp FA huyền thoại năm 1986. Một huyền thoại đích thực của Anfield."
   },
   {
@@ -29,6 +32,7 @@
     "years": "1998–2015",
     "caps": 710,
     "goals": 186,
+    "image": "/assets/lfc/legends/steven-gerrard.jpg",
     "bio": "Nhịp đập của Liverpool suốt 17 năm. Gerrard truyền cảm hứng cho Phép màu Istanbul bằng cú đánh đầu hiệp hai và chơi với đam mê và khả năng lãnh đạo trong mọi trận đấu khoác áo đỏ. Một trong những tiền vệ xuất sắc nhất thế hệ mình."
   },
   {
@@ -37,7 +41,8 @@
     "years": "1980–1996",
     "caps": 660,
     "goals": 346,
-    "bio": "Cây săn bàn vĩ đại nhất mọi thời đại của Liverpool. Rush là sát thủ không ngừng nghỉ trong vòng cấm, giành 5 chức vô địch quốc gia và 3 Cúp FA. Sự kết hợp của ông với Kenny Dalglish là một trong những cặp đôi chết chóc nhất lịch sử bóng đá Anh."
+    "image": "/assets/lfc/legends/ian-rush.jpg",
+    "bio": "Cây săn bàn vĩ đại nhất mọi thời đại của Liverpool. Rush là sát thủ không ngừng nghỉ trong vùng cấm, giành 5 chức vô địch quốc gia và 3 Cúp FA. Sự kết hợp của ông với Kenny Dalglish là một trong những cặp đôi chết chóc nhất lịch sử bóng đá Anh."
   },
   {
     "name": "Robbie Fowler",
@@ -45,7 +50,8 @@
     "years": "1993–2001 / 2006–2007",
     "caps": 369,
     "goals": 183,
-    "bio": "Được gọi là 'Chúa' trên khán đài Kop, khả năng dứt điểm bẩm sinh của Fowler khiến ông trở thành một trong những tiền đạo nguy hiểm nhất thời đại. Ông ghi 28 bàn trong mùa giải chính thức đầu tiên và tiếp tục trở thành biểu tượng Liverpool."
+    "image": "/assets/lfc/legends/robbie-fowler.jpg",
+    "bio": "Được gọi là 'Chúa' trên khán đài Kop, khả năng dứt điểm bẩm sinh của Fowler khiến ông trở thành một trong những tiền đạo nguy hiểm nhất thời đại. Ông ghi 25 bàn tại giải đấu trong mùa giải chính thức đầu tiên và tiếp tục trở thành biểu tượng Liverpool."
   },
   {
     "name": "Jamie Carragher",
@@ -53,6 +59,7 @@
     "years": "1996–2013",
     "caps": 737,
     "goals": 4,
+    "image": "/assets/lfc/legends/jamie-carragher.jpg",
     "bio": "Carra là chiến binh trung thành ở trung tâm hàng thủ Liverpool suốt 17 năm. Màn trình diễn của ông tại Istanbul năm 2005 thật anh hùng. Một thủ lĩnh bẩm sinh và là một trong những hậu vệ xuất sắc nhất thế hệ, cống hiến trọn sự nghiệp cho Liverpool."
   },
   {
@@ -61,22 +68,25 @@
     "years": "1978–1984",
     "caps": 359,
     "goals": 56,
+    "image": "/assets/lfc/legends/graeme-souness.jpg",
     "bio": "Một trong những tiền vệ toàn diện nhất lịch sử bóng đá Anh. Souness là động cơ của đội hình Liverpool vô đối cuối thập niên 1970 và đầu 1980, giành 5 chức vô địch quốc gia và 3 Cúp C1."
   },
   {
     "name": "Mohamed Salah",
     "role": "Tiền đạo",
     "years": "2017–nay",
-    "caps": null,
-    "goals": null,
-    "bio": "Vua Ai Cập. Salah phá kỷ lục Premier League một mùa với 32 bàn thắng năm 2017/18 và là cầu thủ ghi bàn ổn định nhất của Liverpool kể từ đó. Nhà vô địch Champions League 2019 và vô địch Premier League 2020."
+    "caps": 432,
+    "goals": 254,
+    "image": "/assets/lfc/legends/mohamed-salah.jpg",
+    "bio": "Vua Ai Cập. Salah phá kỷ lục Premier League một mùa với 32 bàn thắng năm 2017/18 và là cầu thủ ghi bàn ổn định nhất của Liverpool kể từ đó. Nhà vô địch Champions League 2019, Premier League 2020 và 2025. Xạ thủ vĩ đại thứ 3 mọi thời đại của Liverpool với 254 bàn thắng."
   },
   {
     "name": "Virgil van Dijk",
     "role": "Hậu vệ",
     "years": "2018–nay",
-    "caps": null,
-    "goals": null,
+    "caps": 357,
+    "goals": 32,
+    "image": "/assets/lfc/legends/virgil-van-dijk.jpg",
     "bio": "Trung vệ xuất sắc nhất thế giới ở đỉnh cao phong độ. Sự xuất hiện của Van Dijk đã thay đổi hoàn toàn thành tích phòng ngự Liverpool và là trụ cột trong việc giành Champions League và Premier League. Một thủ lĩnh đầy uy quyền."
   },
   {
@@ -85,6 +95,52 @@
     "years": "2015–2024",
     "caps": null,
     "goals": null,
-    "bio": "'The Normal One'. Klopp đến năm 2015 và xây dựng đội bóng có khả năng chinh phục châu Âu và nước Anh. Ông mang về Champions League đầu tiên sau 14 năm, FIFA Club World Cup và kết thúc 30 năm chờ đợi chức vô địch quốc gia. Ra đi với 9 danh hiệu và tình yêu vĩnh cửu từ The Kop."
+    "image": "/assets/lfc/legends/jurgen-klopp.jpg",
+    "bio": "'The Normal One'. Klopp đến năm 2015 và xây dựng đội bóng có khả năng chinh phục châu Âu và nước Anh. Ông mang về Champions League đầu tiên sau 14 năm, FIFA Club World Cup và kết thúc 30 năm chờ đợi chức vô địch quốc gia. Ra đi với 8 danh hiệu và tình yêu vĩnh cửu từ The Kop."
+  },
+  {
+    "name": "Luis Suárez",
+    "role": "Tiền đạo",
+    "years": "2011–2014",
+    "caps": 133,
+    "goals": 82,
+    "image": "/assets/lfc/legends/luis-suarez.jpg",
+    "bio": "Một trong những cầu thủ điện lực nhất từng khoác áo đỏ. Suárez tàn phá hàng thủ Premier League với khả năng di chuyển, sáng tạo và dứt điểm tàn nhẫn. Mùa 2013/14, anh ghi 31 bàn trong 33 trận — gần như một mình gánh Liverpool đến gần danh hiệu trước khi cơ hội vụt tắt đau lòng. Rời đến Barcelona nhưng đã trở thành huyền thoại Anfield chỉ sau 3 mùa giải."
+  },
+  {
+    "name": "Alisson Becker",
+    "role": "Thủ môn",
+    "years": "2018–nay",
+    "caps": 300,
+    "goals": 1,
+    "image": "/assets/lfc/legends/alisson-becker.jpg",
+    "bio": "Thủ môn hay nhất thế giới và mảnh ghép cuối cùng hoàn thiện cỗ máy của Klopp. Alisson đến từ AS Roma với giá £65 triệu và thay đổi hoàn toàn thành tích phòng thủ Liverpool. Anh thậm chí ghi bàn đánh đầu vào lưới West Brom năm 2021 để giúp đội giành suất dự Champions League. Nhà vô địch Champions League 2019 và Premier League 2020, 2025."
+  },
+  {
+    "name": "Kevin Keegan",
+    "role": "Tiền đạo",
+    "years": "1971–1977",
+    "caps": 323,
+    "goals": 100,
+    "image": "/assets/lfc/legends/kevin-keegan.jpg",
+    "bio": "Hai lần đoạt Quả bóng Vàng và một trong những tiền đạo hấp dẫn nhất lịch sử Liverpool. Keegan đến từ Scunthorpe United với giá £33,000 năm 1971 và tạo nên bộ đôi tấn công chết chóc cùng John Toshack, giúp Liverpool giành 3 chức vô địch quốc gia, Cúp FA, 2 Cúp UEFA và Cúp C1 châu Âu. Rời đến Hamburg năm 1977 và giành 2 danh hiệu Cầu thủ xuất sắc nhất châu Âu liên tiếp."
+  },
+  {
+    "name": "Jordan Henderson",
+    "role": "Tiền vệ",
+    "years": "2011–2023",
+    "caps": 492,
+    "goals": 33,
+    "image": "/assets/lfc/legends/jordan-henderson.jpg",
+    "bio": "Đội trưởng Liverpool trong kỷ nguyên huy hoàng nhất của thời đại. Henderson nâng cao Champions League, Premier League, FA Cup, League Cup và FIFA Club World Cup với tư cách thủ lĩnh, trở thành đội trưởng đầu tiên nâng cao chức vô địch quốc gia sau 30 năm. Sự lãnh đạo và cống hiến không ngừng nghỉ của anh suốt 12 năm khiến ông trở thành một phần không thể thiếu của lịch sử câu lạc bộ."
+  },
+  {
+    "name": "John Barnes",
+    "role": "Tiền vệ cánh",
+    "years": "1987–1997",
+    "caps": 407,
+    "goals": 108,
+    "image": "/assets/lfc/legends/john-barnes.jpg",
+    "bio": "Một trong những cầu thủ tài năng nhất từng thi đấu tại Anfield. Barnes đến từ Watford năm 1987 và thắp sáng bóng đá Anh với tốc độ, kỹ thuật và sáng tạo phi thường. Ông giành 2 chức vô địch quốc gia và 2 Cúp FA, đồng thời được bầu chọn là Cầu thủ xuất sắc nhất năm của FWA hai lần. Khả năng rê bóng mê hoặc và dứt điểm tàn nhẫn giúp ông trở thành một trong những cầu thủ chạy cánh vĩ đại nhất lịch sử bóng đá Anh."
   }
 ]

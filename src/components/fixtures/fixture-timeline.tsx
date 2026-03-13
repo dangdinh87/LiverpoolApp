@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
 import type { Fixture } from "@/lib/types/football";
@@ -30,6 +31,16 @@ const COMP_SHORT: Record<string, string> = {
   "FA Cup": "FA Cup",
   "Carabao Cup": "Carabao Cup",
   "Community Shield": "Community Shield",
+};
+
+// Brand colors per competition (bg for active filter chip — brightened for dark theme)
+const COMP_COLOR: Record<string, string> = {
+  All: "bg-lfc-red",
+  "Premier League": "bg-[#5B2D8E]",
+  "UEFA Champions League": "bg-[#1A3A7A]",
+  "FA Cup": "bg-[#B71C1C]",
+  "Carabao Cup": "bg-[#1B8C4F]",
+  "Community Shield": "bg-[#B71C1C]",
 };
 
 interface FixtureTimelineProps {
@@ -75,31 +86,31 @@ export function FixtureTimeline({ fixtures }: FixtureTimelineProps) {
     <div>
       {/* Competition filter */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        <button
-          onClick={() => setCompFilter("All")}
-          className={cn(
-            "px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider transition-all duration-200",
-            compFilter === "All"
-              ? "bg-lfc-red text-white"
-              : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
-          )}
-        >
-          {t("filter.all")}
-        </button>
-        {availableComps.map((comp) => (
-          <button
-            key={comp}
-            onClick={() => setCompFilter(comp)}
-            className={cn(
-              "px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider transition-all duration-200",
-              compFilter === comp
-                ? "bg-lfc-red text-white"
-                : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
-            )}
-          >
-            {COMP_SHORT[comp] ?? comp}
-          </button>
-        ))}
+        {[{ key: "All", label: t("filter.all") }, ...availableComps.map((c) => ({ key: c, label: COMP_SHORT[c] ?? c }))].map(({ key, label }) => {
+          const isActive = compFilter === key;
+          return (
+            <motion.button
+              key={key}
+              onClick={() => setCompFilter(key)}
+              whileTap={{ scale: 0.96 }}
+              className={cn(
+                "relative px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider overflow-hidden transition-colors",
+                isActive
+                  ? "text-white border border-transparent"
+                  : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
+              )}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="fixture-comp-filter-bg"
+                  className={cn("absolute inset-0", COMP_COLOR[key] ?? "bg-lfc-red")}
+                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                />
+              )}
+              <span className="relative z-10">{label}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Upcoming fixtures */}

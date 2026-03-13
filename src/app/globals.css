@@ -200,6 +200,16 @@
 }
 
 /* ─── Animations ─────────────────────────────────────────────── */
+
+/* Infinite marquee scroll — used by news source logo strip */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
 @keyframes pulse-red {
   0%,
   100% {

@@ -1,27 +1,147 @@
 # Tài Liệu Kỹ Thuật: Hệ Thống Tin Tức Liverpool
 
-> **Cập nhật**: 11/03/2026 — v4.0 (Phase 01 Critical Performance)
-> **Tác giả**: Antigravity AI + Code Review
+> **Cập nhật**: 11/03/2026 — v5.0 (Phase 04: AI Daily Digest)
+> **Tác giả**: Antigravity AI + Code Review + News Pipeline Audit + AI Integration
 
 ---
 
 ## Mục lục
 
-1. [Tổng quan kiến trúc (Phase 01)](#1-tổng-quan-kiến-trúc-phase-01)
-2. [Lớp cơ sở dữ liệu & Sync](#2-lớp-cơ-sở-dữ-liệu--sync)
-3. [Lớp thu thập dữ liệu (Adapters)](#3-lớp-thu-thập-dữ-liệu-adapters)
-4. [Pipeline xử lý dữ liệu](#4-pipeline-xử-lý-dữ-liệu)
-5. [Hệ thống scraping bài viết (Article Extractor)](#5-hệ-thống-scraping-bài-viết-article-extractor)
-6. [Caching Strategy (DB + React.cache + ISR)](#6-caching-strategy-db--reactcache--isr)
-7. [Frontend — Trang danh sách tin `/news`](#7-frontend--trang-danh-sách-tin-news)
-8. [Frontend — Load-More Pagination](#8-frontend--load-more-pagination)
-9. [Frontend — Trang đọc bài `/news/[...slug]`](#9-frontend--trang-đọc-bài-newsslug)
-10. [Hệ thống URL Routing (Slug Encoding)](#10-hệ-thống-url-routing-slug-encoding)
-11. [Client-side Features](#11-client-side-features)
-12. [Đa ngôn ngữ (i18n)](#12-đa-ngôn-ngữ-i18n)
-13. [Cơ chế chịu lỗi (Resilience)](#13-cơ-chế-chịu-lỗi-resilience)
-14. [Homepage Integration](#14-homepage-integration)
-15. [Sơ đồ file & Module Map](#15-sơ-đồ-file--module-map)
+1. [Phase 04: AI Daily Digest (11/03/2026)](#phase-04-ai-daily-digest-11032026)
+2. [Phase 02: Refactoring & Audit (11/03/2026)](#phase-02-refactoring--audit-11032026)
+2. [Tổng quan kiến trúc (Phase 01)](#1-tổng-quan-kiến-trúc-phase-01)
+3. [Lớp cơ sở dữ liệu & Sync](#2-lớp-cơ-sở-dữ-liệu--sync)
+4. [Lớp thu thập dữ liệu (Adapters)](#3-lớp-thu-thập-dữ-liệu-adapters)
+5. [Pipeline xử lý dữ liệu](#4-pipeline-xử-lý-dữ-liệu)
+6. [Hệ thống scraping bài viết (Article Extractor)](#5-hệ-thống-scraping-bài-viết-article-extractor)
+7. [Caching Strategy (DB + React.cache + ISR)](#6-caching-strategy-db--reactcache--isr)
+8. [Frontend — Trang danh sách tin `/news`](#7-frontend--trang-danh-sách-tin-news)
+9. [Frontend — Load-More Pagination](#8-frontend--load-more-pagination)
+10. [Frontend — Trang đọc bài `/news/[...slug]`](#9-frontend--trang-đọc-bài-newsslug)
+11. [Hệ thống URL Routing (Slug Encoding)](#10-hệ-thống-url-routing-slug-encoding)
+12. [Client-side Features](#11-client-side-features)
+13. [Đa ngôn ngữ (i18n)](#12-đa-ngôn-ngữ-i18n)
+14. [Cơ chế chịu lỗi (Resilience)](#13-cơ-chế-chịu-lỗi-resilience)
+15. [Homepage Integration](#14-homepage-integration)
+16. [Sơ đồ file & Module Map](#15-sơ-đồ-file--module-map)
+
+---
+
+## Phase 04: AI Daily Digest (11/03/2026)
+
+**Goal:** Automated AI-powered news digest summarizing top 15 Liverpool FC articles daily in Vietnamese.
+
+**Key Changes:**
+| File | Status | Changes |
+|------|--------|---------|
+| `digest.ts` | NEW | Groq LLM integration, digest generation + DB queries |
+| `api/news/digest/generate/route.ts` | NEW | Cron endpoint with idempotency check, token accounting |
+| `digest-card.tsx` | NEW | Client dismissable card component, localStorage state |
+| `news/digest/[date]/page.tsx` | NEW | Detail page with date validation + metadata |
+| `news/page.tsx` | MODIFIED | Parallel fetch digest + articles, pinned DigestCard above feed |
+| `messages/en.json`, `vi.json` | MODIFIED | News.digest i18n keys |
+| `vercel.json` | MODIFIED | Cron: `0 0 * * *` (daily midnight UTC) |
+
+**Architecture:**
+```
+Daily at 00:00 UTC
+  ├─ /api/news/digest/generate?key=CRON_SECRET
+  ├─ generateDailyDigest()
+  │  ├─ Query top 15 articles (last 24h, sorted by relevance)
+  │  ├─ Build Groq prompt (article list + date)
+  │  ├─ Call llama-3.3-70b-versatile + max 2000 tokens
+  │  ├─ Parse JSON response
+  │  └─ Upsert to news_digests table (idempotent on digest_date)
+  │
+  └─ /news page
+     ├─ getLatestDigest() → DigestCard (pinned above feed)
+     ├─ User can expand summary / dismiss (localStorage)
+     └─ "Read Full" → /news/digest/[date] detail page
+```
+
+**Database Schema (news_digests):**
+```sql
+CREATE TABLE news_digests (
+  id UUID PRIMARY KEY,
+  digest_date DATE UNIQUE,
+  title TEXT,
+  summary TEXT,
+  sections JSONB,  -- DigestSection[]
+  article_ids TEXT[],
+  article_count INTEGER,
+  model TEXT,
+  tokens_used INTEGER,
+  generated_at TIMESTAMP
+);
+```
+
+**DigestSection Structure:**
+```typescript
+{
+  category: "match-report" | "transfer" | "injury" | "team-news" | "opinion" | "analysis" | "general",
+  categoryVi: "Vietnamese category name",
+  headline: "Vietnamese headline",
+  body: "2-3 sentence Vietnamese summary",
+  articleUrls: ["url1", "url2", ...]
+}
+```
+
+**i18n Keys (News.digest):**
+- `badge` — "AI DIGEST" badge label
+- `dismiss` — "Dismiss" button text
+- `expand`/`collapse` — Toggle buttons
+- `readFull` — "Read Full" link
+- `articleCount` — "Based on {count} articles"
+- `backToNews` — Back link text
+- `sourceArticle` — "Source Article {n}"
+- `generatedBy` — Footer credit with model name
+
+**Cron Configuration (vercel.json):**
+```json
+{
+  "crons": [
+    {
+      "path": "/api/news/digest/generate",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+```
+
+**Environment Variables:**
+- `GROQ_API_KEY` — Groq Cloud API key (llama-3.3-70b-versatile model)
+- `CRON_SECRET` — Shared secret for digest generation endpoint
+
+**Idempotency:** Check if `news_digests` record exists for today's date. Skip generation if present (saves Groq tokens).
+
+---
+
+## Phase 02: Refactoring & Audit (11/03/2026)
+
+**Goal:** Consolidate scattered logic, reduce duplication, ensure consistency.
+
+**Key Changes:**
+| File | Status | Changes |
+|------|--------|---------|
+| `sync.ts` | NEW | Shared `syncPipeline()` — called by background + `/api/news/sync` |
+| `supabase-service.ts` | NEW | Shared `getServiceClient()` — single Supabase auth point |
+| `source-detect.ts` | NEW | Unified `detectSource(url)` + `VI_SOURCES` set |
+| `db.ts` | MODIFIED | Uses `syncPipeline()` + `getServiceClient()` |
+| `article-extractor.ts` | MODIFIED | Set-based dedup + `detectSource()` from source-detect.ts |
+| `config.ts` | MODIFIED | Moved `LFC_KEYWORDS_WEIGHTED` (single source for keywords) |
+| `relevance.ts` | MODIFIED | Imports `LFC_KEYWORDS_WEIGHTED` from config.ts |
+| `types.ts` | MODIFIED | Removed `tia` + `sky` (disabled sources) |
+| `news-config.ts` | MODIFIED | Removed `tia` + `sky` references |
+| `validation.ts` | DELETED | Unused, reducing file bloat |
+| `[...slug]/page.tsx` | MODIFIED | Uses `detectSource()` + `VI_SOURCES` |
+| `sync/route.ts` | SIMPLIFIED | Now: `await syncPipeline()` (vs inline logic) |
+
+**Architectural Benefits:**
+1. **Single source of truth:** `syncPipeline()` in sync.ts (both background + cron)
+2. **Centralized auth:** `getServiceClient()` in supabase-service.ts
+3. **Unified detection:** `detectSource()` + `VI_SOURCES` → consistent source naming everywhere
+4. **Better dedup:** Set<string> in article-extractor → O(1) vs O(n) array.includes()
+5. **Keyword consistency:** LFC_KEYWORDS_WEIGHTED moved to config.ts, imported by both filter + scoring logic
 
 ---
 
@@ -95,7 +215,34 @@
 
 ## 2. Lớp cơ sở dữ liệu & Sync
 
-**File:** `src/lib/news/db.ts` (server-only)
+**Files:**
+- `src/lib/news/db.ts` (server-only) — DB queries + trigger
+- `src/lib/news/sync.ts` (server-only) — shared syncPipeline()
+- `src/lib/news/supabase-service.ts` (server-only) — getServiceClient()
+
+### 2.0 Shared Sync Pipeline
+
+**`syncPipeline()`** in `sync.ts`:
+```
+1. Initialize adapters (LFC + 13 RSS + Bongdaplus)
+2. fetchAllNews(adapters, 300) → dedup/score/sort
+3. Batch upsert (50 rows, 1 retry on 502/503)
+4. Re-enrich: fetch og:image for thumbnails (batch 10)
+5. Log result to sync_logs table
+→ Returns: SyncResult { total, upserted, failed, enriched, durationMs, errors }
+```
+
+**Called by:**
+- Background: `db.ts` → `triggerSyncIfNeeded()` (fire-and-forget if stale)
+- Manual: `/api/news/sync` route (cron job)
+
+**`getServiceClient()`** in `supabase-service.ts`:
+```typescript
+export function getServiceClient() {
+  return createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+}
+```
+Used by all news server code (bypasses RLS).
 
 ### 2.1 Articles Table Schema
 
@@ -132,13 +279,19 @@ User visits /news
   └─ getNewsFromDB(limit) → read from DB, always fresh
 ```
 
-**Sync function (background):**
+**Sync in db.ts:**
 ```typescript
-syncArticles() {
-  • 13 adapters fetch in parallel
-  • fetchAllNews(adapters, 300) → top 300 deduped/scored articles
-  • Batch insert: 50 rows per upsert (retry once on 502/503)
-  • Update fetched_at to current time
+triggerSyncIfNeeded() {
+  // Check DB freshness (15-min threshold)
+  const { fresh, empty } = await isDbFresh();
+
+  if (empty) {
+    // First visit: block once, await syncPipeline()
+    await syncPipeline();
+  } else if (!fresh) {
+    // Stale: fire syncPipeline() background, return immediately
+    syncPipeline().catch(err => console.error(err));
+  }
 }
 ```
 
@@ -212,13 +365,25 @@ interface NewsArticle {
 1. `fetch()` gửi HTTP GET tới RSS URL với `User-Agent` header, timeout 15s, `next.revalidate = 1800` (ISR cache)
 2. Response XML → `rss-parser` thư viện parse (dùng `parser.parseString()` thay vì built-in HTTP của parser vì Next.js fetch ổn định hơn)
 3. Custom fields extraction: `media:thumbnail`, `media:content`, `enclosure` → dùng cho ảnh thumbnail
-4. **Keyword filter** (cho feeds VI chung): nếu `config.filter === "lfc"`, chỉ giữ bài chứa ít nhất 1 keyword từ `LFC_KEYWORDS`
+4. **Keyword filter** (cho feeds VI chung): nếu `config.filter === "lfc"`, chỉ giữ bài chứa ít nhất 1 keyword từ `LFC_KEYWORDS_WEIGHTED`
 
-**LFC_KEYWORDS dùng cho filter:**
+**LFC_KEYWORDS_WEIGHTED** (in `config.ts`, single source of truth):
+```typescript
+[
+  { term: "liverpool", weight: 3 },
+  { term: "anfield", weight: 3 },
+  { term: "lfc", weight: 3 },
+  { term: "the kop", weight: 2.5 },
+  { term: "arne slot", weight: 2.5 },
+  { term: "salah", weight: 2.5 },
+  { term: "van dijk", weight: 2.5 },
+  { term: "virgil", weight: 2 },
+  // ... more players + transfer targets ...
+  { term: "alisson", weight: 1.5 },
+  // ... others at 1.0 weight ...
+]
 ```
-liverpool, anfield, salah, van dijk, slot, the kop, lữ đoàn đỏ,
-trent, nunez, gakpo, szoboszlai, mac allister, jota, alisson, diaz
-```
+Used for filtering (any match) + relevance scoring (weighted sum).
 
 **Xử lý ảnh từ RSS:**
 - Thứ tự ưu tiên: `mediaContent` → `enclosure` → `mediaThumbnail`
@@ -344,9 +509,44 @@ Sau khi sort + slice theo limit, pipeline enrich bài thiếu thumbnail hoặc c
 
 ## 5. Hệ thống scraping bài viết (Article Extractor)
 
+**Phase 02 Changes:**
+- Set-based dedup: O(1) image/URL checks (vs O(n) array.includes())
+- Unified source detection: uses `detectSource()` from source-detect.ts
+
 **Phase 01 Change:** Add DB content caching (content_en JSONB + 24h TTL).
 
 **File:** `src/lib/news/enrichers/article-extractor.ts` (server-only)
+
+### 5.0 Phase 02: Set-based Dedup + Unified Source Detection
+
+**Dedup helper (O(1)):**
+```typescript
+function pushUnique(arr: string[], seen: Set<string>, value: string) {
+  if (!seen.has(value)) { seen.add(value); arr.push(value); }
+}
+
+// Usage in extractors:
+const seenImages = new Set<string>();
+const images: string[] = [];
+$("img").each((_, el) => {
+  const src = $(el).attr("src");
+  if (src) pushUnique(images, seenImages, src);
+});
+```
+
+**Source detection (unified):**
+```typescript
+import { detectSource } from "../source-detect";
+
+const { id: sourceId, name: sourceName } = detectSource(url);
+return {
+  sourceUrl: url,
+  sourceName,  // Consistent naming (vs local detectSourceName())
+  // ... rest of content ...
+};
+```
+
+Eliminates duplicate code, ensures consistency across extractors.
 
 ### 5.1 Content Caching (DB-backed)
 
@@ -728,9 +928,35 @@ Khi `content === null` hoặc `paragraphs.length === 0`:
 
 ## 10. Hệ thống URL Routing (Slug Encoding)
 
-**File:** `src/lib/news-config.ts`
+**Files:**
+- `src/lib/news-config.ts` — encode/decode APIs
+- `src/lib/news/source-detect.ts` — unified detectSource() (Phase 02)
 
-### 8.1 Encoding
+### 8.1 Unified Source Detection (Phase 02)
+
+**`detectSource(url)` in `source-detect.ts`:**
+```typescript
+// Single source of truth for URL → { id, name }
+export function detectSource(url: string): { id: NewsSource; name: string } {
+  for (const [domain, id, name] of SOURCE_MAP) {
+    if (url.includes(domain)) return { id, name };
+  }
+  return { id: "bbc", name: new URL(url).hostname };
+}
+
+// Vietnamese sources helper
+export const VI_SOURCES = new Set<NewsSource>([
+  "bongda", "24h", "bongdaplus", "vnexpress", "tuoitre", "thanhnien",
+  "dantri", "zingnews", "vietnamnet", "webthethao",
+]);
+```
+
+Used by:
+- Article extractor: `detectSource(url).name` for source name (consistent)
+- Article page: `VI_SOURCES.has(source)` for language formatting
+- Dedup: unified source detection
+
+### 8.2 Encoding
 
 ```
 Original: https://www.bbc.com/sport/football/12345
@@ -738,12 +964,12 @@ Encoded:  /news/bbc/sport/football/12345
 ```
 
 Quy tắc:
-1. Parse URL → tìm hostname trong `SOURCE_HOSTS` map → lấy source key
+1. Parse URL → call `detectSource(url)` → lấy source key
 2. Path = `{source}/{pathname+search}`
 
 Fallback: nếu URL parse fail → Base64url encoding.
 
-### 8.2 Decoding
+### 8.3 Decoding
 
 ```
 Segments: ["bbc", "sport", "football", "12345"]
@@ -753,22 +979,28 @@ Segments: ["bbc", "sport", "football", "12345"]
 
 Legacy support: single-segment base64url format cũng vẫn decode được.
 
-### 8.3 SOURCE_HOSTS Map
+### 8.4 SOURCE_MAP (in source-detect.ts)
 
 ```
-lfc → www.liverpoolfc.com
-bbc → www.bbc.com
-guardian → www.theguardian.com
-tia → www.thisisanfield.com
-echo → www.liverpoolecho.co.uk
-sky → www.skysports.com
-anfield-watch → www.anfieldwatch.co.uk
-bongda → www.bongda.com.vn
-24h → www.24h.com.vn
-bongdaplus → www.bongdaplus.vn
-vnexpress → vnexpress.net
-tuoitre → tuoitre.vn
-thanhnien → thanhnien.vn
+[domain, id, name]:
+["liverpoolfc.com", "lfc", "LiverpoolFC.com"]
+["bbc.com", "bbc", "BBC Sport"]
+["bbc.co.uk", "bbc", "BBC Sport"]
+["theguardian.com", "guardian", "The Guardian"]
+["liverpoolecho.co.uk", "echo", "Liverpool Echo"]
+["anfieldwatch.co.uk", "anfield-watch", "Anfield Watch"]
+["empireofthekop.com", "eotk", "Empire of the Kop"]
+["bongda.com.vn", "bongda", "Bongda.com.vn"]
+["24h.com.vn", "24h", "24h.com.vn"]
+["bongdaplus.vn", "bongdaplus", "Bongdaplus.vn"]
+["znews.vn", "zingnews", "ZNews"]
+["zingnews.vn", "zingnews", "ZNews"]  // legacy
+["vnexpress.net", "vnexpress", "VnExpress"]
+["dantri.com.vn", "dantri", "Dân Trí"]
+["vietnamnet.vn", "vietnamnet", "VietNamNet"]
+["tuoitre.vn", "tuoitre", "Tuổi Trẻ"]
+["thanhnien.vn", "thanhnien", "Thanh Niên"]
+["webthethao.vn", "webthethao", "Webthethao"]
 ```
 
 ---
@@ -874,32 +1106,35 @@ User mặc định thấy tin đúng ngôn ngữ. Toggle "All News" để xem c�
 
 ```
 src/lib/news/
-├── types.ts              # NewsArticle, ArticleContent types (client-safe)
-├── config.ts             # RSS_FEEDS[], SOURCE_CONFIG, LFC_KEYWORDS
+├── types.ts              # NewsArticle, ArticleContent types (client-safe) [Phase 02: removed tia/sky]
+├── config.ts             # RSS_FEEDS[], SOURCE_CONFIG, LFC_KEYWORDS_WEIGHTED [Phase 02: single source for keywords]
 ├── index.ts              # Export: getNewsFromDB, searchArticles, getNewsPaginated
-├── db.ts                 # [NEW Phase 01] DB sync, getNewsFromDB, getNewsPaginated
-│   ├─ syncArticles()     # Background: adapters → articles upsert
+├── sync.ts               # [NEW Phase 02] shared syncPipeline() for background + /api/news/sync
+├── supabase-service.ts   # [NEW Phase 02] getServiceClient() — auth'd Supabase client
+├── source-detect.ts      # [NEW Phase 02] detectSource() + VI_SOURCES — unified URL→source detection
+├── db.ts                 # [Phase 01] DB sync, getNewsFromDB, getNewsPaginated [Phase 02: uses syncPipeline + getServiceClient]
 │   ├─ isDbFresh()        # O(1) check: is DB > 15 min old?
-│   ├─ triggerSyncIfNeeded() # Non-blocking: block empty, fire stale
+│   ├─ triggerSyncIfNeeded() # Non-blocking: block empty, fire stale (calls syncPipeline)
 │   ├─ getNewsFromDB()    # Main feed query (React.cache)
 │   ├─ getNewsPaginated() # Load-more pagination (not cached)
 │   └─ searchArticles()   # FTS query (React.cache)
 ├── pipeline.ts           # fetchAllNews(): adapters → dedup/score/sort
 ├── dedup.ts              # URL + Jaccard title dedup
 ├── categories.ts         # Regex categorization
-├── relevance.ts          # Scoring: freshness + keywords + source
-├── validation.ts         # Zod schema
+├── relevance.ts          # [Phase 02: imports LFC_KEYWORDS_WEIGHTED from config] Scoring: freshness + keywords + source
 ├── mock.ts               # Mock fallback data
 ├── read-history.ts       # localStorage tracking (client-safe)
 ├── adapters/
 │   ├── base.ts           # FeedAdapter interface
-│   ├── rss-adapter.ts    # 10 RSS feeds
+│   ├── rss-adapter.ts    # RSS feeds (per config.ts)
 │   ├── lfc-adapter.ts    # liverpoolfc.com scraper
 │   └── bongdaplus-adapter.ts # HTML scraper
 ├── enrichers/
-│   ├── article-extractor.ts # [UPDATED] DB cache check + Readability/Cheerio
+│   ├── article-extractor.ts # [Phase 02: Set-based dedup + detectSource] DB cache + Readability/Cheerio
 │   │  ├─ getCachedContent()  # DB content_en lookup
-│   │  └─ cacheContent()      # Write content_en + timestamp
+│   │  ├─ cacheContent()      # Write content_en + timestamp
+│   │  ├─ pushUnique()        # [Phase 02] O(1) dedup helper (Set-based)
+│   │  └─ detectSource()      # [Phase 02] uses source-detect.ts for source name
 │   ├── og-meta.ts        # OG enrichment
 │   └── readability.ts    # Mozilla Readability wrapper
 └── __tests__/
@@ -907,11 +1142,14 @@ src/lib/news/
 src/lib/news-config.ts    # CLIENT: SOURCE_CONFIG, CATEGORY_CONFIG, slug codecs
 
 src/app/news/
-├── page.tsx              # [UPDATED] dynamic=force-dynamic, getNewsFromDB(30)
-├── actions.ts            # [NEW] loadMoreNews() server action
-├── [...slug]/page.tsx    # Article reader
+├── page.tsx              # [Phase 01] dynamic=force-dynamic, getNewsFromDB(30)
+├── actions.ts            # [Phase 01] loadMoreNews() server action
+├── [...slug]/page.tsx    # [Phase 02: uses detectSource + VI_SOURCES] Article reader
 ├── loading.tsx           # Skeleton
 └── error.tsx             # Error boundary
+
+src/app/api/news/
+└── sync/route.ts         # [Phase 02: simplified] GET /?key=CRON_SECRET → syncPipeline()
 
 src/components/news/
 ├── news-feed.tsx         # [UPDATED] useTransition + load-more handler

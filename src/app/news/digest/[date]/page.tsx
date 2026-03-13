@@ -4,6 +4,7 @@ import { ArrowLeft, Sparkles, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getDigestByDate } from "@/lib/news/digest";
+import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
 
 type Params = Promise<{ date: string }>;
@@ -45,6 +46,10 @@ export default async function DigestPage({
     body: string;
     articleUrls: string[];
   }[];
+
+  // Fetch titles for all source URLs across all sections
+  const allUrls = sections.flatMap((s) => s.articleUrls);
+  const titleMap = await getArticleTitlesByUrls(allUrls);
 
   return (
     <div className="min-h-screen">
@@ -109,17 +114,24 @@ export default async function DigestPage({
                   {section.body}
                 </p>
                 {section.articleUrls.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {section.articleUrls.map((url, j) => (
-                      <Link
-                        key={j}
-                        href={getArticleUrl(url)}
-                        className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider text-lfc-red hover:text-white transition-colors"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {t("sourceArticle", { n: j + 1 })}
-                      </Link>
-                    ))}
+                  <div className="flex flex-col gap-1.5 pt-1 border-t border-stadium-border/40">
+                    {section.articleUrls.map((url, j) => {
+                      const articleTitle = titleMap[url];
+                      return (
+                        <Link
+                          key={j}
+                          href={getArticleUrl(url)}
+                          className="inline-flex items-start gap-1.5 font-inter text-xs text-stadium-muted hover:text-lfc-red transition-colors group"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 group-hover:text-lfc-red" />
+                          <span className="line-clamp-1">
+                            {articleTitle ?? t("sourceArticle", { n: j + 1 })}
+                          </span>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -129,7 +141,7 @@ export default async function DigestPage({
 
         {/* Footer */}
         <p className="font-inter text-xs text-stadium-muted mt-10 text-center">
-          {t("generatedBy", { model: digest.model })}
+          {t("generatedBy")}
         </p>
       </div>
     </div>

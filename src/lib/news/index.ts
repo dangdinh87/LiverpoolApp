@@ -4,6 +4,7 @@ import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
 import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
+import { VietnamvnAdapter } from "./adapters/vietnamvn-adapter";
 import { RSS_FEEDS } from "./config";
 import type { NewsArticle } from "./types";
 
@@ -14,13 +15,14 @@ export type { NewsArticle, ArticleContent, NewsSource, NewsLanguage, ArticleCate
 export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 
 // Re-export DB query helpers
-export { getNewsFromDB, searchArticles, getNewsPaginated } from "./db";
+export { getNewsFromDB, searchArticles, getNewsPaginated, getArticleTitlesByUrls } from "./db";
 
 // Build adapter list
 const adapters = [
   new LfcAdapter(),
   ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
   new BongdaplusAdapter(),
+  new VietnamvnAdapter(),
 ];
 
 /** Fetch news directly from adapters (used by sync API). */

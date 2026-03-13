@@ -6,6 +6,29 @@ LiverpoolApp is a Next.js 16 server-rendered application following the App Route
 
 ---
 
+## AI Features
+
+### AI Daily Digest (Phase 04)
+
+**Purpose:** Automated AI-powered news digest summarizing top 15 Liverpool FC articles daily.
+
+**Stack:**
+- **LLM:** Groq Cloud (llama-3.3-70b-versatile, ~2000 tok/request)
+- **Database:** Supabase PostgreSQL (news_digests table)
+- **Cron:** Vercel Cron (daily at 00:00 UTC)
+
+**Flow:**
+1. Cron triggers `/api/news/digest/generate` with `CRON_SECRET`
+2. `generateDailyDigest()` queries top 15 articles (last 24h)
+3. Groq LLM generates Vietnamese summary + 3-7 sections (one per category)
+4. Upserts to `news_digests` table with idempotency check
+5. `/news` page fetches `getLatestDigest()`, displays as pinned `DigestCard`
+6. Users can dismiss (localStorage), expand summary, or click "Read Full" → `/news/digest/[date]`
+
+**Details:** See `docs/news-feature.md` → Phase 04 for full schema + i18n keys.
+
+---
+
 ## Core Layers
 
 ### 1. Data Layer — Football Provider Pattern

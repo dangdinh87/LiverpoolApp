@@ -2,6 +2,7 @@
   {
     "year": 1892,
     "title": "Thành lập câu lạc bộ",
+    "image": "/assets/lfc/history/john-houlding.jpg",
     "description": "Liverpool FC được thành lập vào ngày 3 tháng 6 năm 1892 bởi John Houlding sau tranh chấp với Everton FC về tiền thuê sân Anfield. Câu lạc bộ được gia nhập Football League hạng Nhì cùng năm đó."
   },
   {
@@ -12,17 +13,30 @@
   {
     "year": 1959,
     "title": "Shankly đến Anfield",
+    "image": "/assets/lfc/history/shankly-arrival.jpg",
     "description": "Bill Shankly được bổ nhiệm làm HLV vào ngày 1 tháng 12 năm 1959. Ông biến Liverpool từ một đội bóng Hạng Nhì thành một trong những câu lạc bộ vĩ đại nhất châu Âu, đặt nền móng cho hàng thập kỷ thành công."
   },
   {
     "year": 1964,
     "title": "Chức vô địch đầu tiên của Shankly",
+    "image": "/assets/lfc/history/liverpool-kop-1960s.jpg",
     "description": "Dưới thời Shankly, Liverpool giành chức vô địch giải đấu đầu tiên sau 17 năm, mở đầu kỷ nguyên thống trị bóng đá Anh. Khán đài Kop huyền thoại tại Anfield trở thành thánh đường tinh thần của người hâm mộ bóng đá."
   },
   {
     "year": 1977,
     "title": "Cúp C1 châu Âu đầu tiên",
+    "image": "/assets/lfc/history/european-cup-1977.jpg",
     "description": "Bob Paisley dẫn dắt Liverpool đến chiến thắng Cúp C1 đầu tiên, đánh bại Borussia Mönchengladbach 3–1 tại Rome. Terry McDermott, Tommy Smith và Phil Neal ghi bàn trong đêm lịch sử."
+  },
+  {
+    "year": 1978,
+    "title": "Liên tiếp xưng bá châu Âu",
+    "description": "Liverpool của Bob Paisley bảo vệ thành công Cúp C1, đánh bại Club Brugge 1–0 tại Wembley. Kenny Dalglish — trong trận chung kết châu Âu đầu tiên — ghi bàn duy nhất bằng một cú lốp bóng tinh tế qua thủ môn, xác lập Liverpool là nhà vua liên tiếp của bóng đá châu Âu."
+  },
+  {
+    "year": 1981,
+    "title": "Cúp C1 lần thứ ba",
+    "description": "Liverpool giành Cúp C1 lần thứ ba trong năm năm, đánh bại Real Madrid 1–0 tại Paris. Hậu vệ Alan Kennedy xông lên phía trước hiệp hai để ghi bàn thắng duy nhất. Bob Paisley trở thành HLV đầu tiên trong lịch sử giành Cúp C1 ba lần."
   },
   {
     "year": 1984,
@@ -32,21 +46,35 @@
   {
     "year": 1989,
     "title": "Thảm họa Hillsborough",
+    "image": "/assets/lfc/history/hillsborough.jpg",
     "description": "Ngày 15 tháng 4 năm 1989, 97 cổ động viên Liverpool thiệt mạng trong vụ chen lấn tại sân Hillsborough của Sheffield Wednesday trong trận bán kết Cúp FA. Thảm kịch đã gắn kết thành phố và câu lạc bộ mãi mãi. Công lý được thực thi vào năm 2016."
+  },
+  {
+    "year": 2001,
+    "title": "Mùa giải cú ăn ba",
+    "description": "Liverpool của Gérard Houllier trở thành đội bóng Anh đầu tiên giành ba cúp trong một mùa giải — Cúp FA, Cúp Liên đoàn và Cúp UEFA. Michael Owen ghi hai bàn phút cuối để giành Cúp FA tại Millennium Stadium ở Cardiff, còn Cúp UEFA được giành trong trận chung kết huyền thoại 5–4 với bàn thắng vàng trước Aláves tại Dortmund. Liverpool còn giành thêm UEFA Super Cup và Charity Shield cùng năm đó."
   },
   {
     "year": 2005,
     "title": "Phép màu Istanbul",
+    "image": "/assets/lfc/history/istanbul-2005.jpg",
     "description": "Có lẽ là đêm vĩ đại nhất lịch sử câu lạc bộ. Bị dẫn 3–0 trong hiệp một trước AC Milan trong trận chung kết Champions League, Liverpool ghi 3 bàn trong 6 phút đầu hiệp hai. Steven Gerrard dẫn dắt cuộc ngược dòng và Jerzy Dudek cản hai quả penalty để giành cúp ngày 25 tháng 5 năm 2005."
+  },
+  {
+    "year": 2014,
+    "title": "Suýt chút nữa — Tiếc nuối lịch sử",
+    "description": "Nỗi tiếc nuối lớn nhất của Liverpool thời hiện đại. Luis Suárez ghi 31 bàn tại Premier League khi đội bóng của Brendan Rodgers dẫn đầu bảng xếp hạng phần lớn mùa giải. Một pha vấp ngã của Steven Gerrard trước Chelsea đã tạo cơ hội cho Demba Ba ghi bàn, và Manchester City tận dụng cơ hội giành chức vô địch cách Liverpool 2 điểm. Suárez đoạt danh hiệu Vua phá lưới; mùa giải được nhớ đến như một trong những mùa đẹp và đau lòng nhất lịch sử Liverpool."
   },
   {
     "year": 2015,
     "title": "Kỷ nguyên Klopp bắt đầu",
+    "image": "/assets/lfc/legends/jurgen-klopp.jpg",
     "description": "Jürgen Klopp được bổ nhiệm làm HLV Liverpool vào ngày 8 tháng 10 năm 2015, mô tả phong cách của mình là 'bóng đá heavy metal'. Ông tiếp tục trở thành HLV thành công nhất trong lịch sử câu lạc bộ."
   },
   {
     "year": 2019,
     "title": "Vô địch châu Âu lần nữa",
+    "image": "/assets/lfc/history/salah-champions-2019.jpg",
     "description": "Liverpool của Klopp đánh bại Tottenham Hotspur 2–0 tại Madrid để nâng cao Cúp C1 lần thứ 6. Mohamed Salah ghi bàn từ chấm phạt đền trước khi Divock Origi ấn định chiến thắng, kết thúc 14 năm chờ đợi."
   },
   {
@@ -57,16 +85,29 @@
   {
     "year": 2020,
     "title": "Vô địch Ngoại hạng Anh",
-    "description": "Liverpool kết thúc 30 năm chờ đợi chức vô địch giải đấu, đăng quang Premier League trước 7 vòng đấu — chiến thắng sớm nhất lịch sử Ngoại hạng Anh. Đội bóng của Klopp đạt 99 điểm mùa trước, tạo tiền đề cho vinh quang."
+    "description": "Liverpool kết thúc 30 năm chờ đợi chức vô địch giải đấu, đăng quang Premier League trước 7 vòng đấu — sớm nhất lịch sử Ngoại hạng Anh. Đội bóng của Klopp tích lũy 99 điểm và chỉ thua 3 trận suốt mùa giải."
+  },
+  {
+    "year": 2022,
+    "title": "Gần như cú tứ kép lịch sử",
+    "description": "Liverpool của Klopp chỉ trong gang tấc giành cú tứ kép chưa từng có. Họ đã giành Cúp FA và Cúp Liên đoàn — đánh bại Chelsea trên chấm luân lưu trong cả hai trận chung kết tại Wembley — nhưng chỉ hụt chức vô địch Premier League so với Manchester City đúng 1 điểm và thua Real Madrid trong trận chung kết Champions League tại Paris. Đây là một trong những mùa giải phi thường nhất lịch sử bóng đá Anh."
   },
   {
     "year": 2024,
     "title": "Lời chia tay của Klopp",
+    "image": "/assets/lfc/legends/jurgen-klopp.jpg",
     "description": "Jürgen Klopp tuyên bố rời Liverpool vào cuối mùa giải 2023/24 sau 9 năm biến đổi. Ông khép lại với chức vô địch Cúp Liên đoàn, để lại di sản gồm danh hiệu, kỷ niệm và tình yêu vô điều kiện từ The Kop."
   },
   {
     "year": 2024,
     "title": "Slot tiếp quản",
+    "image": "/assets/lfc/history/arne-slot.jpg",
     "description": "HLV người Hà Lan Arne Slot kế nhiệm Klopp vào mùa hè 2024, đến từ Feyenoord. Ông nhanh chóng thích nghi với cuộc sống tại Anfield, dẫn dắt Liverpool lên đỉnh bảng xếp hạng Premier League trong mùa giải đầu tiên."
+  },
+  {
+    "year": 2025,
+    "title": "Chức vô địch lần thứ 20",
+    "image": "/assets/lfc/history/arne-slot.jpg",
+    "description": "Arne Slot dẫn dắt Liverpool đến chức vô địch Premier League thứ 20 ngay trong mùa giải đầu tiên, đăng quang sớm 4 vòng đấu. The Reds san bằng kỷ lục mọi thời đại của Manchester United, với đội trưởng Virgil van Dijk nâng cao chiếc cúp trước sự cuồng nhiệt của Anfield."
   }
 ]

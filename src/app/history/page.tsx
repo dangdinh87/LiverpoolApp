@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import trophiesEn from "@/data/trophies.json";
 import trophiesVi from "@/data/trophies.vi.json";
 import historyEventsEn from "@/data/history.json";
@@ -11,7 +12,9 @@ import { TrophyCabinet } from "@/components/history/trophy-cabinet";
 import { ClubTimeline } from "@/components/history/club-timeline";
 import { LegendCard } from "@/components/history/legend-card";
 import { ClubTabs } from "@/components/history/club-tabs";
-import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink } from "lucide-react";
+import { ManagerAvatar } from "@/components/history/manager-avatar";
+import { AnfieldGallery } from "@/components/history/anfield-gallery";
+import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink, Camera } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { makePageMeta } from "@/lib/seo";
 
@@ -54,8 +57,6 @@ export default async function HistoryPage({
   const historyEvents = isVi ? historyEventsVi : historyEventsEn;
   const legends = isVi ? legendsVi : legendsEn;
   const clubInfo = isVi ? clubInfoVi : clubInfoEn;
-
-  const totalTrophies = trophies.reduce((s, t) => s + t.count, 0);
 
   /* ── Tab 1: Overview ── */
   const overviewPanel = (
@@ -206,14 +207,16 @@ export default async function HistoryPage({
       {/* Stadium hero card */}
       <section>
         <div className="bg-stadium-surface border border-stadium-border overflow-hidden group">
-          <div
-            className="relative h-72 sm:h-[400px] bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1200&q=80')",
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/60 to-transparent" />
+          <div className="relative h-72 sm:h-[400px] overflow-hidden">
+            <Image
+              src="/assets/lfc/stadium/anfield-interior.webp"
+              alt="Anfield Stadium"
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              unoptimized
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-stadium-bg via-stadium-bg/60 to-transparent" />
             <div className="absolute bottom-10 left-10 right-10">
               <p className="font-barlow text-lfc-red uppercase tracking-[0.25em] text-xs font-bold mb-2">{t("stadium.fortress")}</p>
               <h3 className="font-bebas text-6xl text-white tracking-wider leading-none">
@@ -293,10 +296,29 @@ export default async function HistoryPage({
           ))}
         </div>
       </section>
+
     </div>
   );
 
-  /* ── Tab 3: Honours ── */
+  /* ── Tab 3: Gallery ── */
+  const galleryPanel = (
+    <div>
+      <div className="mb-6 flex items-center justify-between border-b border-stadium-border/50 pb-4">
+        <div>
+          <p className="font-barlow text-lfc-red uppercase tracking-[0.2em] text-[9px] font-bold mb-0.5">
+            {t("sections.gallery")}
+          </p>
+          <h2 className="font-bebas text-2xl md:text-3xl text-white tracking-wider leading-none">
+            {t("sections.photos")}
+          </h2>
+        </div>
+        <Camera className="text-white/5 w-8 h-8" />
+      </div>
+      <AnfieldGallery />
+    </div>
+  );
+
+  /* ── Tab 4: Honours ── */
   const honoursPanel = (
     <div className="space-y-16">
       <section>
@@ -326,17 +348,24 @@ export default async function HistoryPage({
           {clubInfo.managers.map((mgr) => (
             <div
               key={mgr.name}
-              className="bg-stadium-surface border border-stadium-border p-6 hover:border-lfc-red/30 transition-all group"
+              className="bg-stadium-surface border border-stadium-border p-5 hover:border-lfc-red/30 transition-all group flex items-center gap-5"
             >
-              <div>
-                <p className="font-bebas text-2xl text-white tracking-wider mb-1">
+              {/* Avatar */}
+              <div className="relative w-14 h-14 shrink-0 overflow-hidden rounded-sm bg-stadium-surface2">
+                <ManagerAvatar
+                  name={mgr.name}
+                  image={"image" in mgr ? (mgr.image as string | undefined) : undefined}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bebas text-2xl text-white tracking-wider leading-none mb-0.5">
                   {mgr.name}
                 </p>
-                <p className="font-barlow text-lfc-red text-xs font-bold uppercase tracking-widest mb-2">
+                <p className="font-barlow text-lfc-red text-[10px] font-bold uppercase tracking-widest mb-1.5">
                   {mgr.years}
                 </p>
-                <p className="font-inter text-stadium-muted text-xs leading-relaxed opacity-80 italic">
-                  &quot;{mgr.trophies}&quot;
+                <p className="font-inter text-stadium-muted text-xs leading-relaxed opacity-70 truncate">
+                  {mgr.trophies}
                 </p>
               </div>
             </div>
@@ -359,7 +388,7 @@ export default async function HistoryPage({
   return (
     <div className="min-h-screen bg-stadium-bg text-white">
       {/* ── Hero ── */}
-      <div className="relative h-[520px] md:h-[560px] pt-28 flex items-end overflow-hidden">
+      <div className="relative h-[380px] md:h-[420px] pt-28 flex items-end overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center animate-[subtleZoom_20s_infinite_alternate]"
           style={{
@@ -367,29 +396,22 @@ export default async function HistoryPage({
               "url('/assets/lfc/stadium/anfield-aerial.webp')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/80 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-stadium-bg via-stadium-bg/80 to-transparent" />
         <div className="absolute inset-0 bg-black/20" />
 
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 w-full">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-[1px] bg-lfc-red" />
-            <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-sm font-bold">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 w-full">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-px bg-lfc-red" />
+            <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-xs font-bold">
               {t("hero.est")}
             </p>
           </div>
-          <h1 className="font-bebas text-7xl md:text-9xl text-white tracking-widest leading-none mb-6 drop-shadow-2xl">
+          <h1 className="font-bebas text-5xl md:text-7xl text-white tracking-widest leading-none mb-4 drop-shadow-2xl">
             Liverpool FC
           </h1>
-          <div className="flex items-center gap-6">
-            <div className="flex flex-col">
-              <span className="font-bebas text-3xl text-lfc-gold leading-none">{totalTrophies}</span>
-              <span className="font-barlow text-[9px] text-stadium-muted uppercase tracking-widest font-bold">{t("hero.trophies")}</span>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <p className="font-inter text-stadium-muted text-sm max-w-xl leading-relaxed opacity-90 font-medium">
-              {t("hero.foundingStory")}
-            </p>
-          </div>
+          <p className="font-inter text-stadium-muted text-sm max-w-xl leading-relaxed opacity-90 font-medium">
+            {t("hero.foundingStory")}
+          </p>
         </div>
       </div>
 
@@ -397,6 +419,7 @@ export default async function HistoryPage({
       <ClubTabs
         overviewPanel={overviewPanel}
         anfieldPanel={anfieldPanel}
+        galleryPanel={galleryPanel}
         honoursPanel={honoursPanel}
         timelinePanel={timelinePanel}
         legendsPanel={legendsPanel}
@@ -404,6 +427,7 @@ export default async function HistoryPage({
         tabLabels={{
           overview: t("tabs.overview"),
           anfield: t("tabs.anfield"),
+          gallery: t("tabs.gallery"),
           honours: t("tabs.honours"),
           timeline: t("tabs.timeline"),
           legends: t("tabs.legends"),

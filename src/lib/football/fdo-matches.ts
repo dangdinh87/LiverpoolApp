@@ -170,9 +170,10 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
  * Fetch all finished PL matches and derive last-5 form for each team.
  * Returns Map<canonical_team_id, form_string> e.g. Map(40 → "WDWLW")
  */
-export async function derivePLFormMap(): Promise<Map<number, string>> {
+export async function derivePLFormMap(season?: number): Promise<Map<number, string>> {
+  const seasonParam = season ? `&season=${season}` : "";
   const data = await fdoFetch<FdoMatchesResponse>(
-    "/competitions/PL/matches?status=FINISHED",
+    `/competitions/PL/matches?status=FINISHED${seasonParam}`,
     21600, // 6h — same as standings
   );
 
@@ -210,9 +211,10 @@ export async function derivePLFormMap(): Promise<Map<number, string>> {
 // ─── Public: Cross-competition LFC fixtures ─────────────────────────────────
 
 /** Fetch all Liverpool matches across all competitions. Cache 1h. */
-export async function getFdoLfcFixtures(): Promise<Fixture[]> {
+export async function getFdoLfcFixtures(season?: number): Promise<Fixture[]> {
+  const seasonParam = season ? `?season=${season}` : "";
   const data = await fdoFetch<FdoMatchesResponse>(
-    `/teams/${FDO_LFC_ID}/matches`,
+    `/teams/${FDO_LFC_ID}/matches${seasonParam}`,
     3600, // 1h
   );
 

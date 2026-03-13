@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
 import {
   Layers,
   Target,
@@ -37,7 +38,7 @@ export function CategoryTabs({ active }: CategoryTabsProps) {
       {CATEGORIES.map(({ value, icon: Icon }) => {
         const isActive = active === value;
         return (
-          <button
+          <motion.button
             key={value}
             onClick={() => {
               const params = new URLSearchParams();
@@ -47,15 +48,25 @@ export function CategoryTabs({ active }: CategoryTabsProps) {
                 scroll: false,
               });
             }}
-            className={`inline-flex items-center gap-1.5 font-barlow text-xs uppercase tracking-wider px-3 py-1.5 whitespace-nowrap border transition-colors cursor-pointer ${
+            whileTap={{ scale: 0.96 }}
+            className={`relative inline-flex items-center gap-1.5 font-barlow text-xs uppercase tracking-wider px-3 py-1.5 whitespace-nowrap border overflow-hidden cursor-pointer transition-colors ${
               isActive
-                ? "border-lfc-red text-lfc-red bg-lfc-red/10"
+                ? "border-lfc-red text-white"
                 : "border-stadium-border text-stadium-muted hover:border-lfc-red/40 hover:text-white"
             }`}
           >
-            <Icon className="w-3.5 h-3.5" />
-            {t(value)}
-          </button>
+            {isActive && (
+              <motion.div
+                layoutId="category-tab-bg"
+                className="absolute inset-0 bg-lfc-red"
+                transition={{ type: "spring", stiffness: 180, damping: 14 }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-1.5">
+              <Icon className="w-3.5 h-3.5" />
+              {t(value)}
+            </span>
+          </motion.button>
         );
       })}
     </div>

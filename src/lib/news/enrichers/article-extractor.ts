@@ -7,13 +7,14 @@
  * │ bbc.com              │ [data-component=text-block] → article, main     │
  * │ theguardian.com      │ article                                          │
  * │ empireofthekop.com   │ .entry-content → article                        │
- * │ anfieldwatch.co.uk   │ .entry-content → article                        │
+ * │ anfieldwatch.co.uk   │ .main__article → .basic-text                    │
  * │ liverpoolecho.co.uk  │ [data-article-body] → .article-body → article  │
  * │ bongda.com.vn        │ section.contentDetail → article                 │
  * │ 24h.com.vn           │ article → .detail-content → .cms-body          │
  * │ bongdaplus.vn        │ .news-detail → .detail-body → .content-news    │
  * │ vnexpress.net        │ .fck_detail → .article-content                  │
  * │ znews.vn             │ .the-article-body → .article-content            │
+ * │ vietnam.vn           │ .post-detail-body → .post-detail-container      │
  * │ dantri.com.vn        │ article → .singular-content                     │
  * │ tuoitre.vn           │ .detail-cmain → .detail-content                 │
  * │ thanhnien.vn         │ .detail-content → .detail__content              │
@@ -125,7 +126,7 @@ const extractors: Record<string, Extractor> = {
   "bongda.com.vn": extractBongda,
   "24h.com.vn": extractVietnamese,
   "bongdaplus.vn": extractBongdaplus,
-  "anfieldwatch.co.uk": extractWordPress,
+  "anfieldwatch.co.uk": extractAnfieldWatch,
   "liverpoolecho.co.uk": extractLiverpoolEcho,
   "empireofthekop.com": extractWordPress,
   "znews.vn": extractZnews,
@@ -135,6 +136,7 @@ const extractors: Record<string, Extractor> = {
   "tuoitre.vn": extractTuoitre,
   "thanhnien.vn": extractThanhnien,
   "webthethao.vn": extractWebthethao,
+  "vietnam.vn": extractVietnamvn,
 };
 
 function extractLfcOfficial(
@@ -298,6 +300,12 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
       ? $("article")
       : $(".detail-content, .cms-body, .entry-body, #main-content");
 
+  // Remove junk elements before extraction (breadcrumbs, nav, sidebar widgets, forms)
+  container.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, script, style, .related-news, .tags").remove();
+
+  // Pattern to filter out breadcrumb lines, sidebar widget text, source prefixes
+  const junkPattern = /^(Mới nhất|Trang chủ|Bài viết|Phong độ|Thắng|Hòa|Thua|BongDa\.com\.vn|Tin liên quan|Xem thêm|Tags?:|Chia sẻ)/i;
+
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
@@ -306,16 +314,13 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Extract from <figcaption> (player ratings, image captions with article text)
   container.find("figcaption").each((_, el) => {
     const text = $(el).text().trim();
-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+    if (text.length > 20 && !junkPattern.test(text)) pushUnique(paragraphs, seenP, text);
   });
 
   // Also extract from <p> tags (some articles use standard paragraphs)
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
-    if (
-      text.length > 20 &&
-      !text.startsWith("BongDa.com.vn")
-    ) {
+    if (text.length > 20 && !junkPattern.test(text)) {
       pushUnique(paragraphs, seenP, text);
     }
   });
@@ -334,10 +339,12 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  // Build htmlContent preserving figure/img/figcaption structure for inline rendering
-  const htmlContent = contentDetail.length > 0
-    ? sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS)
-    : undefined;
+  // Build htmlContent — strip junk from HTML too
+  let htmlContent: string | undefined;
+  if (contentDetail.length > 0) {
+    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+    htmlContent = sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS);
+  }
 
   return {
     title,
@@ -469,6 +476,57 @@ function extractVietnamese(
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
+  };
+}
+
+function extractAnfieldWatch(
+  $: cheerio.CheerioAPI,
+  url: string
+): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const ogDesc = $('meta[property="og:description"]').attr("content");
+  // og:description is often "Read more." on AW — ignore it
+  const description = ogDesc && ogDesc.length > 20 ? ogDesc : undefined;
+
+  // AW uses .main__article > .basic-text for content (not .entry-content or <article>)
+  const container = $(".main__article, .basic-text, .post-content").first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
+
+  // Filter out store widget text, ad labels, and promotional links
+  const junkPattern = /^(LFC x adidas|Shop the|ADVERTISEMENT|Ad$|🚨|🔴|👉)/;
+
+  container.find("p").each((_, el) => {
+    const $el = $(el);
+    // Skip store widgets and ad paragraphs
+    if ($el.closest(".store-widget, .ad-unit, [class*='store']").length) return;
+    const text = $el.text().trim();
+    if (text.length > 20 && !junkPattern.test(text)) {
+      pushUnique(paragraphs, seenP, text);
+    }
+  });
+
+  container.find("img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src");
+    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("favicon")) {
+      pushUnique(images, seenI, src);
+    }
+  });
+
+  return {
+    title,
+    heroImage,
+    description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs,
+    images,
+    sourceUrl: url,
+    sourceName: "Anfield Watch",
   };
 }
 
@@ -670,6 +728,46 @@ function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
   );
 }
 
+// vietnam.vn uses .post-detail-body for article content (Next.js SSR site)
+function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  const container = $(".post-detail-body, .post-detail-container, .ant-layout-content, [role=main]").first();
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
+
+  // Filter footer/legal text
+  const junkPattern = /^(Nguồn:|BỘ VĂN HÓA|Chịu trách nhiệm|Cục trưởng|Trụ sở|Giấy phép)/;
+
+  container.find("p").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20 && !junkPattern.test(text)) {
+      pushUnique(paragraphs, seenP, text);
+    }
+  });
+
+  container.find("img").each((_, el) => {
+    const src = $(el).attr("src") || $(el).attr("data-src");
+    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+      pushUnique(images, seenI, src);
+    }
+  });
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, images,
+    sourceUrl: url,
+    sourceName: "Vietnam.vn",
+  };
+}
+
 function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
     ".detail-content, .article-content, article, [role=main]",
@@ -828,8 +926,12 @@ export const scrapeArticle = cache(
 
       const html = await res.text();
 
-      // 1. Try Readability first (works best for English sites)
-      const readable = await extractWithReadability(html, url);
+      // Check if this site has a dedicated extractor (skip Readability for those)
+      const dedicatedExtractor = findExtractor(url);
+      const hasDedicatedExtractor = dedicatedExtractor !== extractGeneric;
+
+      // 1. Try Readability first (only for sites without dedicated extractors)
+      const readable = hasDedicatedExtractor ? null : await extractWithReadability(html, url);
       if (readable && readable.length > 300) {
         const $ = cheerio.load(html);
 

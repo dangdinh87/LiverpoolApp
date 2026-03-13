@@ -4,7 +4,7 @@ export type NewsSource =
   | "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus"
   | "echo" | "anfield-watch" | "eotk"
   | "vnexpress" | "tuoitre" | "thanhnien"
-  | "dantri" | "zingnews" | "vietnamnet" | "webthethao";
+  | "dantri" | "zingnews" | "vietnamnet" | "webthethao" | "vietnamvn";
 
 export type NewsLanguage = "en" | "vi";
 

@@ -18,7 +18,7 @@ import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 const LFC_ID = 40;
 

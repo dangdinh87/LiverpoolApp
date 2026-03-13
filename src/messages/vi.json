@@ -12,7 +12,7 @@
       "home": "Trang chủ",
       "squad": "Đội hình",
       "fixtures": "Lịch thi đấu",
-      "season": "Mùa giải",
+      "season": "Lịch đấu & BXH",
       "news": "Tin tức",
       "history": "Câu lạc bộ",
       "about": "Giới thiệu",
@@ -138,8 +138,11 @@
       "all": "Tất cả",
       "local": "Báo Việt",
       "global": "Báo nước ngoài",
+      "viewImage": "Xem ảnh",
       "moreStories": "Thêm tin tức",
-      "loadMore": "Xem thêm (còn {count} bài)",
+      "loadMore": "Xem thêm",
+      "refreshNews": "Làm mới",
+      "refreshing": "Đang đồng bộ...",
       "loading": "Đang tải...",
       "noArticles": "Không tìm thấy bài viết",
       "noArticlesDesc": "Hãy thử bộ lọc khác hoặc quay lại sau.",
@@ -166,7 +169,9 @@
       "catMatch": "Kết quả",
       "catInjury": "Chấn thương",
       "catAnalysis": "Phân tích",
-      "catOpinion": "Bình luận"
+      "catOpinion": "Bình luận",
+      "newsSourceLabel": "Nguồn báo",
+      "newsSourceAll": "Tất cả"
     },
     "sidebar": {
       "source": "Nguồn tin",
@@ -190,7 +195,7 @@
       "original": "Bản gốc"
     },
     "digest": {
-      "badge": "Bản tin AI hàng ngày",
+      "badge": "Tóm tắt bởi AI",
       "dismiss": "Ẩn",
       "expand": "Đọc tóm tắt",
       "collapse": "Thu gọn",
@@ -198,7 +203,10 @@
       "articleCount": "Từ {count} bài viết",
       "backToNews": "Quay lại Tin tức",
       "sourceArticle": "Nguồn #{n}",
-      "generatedBy": "Tạo bởi {model}"
+      "generatedBy": "Tạo bởi AI",
+      "generatedAt": "Cập nhật {time}",
+      "refresh": "Đồng bộ",
+      "syncing": "Đang đồng bộ..."
     }
   },
   "NextMatch": {
@@ -443,10 +451,10 @@
   },
   "Season": {
     "metadata": {
-      "title": "Mùa giải {season}",
+      "title": "Lịch đấu & BXH {season}",
       "description": "Liverpool FC Ngoại hạng Anh {season} — lịch thi đấu, kết quả, bảng xếp hạng và số liệu."
     },
-    "title": "Mùa giải",
+    "title": "Lịch đấu & BXH",
     "stats": {
       "goals": "Bàn thắng LFC",
       "assists": "Kiến tạo LFC",
@@ -472,6 +480,7 @@
     "next": "Tiếp theo: ",
     "vs": "vs ",
     "at": "tại ",
+    "seasonSelect": "Chọn mùa giải",
     "tabs": {
       "fixtures": "Lịch đấu",
       "standings": "Bảng xếp hạng"
@@ -524,6 +533,8 @@
       "stands": "4 Khán đài",
       "iconic": "Địa danh biểu tượng",
       "anfield": "Quanh Anfield",
+      "gallery": "Thư viện ảnh",
+      "photos": "Ảnh Anfield",
       "glory": "Vinh quang",
       "cabinet": "Phòng truyền thống",
       "history": "Lịch sử",
@@ -574,6 +585,7 @@
     "tabs": {
       "overview": "Tổng quan",
       "anfield": "Anfield",
+      "gallery": "Thư viện",
       "honours": "Vinh quang",
       "timeline": "Dòng thời gian",
       "legends": "Huyền thoại"
@@ -695,7 +707,7 @@
       "noFixtures": "Không tìm thấy trận đấu cho giải đấu này."
     },
     "detail": {
-      "back": "Mùa giải",
+      "back": "Lịch đấu & BXH",
       "matchTimeline": "Diễn biến trận đấu",
       "statistics": "Thống kê",
       "lineups": "Đội hình",
@@ -819,6 +831,7 @@
     "contact": "Liên hệ",
     "rights": "Bảo lưu mọi quyền.",
     "disclaimer": "LFCVN là trang web không chính thức và không liên kết với Liverpool FC.",
+    "newsSources": "Tổng hợp tin tức từ các nguồn báo uy tín",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
       "privacy": "Chính sách bảo mật",

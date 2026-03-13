@@ -131,8 +131,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               // Active check: exact match, or startsWith for /news (covers /news/[...slug])
               const basePath = href.split("?")[0];
               const isActive = basePath === "/"
-                ? pathname === "/" && !currentTab
-                : pathname === basePath && (hasTab ? targetTab === currentTab : !currentTab)
+                ? pathname === "/"
+                : pathname === basePath && (hasTab ? targetTab === currentTab : true)
                   || (basePath !== "/" && pathname.startsWith(basePath + "/"));
 
               return (
@@ -151,7 +151,11 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                       </span>
                     )}
                     {isActive && (
-                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full" />
+                      <motion.span
+                        layoutId="nav-underline"
+                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
+                        transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                      />
                     )}
                   </Link>
                 </li>
@@ -330,8 +334,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     const currentTab = searchParams.get("tab");
                     const basePath = url.pathname;
                     const isActive = basePath === "/"
-                      ? pathname === "/" && !currentTab
-                      : pathname === basePath && (!hasTab || targetTab === currentTab) && (hasTab || !currentTab)
+                      ? pathname === "/"
+                      : pathname === basePath && (hasTab ? targetTab === currentTab : true)
                         || (basePath !== "/" && pathname.startsWith(basePath + "/"));
 
                     return (
@@ -339,13 +343,20 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                         <Link
                           href={href}
                           className={cn(
-                            "px-4 py-3 rounded-none font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
+                            "relative block px-4 py-3 rounded-none font-barlow font-semibold uppercase tracking-[0.12em] transition-colors overflow-hidden",
                             isActive
-                              ? "bg-lfc-red text-white"
+                              ? "text-white"
                               : "text-stadium-muted hover:bg-stadium-surface hover:text-white"
                           )}
                         >
-                          {label}
+                          {isActive && (
+                            <motion.div
+                              layoutId="mobile-nav-bg"
+                              className="absolute inset-0 bg-lfc-red"
+                              transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                            />
+                          )}
+                          <span className="relative z-10">{label}</span>
                         </Link>
                       </SheetClose>
                     );

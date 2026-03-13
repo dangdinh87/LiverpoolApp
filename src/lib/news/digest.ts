@@ -43,55 +43,57 @@ const CATEGORY_VI_MAP: Record<string, string> = {
   general: "Tin Tổng Hợp",
 };
 
-const DIGEST_SYSTEM_PROMPT = `You are a Vietnamese sports editor creating a daily Liverpool FC news digest.
+const DIGEST_SYSTEM_PROMPT = `You are a Vietnamese sports editor creating a comprehensive daily Liverpool FC news digest.
 
 Input: A list of recent articles with titles, snippets, sources, and categories.
 Output: A structured JSON object with these exact fields:
 {
   "title": "Liverpool Daily — {date in Vietnamese format}",
-  "summary": "2-3 sentence overview in Vietnamese summarizing the day's key stories",
+  "summary": "4-6 sentence overview in Vietnamese covering ALL major stories of the day — mention specific names, scores, and key developments",
   "sections": [
     {
       "category": "category-key",
       "categoryVi": "Vietnamese category name",
-      "headline": "Short headline in Vietnamese",
-      "body": "2-3 sentence summary in Vietnamese combining insights from the articles",
+      "headline": "Detailed headline in Vietnamese mentioning key names/events",
+      "body": "4-6 sentence detailed summary in Vietnamese. Mention specific player names, manager names, scores, transfer fees, injury details. Combine insights from multiple articles to give a complete picture.",
       "articleUrls": ["url1", "url2"]
     }
   ]
 }
 
 Rules:
-- Write in natural Vietnamese journalistic style
+- Write in natural Vietnamese journalistic style with rich detail
+- IMPORTANT: Mention ALL key people (players, managers, staff) by name — do NOT omit notable names
 - Group articles by category; skip categories with 0 articles
-- Each section summarizes 1-4 related articles from that category
-- Keep player names and club names in English (Salah, Van Dijk, Arsenal)
+- Each section summarizes 1-5 related articles from that category
+- Keep player names and club names in English (Salah, Van Dijk, Arsenal, Xabi Alonso)
 - Football terms: "clean sheet" = "giữ sạch lưới", "assist" = "kiến tạo"
-- If fewer than 5 articles provided, create a shorter "Tin Nhanh" format with 1-2 sections
+- Include specific details: scores, statistics, dates, quotes when available
+- If fewer than 5 articles provided, create a shorter "Tin Nhanh" format with 1-2 sections but still be detailed
 - Return ONLY valid JSON — no markdown fences, no commentary, no explanations`;
 
 export async function generateDailyDigest(): Promise<DigestResult> {
   const supabase = getServiceClient();
 
-  // Query top 15 articles from last 24h
+  // Query top 25 most relevant articles recently synced (fetched_at) or published
   const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
   const { data: articles } = await supabase
     .from("articles")
     .select("url, title, snippet, source, language, category, relevance")
     .eq("is_active", true)
-    .gte("published_at", since)
+    .or(`published_at.gte.${since},fetched_at.gte.${since}`)
     .order("relevance", { ascending: false })
-    .limit(15);
+    .limit(25);
 
   if (!articles || articles.length === 0) {
-    throw new Error("No articles found in last 24h for digest");
+    throw new Error("No recent articles found for digest");
   }
 
   // Build prompt input
   const articleList = articles
     .map(
       (a, i) =>
-        `[${i + 1}] ${a.title}\n   Source: ${a.source} | Lang: ${a.language} | Category: ${a.category}\n   Snippet: ${a.snippet?.slice(0, 150) || "N/A"}\n   URL: ${a.url}`
+        `[${i + 1}] ${a.title}\n   Source: ${a.source} | Lang: ${a.language} | Category: ${a.category}\n   Snippet: ${a.snippet?.slice(0, 400) || "N/A"}\n   URL: ${a.url}`
     )
     .join("\n\n");
 
@@ -110,14 +112,14 @@ export async function generateDailyDigest(): Promise<DigestResult> {
     model: groq("llama-3.3-70b-versatile"),
     system: DIGEST_SYSTEM_PROMPT,
     prompt,
-    maxOutputTokens: 2000,
+    maxOutputTokens: 4000,
   });
 
   // Parse JSON response
   let parsed: { title: string; summary: string; sections: DigestSection[] };
   try {
     const jsonStr = result.text
-      .replace(/^```json\s*/i, "")
+      .replace(/^```(?:json)?\s*/i, "")
       .replace(/```\s*$/, "")
       .trim();
     parsed = JSON.parse(jsonStr);
@@ -148,6 +150,9 @@ export async function generateDailyDigest(): Promise<DigestResult> {
   };
 }
 
+// Timestamp-based lock: auto-expires after 30s to prevent stuck state
+let digestLockUntil = 0;
+
 export async function getLatestDigest(): Promise<DigestRecord | null> {
   const supabase = getServiceClient();
   const { data } = await supabase
@@ -156,6 +161,54 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
     .order("digest_date", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  // Auto-generate/refresh digest if missing, wrong date, or stale (>4h)
+  const today = new Date().toISOString().split("T")[0];
+  const DIGEST_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
+  const now = Date.now();
+  const isStale = data?.generated_at
+    ? now - new Date(data.generated_at).getTime() > DIGEST_STALE_MS
+    : false;
+  const needsGenerate = !data || data.digest_date !== today || isStale;
+  const isLocked = now < digestLockUntil;
+
+  if (needsGenerate && process.env.GROQ_API_KEY && !isLocked) {
+    digestLockUntil = now + 30_000; // Lock for 30s max
+    try {
+      console.log("[digest] Auto-generating (stale=%s, date=%s, today=%s)...", isStale, data?.digest_date, today);
+      const digest = await Promise.race([
+        generateDailyDigest(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Digest timeout 15s")), 15000)
+        ),
+      ]);
+      const { data: freshDigest } = await supabase.from("news_digests").upsert(
+        {
+          digest_date: today,
+          title: digest.title,
+          summary: digest.summary,
+          sections: digest.sections,
+          article_ids: digest.sections.flatMap((s) => s.articleUrls),
+          article_count: digest.articleCount,
+          model: "llama-3.3-70b-versatile",
+          tokens_used: digest.tokensUsed,
+        },
+        { onConflict: "digest_date" }
+      ).select("*").maybeSingle();
+      console.log("[digest] Auto-generated OK, sections:", digest.sections.length);
+      digestLockUntil = 0;
+      return freshDigest ?? data;
+    } catch (err) {
+      console.warn("[digest] Auto-generation failed:", err instanceof Error ? err.message : err);
+      digestLockUntil = 0; // Release lock on error so next request can retry
+      return data;
+    }
+  }
+
+  if (needsGenerate && isLocked) {
+    console.log("[digest] Skipped — locked until", new Date(digestLockUntil).toISOString());
+  }
+
   return data;
 }
 

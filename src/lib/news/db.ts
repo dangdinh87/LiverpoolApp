@@ -7,8 +7,10 @@ import type { NewsArticle } from "./types";
 const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
-// Sync threshold: 15 minutes
-const STALE_MS = 15 * 60 * 1000;
+// Sync thresholds
+const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
+const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
+const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
 let syncInProgress = false;
@@ -52,10 +54,10 @@ function rowToArticle(row: ArticleRow): NewsArticle {
 }
 
 /**
- * DB-level stale check. Survives serverless cold starts (unlike in-memory lastSyncTime).
- * Returns { fresh, empty } based on newest fetched_at in articles table.
+ * DB-level age check. Survives serverless cold starts (unlike in-memory lastSyncTime).
+ * Returns actual age in ms so callers can decide blocking vs background sync.
  */
-async function isDbFresh(): Promise<{ fresh: boolean; empty: boolean }> {
+async function getDbAge(): Promise<{ ageMs: number | null; empty: boolean }> {
   const supabase = getServiceClient();
   const { data } = await supabase
     .from("articles")
@@ -64,38 +66,51 @@ async function isDbFresh(): Promise<{ fresh: boolean; empty: boolean }> {
     .limit(1)
     .maybeSingle();
 
-  if (!data) return { fresh: false, empty: true };
-  if (!data.fetched_at) return { fresh: false, empty: false };
+  if (!data) return { ageMs: null, empty: true };
+  if (!data.fetched_at) return { ageMs: null, empty: false };
 
-  const age = Date.now() - new Date(data.fetched_at).getTime();
-  return { fresh: age < STALE_MS, empty: false };
+  const ageMs = Date.now() - new Date(data.fetched_at).getTime();
+  return { ageMs, empty: false };
 }
 
 /**
- * Non-blocking sync: check DB freshness, trigger background sync if stale.
- * Only blocks on truly empty DB (first-ever visit).
+ * Three-tier sync: fresh → skip, mildly stale → background, very stale/empty → blocking.
+ * Blocking sync uses Promise.race with timeout to prevent hanging.
  */
 async function triggerSyncIfNeeded(): Promise<void> {
   if (syncInProgress) return;
 
-  const { fresh, empty } = await isDbFresh();
+  const { ageMs, empty } = await getDbAge();
 
-  if (fresh) return;
+  // Fresh data — no sync needed
+  if (ageMs !== null && ageMs < STALE_MS) return;
 
-  if (empty) {
-    // Empty DB: block once to bootstrap
+  // Empty DB or very stale (>30 min): BLOCKING sync with timeout
+  if (empty || (ageMs !== null && ageMs >= VERY_STALE_MS)) {
     syncInProgress = true;
     try {
-      console.log("[news/db] Empty DB — bootstrap sync (blocking)...");
-      await syncPipeline();
+      const label = empty ? "Empty DB — bootstrap" : `Very stale (${Math.round((ageMs ?? 0) / 60000)}min)`;
+      console.log(`[news/db] ${label} sync (blocking, ${BLOCKING_SYNC_TIMEOUT}ms timeout)...`);
+
+      await Promise.race([
+        syncPipeline(),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("Sync timeout")), BLOCKING_SYNC_TIMEOUT)
+        ),
+      ]);
+    } catch (err) {
+      // Timeout or sync error — serve whatever stale data we have
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      console.warn(`[news/db] Blocking sync did not complete: ${msg}`);
     } finally {
       syncInProgress = false;
     }
     return;
   }
 
-  // Stale DB: fire-and-forget sync, serve stale data immediately
+  // Mildly stale (15-30 min): fire-and-forget sync, serve stale data immediately
   syncInProgress = true;
+  console.log(`[news/db] Mildly stale (${Math.round((ageMs ?? 0) / 60000)}min) — background sync...`);
   syncPipeline()
     .catch((err) => console.error("[news/db] Background sync failed:", err))
     .finally(() => { syncInProgress = false; });
@@ -238,5 +253,28 @@ export async function getNewsPaginated(
   } catch (err) {
     console.error("[news/db] Paginate fatal:", err);
     return { articles: [], hasMore: false };
+  }
+}
+
+/**
+ * Fetch article title + url for a set of URLs (used by digest page to show source links).
+ */
+export async function getArticleTitlesByUrls(
+  urls: string[]
+): Promise<Record<string, string>> {
+  if (!urls.length) return {};
+  try {
+    const supabase = getServiceClient();
+    const { data } = await supabase
+      .from("articles")
+      .select("url, title")
+      .in("url", urls);
+    const map: Record<string, string> = {};
+    for (const row of data ?? []) {
+      map[row.url] = row.title;
+    }
+    return map;
+  } catch {
+    return {};
   }
 }

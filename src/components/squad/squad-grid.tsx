@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PlayerCard } from "./player-card";
@@ -78,25 +79,38 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
       {/* Toolbar: filters + search + action slot */}
       <div className="flex flex-wrap items-center gap-2 mb-8">
         {/* Position filter tabs */}
-        {FILTERS.map(({ label, value }) => (
-          <button
-            key={value}
-            onClick={() => setFilter(value)}
-            className={cn(
-              "px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider transition-all duration-200",
-              filter === value
-                ? "bg-lfc-red text-white"
-                : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
-            )}
-          >
-            {label}
-            <span className="ml-2 text-xs opacity-60">
-              {value === "All"
-                ? players.length
-                : players.filter((p) => p.position === value).length}
-            </span>
-          </button>
-        ))}
+        {FILTERS.map(({ label, value }) => {
+          const isActive = filter === value;
+          return (
+            <motion.button
+              key={value}
+              onClick={() => setFilter(value)}
+              whileTap={{ scale: 0.96 }}
+              className={cn(
+                "relative px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider overflow-hidden transition-colors",
+                isActive
+                  ? "text-white border border-transparent"
+                  : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
+              )}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="squad-pos-filter-bg"
+                  className="absolute inset-0 bg-lfc-red"
+                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                />
+              )}
+              <span className="relative z-10">
+                {label}
+                <span className="ml-2 text-xs opacity-60">
+                  {value === "All"
+                    ? players.length
+                    : players.filter((p) => p.position === value).length}
+                </span>
+              </span>
+            </motion.button>
+          );
+        })}
 
         {/* Search input */}
         <div className="relative ml-auto">

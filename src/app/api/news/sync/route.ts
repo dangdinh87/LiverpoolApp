@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { syncPipeline } from "@/lib/news/sync";
 
 export const maxDuration = 60;
@@ -14,6 +15,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await syncPipeline();
+
+    // Invalidate ISR cache so next visitor gets fresh data
+    if (result.upserted > 0) {
+      revalidatePath("/");
+    }
 
     return NextResponse.json({
       ok: true,

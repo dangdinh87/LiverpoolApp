@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 interface HistoryEvent {
   year: number;
   title: string;
   description: string;
+  image?: string;
 }
 
 interface ClubTimelineProps {
@@ -37,16 +39,32 @@ export function ClubTimeline({ events }: ClubTimelineProps) {
 
               {/* Content card */}
               <div className={`ml-10 md:ml-0 md:w-[calc(50%-2rem)] ${isLeft ? "md:mr-8 md:text-right" : "md:ml-8"}`}>
-                <div className="bg-stadium-surface border border-stadium-border rounded-none p-5 hover:border-lfc-red/30 transition-colors">
-                  <span className="font-bebas text-3xl text-lfc-red leading-none block mb-1">
-                    {event.year}
-                  </span>
-                  <h3 className="font-barlow text-white font-semibold uppercase tracking-wider text-sm mb-2">
-                    {event.title}
-                  </h3>
-                  <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-                    {event.description}
-                  </p>
+                <div className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden hover:border-lfc-red/30 transition-colors group">
+                  {/* Event image */}
+                  {event.image && (
+                    <div className="relative h-36 overflow-hidden">
+                      <Image
+                        src={event.image}
+                        alt={event.title}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 45vw"
+                        unoptimized
+                      />
+                      <div className="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-stadium-surface" />
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <span className="font-bebas text-3xl text-lfc-red leading-none block mb-1">
+                      {event.year}
+                    </span>
+                    <h3 className="font-barlow text-white font-semibold uppercase tracking-wider text-sm mb-2">
+                      {event.title}
+                    </h3>
+                    <p className="font-inter text-stadium-muted text-sm leading-relaxed">
+                      {event.description}
+                    </p>
+                  </div>
                 </div>
               </div>
 

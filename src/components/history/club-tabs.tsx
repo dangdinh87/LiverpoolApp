@@ -8,15 +8,17 @@ import {
   type ReactNode,
   type KeyboardEvent,
 } from "react";
-import { Info, MapPin, Trophy, Users, History } from "lucide-react";
+import { motion } from "framer-motion";
+import { Info, MapPin, Trophy, Users, History, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TAB_IDS = ["overview", "anfield", "honours", "timeline", "legends"] as const;
+const TAB_IDS = ["overview", "anfield", "honours", "timeline", "legends", "gallery"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const TAB_ICONS: Record<TabId, React.ElementType> = {
   overview: Info,
   anfield: MapPin,
+  gallery: Camera,
   honours: Trophy,
   timeline: History,
   legends: Users,
@@ -25,6 +27,7 @@ const TAB_ICONS: Record<TabId, React.ElementType> = {
 interface ClubTabsProps {
   overviewPanel: ReactNode;
   anfieldPanel: ReactNode;
+  galleryPanel: ReactNode;
   honoursPanel: ReactNode;
   timelinePanel: ReactNode;
   legendsPanel: ReactNode;
@@ -35,6 +38,7 @@ interface ClubTabsProps {
 export function ClubTabs({
   overviewPanel,
   anfieldPanel,
+  galleryPanel,
   honoursPanel,
   timelinePanel,
   legendsPanel,
@@ -53,7 +57,6 @@ export function ClubTabs({
   }
 
   const tabBarRef = useRef<HTMLDivElement>(null);
-  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
 
   /* ---- switch tab ---- */
   const switchTab = useCallback(
@@ -63,26 +66,6 @@ export function ClubTabs({
     },
     [activeTab]
   );
-
-  /* ---- indicator position ---- */
-  const updateIndicator = useCallback(() => {
-    if (!tabBarRef.current) return;
-    const btn = tabBarRef.current.querySelector(
-      `[data-tab="${activeTab}"]`
-    ) as HTMLElement | null;
-    if (btn) {
-      setIndicator({ left: btn.offsetLeft, width: btn.offsetWidth });
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(updateIndicator);
-    window.addEventListener("resize", updateIndicator);
-    return () => {
-      cancelAnimationFrame(id);
-      window.removeEventListener("resize", updateIndicator);
-    };
-  }, [updateIndicator]);
 
   /* ---- URL sync ---- */
   useEffect(() => {
@@ -118,6 +101,7 @@ export function ClubTabs({
   const panels: Record<TabId, ReactNode> = {
     overview: overviewPanel,
     anfield: anfieldPanel,
+    gallery: galleryPanel,
     honours: honoursPanel,
     timeline: timelinePanel,
     legends: legendsPanel,
@@ -136,18 +120,20 @@ export function ClubTabs({
           >
             {TAB_IDS.map((id) => {
               const Icon = TAB_ICONS[id];
+              const isActive = activeTab === id;
               return (
-                <button
+                <motion.button
                   key={id}
                   data-tab={id}
                   onClick={() => switchTab(id)}
+                  whileTap={{ scale: 0.97 }}
                   role="tab"
-                  tabIndex={activeTab === id ? 0 : -1}
-                  aria-selected={activeTab === id}
+                  tabIndex={isActive ? 0 : -1}
+                  aria-selected={isActive}
                   aria-controls={`club-panel-${id}`}
                   className={cn(
-                    "flex items-center gap-2 px-4 sm:px-6 py-5 font-barlow font-bold text-[13px] uppercase tracking-[0.15em] transition-all outline-none whitespace-nowrap group",
-                    activeTab === id
+                    "relative flex items-center gap-2 px-4 sm:px-6 py-5 font-barlow font-bold text-[13px] uppercase tracking-[0.15em] transition-colors outline-none whitespace-nowrap group",
+                    isActive
                       ? "text-white"
                       : "text-stadium-muted hover:text-white/80"
                   )}
@@ -156,19 +142,22 @@ export function ClubTabs({
                     size={16}
                     className={cn(
                       "shrink-0 transition-transform duration-300 group-hover:scale-110",
-                      activeTab === id ? "text-lfc-red" : "text-stadium-muted"
+                      isActive ? "text-lfc-red" : "text-stadium-muted"
                     )}
                   />
                   <span>{tabLabels[id]}</span>
-                </button>
+
+                  {/* Animated underline indicator */}
+                  {isActive && (
+                    <motion.div
+                      layoutId="club-tab-underline"
+                      className="absolute bottom-0 left-0 right-0 h-[2px] bg-lfc-red rounded-full"
+                      transition={{ type: "spring", stiffness: 180, damping: 20 }}
+                    />
+                  )}
+                </motion.button>
               );
             })}
-
-            {/* animated red underline */}
-            <div
-              className="absolute bottom-0 h-[2px] bg-lfc-red rounded-full transition-all duration-300 ease-out"
-              style={{ left: indicator.left, width: indicator.width }}
-            />
           </div>
         </div>
       </div>

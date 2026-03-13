@@ -22,23 +22,25 @@ if (process.env.NODE_ENV === "development") {
 export const getSquad = cache(() => provider.getSquad());
 
 // Fixtures: FDO (all comps) + ESPN (FA Cup, EFL Cup supplement)
-export const getFixtures = cache(async () => {
+export const getFixtures = cache(async (season?: number) => {
   if (!hasFdoKey) {
     console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no fixtures");
     return [];
   }
 
   try {
-    const allFixtures = await getFdoLfcFixtures();
+    const allFixtures = await getFdoLfcFixtures(season);
     const coveredComps = new Set(allFixtures.map((f) => f.league.name));
 
-    // ESPN: FA Cup, EFL Cup (free, no key needed)
-    try {
-      const espnCups = await getEspnCupFixtures();
-      const newCups = espnCups.filter((f) => !coveredComps.has(f.league.name));
-      allFixtures.push(...newCups);
-    } catch (err) {
-      console.error("[football] ESPN cup fixtures failed:", err);
+    // ESPN: FA Cup, EFL Cup (free, no key needed) — only for current season
+    if (!season) {
+      try {
+        const espnCups = await getEspnCupFixtures();
+        const newCups = espnCups.filter((f) => !coveredComps.has(f.league.name));
+        allFixtures.push(...newCups);
+      } catch (err) {
+        console.error("[football] ESPN cup fixtures failed:", err);
+      }
     }
 
     return allFixtures;
@@ -49,14 +51,14 @@ export const getFixtures = cache(async () => {
 });
 
 // Standings: Football-Data.org (real W/D/L/GF/GA/form)
-export const getStandings = cache(async () => {
+export const getStandings = cache(async (season?: number) => {
   if (!hasFdoKey) {
     console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no standings");
     return [];
   }
 
   try {
-    return await getFdoStandings();
+    return await getFdoStandings(season);
   } catch (err) {
     console.error("[football] FDO standings failed:", err);
     return [];
@@ -64,10 +66,10 @@ export const getStandings = cache(async () => {
 });
 
 // UCL standings
-export const getUclStandings = cache(async () => {
+export const getUclStandings = cache(async (season?: number) => {
   if (!hasFdoKey) return [] as Standing[];
   try {
-    return await getFdoUclStandings();
+    return await getFdoUclStandings(season);
   } catch (err) {
     console.error("[football] FDO UCL standings failed:", err);
     return [] as Standing[];

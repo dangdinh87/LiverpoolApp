@@ -10,21 +10,26 @@ import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { SeasonTabs } from "@/components/season/season-tabs";
 import { makePageMeta } from "@/lib/seo";
 
-/** Derive season label from current date. Aug-Dec → YYYY/(YY+1), Jan-Jul → (YYYY-1)/YY */
-function getCurrentSeason(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  if (month >= 8) return `${year}/${(year + 1).toString().slice(-2)}`;
-  return `${year - 1}/${year.toString().slice(-2)}`;
+// Available seasons on FDO free tier (start year → display label)
+const AVAILABLE_SEASONS = [2025, 2024, 2023] as const;
+
+/** Convert start year (2025) → display label (2025/26) */
+function seasonLabel(startYear: number): string {
+  return `${startYear}/${(startYear + 1).toString().slice(-2)}`;
 }
 
-const SEASON_LABEL = getCurrentSeason();
+/** Derive current season start year from date. Aug-Dec → YYYY, Jan-Jul → YYYY-1 */
+function getCurrentSeasonYear(): number {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  return month >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Season.metadata");
-  const title = t("title", { season: SEASON_LABEL });
-  const description = t("description", { season: SEASON_LABEL });
+  const label = seasonLabel(getCurrentSeasonYear());
+  const title = t("title", { season: label });
+  const description = t("description", { season: label });
   return { title, description, ...makePageMeta(title, description) };
 }
 
@@ -33,14 +38,26 @@ export const dynamic = "force-dynamic";
 export default async function SeasonPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; season?: string }>;
 }) {
-  const { tab } = await searchParams;
+  const { tab, season: seasonParam } = await searchParams;
 
+  // Validate season param — fallback to current if invalid
+  const currentYear = getCurrentSeasonYear();
+  const selectedSeason = seasonParam
+    ? AVAILABLE_SEASONS.includes(Number(seasonParam) as typeof AVAILABLE_SEASONS[number])
+      ? Number(seasonParam)
+      : currentYear
+    : currentYear;
+
+  // Only pass season to API if not the current season (avoids unnecessary param)
+  const apiSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
+
+  // UCL standings only available for current season on FDO free tier
   const [fixtures, standings, uclStandings] = await Promise.all([
-    getFixtures(),
-    getStandings(),
-    getUclStandings(),
+    getFixtures(apiSeason),
+    getStandings(apiSeason),
+    apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
   ]);
 
   /* ── Tab panels ── */
@@ -59,6 +76,9 @@ export default async function SeasonPage({
         defaultTab={tab}
         matchCount={fixtures.length}
         teamCount={standings.length}
+        seasons={AVAILABLE_SEASONS.map((y) => ({ value: y, label: seasonLabel(y) }))}
+        currentSeason={selectedSeason}
+        liveSeasonYear={currentYear}
       />
     </div>
   );

@@ -124,10 +124,11 @@ function mapEntry(
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /** Fetch PL standings from Football-Data.org. Cache 6h (standings don't change often). */
-export async function getFdoStandings(): Promise<Standing[]> {
+export async function getFdoStandings(season?: number): Promise<Standing[]> {
+  const seasonParam = season ? `?season=${season}` : "";
   const [data, formMap] = await Promise.all([
-    fdoFetch<FdoStandingsResponse>("/competitions/PL/standings", 21600),
-    derivePLFormMap().catch(() => new Map<number, string>()),
+    fdoFetch<FdoStandingsResponse>(`/competitions/PL/standings${seasonParam}`, 21600),
+    derivePLFormMap(season).catch(() => new Map<number, string>()),
   ]);
 
   const totalGroup = data.standings.find((s) => s.type === "TOTAL");
@@ -146,9 +147,10 @@ export async function getFdoStandings(): Promise<Standing[]> {
 }
 
 /** Fetch UCL league-phase standings from Football-Data.org. Cache 6h. */
-export async function getFdoUclStandings(): Promise<Standing[]> {
+export async function getFdoUclStandings(season?: number): Promise<Standing[]> {
+  const seasonParam = season ? `?season=${season}` : "";
   const data = await fdoFetch<FdoStandingsResponse>(
-    "/competitions/CL/standings",
+    `/competitions/CL/standings${seasonParam}`,
     21600
   );
 

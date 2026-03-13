@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
+import { getLatestDigest } from "@/lib/news/digest";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
 import { NewsSection } from "@/components/home/news-section";
@@ -18,18 +19,20 @@ export const metadata: Metadata = {
   ),
 };
 
-// ISR: revalidate every 30 min (no cookies() call — locale filtering moved to client)
-export const revalidate = 1800;
+// Always fetch fresh data on each visit (no ISR cache)
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   let fixtures: Fixture[] = [];
   let standings: Awaited<ReturnType<typeof getStandings>> = [];
   let allNews: Awaited<ReturnType<typeof getNewsFromDB>> = [];
+  let digest: Awaited<ReturnType<typeof getLatestDigest>> = null;
   try {
-    [fixtures, standings, allNews] = await Promise.all([
+    [fixtures, standings, allNews, digest] = await Promise.all([
       getFixtures(),
       getStandings(),
       getNewsFromDB(40),
+      getLatestDigest(),
     ]);
   } catch (err) {
     console.error("[homepage] Data fetch error:", err);
@@ -51,11 +54,11 @@ export default async function HomePage() {
     <>
       <LiveMatchBanner fixtures={fixtures} />
       <Hero />
+      <section className="py-10 pb-16">
+        <NewsSection articles={allNews} digest={digest} />
+      </section>
       <section className="py-10">
         <BentoGrid nextMatch={nextMatch} standings={standings} />
-      </section>
-      <section className="py-10 pb-16">
-        <NewsSection articles={allNews} />
       </section>
     </>
   );

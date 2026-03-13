@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { getSquadPlayers } from "@/lib/squad-data";
-import { getLfcFplPlayers } from "@/lib/fpl-data";
-import { SquadTabs } from "@/components/squad/squad-tabs";
+import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,15 +11,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description) };
 }
 
-export const dynamic = "force-dynamic";
-
 export default async function SquadPage() {
   const t = await getTranslations("Squad");
 
-  const [squadPlayers, fplPlayers] = await Promise.all([
-    Promise.resolve(getSquadPlayers({ includeLoans: true, includeForever: true })),
-    getLfcFplPlayers(),
-  ]);
+  const squadPlayers = getSquadPlayers({ includeLoans: true, includeForever: true });
 
   return (
     <div className="min-h-screen">
@@ -65,9 +58,7 @@ export default async function SquadPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
-        <Suspense>
-          <SquadTabs squadPlayers={squadPlayers} fplPlayers={fplPlayers} />
-        </Suspense>
+        <SquadGrid players={squadPlayers} />
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
+import { ArticleImageViewer } from "@/components/news/article-image-viewer";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
@@ -169,32 +170,14 @@ export default async function ArticlePage({
     : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
 
+  const extraImages = content.htmlContent
+    ? []
+    : content.images.filter((img) => img !== content.heroImage).slice(0, 3);
+
   const renderExtras = () => (
     <>
-      {/* Skip extra image grid when htmlContent has inline images */}
-      {!content.htmlContent && (() => {
-        const extraImages = content.images.filter(
-          (img) => img !== content.heroImage
-        ).slice(0, 3);
-        if (extraImages.length === 0) return null;
-        return (
-          <div className="my-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {extraImages.map((img, i) => (
-              <div key={i} className="relative w-full aspect-video overflow-hidden ring-1 ring-white/10">
-                <Image
-                  src={img}
-                  alt={`Article image ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  loading="lazy"
-                  unoptimized
-                />
-              </div>
-            ))}
-          </div>
-        );
-      })()}
+      {/* Clickable image grid + lightbox for inline htmlContent images */}
+      <ArticleImageViewer extraImages={extraImages} />
       {(content.isThinContent || content.paragraphs.length <= 2) && (
         <div className="mt-8 p-5 bg-stadium-surface border border-stadium-border text-center">
           <p className="font-inter text-sm text-white/60 mb-4">{t("thinContentMsg")}</p>

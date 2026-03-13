@@ -2,6 +2,7 @@
   {
     "year": 1892,
     "title": "Club Founded",
+    "image": "/assets/lfc/history/john-houlding.jpg",
     "description": "Liverpool FC was founded on 3 June 1892 by John Houlding after a dispute with Everton FC over the rent at Anfield stadium. The club was admitted to the Football League Second Division that same year."
   },
   {
@@ -12,17 +13,30 @@
   {
     "year": 1959,
     "title": "Shankly Arrives",
+    "image": "/assets/lfc/history/shankly-arrival.jpg",
     "description": "Bill Shankly was appointed manager on 1 December 1959. He transformed Liverpool from a Second Division side into one of the greatest clubs in Europe, laying the foundations for decades of success."
   },
   {
     "year": 1964,
     "title": "First Shankly Title",
+    "image": "/assets/lfc/history/liverpool-kop-1960s.jpg",
     "description": "Under Shankly, Liverpool claimed their first league title in 17 years, beginning an era of dominance in English football. The famous Kop terrace at Anfield became the spiritual home of football fandom."
   },
   {
     "year": 1977,
     "title": "First European Cup",
+    "image": "/assets/lfc/history/european-cup-1977.jpg",
     "description": "Bob Paisley led Liverpool to their first European Cup triumph, defeating Borussia Mönchengladbach 3–1 in Rome. Terry McDermott, Tommy Smith and Phil Neal scored the goals in a historic night."
+  },
+  {
+    "year": 1978,
+    "title": "Back-to-Back in Europe",
+    "description": "Bob Paisley's Liverpool retained the European Cup, defeating Club Brugge 1–0 at Wembley Stadium. Kenny Dalglish — in his first European final — scored the only goal with an audacious chip over the goalkeeper, cementing Liverpool as back-to-back kings of Europe."
+  },
+  {
+    "year": 1981,
+    "title": "Third European Cup",
+    "description": "Liverpool claimed their third European Cup in five years, defeating Real Madrid 1–0 in Paris. Full-back Alan Kennedy charged forward in the second half to score the only goal. Bob Paisley became the first manager in history to win the European Cup three times."
   },
   {
     "year": 1984,
@@ -32,21 +46,35 @@
   {
     "year": 1989,
     "title": "Hillsborough Disaster",
+    "image": "/assets/lfc/history/hillsborough.jpg",
     "description": "On 15 April 1989, 97 Liverpool supporters lost their lives in a crush at Sheffield Wednesday's Hillsborough stadium during an FA Cup semi-final. The tragedy united the city and the club forever. Justice was served in 2016."
+  },
+  {
+    "year": 2001,
+    "title": "The Treble Season",
+    "description": "Gérard Houllier's Liverpool became the first English club to win three cup competitions in a single season — FA Cup, League Cup and UEFA Cup. Michael Owen won the FA Cup with two late goals at Cardiff's Millennium Stadium, and the UEFA Cup was clinched in an extraordinary 5–4 golden goal victory over Aláves in Dortmund. Liverpool also claimed the UEFA Super Cup and Charity Shield that year."
   },
   {
     "year": 2005,
     "title": "Miracle of Istanbul",
+    "image": "/assets/lfc/history/istanbul-2005.jpg",
     "description": "Perhaps the greatest night in the club's history. 3–0 down at half-time against AC Milan in the Champions League final, Liverpool scored three goals in six second-half minutes. Steven Gerrard led the comeback and Jerzy Dudek saved two penalties to win the cup on 25 May 2005."
+  },
+  {
+    "year": 2014,
+    "title": "So Close — The Near Miss",
+    "description": "Liverpool's most heartbreaking near miss of the modern era. Luis Suárez scored 31 Premier League goals as Brendan Rodgers' side led the title race for much of the season. A Steven Gerrard slip against Chelsea allowed Demba Ba to score, and Manchester City capitalised to claim the title by two points. Suárez won the Golden Boot; the season is remembered as one of Liverpool's finest and most painful."
   },
   {
     "year": 2015,
     "title": "Klopp Era Begins",
+    "image": "/assets/lfc/legends/jurgen-klopp.jpg",
     "description": "Jürgen Klopp was appointed Liverpool manager on 8 October 2015, describing his approach as 'heavy metal football'. He would go on to become the most successful manager in the club's history."
   },
   {
     "year": 2019,
     "title": "Champions of Europe Again",
+    "image": "/assets/lfc/history/salah-champions-2019.jpg",
     "description": "Klopp's Liverpool defeated Tottenham Hotspur 2–0 in Madrid to lift a sixth European Cup. Mohamed Salah scored from the penalty spot before Divock Origi sealed the victory, ending a 14-year wait."
   },
   {
@@ -57,16 +85,29 @@
   {
     "year": 2020,
     "title": "Premier League Champions",
-    "description": "Liverpool ended a 30-year wait for the league title, clinching the Premier League with seven games to spare — the fastest title win in Premier League history. Klopp's side finished on 99 points in the prior season, setting the stage for glory."
+    "description": "Liverpool ended a 30-year wait for the league title, clinching the Premier League with seven games to spare — the earliest title win in Premier League history. Klopp's side amassed 99 points and lost just three league games all season."
+  },
+  {
+    "year": 2022,
+    "title": "The Near Quadruple",
+    "description": "Klopp's Liverpool came within touching distance of an unprecedented quadruple. They won the FA Cup and League Cup — defeating Chelsea on penalties in both Wembley finals — but narrowly lost the Premier League title to Manchester City by just one point and fell to Real Madrid in the Champions League final in Paris. The season stands as one of the most extraordinary in English football history."
   },
   {
     "year": 2024,
     "title": "Klopp's Farewell",
+    "image": "/assets/lfc/legends/jurgen-klopp.jpg",
     "description": "Jürgen Klopp announced his departure from Liverpool at the end of the 2023/24 season after nine transformative years. He signed off with a League Cup triumph, leaving behind a legacy of trophies, memories and unconditional love from the Anfield faithful."
   },
   {
     "year": 2024,
     "title": "Slot Takes Charge",
+    "image": "/assets/lfc/history/arne-slot.jpg",
     "description": "Dutch coach Arne Slot succeeded Klopp in the summer of 2024, arriving from Feyenoord. He quickly settled into life at Anfield, guiding Liverpool to the top of the Premier League in his debut season."
+  },
+  {
+    "year": 2025,
+    "title": "20th League Title",
+    "image": "/assets/lfc/history/arne-slot.jpg",
+    "description": "Arne Slot guided Liverpool to a record-equalling 20th league title in his first season as manager, clinching the 2024–25 Premier League with four games to spare. The Reds matched Manchester United's all-time record, with captain Virgil van Dijk hoisting the trophy aloft inside a joyous Anfield."
   }
 ]

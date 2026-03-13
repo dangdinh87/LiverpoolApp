@@ -97,7 +97,7 @@ export function Hero() {
       {/* Large watermark text in the background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
         <span
-          className="font-bebas text-[20vw] text-white/[0.03] leading-none tracking-[0.15em] select-none whitespace-nowrap"
+          className="font-bebas text-[20vw] text-white/5 leading-none tracking-[0.15em] select-none whitespace-nowrap"
         >
           LIVERPOOL
         </span>
@@ -120,7 +120,7 @@ export function Hero() {
             alt="Liverpool FC Crest"
             width={64}
             height={80}
-            className="mx-auto drop-shadow-[0_0_30px_rgba(200,16,46,0.4)]"
+            className="mx-auto drop-shadow-[0_0_40px_rgba(200,16,46,0.6)]"
             priority
           />
         </motion.div>

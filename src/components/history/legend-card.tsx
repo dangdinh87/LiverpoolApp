@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 
@@ -10,6 +12,7 @@ interface Legend {
   caps: number | null;
   goals: number | null;
   bio: string;
+  image?: string;
 }
 
 interface LegendCardProps {
@@ -28,6 +31,7 @@ function getInitials(name: string): string {
 
 export function LegendCard({ legend }: LegendCardProps) {
   const t = useTranslations("History.legends");
+  const [imgError, setImgError] = useState(false);
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -36,40 +40,58 @@ export function LegendCard({ legend }: LegendCardProps) {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="bg-stadium-surface border border-stadium-border group relative overflow-hidden transition-all duration-500 hover:border-white/20"
     >
-      {/* Decorative background initials */}
-      <span className="font-bebas text-[120px] text-white/5 absolute -right-6 -top-12 leading-none select-none pointer-events-none transition-transform duration-700 group-hover:scale-110 group-hover:text-white/10">
-        {getInitials(legend.name)}
-      </span>
-
-      {/* Profile Header */}
-      <div className="relative p-6 pb-2 border-b border-stadium-border/30">
-        <h3 className="font-bebas text-3xl text-white tracking-widest leading-none mb-1 group-hover:text-lfc-red transition-colors duration-500">
-          {legend.name}
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="font-barlow text-lfc-red text-[10px] font-bold uppercase tracking-[0.2em]">
+      {/* Photo or initials banner */}
+      <div className="relative h-52 overflow-hidden bg-stadium-surface2">
+        {legend.image && !imgError ? (
+          <Image
+            src={legend.image}
+            alt={legend.name}
+            fill
+            className="object-cover object-center transition-transform duration-700 scale-105 group-hover:scale-100"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            unoptimized
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <span className="font-bebas text-[100px] text-white/10 leading-none select-none">
+              {getInitials(legend.name)}
+            </span>
+          </div>
+        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-linear-to-t from-stadium-surface via-stadium-surface/40 to-transparent" />
+        {/* Role badge */}
+        <div className="absolute top-3 left-3">
+          <span className="font-barlow text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-1 bg-lfc-red/90 text-white">
             {legend.role}
-          </span>
-          <span className="w-1 h-1 rounded-full bg-stadium-border" />
-          <span className="font-inter text-stadium-muted text-[10px] uppercase tracking-widest font-bold font-semibold opacity-70">
-            {legend.years}
           </span>
         </div>
       </div>
 
-      <div className="p-6 pt-6">
+      {/* Profile Header */}
+      <div className="relative px-5 pt-4 pb-2 border-b border-stadium-border/30">
+        <h3 className="font-bebas text-3xl text-white tracking-widest leading-none mb-1 group-hover:text-lfc-red transition-colors duration-500">
+          {legend.name}
+        </h3>
+        <span className="font-inter text-stadium-muted text-[10px] uppercase tracking-widest font-semibold opacity-70">
+          {legend.years}
+        </span>
+      </div>
+
+      <div className="px-5 py-4">
         {/* Stats Row */}
         {(legend.caps !== null || legend.goals !== null) && (
-          <div className="flex gap-10 mb-6">
+          <div className="flex gap-8 mb-4">
             {legend.caps !== null && (
               <div className="flex flex-col">
-                <p className="font-bebas text-3xl text-white leading-none mb-1">{legend.caps}</p>
+                <p className="font-bebas text-2xl text-white leading-none mb-0.5">{legend.caps}</p>
                 <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("appearances")}</p>
               </div>
             )}
             {legend.goals !== null && (
               <div className="flex flex-col">
-                <p className="font-bebas text-3xl text-lfc-red leading-none mb-1">{legend.goals}</p>
+                <p className="font-bebas text-2xl text-lfc-red leading-none mb-0.5">{legend.goals}</p>
                 <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("goals")}</p>
               </div>
             )}

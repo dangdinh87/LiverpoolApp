@@ -33,13 +33,13 @@ export function PlayerCard({ player }: PlayerCardProps) {
         className={cn(
           "relative overflow-hidden rounded-none bg-stadium-surface border border-stadium-border",
           "transition-all duration-300",
-          "hover:border-lfc-red/60 hover:bg-stadium-surface2 hover:shadow-[0_0_20px_rgba(200,16,46,0.15)]"
+          "hover:border-lfc-red/60 hover:bg-stadium-surface2 hover:shadow-[0_0_30px_rgba(200,16,46,0.25),0_0_60px_rgba(200,16,46,0.08)]"
         )}
       >
-        {/* Jersey number watermark */}
+        {/* Jersey number watermark — rises on hover */}
         {player.shirtNumber && (
           <span
-            className="absolute bottom-0 right-0 font-bebas text-white leading-none pointer-events-none select-none translate-x-4 translate-y-4"
+            className="absolute bottom-0 right-0 font-bebas text-white leading-none pointer-events-none select-none translate-x-4 translate-y-4 transition-all duration-500 group-hover:translate-x-1 group-hover:translate-y-1 group-hover:opacity-[0.12]"
             style={{ fontSize: "7rem", opacity: 0.04 }}
             aria-hidden="true"
           >

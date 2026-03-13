@@ -14,24 +14,26 @@ import {
   type NewsSource,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { DigestCard } from "@/components/news/digest-card";
+import type { DigestRecord } from "@/lib/news/digest";
 
 interface NewsSectionProps {
   articles: NewsArticle[];
+  digest?: DigestRecord | null;
 }
 
+// Consistent badge — no rounded, bold, matches news-feed.tsx style
 function Badge({ source }: { source: NewsSource }) {
   const cfg = SOURCE_CONFIG[source];
   if (!cfg) return null;
   return (
-    <span
-      className={`inline-flex items-center font-barlow text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md ${cfg.color}`}
-    >
+    <span className={`inline-flex items-center font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 ${cfg.color}`}>
       {cfg.label}
     </span>
   );
 }
 
-export function NewsSection({ articles }: NewsSectionProps) {
+export function NewsSection({ articles, digest }: NewsSectionProps) {
   const t = useTranslations("News");
   const locale = useLocale();
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
@@ -60,23 +62,42 @@ export function NewsSection({ articles }: NewsSectionProps) {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.4 }}
-        className="flex items-end justify-between mb-10"
+        className="flex items-end justify-between mb-6"
       >
         <div>
           <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-1">
             {t("tagline")}
           </p>
-          <h2 className="font-bebas text-5xl md:text-6xl text-white tracking-wider">
+          <h2 className="font-bebas text-5xl md:text-6xl text-white tracking-wider drop-shadow-[0_0_20px_rgba(200,16,46,0.3)]">
             {t("title")}
           </h2>
         </div>
         <Link
           href="/news"
-          className="hidden sm:flex items-center gap-1.5 font-barlow text-sm text-lfc-red hover:text-lfc-red/80 uppercase tracking-wider font-semibold transition-colors"
+          className="hidden sm:flex items-center gap-1.5 font-barlow text-sm text-lfc-red hover:text-white uppercase tracking-wider font-semibold transition-colors"
         >
           {t("viewAll")}
         </Link>
       </motion.div>
+
+      {/* AI Digest card — shown above news grid when available */}
+      {digest && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.35 }}
+          className="mb-6"
+        >
+          <DigestCard
+            date={digest.digest_date}
+            title={digest.title}
+            summary={digest.summary}
+            articleCount={digest.article_count}
+            generatedAt={digest.generated_at}
+          />
+        </motion.div>
+      )}
 
       {/* Featured + Side list layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
@@ -92,23 +113,23 @@ export function NewsSection({ articles }: NewsSectionProps) {
             href={getArticleUrl(featured.link)}
             className={`group block relative overflow-hidden cursor-pointer ${readSet.has(featured.link) ? "opacity-70" : ""}`}
           >
-            <div className="relative aspect-16/10 w-full">
+            <div className="relative aspect-16/10 w-full overflow-hidden">
               {featured.thumbnail ? (
                 <Image
                   src={featured.thumbnail}
                   alt={featured.title}
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
                   sizes="(max-width: 1024px) 100vw, 60vw"
                   quality={85}
                   unoptimized
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-lfc-red/20 to-stadium-bg flex items-center justify-center">
+                <div className="absolute inset-0 bg-linear-to-br from-lfc-red/20 to-stadium-bg flex items-center justify-center">
                   <Newspaper className="w-12 h-12 text-stadium-muted" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-3">
@@ -120,7 +141,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
                   </span>
                 )}
               </div>
-              <h3 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug group-hover:text-lfc-gold transition-colors line-clamp-2">
+              <h3 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug transition-colors duration-300 group-hover:text-lfc-gold line-clamp-2">
                 {featured.title}
               </h3>
               {featured.contentSnippet && (
@@ -144,7 +165,7 @@ export function NewsSection({ articles }: NewsSectionProps) {
             >
               <Link
                 href={getArticleUrl(article.link)}
-                className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden hover:border-lfc-red/30 transition-all duration-300 ${readSet.has(article.link) ? "opacity-60" : ""}`}
+                className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/30 hover:bg-stadium-surface ${readSet.has(article.link) ? "opacity-60" : ""}`}
               >
                 {/* Thumbnail */}
                 <div className="relative w-24 h-20 shrink-0 overflow-hidden">
@@ -166,10 +187,10 @@ export function NewsSection({ articles }: NewsSectionProps) {
                 </div>
                 {/* Content */}
                 <div className="flex flex-col justify-center gap-1.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     <Badge source={article.source} />
                   </div>
-                  <p className="font-inter text-sm text-white font-medium leading-snug group-hover:text-lfc-red transition-colors line-clamp-2">
+                  <p className="font-inter text-sm text-white font-medium leading-snug group-hover:text-lfc-gold transition-colors duration-200 line-clamp-2">
                     {article.title}
                   </p>
                   {formatRelativeDate(article.pubDate, article.language) && (

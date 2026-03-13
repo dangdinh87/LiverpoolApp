@@ -23,6 +23,7 @@ export const SOURCE_CONFIG: Record<
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100" },
   eotk: { label: "Empire of the Kop", color: "bg-yellow-700 text-yellow-100" },
+  vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100" },
 };
 
 export const CATEGORY_CONFIG: Record<
@@ -56,6 +57,7 @@ const SOURCE_HOSTS: Record<string, string> = {
   vietnamnet: "vietnamnet.vn",
   webthethao: "webthethao.vn",
   eotk: "www.empireofthekop.com",
+  vietnamvn: "www.vietnam.vn",
 };
 
 // Hostname → source prefix (reverse lookup, with and without www)
