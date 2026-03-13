@@ -33,6 +33,7 @@ const NEWS_SOURCES: SourceLogo[] = [
   { key: "echo", label: "Liverpool Echo", logo: "/assets/news/logos/echo.png", width: 200, height: 40, url: "https://www.liverpoolecho.co.uk" },
   { key: "anfield-watch", label: "Anfield Watch", logo: "/assets/news/logos/anfield-watch.svg", width: 160, height: 40, url: "https://www.anfieldwatch.co.uk" },
   { key: "eotk", label: "Empire of the Kop", logo: "/assets/news/logos/eotk.svg", width: 150, height: 40, url: "https://www.empireofthekop.com" },
+  { key: "goal", label: "GOAL", logo: "/assets/news/logos/goal.svg", width: 100, height: 40, url: "https://www.goal.com" },
   { key: "liverpoolfc", label: "LiverpoolFC.com", logo: "/assets/lfc/crest.webp", width: 40, height: 40, url: "https://www.liverpoolfc.com" },
 ];
 

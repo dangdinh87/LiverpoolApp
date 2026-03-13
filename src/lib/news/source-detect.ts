@@ -21,6 +21,7 @@ const SOURCE_MAP: [string, NewsSource, string][] = [
   ["thanhnien.vn", "thanhnien", "Thanh Niên"],
   ["webthethao.vn", "webthethao", "Webthethao"],
   ["vietnam.vn", "vietnamvn", "Vietnam.vn"],
+  ["goal.com", "goal", "GOAL"],
 ];
 
 /**

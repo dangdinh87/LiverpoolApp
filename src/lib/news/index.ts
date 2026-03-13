@@ -5,6 +5,7 @@ import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
 import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
 import { VietnamvnAdapter } from "./adapters/vietnamvn-adapter";
+import { GoalAdapter } from "./adapters/goal-adapter";
 import { RSS_FEEDS } from "./config";
 import type { NewsArticle } from "./types";
 
@@ -23,6 +24,7 @@ const adapters = [
   ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
   new BongdaplusAdapter(),
   new VietnamvnAdapter(),
+  new GoalAdapter(),
 ];
 
 /** Fetch news directly from adapters (used by sync API). */

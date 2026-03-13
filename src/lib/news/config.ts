@@ -47,6 +47,7 @@ export const SOURCE_CONFIG: Record<
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100", language: "vi" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100", language: "vi" },
   vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100", language: "vi" },
+  goal: { label: "GOAL", color: "bg-[#00234B] text-white", language: "en" },
 };
 
 // Vietnam.vn scraper config (no RSS, scrape sports category)
