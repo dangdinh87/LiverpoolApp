@@ -213,9 +213,11 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 /** Fetch all Liverpool matches across all competitions. Cache 1h. */
 export async function getFdoLfcFixtures(season?: number): Promise<Fixture[]> {
   const seasonParam = season ? `?season=${season}` : "";
+  // Use shorter cache (5min) for current season to pick up live status faster
+  const revalidate = season ? 3600 : 300;
   const data = await fdoFetch<FdoMatchesResponse>(
     `/teams/${FDO_LFC_ID}/matches${seasonParam}`,
-    3600, // 1h
+    revalidate,
   );
 
   return data.matches.map(mapMatchToFixture);
