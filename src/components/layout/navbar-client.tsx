@@ -30,6 +30,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/squad", label: "Squad" },
   { href: "/season", label: "Season" },
+  { href: "/stats", label: "Stats" },
   { href: "/news", label: "News" },
   { href: "/history", label: "The Club" },
   { href: "/about", label: "About" },
@@ -87,10 +88,10 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
   return (
     <header
       className={cn(
-        "fixed left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-stadium-bg/95 border-b border-stadium-border"
-          : "bg-stadium-bg/40"
+          ? "bg-stadium-bg/95 border-b border-stadium-border backdrop-blur-md"
+          : "bg-stadium-bg/80 border-b border-white/8 backdrop-blur-md"
       )}
       style={{ top: "var(--live-banner-h, 0px)" }}
     >
@@ -121,6 +122,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               { href: "/news", label: t("news"), highlight: true },
               { href: "/squad", label: t("squad") },
               { href: "/season", label: t("season") || "Season" },
+              { href: "/stats", label: t("stats") || "Stats" },
             ].map(({ href, label, highlight }) => {
               const basePath = href.split("?")[0];
               const isActive = basePath === "/"
@@ -133,7 +135,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     href={href}
                     className={cn(
                       "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
-                      isActive ? "text-white" : "text-stadium-muted hover:text-white"
+                      isActive ? "text-white" : "text-white/80 hover:text-white"
                     )}
                   >
                     {label}
@@ -143,11 +145,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                       </span>
                     )}
                     {isActive && (
-                      <motion.span
-                        layoutId="nav-underline"
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
-                        transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                      />
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full" />
                     )}
                   </Link>
                 </li>
@@ -165,17 +163,13 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                   "relative flex items-center gap-1 px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors cursor-pointer",
                   pathname === "/history" || pathname === "/gallery"
                     ? "text-white"
-                    : "text-stadium-muted hover:text-white"
+                    : "text-white/80 hover:text-white"
                 )}
               >
                 {t("history") || "The Club"}
                 <ChevronDown size={12} className={cn("transition-transform duration-200", clubMenuOpen && "rotate-180")} />
                 {(pathname === "/history" || pathname === "/gallery") && (
-                  <motion.span
-                    layoutId="nav-underline"
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
-                    transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                  />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full" />
                 )}
               </button>
               <AnimatePresence>
@@ -218,16 +212,12 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                 href="/about"
                 className={cn(
                   "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
-                  pathname === "/about" ? "text-white" : "text-stadium-muted hover:text-white"
+                  pathname === "/about" ? "text-white" : "text-white/80 hover:text-white"
                 )}
               >
                 {t("about") || "About"}
                 {pathname === "/about" && (
-                  <motion.span
-                    layoutId="nav-underline"
-                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
-                    transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                  />
+                  <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full" />
                 )}
               </Link>
             </li>
@@ -395,6 +385,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     { href: "/news", label: t("news") },
                     { href: "/squad", label: t("squad") },
                     { href: "/season", label: t("season") },
+                    { href: "/stats", label: t("stats") },
                     { href: "/history", label: `${t("history")} — ${t("clubOverview")}` },
                     { href: "/gallery", label: `${t("history")} — ${t("clubGallery")}` },
                     { href: "/about", label: t("about") },
@@ -417,15 +408,11 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                             "relative block px-4 py-3 rounded-none font-barlow font-semibold uppercase tracking-[0.12em] transition-colors overflow-hidden",
                             isActive
                               ? "text-white"
-                              : "text-stadium-muted hover:bg-stadium-surface hover:text-white"
+                              : "text-white/80 hover:bg-stadium-surface hover:text-white"
                           )}
                         >
                           {isActive && (
-                            <motion.div
-                              layoutId="mobile-nav-bg"
-                              className="absolute inset-0 bg-lfc-red"
-                              transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                            />
+                            <div className="absolute inset-0 bg-lfc-red" />
                           )}
                           <span className="relative z-10">{label}</span>
                         </Link>

@@ -5,7 +5,7 @@
 import "server-only";
 import type { FootballDataProvider } from "./provider";
 import type {
-  Player, PlayerStats, Fixture, Standing, TopScorer,
+  Player, PlayerStats, PlayerStatistic, Fixture, Standing, TopScorer,
   FixtureEvent, FixtureLineup, FixtureTeamStats,
   Injury, TeamInfo, Coach, GameweekInfo,
 } from "@/lib/types/football";
@@ -13,6 +13,7 @@ import {
   getSquadPlayers, calculateAge,
   type LfcPlayer, type PlayerPosition,
 } from "@/lib/squad-data";
+import { getFplPlayerStats, type FplPlayerStats } from "./fpl-stats";
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
@@ -196,6 +197,49 @@ function mapScorerToTopScorer(s: FdoScorer): TopScorer {
   };
 }
 
+// Map FPL stats → canonical PlayerStatistic (PL only)
+function mapFplToStatistic(fpl: FplPlayerStats, local: LfcPlayer): PlayerStatistic {
+  const appearances = fpl.minutes > 0 ? fpl.starts + Math.max(0, Math.round((fpl.minutes - fpl.starts * 90) / 20)) : 0;
+  // FPL doesn't directly give total appearances; estimate from starts + sub appearances
+  // Better: use starts as lineups, and compute sub-ins
+  const subIn = Math.max(0, appearances - fpl.starts);
+
+  return {
+    team: { id: CANONICAL_LFC_ID, name: "Liverpool FC", logo: "/assets/lfc/crest.webp" },
+    league: { id: 39, name: "Premier League", season: 2025 },
+    games: {
+      appearences: appearances > 0 ? appearances : fpl.starts > 0 ? fpl.starts : null,
+      lineups: fpl.starts,
+      minutes: fpl.minutes,
+      number: local.shirtNumber,
+      position: LOCAL_POSITION_MAP[local.position],
+      rating: null,
+      captain: false,
+    },
+    substitutes: { in: subIn, out: null, bench: null },
+    goals: {
+      total: fpl.goalsScored,
+      assists: fpl.assists,
+      conceded: fpl.goalsConceded,
+      saves: fpl.saves,
+    },
+    passes: { total: null, key: null, accuracy: null },
+    tackles: { total: null, blocks: null, interceptions: null },
+    duels: { total: null, won: null },
+    dribbles: { attempts: null, success: null, past: null },
+    fouls: { drawn: null, committed: null },
+    cards: { yellow: fpl.yellowCards, yellowred: null, red: fpl.redCards },
+    shots: { total: null, on: null },
+    penalty: {
+      won: null,
+      commited: null,
+      scored: null,
+      missed: fpl.penaltiesMissed,
+      saved: fpl.penaltiesSaved,
+    },
+  };
+}
+
 // ─── Provider ──────────────────────────────────────────────────────────────────
 
 export class FdoProvider implements FootballDataProvider {
@@ -258,34 +302,23 @@ export class FdoProvider implements FootballDataProvider {
     }
   }
 
-  // Player Stats: match local squad player with FDO scorers data
+  // Player Stats: FPL API for Premier League stats (free, no key needed)
   async getPlayerStats(playerId: number): Promise<PlayerStats | null> {
     try {
-      // Try local squad first for basic player info
       const localPlayers = getSquadPlayers({ includeLoans: true });
       const local = localPlayers.find((p) => p.id === playerId);
       if (!local) return null;
 
       const player = mapLocalPlayer(local);
-      // Return basic stats (FDO doesn't have per-player detailed stats on free tier)
-      return {
-        player,
-        statistics: [{
-          team: { id: CANONICAL_LFC_ID, name: "Liverpool FC", logo: "/assets/lfc/crest.png" },
-          league: { id: 39, name: "Premier League", season: 2025 },
-          games: { appearences: null, lineups: null, minutes: null, number: local.shirtNumber, position: LOCAL_POSITION_MAP[local.position], rating: null, captain: false },
-          substitutes: { in: null, out: null, bench: null },
-          goals: { total: null, assists: null, conceded: null, saves: null },
-          passes: { total: null, key: null, accuracy: null },
-          tackles: { total: null, blocks: null, interceptions: null },
-          duels: { total: null, won: null },
-          dribbles: { attempts: null, success: null, past: null },
-          fouls: { drawn: null, committed: null },
-          cards: { yellow: 0, yellowred: null, red: 0 },
-          shots: { total: null, on: null },
-          penalty: { won: null, commited: null, scored: null, missed: null, saved: null },
-        }],
-      };
+
+      // Fetch FPL stats by name matching
+      const fpl = await getFplPlayerStats(local.name);
+      if (fpl) {
+        return { player, statistics: [mapFplToStatistic(fpl, local)] };
+      }
+
+      // Fallback: empty stats (player not found in FPL, e.g. youth/loan)
+      return { player, statistics: [] };
     } catch (err) {
       console.error("[fdo-provider] getPlayerStats failed:", err);
       return null;

@@ -99,7 +99,7 @@ export function PlayerFavouriteButton({
       } else if (result && "favourited" in result) {
         setFavourited(result.favourited);
         showToast({
-          type: "favourite",
+          type: "success",
           message: result.favourited
             ? t("favAdded", { name: playerName })
             : t("favRemoved", { name: playerName }),
@@ -147,7 +147,7 @@ export function PlayerFavouriteButton({
         disabled={isPending}
         whileTap={{ scale: 0.95 }}
         className={cn(
-          "inline-flex items-center gap-2.5 px-4 py-2.5 border font-inter text-sm transition-all",
+          "inline-flex items-center gap-2.5 px-4 py-2.5 border font-inter text-sm transition-all cursor-pointer",
           favourited
             ? "bg-lfc-red/10 border-lfc-red/40 text-lfc-red hover:bg-lfc-red/20"
             : "border-stadium-border text-stadium-muted hover:border-lfc-red/40 hover:text-white"

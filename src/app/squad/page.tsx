@@ -18,41 +18,26 @@ export default async function SquadPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <div className="relative h-[35vh] min-h-[280px] flex items-end overflow-hidden">
-        {/* Background with subtle zoom */}
+      {/* Hero — compact */}
+      <div className="relative h-[25vh] min-h-[200px] flex items-end overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-[subtleZoom_25s_infinite_alternate]"
-          style={{
-            backgroundImage: "url('/assets/lfc/stadium/anfield-pitch.webp')",
-          }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/assets/lfc/stadium/anfield-pitch.webp')" }}
         />
-        {/* Layered overlays for depth */}
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/50 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-black/15" />
 
-        {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-10 h-[1px] bg-lfc-red" />
-            <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-xs font-bold">
-              {t("season", { season: "2025/26" })}
-            </p>
-          </div>
-          <h1 className="font-bebas text-7xl md:text-9xl text-white tracking-widest leading-none mb-4 drop-shadow-2xl">
-            {t("title")}
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="px-4 py-1.5 bg-lfc-red/10 border border-lfc-red/20">
-              <span className="font-bebas text-xl text-lfc-red tracking-wider">
-                {t("count", { count: squadPlayers.length, n: squadPlayers.length })}
-              </span>
-            </div>
-            <div className="w-px h-6 bg-white/10" />
-            <p className="font-inter text-stadium-muted text-sm opacity-80">
-              {t("club")}
-            </p>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full">
+          <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-[10px] font-bold mb-1">
+            {t("season", { season: "2025/26" })}
+          </p>
+          <div className="flex items-baseline gap-4">
+            <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-widest leading-none">
+              {t("title")}
+            </h1>
+            <span className="font-bebas text-lg text-stadium-muted tracking-wider">
+              {t("count", { count: squadPlayers.length, n: squadPlayers.length })}
+            </span>
           </div>
         </div>
       </div>

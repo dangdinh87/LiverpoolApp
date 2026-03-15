@@ -26,6 +26,7 @@ interface FavouriteHeartProps {
   isLoggedIn: boolean;
   onToggle: (playerId: number, added: boolean) => void;
   onNotify?: (playerName: string, added: boolean) => void;
+  variant?: "overlay" | "inline";
 }
 
 export function FavouriteHeart({
@@ -36,6 +37,7 @@ export function FavouriteHeart({
   isLoggedIn,
   onToggle,
   onNotify,
+  variant = "overlay",
 }: FavouriteHeartProps) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -46,7 +48,12 @@ export function FavouriteHeart({
     return (
       <button
         type="button"
-        className="absolute top-2 right-2 z-10 p-1.5 bg-black/60 backdrop-blur-sm border border-white/10 text-stadium-muted hover:text-white transition-all hover:scale-110 cursor-pointer"
+        className={cn(
+          "z-10 transition-all cursor-pointer",
+          variant === "overlay"
+            ? "absolute top-2 right-2 p-1.5 bg-black/60 backdrop-blur-sm border border-white/10 text-stadium-muted hover:text-white hover:scale-110"
+            : "inline-flex items-center justify-center h-7 w-7 border border-white/10 bg-white/5 text-stadium-muted hover:text-lfc-red hover:border-lfc-red/40"
+        )}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -114,10 +121,15 @@ export function FavouriteHeart({
         disabled={isPending}
         whileTap={{ scale: 0.85 }}
         className={cn(
-          "absolute top-2 right-2 z-10 p-1.5 backdrop-blur-sm border transition-all",
+          "z-10 border transition-all",
+          variant === "overlay"
+            ? "absolute top-2 right-2 p-1.5 backdrop-blur-sm"
+            : "inline-flex items-center justify-center h-7 w-7 bg-transparent",
           isFavourited
             ? "bg-lfc-red/20 border-lfc-red/40 text-lfc-red hover:bg-lfc-red/30"
-            : "bg-black/60 border-white/10 text-stadium-muted hover:text-white hover:border-white/30"
+            : variant === "overlay"
+              ? "bg-black/60 border-white/10 text-stadium-muted hover:text-white hover:border-white/30"
+              : "border-white/10 text-stadium-muted hover:text-lfc-red hover:border-lfc-red/40 hover:bg-lfc-red/5"
         )}
         title={isFavourited ? t("removeFav") : t("favourite")}
       >

@@ -9,6 +9,10 @@ import { getFdoStandings, getFdoUclStandings } from "./fdo-standings";
 import { getFdoLfcFixtures, getFdoCoach } from "./fdo-matches";
 import { getEspnMatchEvents, getEspnMatchDetail, getEspnCupFixtures } from "./espn-events";
 export type { EspnMatchDetail } from "./espn-events";
+export { computeSeasonStats } from "./season-stats";
+export { getFplPlayerStats, getAllFplStats } from "./fpl-stats";
+export type { FplPlayerStats } from "./fpl-stats";
+export type { SeasonStats, SeasonOverview, MonthlyGoals, CompetitionStats, SeasonRecords, FormEntry, RecordDisplay, WDLRecord } from "./season-stats";
 
 const provider = new FdoProvider();
 

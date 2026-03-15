@@ -6,8 +6,11 @@ import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react"
 import { getTranslations, getLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
+import { getPlayerStats } from "@/lib/football";
+import { getFplPlayerStats } from "@/lib/football/fpl-stats";
 import { Badge } from "@/components/ui/badge";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
+import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
 import { makePageMeta } from "@/lib/seo";
 
@@ -66,10 +69,10 @@ const HONOR_TROPHY_IMAGE: Record<string, string> = {
 };
 
 const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string; border: string }> = {
-  goalkeeper: { bg: "bg-yellow-500/15", text: "text-yellow-400", border: "border-yellow-500/30" },
-  defender: { bg: "bg-blue-500/15", text: "text-blue-400", border: "border-blue-500/30" },
-  midfielder: { bg: "bg-green-500/15", text: "text-green-400", border: "border-green-500/30" },
-  forward: { bg: "bg-lfc-red/15", text: "text-lfc-red", border: "border-lfc-red/30" },
+  goalkeeper: { bg: "bg-yellow-500", text: "text-white", border: "border-yellow-500" },
+  defender: { bg: "bg-blue-500", text: "text-white", border: "border-blue-500" },
+  midfielder: { bg: "bg-green-600", text: "text-white", border: "border-green-600" },
+  forward: { bg: "bg-lfc-red", text: "text-white", border: "border-lfc-red" },
 };
 
 // ─── Static generation ───────────────────────────────────────────────────────
@@ -124,6 +127,12 @@ export default async function PlayerPage({ params }: PageProps) {
   const heroImage = player.localBodyShot || player.localPhoto;
   const flag = getFlag(player.nationality);
 
+  // Fetch player stats: canonical (mapped from FPL) + raw FPL data
+  const [playerStats, fplStats] = await Promise.all([
+    getPlayerStats(player.id),
+    getFplPlayerStats(player.name),
+  ]);
+
   const bio = getPlayerBio(player.slug, locale);
   const bioParagraphs = bio
     ? bio.split(/\n{2,}|(?<=\.)(?=\s[A-Z])/).filter(Boolean).slice(0, 6)
@@ -140,15 +149,15 @@ export default async function PlayerPage({ params }: PageProps) {
 
         {/* Giant shirt number watermark */}
         <span
-          className="absolute -right-8 top-1/2 -translate-y-1/2 font-bebas text-white/[0.03] leading-none pointer-events-none select-none"
+          className="absolute -right-8 top-1/2 -translate-y-1/2 font-bebas text-white/[0.10] leading-none pointer-events-none select-none"
           style={{ fontSize: "clamp(20rem, 50vw, 40rem)" }}
           aria-hidden="true"
         >
           {player.shirtNumber}
         </span>
 
-        {/* Subtle LFC crest watermark */}
-        <div className="absolute left-8 md:left-16 top-1/2 -translate-y-1/2 w-48 md:w-72 opacity-[0.03] pointer-events-none select-none">
+        {/* LFC crest watermark */}
+        <div className="absolute left-8 md:left-16 top-1/2 -translate-y-1/2 w-48 md:w-72 opacity-[0.10] pointer-events-none select-none">
           <Image src="/assets/lfc/crest.webp" alt="" width={288} height={288} aria-hidden="true" />
         </div>
 
@@ -169,9 +178,8 @@ export default async function PlayerPage({ params }: PageProps) {
             </Link>
 
             {/* Position badge + status */}
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               <Badge
-                variant="outline"
                 className={cn(
                   "text-sm font-barlow font-bold uppercase tracking-widest px-4 py-1.5",
                   accent.bg, accent.text, accent.border
@@ -180,18 +188,18 @@ export default async function PlayerPage({ params }: PageProps) {
                 {t(`positions.${player.position}`)}
               </Badge>
               {player.onLoan && (
-                <Badge variant="outline" className="text-sm bg-amber-500/15 text-amber-400 border-amber-500/30 px-3 py-1.5">
+                <Badge className="text-sm bg-amber-500 text-white border-amber-500 font-barlow font-bold uppercase tracking-widest px-3 py-1.5">
                   {t("status.onLoan")}
                 </Badge>
               )}
               {player.forever && (
-                <Badge variant="outline" className="text-sm bg-lfc-gold/15 text-lfc-gold border-lfc-gold/30 px-3 py-1.5">
+                <Badge className="text-sm bg-lfc-gold text-black border-lfc-gold font-barlow font-bold uppercase tracking-widest px-3 py-1.5">
                   {t("status.forever")}
                 </Badge>
               )}
             </div>
 
-            {/* Shirt number + name */}
+            {/* Shirt number + name + favourite */}
             <div className="flex items-end gap-4 mb-2">
               <span className="font-bebas text-lfc-red text-6xl md:text-8xl leading-none">
                 {player.shirtNumber}
@@ -200,6 +208,13 @@ export default async function PlayerPage({ params }: PageProps) {
                 <h1 className="font-bebas text-5xl md:text-7xl text-white tracking-wider leading-none">
                   {player.name}
                 </h1>
+              </div>
+              <div className="pb-2 md:pb-3">
+                <PlayerFavouriteButton
+                  playerId={player.id}
+                  playerName={player.name}
+                  playerPhoto={player.photo}
+                />
               </div>
             </div>
 
@@ -217,15 +232,6 @@ export default async function PlayerPage({ params }: PageProps) {
               <InfoPill icon={<Shirt size={14} />} label={`#${player.shirtNumber}`} />
               {player.height && <InfoPill icon={<Ruler size={14} />} label={player.height} />}
               {player.weight && <InfoPill icon={<Weight size={14} />} label={player.weight} />}
-            </div>
-
-            {/* Favourite button */}
-            <div className="mt-6">
-              <PlayerFavouriteButton
-                playerId={player.id}
-                playerName={player.name}
-                playerPhoto={player.photo}
-              />
             </div>
           </div>
 
@@ -289,6 +295,13 @@ export default async function PlayerPage({ params }: PageProps) {
           <StatCard label={t("info.age")} value={String(age)} />
           <StatCard label={t("info.honours")} value={String(player.honors.length)} gold />
         </div>
+
+        {/* ─── Season Statistics ─── */}
+        <PlayerSeasonStats
+          statistics={playerStats?.statistics ?? []}
+          fplStats={fplStats}
+          position={player.position}
+        />
 
         {/* ─── Honours showcase ─── */}
         {player.honors.length > 0 && (
