@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Gallery.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/gallery" }) };
 }
 
 export const revalidate = 1800;

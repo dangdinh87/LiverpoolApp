@@ -7,7 +7,7 @@ export async function generateMetadata() {
   const t = await getTranslations("Fixtures.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/fixtures" }) };
 }
 
 export const dynamic = "force-dynamic";

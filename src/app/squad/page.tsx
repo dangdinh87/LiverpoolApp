@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Squad.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/squad" }) };
 }
 
 export default async function SquadPage() {

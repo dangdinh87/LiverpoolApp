@@ -7,7 +7,7 @@ export async function generateMetadata() {
   const t = await getTranslations("Standings.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/standings" }) };
 }
 
 export const dynamic = "force-dynamic";

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
 import { scrapeArticle, getNewsFromDB } from "@/lib/news";
+import { getHreflangAlternates } from "@/lib/seo";
 import { getFixtures } from "@/lib/football";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
@@ -90,9 +91,11 @@ export async function generateMetadata({
   const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
   const images = content.heroImage ? [{ url: content.heroImage, width: 1200, height: 630 }] : [];
 
+  const articlePath = `/news/${slug.join("/")}`;
   return {
     title: content.title,
     description,
+    alternates: getHreflangAlternates(articlePath),
     openGraph: {
       type: "article",
       title: content.title,
@@ -100,7 +103,7 @@ export async function generateMetadata({
       images,
       ...(content.publishedAt && { publishedTime: content.publishedAt }),
       ...(content.author && { authors: [content.author] }),
-      siteName: "Liverpool FC Fan Site",
+      siteName: "Liverpool FC Việt Nam",
     },
     twitter: {
       card: "summary_large_image",

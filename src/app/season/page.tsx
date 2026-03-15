@@ -30,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const label = seasonLabel(getCurrentSeasonYear());
   const title = t("title", { season: label });
   const description = t("description", { season: label });
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/season" }) };
 }
 
 export const dynamic = "force-dynamic";

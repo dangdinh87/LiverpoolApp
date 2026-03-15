@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 import { getDigestByDate } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
+import { makePageMeta } from "@/lib/seo";
 
 type Params = Promise<{ date: string }>;
 
@@ -18,9 +19,16 @@ export async function generateMetadata({
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found" };
   const digest = await getDigestByDate(date);
   if (!digest) return { title: "Digest Not Found" };
+  const description = digest.summary.slice(0, 160);
+  const digestPath = `/news/digest/${date}`;
   return {
     title: digest.title,
-    description: digest.summary.slice(0, 160),
+    description,
+    ...makePageMeta(digest.title, description, {
+      path: digestPath,
+      type: "article",
+      publishedTime: digest.generated_at,
+    }),
   };
 }
 

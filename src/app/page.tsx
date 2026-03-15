@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   ...makePageMeta(
     "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
     "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+    { path: "/" },
   ),
 };
 
@@ -47,11 +48,11 @@ export default async function HomePage() {
       cloudinary_url: string;
     }>("homepage_hero_image");
     if (heroSetting?.cloudinary_url) {
-      // Optimize for hero size via Cloudinary transformation
-      heroBackgroundUrl = heroSetting.cloudinary_url.replace(
-        "/upload/",
-        "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/",
-      );
+      const url = heroSetting.cloudinary_url;
+      // Apply Cloudinary transformation only for Cloudinary URLs
+      heroBackgroundUrl = url.includes("/upload/")
+        ? url.replace("/upload/", "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/")
+        : url;
     }
   } catch {
     // Fallback to default — no error needed

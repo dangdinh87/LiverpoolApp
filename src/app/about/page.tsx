@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("About.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/about" }) };
 }
 
 const FEATURE_ICONS: Record<string, React.ReactNode> = {

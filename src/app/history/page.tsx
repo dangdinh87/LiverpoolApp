@@ -22,7 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("History.metadata");
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description) };
+  return { title, description, ...makePageMeta(title, description, { path: "/history" }) };
 }
 
 export const dynamic = "force-dynamic";

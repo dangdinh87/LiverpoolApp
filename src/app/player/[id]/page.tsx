@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
 import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
-import { makePageMeta } from "@/lib/seo";
+import { getHreflangAlternates } from "@/lib/seo";
 
 // ─── Country flag emoji mapping ──────────────────────────────────────────────
 
@@ -91,12 +91,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: player.name,
     description,
+    alternates: getHreflangAlternates(`/player/${id}`),
     openGraph: {
       title: player.name,
       description,
       type: "profile",
       ...(images.length > 0 && { images }),
-      siteName: "Liverpool FC Fan Site",
+      siteName: "Liverpool FC Việt Nam",
     },
     twitter: {
       card: "summary_large_image",
