@@ -75,6 +75,8 @@ function SheetContent({
         )}
         {...props}
       >
+        {/* Accessible title for screen readers (required by Radix Dialog) */}
+        <SheetPrimitive.Title className="sr-only">Menu</SheetPrimitive.Title>
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">

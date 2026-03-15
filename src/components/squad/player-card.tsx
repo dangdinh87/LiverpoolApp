@@ -6,6 +6,17 @@ import { FavouriteHeart } from "./favourite-heart";
 import { calculateAge, type LfcPlayer, type PlayerPosition } from "@/lib/squad-data";
 import { cn } from "@/lib/utils";
 
+// Nationality → flag emoji
+const NATIONALITY_FLAGS: Record<string, string> = {
+  Argentinian: "🇦🇷", Brazilian: "🇧🇷", Czech: "🇨🇿", Dutch: "🇳🇱",
+  Egyptian: "🇪🇬", English: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", French: "🇫🇷", Georgian: "🇬🇪",
+  German: "🇩🇪", Greek: "🇬🇷", Hungarian: "🇭🇺", Italian: "🇮🇹",
+  Japanese: "🇯🇵", "Northern Irish": "🇬🇧", Portuguese: "🇵🇹",
+  Scottish: "🏴󠁧󠁢󠁳󠁣󠁴󠁿", Spanish: "🇪🇸", Swedish: "🇸🇪",
+  Irish: "🇮🇪", Welsh: "🏴󠁧󠁢󠁷󠁬󠁳󠁿", Colombian: "🇨🇴", Uruguayan: "🇺🇾",
+  Belgian: "🇧🇪", Senegalese: "🇸🇳", Guinean: "🇬🇳", American: "🇺🇸",
+};
+
 // Position badge color map
 const POSITION_COLORS: Record<PlayerPosition, string> = {
   goalkeeper: "bg-yellow-500 text-white",
@@ -34,8 +45,8 @@ export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, o
   const t = useTranslations("Squad");
   const pt = useTranslations("PlayerDetail.info");
   const age = calculateAge(player.dateOfBirth);
+  const flag = player.nationality ? NATIONALITY_FLAGS[player.nationality] ?? "" : "";
   const metaItems = [
-    player.nationality ? { label: pt("nationality"), value: player.nationality } : null,
     Number.isFinite(age) ? { label: pt("age"), value: pt("ageYears", { age }) } : null,
     player.height ? { label: pt("height"), value: player.height } : null,
   ].filter(Boolean) as { label: string; value: string }[];
@@ -118,7 +129,7 @@ export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, o
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <h3 className="font-inter font-semibold text-white text-sm leading-tight truncate group-hover:text-lfc-red transition-colors">
-                {player.name}
+                {flag && <span className="mr-1" aria-label={player.nationality}>{flag}</span>}{player.name}
               </h3>
               <p className="text-white/70 text-xs font-inter mt-0.5 truncate">
                 {player.shirtName}

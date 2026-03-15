@@ -44,79 +44,75 @@ export function DigestCard(props: DigestProps) {
       {/* Top red accent line */}
       <div className="h-[2px] w-full bg-linear-to-r from-lfc-red via-lfc-red/60 to-transparent" />
 
-      <div className="flex">
-        {/* Left: title + summary */}
-        <div className="flex-1 min-w-0 px-4 py-3">
-          <div className="flex items-baseline gap-2 flex-wrap mb-1.5">
-            <h3 className="font-bebas text-xl sm:text-2xl text-white tracking-wider leading-none">
-              {displayTitle}
-            </h3>
-            <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-[0.2em] text-lfc-red shrink-0 translate-y-px">
-              <Sparkles className="w-3 h-3" />
-              {t("badge")}
-            </span>
-          </div>
-          <p className="font-inter text-sm text-white/70 leading-normal">
-            {displaySummary}
-          </p>
-          {/* Footer: timestamp + sync button */}
-          <div className="flex items-center gap-3 mt-2">
-            {displayTime && (
-              <span className="font-inter text-[11px] text-stadium-muted">
-                {t("generatedAt", { time: formatDigestTime(displayTime) })}
-              </span>
-            )}
-            <button
-              onClick={async () => {
-                setIsRefreshing(true);
-                setError(null);
-                try {
-                  const result = await refreshDigest();
-                  if (result.ok) {
-                    if (result.title) setDisplayTitle(result.title);
-                    if (result.summary) setDisplaySummary(result.summary);
-                    if (result.generatedAt) setDisplayTime(result.generatedAt);
-                  } else {
-                    setError(result.error || "Failed");
-                  }
-                } catch (err) {
-                  setError(err instanceof Error ? err.message : "Network error");
-                } finally {
-                  setIsRefreshing(false);
-                }
-              }}
-              disabled={isRefreshing}
-              className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-wider text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-              {isRefreshing ? t("syncing") : t("refresh")}
-            </button>
-            {error && (
-              <span className="inline-flex items-center gap-1 font-inter text-[11px] text-red-400">
-                <AlertCircle className="w-3 h-3" /> {error}
-              </span>
-            )}
-          </div>
+      {/* Dismiss button — top right */}
+      <button
+        onClick={() => { setDismissed(true); localStorage.setItem(DISMISSED_KEY, props.date); }}
+        className="absolute top-2.5 right-2.5 text-stadium-muted/40 hover:text-white transition-colors cursor-pointer z-10"
+        aria-label="Dismiss"
+      >
+        <X className="w-4 h-4" />
+      </button>
+
+      <div className="px-4 py-3 pr-10">
+        {/* Title + badge */}
+        <div className="flex items-baseline gap-2 flex-wrap mb-1.5">
+          <h3 className="font-bebas text-xl sm:text-2xl text-white tracking-wider leading-none">
+            {displayTitle}
+          </h3>
+          <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-[0.2em] text-lfc-red shrink-0 translate-y-px">
+            <Sparkles className="w-3 h-3" />
+            {t("badge")}
+          </span>
         </div>
 
-        {/* Right: action sidebar */}
-        <div className="shrink-0 border-l border-stadium-border/40 flex flex-col items-end justify-between px-3 py-3 gap-3">
-          {/* Dismiss */}
-          <button
-            onClick={() => { setDismissed(true); localStorage.setItem(DISMISSED_KEY, props.date); }}
-            className="text-stadium-muted/40 hover:text-white transition-colors cursor-pointer"
-            aria-label="Dismiss"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        {/* Summary */}
+        <p className="font-inter text-sm text-white/70 leading-relaxed line-clamp-3 sm:line-clamp-none">
+          {displaySummary}
+        </p>
 
-          {/* Read full */}
+        {/* Footer: actions row */}
+        <div className="flex items-center gap-3 mt-3 flex-wrap">
           <Link
             href={`/news/digest/${props.date}`}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lfc-red font-barlow font-bold text-[11px] uppercase tracking-wider text-white hover:bg-lfc-red/80 transition-all duration-200 whitespace-nowrap"
           >
             {t("readFull")} <ArrowRight className="w-3 h-3" />
           </Link>
+          <button
+            onClick={async () => {
+              setIsRefreshing(true);
+              setError(null);
+              try {
+                const result = await refreshDigest();
+                if (result.ok) {
+                  if (result.title) setDisplayTitle(result.title);
+                  if (result.summary) setDisplaySummary(result.summary);
+                  if (result.generatedAt) setDisplayTime(result.generatedAt);
+                } else {
+                  setError(result.error || "Failed");
+                }
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Network error");
+              } finally {
+                setIsRefreshing(false);
+              }
+            }}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-wider text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? t("syncing") : t("refresh")}
+          </button>
+          {displayTime && (
+            <span className="font-inter text-[11px] text-stadium-muted">
+              {t("generatedAt", { time: formatDigestTime(displayTime) })}
+            </span>
+          )}
+          {error && (
+            <span className="inline-flex items-center gap-1 font-inter text-[11px] text-red-400">
+              <AlertCircle className="w-3 h-3" /> {error}
+            </span>
+          )}
         </div>
       </div>
     </div>

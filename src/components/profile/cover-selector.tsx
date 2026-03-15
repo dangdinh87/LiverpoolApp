@@ -9,84 +9,63 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/stores/toast-store";
 
-// Curated high-res landscape covers — dark tones prioritized, width >= 1600
+// Default hero background — must match DEFAULT_HERO_BG in hero.tsx
+const DEFAULT_COVER_URL = "/assets/lfc/stadium/bg_3.jpg";
+
+// Hero background presets — curated high-quality Anfield/Liverpool images
 const COVER_PRESETS = [
-  // === Dark / Night / Moody (best for hero overlay) ===
+  // === Default first ===
   {
-    id: "anfield-sunset",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477604/lfc-gallery/unsplash-anfield-aerial-sunset.jpg",
-    alt: "Aerial view of Anfield at sunset",
+    id: "dalglish-stand-matchday",
+    url: DEFAULT_COVER_URL,
+    alt: "Sir Kenny Dalglish Stand on matchday",
+    isDefault: true,
   },
+  {
+    id: "kop-flags-night",
+    url: "/assets/lfc/stadium/bg_1.jpg",
+    alt: "The Kop flags & banners at night",
+  },
+  {
+    id: "ynwa-scarves-night",
+    url: "/assets/lfc/stadium/bg_2.jpg",
+    alt: "YNWA scarves — The Kop at night",
+  },
+  {
+    id: "anfield-aerial-dusk",
+    url: "/assets/lfc/stadium/bg_4.jpg",
+    alt: "Anfield aerial view at dusk",
+  },
+  {
+    id: "anfield-panorama-interior",
+    url: "/assets/lfc/stadium/bg_5.jpg",
+    alt: "Anfield Stadium panoramic interior",
+  },
+  {
+    id: "anfield-pitch-kop-view",
+    url: "/assets/lfc/stadium/bg_6.jpg",
+    alt: "Anfield pitch from The Kop end",
+  },
+  {
+    id: "champions-parade-crowd",
+    url: "/assets/lfc/stadium/bg_7.jpg",
+    alt: "Champions of Europe victory parade",
+  },
+  {
+    id: "kop-matchday-flags",
+    url: "/assets/lfc/stadium/bg_8.jpg",
+    alt: "The Kop matchday with flags",
+  },
+  // === Best Cloudinary gallery picks ===
   {
     id: "anfield-matchday",
     url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477627/lfc-gallery/unsplash-anfield-matchday-atmosphere.jpg",
-    alt: "Anfield full of fans on matchday",
-  },
-  {
-    id: "anfield-cloudy",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477607/lfc-gallery/unsplash-anfield-cloudy-sky.jpg",
-    alt: "Anfield with cloudy sky",
-  },
-  {
-    id: "anfield-players-pitch",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477631/lfc-gallery/unsplash-anfield-players-on-pitch.jpg",
-    alt: "Players on the Anfield pitch",
-  },
-  {
-    id: "anfield-empty-red-seats",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477661/lfc-gallery/pexels-anfield-empty-red-seats.jpg",
-    alt: "Empty Anfield with iconic red seats and pitch",
-  },
-  {
-    id: "anfield-gates",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477667/lfc-gallery/pexels-anfield-gates-sunrays.jpg",
-    alt: "Shankly Gates with sunrays",
-  },
-  {
-    id: "anfield-red-seats",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477670/lfc-gallery/pexels-anfield-red-seats-numbered.jpg",
-    alt: "Close-up of numbered red seats at Anfield",
+    alt: "Anfield full of fans on matchday night",
   },
   {
     id: "anfield-lfc-seats",
     url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477658/lfc-gallery/pexels-anfield-lfc-letters-seats.jpg",
     alt: "Anfield seats spelling LFC",
-  },
-  {
-    id: "champions-league-trophy",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477731/lfc-gallery/unsplash-champions-league-trophy.jpg",
-    alt: "UEFA Champions League trophy",
-  },
-  {
-    id: "anfield-exterior-brick",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477620/lfc-gallery/unsplash-anfield-exterior-brick-crest.jpg",
-    alt: "Anfield brick building with crest",
-  },
-  // === Medium tone ===
-  {
-    id: "anfield-empty-pitch",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477617/lfc-gallery/unsplash-anfield-empty-pitch.jpg",
-    alt: "Empty Anfield with soccer field",
-  },
-  {
-    id: "anfield-exterior-fans",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477638/lfc-gallery/unsplash-anfield-exterior-fans-walking.jpg",
-    alt: "Anfield exterior with fans",
-  },
-  {
-    id: "anfield-green-field",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477600/lfc-gallery/unsplash-anfield-green-field-red-seats.jpg",
-    alt: "Anfield with green field and red seats",
-  },
-  {
-    id: "anfield-aerial",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477613/lfc-gallery/unsplash-anfield-aerial-surroundings.jpg",
-    alt: "Aerial view of Anfield",
-  },
-  {
-    id: "anfield-stadium-field",
-    url: "https://res.cloudinary.com/darlrynqm/image/upload/v1773477597/lfc-gallery/unsplash-anfield-stadium-field-seating.jpg",
-    alt: "Anfield with field and seating",
   },
 ] as const;
 
@@ -153,6 +132,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
         {COVER_PRESETS.map((preset) => {
           const isActive = selected === preset.url;
+          const isDefault = "isDefault" in preset && preset.isDefault;
           return (
             <motion.button
               key={preset.id}
@@ -163,7 +143,9 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
                 "relative aspect-[16/9] overflow-hidden border-2 transition-all cursor-pointer group",
                 isActive
                   ? "border-lfc-red ring-1 ring-lfc-red/50"
-                  : "border-stadium-border hover:border-white/40",
+                  : isDefault
+                    ? "border-lfc-gold/50 hover:border-lfc-gold"
+                    : "border-stadium-border hover:border-white/40",
                 isPending && "opacity-50 pointer-events-none"
               )}
             >
@@ -176,6 +158,12 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
                 unoptimized
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+              {/* Default badge */}
+              {isDefault && !isActive && (
+                <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-lfc-gold/90 text-black text-[9px] font-barlow font-bold uppercase tracking-wider">
+                  {t("coverDefault")}
+                </span>
+              )}
               {isActive && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                   <div className="bg-lfc-red p-1">

@@ -140,7 +140,7 @@ export default async function RootLayout({
           <QueryProvider>
             <NextIntlClientProvider messages={messages}>
               <NavbarAuth />
-              <main>{children}</main>
+              <main className="min-h-screen">{children}</main>
               <Footer />
               <GlobalToast />
               <GlobalChat />

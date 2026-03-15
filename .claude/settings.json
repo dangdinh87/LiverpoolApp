@@ -28,7 +28,12 @@
       "mcp__supabase__search_docs",
       "WebFetch(domain:www.pinterest.com)",
       "WebFetch(domain:unsplash.com)",
-      "WebFetch(domain:www.pexels.com)"
+      "WebFetch(domain:www.pexels.com)",
+      "WebFetch(domain:highlightly.net)",
+      "WebFetch(domain:api.sofascore.com)",
+      "WebFetch(domain:tommhe14.github.io)",
+      "WebFetch(domain:sofascore.helpscoutdocs.com)",
+      "WebFetch(domain:scraperfc.readthedocs.io)"
     ]
   }
 }

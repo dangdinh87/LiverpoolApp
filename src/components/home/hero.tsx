@@ -77,7 +77,7 @@ const LINES = [
   { words: ["WALK", "ALONE"], isRed: true, startIdx: "YOU'LLNEVER".length },
 ] as const;
 
-const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg.avif";
+const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg_3.jpg";
 
 interface HeroProps {
   backgroundUrl?: string;
@@ -89,11 +89,14 @@ export function Hero({ backgroundUrl }: HeroProps) {
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden snap-start">
       {/* Background image with slow zoom */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-[subtleZoom_25s_infinite_alternate]"
-        style={{
-          backgroundImage: `url('${heroImage}')`,
-        }}
+      <Image
+        src={heroImage}
+        alt="Anfield Stadium"
+        fill
+        priority
+        className="object-cover object-center"
+        sizes="100vw"
+        quality={80}
       />
 
       {/* Lighter overlays — let more image show through */}
@@ -101,14 +104,6 @@ export function Hero({ backgroundUrl }: HeroProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-stadium-bg/60 via-transparent to-transparent h-28" />
       <div className="absolute inset-0 bg-black/10" />
 
-      {/* Large watermark text in the background */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-        <span
-          className="font-bebas text-[20vw] text-white/5 leading-none tracking-[0.15em] select-none whitespace-nowrap"
-        >
-          LIVERPOOL
-        </span>
-      </div>
 
       {/* Red accent line at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-lfc-red to-transparent" />
