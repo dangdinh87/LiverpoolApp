@@ -4,7 +4,8 @@ import { getNewsFromDB } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("News.metadata");
@@ -40,6 +41,10 @@ export default async function NewsPage() {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "News", url: getCanonical("/news") },
+      ])} />
       {/* Hero Banner — compact, with pt for navbar clearance */}
       <div className="relative min-h-[160px] flex items-end pt-16">
         <div

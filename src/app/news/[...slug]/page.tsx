@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
 import { scrapeArticle, getNewsFromDB } from "@/lib/news";
-import { getHreflangAlternates } from "@/lib/seo";
+import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
@@ -233,6 +234,24 @@ export default async function ArticlePage({
     <div className="min-h-screen">
       <ReadingProgress />
       <ReadTracker articleUrl={url} />
+      {content && (
+        <JsonLd data={[
+          buildBreadcrumbJsonLd([
+            { name: "Home", url: getCanonical("/") },
+            { name: "News", url: getCanonical("/news") },
+            { name: content.title, url: getCanonical(`/news/${slug.join("/")}`) },
+          ]),
+          buildNewsArticleJsonLd({
+            title: content.title,
+            description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
+            url: getCanonical(`/news/${slug.join("/")}`),
+            image: content.heroImage,
+            author: content.author,
+            publishedAt: content.publishedAt,
+            sourceName: content.sourceName,
+          }),
+        ]} />
+      )}
 
       {/* Hero Image — full viewport */}
       {content.heroImage && (

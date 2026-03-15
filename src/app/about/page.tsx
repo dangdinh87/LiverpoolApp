@@ -17,7 +17,8 @@ import {
   Shield,
 } from "lucide-react";
 import { MomoModal } from "./momo-modal";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("About.metadata");
@@ -53,6 +54,10 @@ export default async function AboutPage() {
 
   return (
     <main className="min-h-screen bg-stadium-bg text-white pt-24 pb-32">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "About", url: getCanonical("/about") },
+      ])} />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
         {/* ── Header ── */}
         <div>

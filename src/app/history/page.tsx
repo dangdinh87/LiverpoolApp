@@ -16,7 +16,8 @@ import { ManagerAvatar } from "@/components/history/manager-avatar";
 import { StadiumShowcase } from "@/components/history/stadium-showcase";
 import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink, Camera } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("History.metadata");
@@ -387,6 +388,10 @@ export default async function HistoryPage({
 
   return (
     <div className="min-h-screen bg-stadium-bg text-white">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "History", url: getCanonical("/history") },
+      ])} />
       {/* ── Hero ── */}
       <div className="relative h-[380px] md:h-[420px] pt-28 flex items-end overflow-hidden">
         <div

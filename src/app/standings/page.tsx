@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { getStandings } from "@/lib/football";
 import { StandingsTable } from "@/components/standings/standings-table";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
   const t = await getTranslations("Standings.metadata");
@@ -21,6 +22,10 @@ export default async function StandingsPage() {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "Standings", url: getCanonical("/standings") },
+      ])} />
       {/* Hero */}
       <div className="relative h-[40vh] min-h-[320px] flex items-end">
         <div

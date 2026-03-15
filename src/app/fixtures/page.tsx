@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { getFixtures } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
   const t = await getTranslations("Fixtures.metadata");
@@ -18,6 +19,10 @@ export default async function FixturesPage() {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "Fixtures", url: getCanonical("/fixtures") },
+      ])} />
       {/* Hero */}
       <div className="relative h-[40vh] min-h-[320px] flex items-end">
         <div

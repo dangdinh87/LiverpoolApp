@@ -6,7 +6,8 @@ import { getTranslations } from "next-intl/server";
 import { getDigestByDate } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 type Params = Promise<{ date: string }>;
 
@@ -61,6 +62,19 @@ export default async function DigestPage({
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={[
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: getCanonical("/") },
+          { name: "News", url: getCanonical("/news") },
+          { name: "Daily Digest", url: getCanonical(`/news/digest/${date}`) },
+        ]),
+        buildNewsArticleJsonLd({
+          title: digest.title,
+          description: digest.summary.slice(0, 160),
+          url: getCanonical(`/news/digest/${date}`),
+          publishedAt: digest.generated_at,
+        }),
+      ]} />
       {/* Header */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-8">
         <Link

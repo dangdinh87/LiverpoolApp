@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, buildImageGalleryJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { GalleryPage as GalleryClient } from "@/components/gallery/gallery-page";
 import { listGalleryImagesFromDB, getGalleryCategoryCounts } from "@/lib/gallery/queries";
 import { isAdminEmail } from "@/lib/constants";
@@ -66,6 +67,20 @@ export default async function GalleryRoute() {
 
   return (
     <div className="min-h-screen bg-stadium-bg text-white pt-20">
+      <JsonLd data={[
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: getCanonical("/") },
+          { name: "Gallery", url: getCanonical("/gallery") },
+        ]),
+        buildImageGalleryJsonLd(
+          images.slice(0, 20).map((img) => ({
+            src: img.src,
+            alt: img.alt,
+            width: img.width,
+            height: img.height,
+          }))
+        ),
+      ]} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <GalleryClient
           images={images}

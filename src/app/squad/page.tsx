@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { SquadGrid } from "@/components/squad/squad-grid";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Squad.metadata");
@@ -18,6 +19,10 @@ export default async function SquadPage() {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "Squad", url: getCanonical("/squad") },
+      ])} />
       {/* Hero — compact */}
       <div className="relative h-[25vh] min-h-[200px] flex items-end overflow-hidden">
         <div

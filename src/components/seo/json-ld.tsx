@@ -12,10 +12,16 @@ function safeJsonStringify(data: unknown): string {
  * Used by all pages to add per-page structured data (BreadcrumbList, NewsArticle, etc.)
  */
 export function JsonLd({ data }: { data: object | object[] }) {
+  const items = Array.isArray(data) ? data : [data];
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: safeJsonStringify(data) }}
-    />
+    <>
+      {items.map((item, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonStringify(item) }}
+        />
+      ))}
+    </>
   );
 }

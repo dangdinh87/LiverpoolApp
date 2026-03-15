@@ -8,7 +8,8 @@ import { FormTimeline } from "@/components/stats/form-timeline";
 import { CompetitionBreakdown } from "@/components/stats/competition-breakdown";
 import { RecordsMilestones } from "@/components/stats/records-milestones";
 import { SeasonSelector } from "@/components/stats/season-selector";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
   const t = await getTranslations("Stats.metadata");
@@ -44,6 +45,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: "Stats", url: getCanonical("/stats") },
+      ])} />
       {/* ─── Hero ─── */}
       <div className="relative h-[40vh] min-h-[320px] flex items-end">
         <div

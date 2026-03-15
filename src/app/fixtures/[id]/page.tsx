@@ -17,6 +17,8 @@ import {
 import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
+import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +64,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
   const [events, lineups, providerStats, espnDetail] = await Promise.all([
     isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
-    getFixtureLineups(fixtureId),
+    getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
     isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
   ]);
@@ -79,8 +81,11 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     s.team.id === teams.away.id || s.team.name.toLowerCase().includes(teams.away.name.toLowerCase().split(" ")[0].toLowerCase())
   );
 
-  const homeLineup = lineups.find((l) => l.team.id === teams.home.id);
-  const awayLineup = lineups.find((l) => l.team.id === teams.away.id);
+  // Match lineups by team ID first, then by name (IDs differ across FDO/ESPN providers)
+  const homeLineup = lineups.find((l) => l.team.id === teams.home.id)
+    ?? lineups.find((l) => l.team.name.toLowerCase().includes(teams.home.name.toLowerCase().split(" ")[0].toLowerCase()));
+  const awayLineup = lineups.find((l) => l.team.id === teams.away.id)
+    ?? lineups.find((l) => l.team.name.toLowerCase().includes(teams.away.name.toLowerCase().split(" ")[0].toLowerCase()));
 
   const htHome = score.halftime.home;
   const htAway = score.halftime.away;
@@ -118,6 +123,25 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen pt-24 pb-16">
+      <JsonLd data={[
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: getCanonical("/") },
+          { name: "Fixtures", url: getCanonical("/fixtures") },
+          { name: `${teams.home.name} vs ${teams.away.name}`, url: getCanonical(`/fixtures/${id}`) },
+        ]),
+        buildSportsEventJsonLd({
+          name: `${teams.home.name} vs ${teams.away.name}`,
+          startDate: f.date,
+          venue: f.venue?.name,
+          venueCity: f.venue?.city,
+          homeTeam: teams.home.name,
+          awayTeam: teams.away.name,
+          competition: league.name,
+          homeScore: goals?.home,
+          awayScore: goals?.away,
+          status: f.status.short,
+        }),
+      ]} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <Link
           href="/season"
@@ -290,14 +314,21 @@ export default async function FixtureDetailPage({ params }: PageProps) {
         )}
 
         {/* ─── Lineups (collapsible) ─── */}
-        {(homeLineup || awayLineup) && (
-          <DetailSection title={tDetail("lineups")}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-              {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-            </div>
-          </DetailSection>
-        )}
+        {(homeLineup || awayLineup) && (() => {
+          // Confirmed if match finished/live, or <1h before kickoff
+          const msToKickoff = date.getTime() - Date.now();
+          const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
+          const lineupLabel = isConfirmed ? tDetail("lineupsConfirmed") : tDetail("lineupsPredicted");
+
+          return (
+            <DetailSection title={tDetail("lineups")} badge={lineupLabel} badgeConfirmed={isConfirmed}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+              </div>
+            </DetailSection>
+          );
+        })()}
       </div>
     </div>
   );
@@ -305,11 +336,23 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
 // ─── Collapsible section using native <details> ────────────────────────────
 
-function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+function DetailSection({ title, children, badge, badgeConfirmed }: { title: string; children: React.ReactNode; badge?: string; badgeConfirmed?: boolean }) {
   return (
     <details open className="group bg-stadium-surface border border-stadium-border mb-4">
       <summary className="flex items-center justify-between cursor-pointer p-4 sm:p-5 select-none list-none [&::-webkit-details-marker]:hidden">
-        <h2 className="font-bebas text-lg text-white tracking-wider">{title}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="font-bebas text-lg text-white tracking-wider">{title}</h2>
+          {badge && (
+            <span className={cn(
+              "px-2 py-0.5 text-[10px] font-barlow font-semibold uppercase tracking-wider border",
+              badgeConfirmed
+                ? "text-green-400 border-green-500/30 bg-green-500/10"
+                : "text-lfc-gold border-lfc-gold/30 bg-lfc-gold/10",
+            )}>
+              {badge}
+            </span>
+          )}
+        </div>
         <ChevronDown size={18} className="text-stadium-muted transition-transform group-open:rotate-180" />
       </summary>
       <div className="px-4 sm:px-5 pb-4 sm:pb-5">
@@ -430,44 +473,66 @@ function StatsComparison({ home, away }: { home: FixtureTeamStats; away: Fixture
 function LineupSection({ lineup, subsLabel, coachLabel }: { lineup: FixtureLineup; subsLabel: string; coachLabel: string }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-2">
-        <div className="relative w-4 h-4 shrink-0">
-          <Image
-            src={lineup.team.id === LFC_ID ? "/assets/lfc/crest.webp" : lineup.team.logo}
-            alt="" fill sizes="16px" className="object-contain"
-          />
-        </div>
-        <span className="font-inter font-semibold text-white text-sm">{lineup.team.name}</span>
-        <span className="font-barlow text-lfc-gold text-xs ml-auto">{lineup.formation}</span>
+      {/* Team header */}
+      <div className="flex items-center gap-2.5 mb-3 pb-2 border-b border-stadium-border/50">
+        {(lineup.team.id === LFC_ID || lineup.team.logo) && (
+          <div className="relative w-5 h-5 shrink-0">
+            <Image
+              src={lineup.team.id === LFC_ID ? "/assets/lfc/crest.webp" : lineup.team.logo}
+              alt="" fill sizes="20px" className="object-contain"
+            />
+          </div>
+        )}
+        <span className="font-inter font-bold text-white text-sm">{lineup.team.name}</span>
+        <span className="font-bebas text-lfc-gold text-base tracking-wider ml-auto">{lineup.formation}</span>
       </div>
 
-      <div className="space-y-0.5 mb-2">
+      {/* Starting XI */}
+      <div className="space-y-0.5 mb-4">
         {lineup.startXI.map(({ player: p }) => (
-          <div key={p.id} className="flex items-center gap-2 text-sm font-inter py-0.5">
-            <span className="w-5 text-center font-barlow text-stadium-muted text-xs">{p.number}</span>
-            <span className="text-white">{p.name}</span>
-            <span className="text-stadium-muted text-[10px] ml-auto">{posLabel(p.pos)}</span>
+          <div key={p.id} className="flex items-center gap-3 py-1.5 hover:bg-stadium-surface2/50 px-1 -mx-1 transition-colors">
+            <span className="w-7 h-7 flex items-center justify-center font-bebas text-base text-white/90 bg-stadium-surface2 border border-stadium-border/50 shrink-0">
+              {p.number}
+            </span>
+            <span className="text-white font-inter text-sm font-medium">{p.name}</span>
+            <span className={cn(
+              "text-[10px] font-barlow font-semibold uppercase tracking-wider ml-auto px-1.5 py-0.5",
+              p.pos === "G" && "text-yellow-400 bg-yellow-400/10",
+              p.pos === "D" && "text-blue-400 bg-blue-400/10",
+              p.pos === "M" && "text-green-400 bg-green-400/10",
+              p.pos === "F" && "text-lfc-red bg-lfc-red/10",
+            )}>
+              {posLabel(p.pos)}
+            </span>
           </div>
         ))}
       </div>
 
+      {/* Substitutes */}
       {lineup.substitutes.length > 0 && (
-        <>
-          <p className="font-barlow text-stadium-muted text-[10px] uppercase tracking-wider mb-0.5">{subsLabel}</p>
+        <div className="border-t border-stadium-border/50 pt-3">
+          <p className="font-barlow text-stadium-muted text-xs uppercase tracking-wider mb-2 font-semibold">{subsLabel}</p>
           <div className="space-y-0.5">
             {lineup.substitutes.map(({ player: p }) => (
-              <div key={p.id} className="flex items-center gap-2 text-sm font-inter py-0.5">
-                <span className="w-5 text-center font-barlow text-stadium-muted text-xs">{p.number}</span>
-                <span className="text-stadium-muted">{p.name}</span>
+              <div key={p.id} className="flex items-center gap-3 py-1 px-1 -mx-1">
+                <span className="w-6 h-6 flex items-center justify-center font-bebas text-sm text-stadium-muted bg-stadium-surface2/50 border border-stadium-border/30 shrink-0">
+                  {p.number}
+                </span>
+                <span className="text-stadium-muted font-inter text-sm">{p.name}</span>
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
 
-      <p className="mt-2 text-xs font-inter text-stadium-muted">
-        {coachLabel}: <span className="text-white">{lineup.coach.name}</span>
-      </p>
+      {/* Coach */}
+      {lineup.coach.name && (
+        <div className="border-t border-stadium-border/50 pt-2 mt-3">
+          <p className="text-xs font-inter text-stadium-muted">
+            {coachLabel}: <span className="text-white font-medium">{lineup.coach.name}</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

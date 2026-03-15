@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
 import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
-import { getHreflangAlternates } from "@/lib/seo";
+import { getHreflangAlternates, buildBreadcrumbJsonLd, buildPersonJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 
 // ─── Country flag emoji mapping ──────────────────────────────────────────────
 
@@ -141,6 +142,21 @@ export default async function PlayerPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={[
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: getCanonical("/") },
+          { name: "Squad", url: getCanonical("/squad") },
+          { name: player.name, url: getCanonical(`/player/${player.slug}`) },
+        ]),
+        buildPersonJsonLd({
+          name: player.name,
+          birthDate: player.dateOfBirth,
+          nationality: player.nationality,
+          image: player.photoLg,
+          url: getCanonical(`/player/${player.slug}`),
+          position: player.position,
+        }),
+      ]} />
       {/* ═══════════════════════════════════════════════════════════════════════
           HERO — body shot + key info overlay
          ═══════════════════════════════════════════════════════════════════════ */}
