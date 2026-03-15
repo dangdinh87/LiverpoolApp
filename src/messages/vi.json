@@ -32,7 +32,9 @@
       "fixtures": "Lịch thi đấu",
       "gallery": "Thư viện ảnh",
       "clubOverview": "Tổng quan",
-      "clubGallery": "Thư viện ảnh"
+      "clubGallery": "Thư viện ảnh",
+      "matchSoon": "Sắp đá",
+      "matchLive": "Trực tiếp"
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -780,6 +782,8 @@
       "matchTimeline": "Diễn biến trận đấu",
       "statistics": "Thống kê",
       "lineups": "Đội hình",
+      "lineupsConfirmed": "Chính thức",
+      "lineupsPredicted": "Dự kiến",
       "substitutes": "Cầu thủ dự bị",
       "coach": "HLV"
     }
@@ -891,6 +895,7 @@
     "coverReset": "Đặt lại mặc định",
     "coverResetDone": "Đã đặt lại ảnh nền mặc định.",
     "coverError": "Không thể cập nhật ảnh nền.",
+    "coverDefault": "Mặc định",
     "streakCount": "Chuỗi {count} ngày",
     "streakLabel": "Số ngày truy cập liên tiếp"
   },
@@ -906,6 +911,7 @@
     "kickoff": "Giao bóng {time}",
     "halftimeShort": "H1",
     "locale_code": "vi-VN",
+    "soon": "SẮP ĐÁ",
     "countdown": {
       "inMins": "sau {n} phút",
       "inHours": "sau {n} giờ {m} phút",

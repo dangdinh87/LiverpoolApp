@@ -3,7 +3,7 @@
 // plus venue, attendance, referee, and 28 per-team match statistics.
 
 import "server-only";
-import type { Fixture, FixtureEvent, FixtureTeamStats, FixtureStatItem } from "@/lib/types/football";
+import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats, FixtureStatItem } from "@/lib/types/football";
 
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const ESPN_LFC_ID = "364"; // Liverpool FC in ESPN
@@ -54,6 +54,20 @@ interface EspnBoxscoreTeam {
   statistics: { name: string; displayValue: string }[];
 }
 
+interface EspnRosterEntry {
+  starter: boolean;
+  jersey: string;
+  athlete: { id: string; displayName: string };
+  position: { abbreviation: string; name?: string };
+}
+
+interface EspnRosterTeam {
+  team: { id: string; displayName: string; logo?: string };
+  formation?: string;
+  coach?: { displayName: string }[];
+  roster: EspnRosterEntry[];
+}
+
 interface EspnSummary {
   keyEvents?: EspnKeyEvent[];
   boxscore?: {
@@ -64,6 +78,7 @@ interface EspnSummary {
     attendance?: number;
     officials?: { displayName?: string }[];
   };
+  rosters?: EspnRosterTeam[];
 }
 
 // ─── Match detail type (venue, attendance, referee, stats) ──────────────────
@@ -113,12 +128,39 @@ async function buildDateToEspnId(): Promise<Map<string, string>> {
   return dateMap;
 }
 
+// ─── Scoreboard fallback: find LFC match on a specific date ─────────────────
+
+/** Check today's scoreboard for a Liverpool match (covers matches not yet in team schedule). */
+async function findLfcOnScoreboard(dateKey: string): Promise<string | null> {
+  const yyyymmdd = dateKey.replace(/-/g, "");
+  for (const slug of LEAGUE_SLUGS) {
+    try {
+      const data = await espnFetch<{ events: EspnScheduleEvent[] }>(
+        `${ESPN_BASE}/${slug}/scoreboard?dates=${yyyymmdd}`,
+        300, // 5min cache — scoreboard updates frequently
+      );
+      for (const ev of data.events) {
+        const comp = ev.competitions[0];
+        const teamIds = comp?.competitors?.map((c) => c.team?.id) ?? [];
+        if (teamIds.includes(ESPN_LFC_ID)) return ev.id;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 // ─── ESPN ID resolver (shared) ──────────────────────────────────────────────
 
 async function resolveEspnId(fixtureDate: string): Promise<string | null> {
   const dateKey = fixtureDate.slice(0, 10);
+  // Try team schedule first (covers past + near-future matches)
   const dateMap = await buildDateToEspnId();
-  return dateMap.get(dateKey) ?? null;
+  const fromSchedule = dateMap.get(dateKey);
+  if (fromSchedule) return fromSchedule;
+  // Fallback: check scoreboard (covers today's & upcoming matches not yet in schedule)
+  return findLfcOnScoreboard(dateKey);
 }
 
 async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
@@ -129,7 +171,7 @@ async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
         3600, // 1h cache
       );
       // Verify it has content (keyEvents or boxscore)
-      if (data.keyEvents?.length || data.boxscore?.teams?.length) {
+      if (data.keyEvents?.length || data.boxscore?.teams?.length || data.rosters?.length) {
         return data;
       }
     } catch {
@@ -474,6 +516,76 @@ export async function getEspnCupFixtures(): Promise<Fixture[]> {
 
   return fixtures;
 }
+
+// ─── Position mapping: ESPN abbreviation → canonical pos ────────────────────
+
+function mapEspnPosition(abbr: string | undefined): string {
+  if (!abbr || abbr === "SUB") return "M"; // bench players have "SUB" — no specific position
+  if (abbr === "G") return "G";
+  if (abbr.includes("D") || abbr.includes("B")) return "D"; // D, CD, CB, LB, RB
+  if (abbr.includes("M")) return "M"; // M, CM, CDM, CAM, LM, RM
+  if (abbr.includes("F") || abbr.includes("W") || abbr === "ST") return "F"; // F, CF, FW, LW, RW, ST
+  return "M"; // safe default
+}
+
+// ─── Public: Fetch match lineups from ESPN roster data ──────────────────────
+
+/**
+ * Fetch match lineups (formation, starting XI, bench, coach) from ESPN
+ * for a Liverpool fixture. Uses the same summary endpoint already cached.
+ */
+export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureLineup[]> {
+  try {
+    const espnId = await resolveEspnId(fixtureDate);
+    if (!espnId) return [];
+
+    const summary = await fetchSummary(espnId);
+    if (!summary?.rosters?.length) return [];
+
+    return summary.rosters.map((r) => {
+      const starters = r.roster.filter((p) => p.starter);
+      const subs = r.roster.filter((p) => !p.starter);
+
+      return {
+        team: {
+          id: espnTeamId(r.team.id),
+          name: r.team.displayName,
+          logo: r.team.logo ?? "",
+          colors: null,
+        },
+        formation: r.formation ?? "",
+        startXI: starters.map((p) => ({
+          player: {
+            id: parseInt(p.athlete.id, 10) || 0,
+            name: p.athlete.displayName,
+            number: parseInt(p.jersey, 10) || 0,
+            pos: mapEspnPosition(p.position.abbreviation),
+            grid: null,
+          },
+        })),
+        substitutes: subs.map((p) => ({
+          player: {
+            id: parseInt(p.athlete.id, 10) || 0,
+            name: p.athlete.displayName,
+            number: parseInt(p.jersey, 10) || 0,
+            pos: mapEspnPosition(p.position.abbreviation),
+            grid: null,
+          },
+        })),
+        coach: {
+          id: 0,
+          name: r.coach?.[0]?.displayName ?? "",
+          photo: "",
+        },
+      };
+    });
+  } catch (err) {
+    console.error("[espn] getEspnMatchLineups failed:", err);
+    return [];
+  }
+}
+
+// ─── Public: Fetch match detail (venue, attendance, referee, stats) ────────
 
 export async function getEspnMatchDetail(fixtureDate: string): Promise<EspnMatchDetail | null> {
   try {

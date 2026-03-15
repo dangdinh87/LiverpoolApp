@@ -7,7 +7,7 @@ import type { Standing } from "@/lib/types/football";
 import { FdoProvider } from "./fdo-provider";
 import { getFdoStandings, getFdoUclStandings } from "./fdo-standings";
 import { getFdoLfcFixtures, getFdoCoach } from "./fdo-matches";
-import { getEspnMatchEvents, getEspnMatchDetail, getEspnCupFixtures } from "./espn-events";
+import { getEspnMatchEvents, getEspnMatchDetail, getEspnMatchLineups, getEspnCupFixtures } from "./espn-events";
 export type { EspnMatchDetail } from "./espn-events";
 export { computeSeasonStats } from "./season-stats";
 export { getFplPlayerStats, getAllFplStats } from "./fpl-stats";
@@ -97,7 +97,18 @@ export const getFixtureEvents = cache(async (id: number, fixtureDate?: string) =
   return provider.getFixtureEvents(id);
 });
 
-export const getFixtureLineups = cache((id: number) => provider.getFixtureLineups(id));
+// Fixture lineups: ESPN (has roster data) → provider fallback
+export const getFixtureLineups = cache(async (id: number, fixtureDate?: string) => {
+  if (fixtureDate) {
+    try {
+      const espnLineups = await getEspnMatchLineups(fixtureDate);
+      if (espnLineups.length > 0) return espnLineups;
+    } catch (err) {
+      console.error("[football] ESPN lineups failed:", err);
+    }
+  }
+  return provider.getFixtureLineups(id);
+});
 export const getFixtureStatistics = cache((id: number) => provider.getFixtureStatistics(id));
 
 // Match detail: ESPN (venue, attendance, referee, stats)

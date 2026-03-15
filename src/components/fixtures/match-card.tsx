@@ -59,6 +59,7 @@ export function MatchCard({ fixture }: MatchCardProps) {
   const isFinished = f.status.short === "FT" || f.status.short === "AET" || f.status.short === "PEN";
   const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
   const isUpcoming = !isFinished && !isLive;
+  const isSoon = isUpcoming && (new Date(f.date).getTime() - Date.now()) <= 30 * 60_000 && (new Date(f.date).getTime() - Date.now()) > 0;
   const isLfc = (id: number) => id === 40;
   const teamLogo = (id: number, logo: string) => isLfc(id) ? "/assets/lfc/crest.webp" : logo;
 
@@ -99,6 +100,7 @@ export function MatchCard({ fixture }: MatchCardProps) {
         "bg-stadium-surface border border-stadium-border rounded-none",
         "hover:border-white/25 hover:bg-stadium-surface2 hover:shadow-[0_4px_30px_rgba(0,0,0,0.4)]",
         isLive && "border-lfc-red/40 shadow-[0_0_30px_rgba(200,16,46,0.12)]",
+        isSoon && "border-lfc-gold/30 shadow-[0_0_20px_rgba(246,235,97,0.08)]",
         isFinished && compCfg.glow,
       )}
     >
@@ -112,6 +114,7 @@ export function MatchCard({ fixture }: MatchCardProps) {
       {/* Result accent strip — with colored glow */}
       {isFinished && <div className={cn("absolute left-0 top-0 bottom-0 w-1", resultCfg.bg, resultCfg.glow)} />}
       {isLive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lfc-red animate-pulse" />}
+      {isSoon && <div className="absolute left-0 top-0 bottom-0 w-1 bg-lfc-gold animate-pulse" />}
 
       <div className="relative px-5 py-4">
         {/* Top bar: competition name + round + badges */}
@@ -147,8 +150,17 @@ export function MatchCard({ fixture }: MatchCardProps) {
             )}
 
             {isUpcoming && countdown && (
-              <span className="text-[11px] font-bebas tracking-widest leading-none text-stadium-muted">
+              <span className={cn(
+                "text-[11px] font-bebas tracking-widest leading-none",
+                isSoon ? "text-lfc-gold" : "text-stadium-muted",
+              )}>
                 {countdown.toUpperCase()}
+              </span>
+            )}
+            {isSoon && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-lfc-gold/15 border border-lfc-gold/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-lfc-gold animate-pulse" />
+                <span className="text-lfc-gold text-[10px] font-bebas tracking-wider leading-none">{t("soon")}</span>
               </span>
             )}
           </div>

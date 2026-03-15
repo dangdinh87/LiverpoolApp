@@ -31,7 +31,9 @@
       "fixtures": "Fixtures",
       "gallery": "Gallery",
       "clubOverview": "Overview",
-      "clubGallery": "Gallery"
+      "clubGallery": "Gallery",
+      "matchSoon": "Soon",
+      "matchLive": "Live"
     },
     "labels": {
       "opponent": "Opponent",
@@ -779,6 +781,8 @@
       "matchTimeline": "Match Timeline",
       "statistics": "Statistics",
       "lineups": "Lineups",
+      "lineupsConfirmed": "Confirmed",
+      "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
       "coach": "Coach"
     }
@@ -890,6 +894,7 @@
     "coverReset": "Reset to default",
     "coverResetDone": "Homepage background reset to default.",
     "coverError": "Failed to update background.",
+    "coverDefault": "Default",
     "streakCount": "{count} day streak",
     "streakLabel": "Daily visit streak"
   },
@@ -905,6 +910,7 @@
     "kickoff": "Kick-off {time}",
     "halftimeShort": "HT",
     "locale_code": "en-GB",
+    "soon": "SOON",
     "countdown": {
       "inMins": "in {n}m",
       "inHours": "in {n}h {m}m",

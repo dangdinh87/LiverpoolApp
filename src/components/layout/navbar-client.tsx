@@ -39,9 +39,11 @@ const NAV_LINKS = [
 interface NavbarClientProps {
   user: { id: string; email: string | null } | null;
   profile: UserProfile | null;
+  nextMatchDate?: string | null;
+  isMatchLive?: boolean;
 }
 
-export function NavbarClient({ user, profile }: NavbarClientProps) {
+export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -90,8 +92,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-stadium-bg/95 border-b border-stadium-border backdrop-blur-md"
-          : "bg-stadium-bg/80 border-b border-white/8 backdrop-blur-md"
+          ? "bg-stadium-bg border-b border-stadium-border"
+          : "bg-stadium-bg border-b border-white/8"
       )}
       style={{ top: "var(--live-banner-h, 0px)" }}
     >
@@ -121,9 +123,9 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               { href: "/", label: t("home") || "Home" },
               { href: "/news", label: t("news"), highlight: true },
               { href: "/squad", label: t("squad") },
-              { href: "/season", label: t("season") || "Season" },
+              { href: "/season", label: t("season") || "Season", matchSoon: !isMatchLive && !!nextMatchDate && (new Date(nextMatchDate).getTime() - Date.now()) <= 30 * 60_000 && (new Date(nextMatchDate).getTime() - Date.now()) > 0 },
               { href: "/stats", label: t("stats") || "Stats" },
-            ].map(({ href, label, highlight }) => {
+            ].map(({ href, label, highlight, matchSoon }) => {
               const basePath = href.split("?")[0];
               const isActive = basePath === "/"
                 ? pathname === "/"
@@ -140,8 +142,14 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                   >
                     {label}
                     {highlight && (
-                      <span className="absolute -top-1 -right-1 px-1 py-px text-[8px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase">
+                      <span className="absolute -top-2.5 -right-2 px-1.5 py-0.5 text-[9px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase">
                         {t("hot")}
+                      </span>
+                    )}
+                    {matchSoon && (
+                      <span className="absolute -top-2.5 -right-2 flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase whitespace-nowrap">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        {t("matchSoon")}
                       </span>
                     )}
                     {isActive && (
