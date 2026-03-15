@@ -19,12 +19,12 @@ export default async function SquadPage() {
   return (
     <div className="min-h-screen">
       {/* Hero */}
-      <div className="relative h-[50vh] min-h-[380px] flex items-end overflow-hidden">
+      <div className="relative h-[35vh] min-h-[280px] flex items-end overflow-hidden">
         {/* Background with subtle zoom */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-[subtleZoom_25s_infinite_alternate]"
           style={{
-            backgroundImage: "url('/assets/fan_made/background_1.jpg')",
+            backgroundImage: "url('/assets/lfc/stadium/anfield-pitch.webp')",
           }}
         />
         {/* Layered overlays for depth */}
@@ -33,7 +33,7 @@ export default async function SquadPage() {
         <div className="absolute inset-0 bg-black/15" />
 
         {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14 w-full">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 w-full">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-10 h-[1px] bg-lfc-red" />
             <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-xs font-bold">
@@ -57,7 +57,7 @@ export default async function SquadPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
         <SquadGrid players={squadPlayers} />
       </div>
     </div>

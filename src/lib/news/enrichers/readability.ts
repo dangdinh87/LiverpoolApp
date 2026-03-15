@@ -55,5 +55,10 @@ export function estimateReadingTime(text: string): number {
 
 // Re-export for use in article-extractor
 export function sanitizeText(html: string): string {
-  return sanitize(html, { allowedTags: [] });
+  return sanitize(html, { allowedTags: [] })
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'");
 }

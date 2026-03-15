@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
+import { getSiteSetting } from "@/lib/gallery/queries";
 import { Hero } from "@/components/home/hero";
 import { BentoGrid } from "@/components/home/bento-grid";
 import { NewsSection } from "@/components/home/news-section";
@@ -27,6 +28,7 @@ export default async function HomePage() {
   let standings: Awaited<ReturnType<typeof getStandings>> = [];
   let allNews: Awaited<ReturnType<typeof getNewsFromDB>> = [];
   let digest: Awaited<ReturnType<typeof getLatestDigest>> = null;
+  let heroBackgroundUrl: string | undefined;
   try {
     [fixtures, standings, allNews, digest] = await Promise.all([
       getFixtures(),
@@ -36,6 +38,23 @@ export default async function HomePage() {
     ]);
   } catch (err) {
     console.error("[homepage] Data fetch error:", err);
+  }
+
+  // Fetch hero background from site_settings
+  try {
+    const heroSetting = await getSiteSetting<{
+      gallery_image_id: string;
+      cloudinary_url: string;
+    }>("homepage_hero_image");
+    if (heroSetting?.cloudinary_url) {
+      // Optimize for hero size via Cloudinary transformation
+      heroBackgroundUrl = heroSetting.cloudinary_url.replace(
+        "/upload/",
+        "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/",
+      );
+    }
+  } catch {
+    // Fallback to default — no error needed
   }
 
   // Live match takes priority, otherwise earliest upcoming
@@ -53,7 +72,7 @@ export default async function HomePage() {
   return (
     <>
       <LiveMatchBanner fixtures={fixtures} />
-      <Hero />
+      <Hero backgroundUrl={heroBackgroundUrl} />
       <section className="py-10 pb-16">
         <NewsSection articles={allNews} digest={digest} />
       </section>

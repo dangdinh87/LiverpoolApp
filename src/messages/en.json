@@ -28,7 +28,10 @@
       "days": "days",
       "memberLogin": "Member Login",
       "standings": "Standings",
-      "fixtures": "Fixtures"
+      "fixtures": "Fixtures",
+      "gallery": "Gallery",
+      "clubOverview": "Overview",
+      "clubGallery": "Gallery"
     },
     "labels": {
       "opponent": "Opponent",
@@ -79,7 +82,19 @@
     "allNews": "All News",
     "squad": "Squad",
     "premierLeague": "Premier League",
-    "fullTable": "Full Table"
+    "fullTable": "Full Table",
+    "currentPosition": "Current position",
+    "points": "Points",
+    "goalDiff": "Goal diff",
+    "record": "Record",
+    "top4Gap": "Gap to top 4",
+    "leaderGap": "Gap to leader",
+    "leading": "Leading the table",
+    "unbeatenRun": "{count} unbeaten",
+    "winsLast5": "{count} wins in the last 5",
+    "toughRun": "Form needs a response",
+    "goalsFor": "Goals for",
+    "goalsAgainst": "Goals against"
   },
   "News": {
     "metadata": {
@@ -189,9 +204,15 @@
     "actions": {
       "like": "Like",
       "save": "Save",
+      "saved": "Saved",
+      "unsave": "Unsave",
       "share": "Share",
       "copied": "Copied",
-      "original": "Original"
+      "original": "Original",
+      "confirmUnsave": "Remove saved article?",
+      "confirmUnsaveDesc": "This article will be removed from your saved list.",
+      "articleSaved": "Article saved",
+      "articleUnsaved": "Article removed from saved"
     },
     "digest": {
       "badge": "AI Summary",
@@ -211,7 +232,11 @@
   "NextMatch": {
     "title": "Next Match",
     "live": "Live",
-    "noMatch": "No upcoming match"
+    "noMatch": "No upcoming match",
+    "today": "Today",
+    "home": "Home",
+    "away": "Away",
+    "round": "Round"
   },
   "LiveBanner": {
     "live": "LIVE",
@@ -541,7 +566,8 @@
       "masterminds": "Masterminds",
       "managers": "Great Managers",
       "immortals": "The Immortals",
-      "legends": "Legends"
+      "legends": "Legends",
+      "stadiumImages": "Stadium Images"
     },
     "facts": {
       "fullName": "Full Name",
@@ -786,6 +812,17 @@
     "favouritePlayers": "Favourite Players",
     "favouritePlayersEmpty": "No favourite players yet. Visit a player's page to add them.",
     "removeFav": "Remove",
+    "browseSquad": "Browse squad →",
+    "confirmRemoveFav": "Remove {name} from favourites?",
+    "confirmRemoveFavDesc": "You can always add them back later.",
+    "cancelAction": "Cancel",
+    "confirmAction": "Remove",
+    "favAdded": "{name} added to favourites",
+    "favRemoved": "{name} removed from favourites",
+    "favError": "Something went wrong. Please try again.",
+    "favourite": "Favourite",
+    "favourited": "Favourited",
+    "loginToFav": "Sign in to save favourites",
     "avatar": {
       "title": "Avatar",
       "upload": "Upload",
@@ -798,11 +835,20 @@
     "savedArticles": "Saved Articles",
     "savedArticlesEmpty": "No saved articles yet. Bookmark articles from the News page and they'll appear here.",
     "unsave": "Remove",
+    "confirmUnsave": "Remove saved article?",
+    "confirmUnsaveDesc": "This article will be removed from your saved list.",
     "savedAt": "Saved {date}",
     "viewArticle": "Read",
     "saveSuccess": "Article saved!",
     "unsaveSuccess": "Article removed from saved.",
-    "loginToSave": "Log in to save articles"
+    "loginToSave": "Log in to save articles",
+    "coverTitle": "Homepage Background",
+    "coverUpdated": "Homepage background updated!",
+    "coverReset": "Reset to default",
+    "coverResetDone": "Homepage background reset to default.",
+    "coverError": "Failed to update background.",
+    "streakCount": "{count} day streak",
+    "streakLabel": "Daily visit streak"
   },
   "Match": {
     "live": "LIVE",
@@ -920,5 +966,66 @@
   },
   "auth": {
     "pleaseLogin": "Please log in to continue"
+  },
+  "Gallery": {
+    "metadata": {
+      "title": "Gallery — Liverpool FC",
+      "description": "Anfield, current squad, club legends and historic moments — the best of Liverpool FC in pictures."
+    },
+    "hero": {
+      "label": "Photo Gallery",
+      "title": "Gallery",
+      "subtitle": "Anfield, current squad, club legends and historic moments — the best of Liverpool FC in pictures."
+    },
+    "categories": {
+      "all": "All",
+      "anfield": "Anfield",
+      "squad": "Squad",
+      "matches": "Matches",
+      "fans": "Fans",
+      "legends": "Legends",
+      "trophies": "Trophies",
+      "history": "History"
+    },
+    "attribution": "Liverpool FC Gallery",
+    "upload": {
+      "button": "Upload Photo",
+      "title": "Upload New Photo",
+      "dropzone": "Click to select an image",
+      "altLabel": "Description",
+      "altPlaceholder": "e.g. Salah celebrating at Anfield",
+      "categoryLabel": "Category",
+      "uploading": "Uploading...",
+      "success": "Uploaded!",
+      "submit": "Upload"
+    },
+    "admin": {
+      "delete": "Delete Image",
+      "deleteConfirm": "Delete this image? This cannot be undone.",
+      "deleteSuccess": "Image deleted",
+      "setHomepage": "Set as Homepage Background",
+      "setHomepageConfirm": "Use this image as the homepage background?",
+      "setHomepageSuccess": "Homepage background updated",
+      "setHeroBg": "Set as Gallery Banner",
+      "setHeroBgConfirm": "Use this image as the gallery page banner?",
+      "setHeroBgSuccess": "Gallery banner updated",
+      "download": "Download",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "actionError": "Action failed. Please try again.",
+      "resetHomepage": "Reset to Default",
+      "resetHomepageSuccess": "Homepage background reset to default"
+    },
+    "loadMore": {
+      "button": "Load More",
+      "loading": "Loading..."
+    },
+    "viewMode": {
+      "card": "Card View",
+      "list": "List View"
+    },
+    "search": {
+      "placeholder": "Search photos..."
+    }
   }
 }

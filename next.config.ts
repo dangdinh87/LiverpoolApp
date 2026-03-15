@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'resources.premierleague.com' },
       // Unsplash (hero backgrounds)
       { protocol: 'https', hostname: 'images.unsplash.com' },
+      // Cloudinary (gallery images)
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
       // Football-Data.org (team crests)
       { protocol: 'https', hostname: 'crests.football-data.org' },
       // Wikipedia (competition logos — e.g. FDO UCL emblem)

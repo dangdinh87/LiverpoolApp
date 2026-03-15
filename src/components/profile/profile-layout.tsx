@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 import { ProfileForm } from "./profile-form";
 import { AvatarUpload } from "./avatar-upload";
+import { CoverSelector } from "./cover-selector";
 import { FavouriteList } from "./favourite-list";
 import { SavedArticlesList } from "./saved-articles-list";
 import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
@@ -27,9 +28,11 @@ interface ProfileLayoutProps {
   profile: UserProfile | null;
   favourites: FavouritePlayer[];
   savedArticles: SavedArticle[];
+  isAdmin?: boolean;
+  currentHeroBg?: string | null;
 }
 
-export function ProfileLayout({ user, profile, favourites, savedArticles }: ProfileLayoutProps) {
+export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmin, currentHeroBg }: ProfileLayoutProps) {
   const t = useTranslations("Profile");
   const [activeTab, setActiveTab] = useState<TabId>("profile");
   const [streak, setStreak] = useState(0);
@@ -94,16 +97,16 @@ export function ProfileLayout({ user, profile, favourites, savedArticles }: Prof
                 )}
 
                 {/* Streak badge */}
-                <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-stadium-bg border border-stadium-border rounded-full">
+                <div
+                  className="flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-stadium-bg border border-stadium-border rounded-full"
+                  title={t("streakLabel")}
+                >
                   <Flame size={14} className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
                   <span className={cn(
-                    "font-bebas text-base leading-none",
+                    "font-inter text-xs leading-none",
                     streak > 0 ? "text-orange-400" : "text-stadium-muted"
                   )}>
-                    {streak}
-                  </span>
-                  <span className="font-inter text-[10px] text-stadium-muted uppercase tracking-wider">
-                    {streak === 1 ? "day" : "days"} streak
+                    {t("streakCount", { count: streak })}
                   </span>
                 </div>
               </div>
@@ -156,22 +159,31 @@ export function ProfileLayout({ user, profile, favourites, savedArticles }: Prof
                 transition={{ duration: 0.15 }}
               >
                 {activeTab === "profile" && (
-                  <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-                    <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
-                      <Settings size={16} className="text-lfc-red" />
-                      {t("title")}
-                    </h2>
-                    <div className="flex flex-col sm:flex-row gap-6">
-                      <div className="flex flex-col items-center shrink-0">
-                        <AvatarUpload
-                          currentUrl={profile?.avatar_url ?? null}
-                          username={profile?.username ?? null}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <ProfileForm profile={profile ?? null} />
+                  <div className="space-y-4">
+                    <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
+                      <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
+                        <Settings size={16} className="text-lfc-red" />
+                        {t("title")}
+                      </h2>
+                      <div className="flex flex-col sm:flex-row gap-6">
+                        <div className="flex flex-col items-center shrink-0">
+                          <AvatarUpload
+                            currentUrl={profile?.avatar_url ?? null}
+                            username={profile?.username ?? null}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <ProfileForm profile={profile ?? null} />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Homepage background selector (admin only) */}
+                    {isAdmin && (
+                      <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
+                        <CoverSelector currentCoverUrl={currentHeroBg ?? null} />
+                      </div>
+                    )}
                   </div>
                 )}
 

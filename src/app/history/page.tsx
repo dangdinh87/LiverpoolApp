@@ -13,7 +13,7 @@ import { ClubTimeline } from "@/components/history/club-timeline";
 import { LegendCard } from "@/components/history/legend-card";
 import { ClubTabs } from "@/components/history/club-tabs";
 import { ManagerAvatar } from "@/components/history/manager-avatar";
-import { AnfieldGallery } from "@/components/history/anfield-gallery";
+import { StadiumShowcase } from "@/components/history/stadium-showcase";
 import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink, Camera } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { makePageMeta } from "@/lib/seo";
@@ -203,7 +203,19 @@ export default async function HistoryPage({
 
   /* ── Tab 2: Anfield ── */
   const anfieldPanel = (
-    <div className="space-y-20">
+    <div className="relative space-y-20">
+      {/* Fixed background */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <Image
+          src="/assets/lfc/stadium/anfield-aerial.webp"
+          alt=""
+          fill
+          className="object-cover opacity-[0.06]"
+          sizes="100vw"
+          unoptimized
+        />
+      </div>
+
       {/* Stadium hero card */}
       <section>
         <div className="bg-stadium-surface border border-stadium-border overflow-hidden group">
@@ -297,28 +309,16 @@ export default async function HistoryPage({
         </div>
       </section>
 
+      {/* Stadium images */}
+      <section>
+        <SectionHeader label={t("sections.gallery")} title={t("sections.stadiumImages")} icon={Camera} />
+        <StadiumShowcase />
+      </section>
+
     </div>
   );
 
-  /* ── Tab 3: Gallery ── */
-  const galleryPanel = (
-    <div>
-      <div className="mb-6 flex items-center justify-between border-b border-stadium-border/50 pb-4">
-        <div>
-          <p className="font-barlow text-lfc-red uppercase tracking-[0.2em] text-[9px] font-bold mb-0.5">
-            {t("sections.gallery")}
-          </p>
-          <h2 className="font-bebas text-2xl md:text-3xl text-white tracking-wider leading-none">
-            {t("sections.photos")}
-          </h2>
-        </div>
-        <Camera className="text-white/5 w-8 h-8" />
-      </div>
-      <AnfieldGallery />
-    </div>
-  );
-
-  /* ── Tab 4: Honours ── */
+  /* ── Tab 3: Honours ── */
   const honoursPanel = (
     <div className="space-y-16">
       <section>
@@ -419,7 +419,6 @@ export default async function HistoryPage({
       <ClubTabs
         overviewPanel={overviewPanel}
         anfieldPanel={anfieldPanel}
-        galleryPanel={galleryPanel}
         honoursPanel={honoursPanel}
         timelinePanel={timelinePanel}
         legendsPanel={legendsPanel}
@@ -427,7 +426,6 @@ export default async function HistoryPage({
         tabLabels={{
           overview: t("tabs.overview"),
           anfield: t("tabs.anfield"),
-          gallery: t("tabs.gallery"),
           honours: t("tabs.honours"),
           timeline: t("tabs.timeline"),
           legends: t("tabs.legends"),

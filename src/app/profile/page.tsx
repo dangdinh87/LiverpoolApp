@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { isAdminEmail } from "@/lib/constants";
+import { getSiteSetting } from "@/lib/gallery/queries";
 import { ProfileLayout } from "@/components/profile/profile-layout";
 import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
 
@@ -37,12 +39,25 @@ export default async function ProfilePage() {
       .order("saved_at", { ascending: false }),
   ]);
 
+  const admin = isAdminEmail(user.email);
+
+  // Fetch current homepage hero bg for admin selector
+  let currentHeroBg: string | null = null;
+  if (admin) {
+    try {
+      const setting = await getSiteSetting<{ cloudinary_url: string }>("homepage_hero_image");
+      currentHeroBg = setting?.cloudinary_url ?? null;
+    } catch { /* fallback to null */ }
+  }
+
   return (
     <ProfileLayout
       user={{ id: user.id, email: user.email ?? null, createdAt: user.created_at }}
       profile={profile ?? null}
       favourites={(favourites ?? []) as FavouritePlayer[]}
       savedArticles={(savedArticles ?? []) as SavedArticle[]}
+      isAdmin={admin}
+      currentHeroBg={currentHeroBg}
     />
   );
 }

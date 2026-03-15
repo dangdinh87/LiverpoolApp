@@ -44,6 +44,7 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
+  const [clubMenuOpen, setClubMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -120,20 +121,11 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
               { href: "/news", label: t("news"), highlight: true },
               { href: "/squad", label: t("squad") },
               { href: "/season", label: t("season") || "Season" },
-              { href: "/history", label: t("history") || "The Club" },
-              { href: "/about", label: t("about") || "About" },
             ].map(({ href, label, highlight }) => {
-              // Parse href to check for tab param
-              const hasTab = href.includes("tab=");
-              const targetTab = hasTab ? new URL(href, "http://localhost").searchParams.get("tab") : null;
-              const currentTab = searchParams.get("tab");
-
-              // Active check: exact match, or startsWith for /news (covers /news/[...slug])
               const basePath = href.split("?")[0];
               const isActive = basePath === "/"
                 ? pathname === "/"
-                : pathname === basePath && (hasTab ? targetTab === currentTab : true)
-                  || (basePath !== "/" && pathname.startsWith(basePath + "/"));
+                : pathname === basePath || (basePath !== "/" && pathname.startsWith(basePath + "/"));
 
               return (
                 <li key={href}>
@@ -161,6 +153,84 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                 </li>
               );
             })}
+
+            {/* Club dropdown */}
+            <li
+              className="relative"
+              onMouseEnter={() => setClubMenuOpen(true)}
+              onMouseLeave={() => setClubMenuOpen(false)}
+            >
+              <button
+                className={cn(
+                  "relative flex items-center gap-1 px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors cursor-pointer",
+                  pathname === "/history" || pathname === "/gallery"
+                    ? "text-white"
+                    : "text-stadium-muted hover:text-white"
+                )}
+              >
+                {t("history") || "The Club"}
+                <ChevronDown size={12} className={cn("transition-transform duration-200", clubMenuOpen && "rotate-180")} />
+                {(pathname === "/history" || pathname === "/gallery") && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
+                    transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                  />
+                )}
+              </button>
+              <AnimatePresence>
+                {clubMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 top-full w-44 bg-stadium-surface border border-stadium-border shadow-2xl overflow-hidden z-50"
+                  >
+                    <Link
+                      href="/history"
+                      onClick={() => setClubMenuOpen(false)}
+                      className={cn(
+                        "block px-4 py-2.5 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
+                        pathname === "/history" ? "text-white bg-stadium-surface2" : "text-stadium-muted hover:text-white hover:bg-stadium-surface2"
+                      )}
+                    >
+                      {t("clubOverview")}
+                    </Link>
+                    <Link
+                      href="/gallery"
+                      onClick={() => setClubMenuOpen(false)}
+                      className={cn(
+                        "block px-4 py-2.5 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
+                        pathname === "/gallery" ? "text-white bg-stadium-surface2" : "text-stadium-muted hover:text-white hover:bg-stadium-surface2"
+                      )}
+                    >
+                      {t("clubGallery")}
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </li>
+
+            {/* About */}
+            <li>
+              <Link
+                href="/about"
+                className={cn(
+                  "relative px-3 py-2 text-sm font-barlow font-semibold uppercase tracking-[0.12em] transition-colors",
+                  pathname === "/about" ? "text-white" : "text-stadium-muted hover:text-white"
+                )}
+              >
+                {t("about") || "About"}
+                {pathname === "/about" && (
+                  <motion.span
+                    layoutId="nav-underline"
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-lfc-red rounded-full"
+                    transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                  />
+                )}
+              </Link>
+            </li>
           </ul>
 
           {/* Right side */}
@@ -325,7 +395,8 @@ export function NavbarClient({ user, profile }: NavbarClientProps) {
                     { href: "/news", label: t("news") },
                     { href: "/squad", label: t("squad") },
                     { href: "/season", label: t("season") },
-                    { href: "/history", label: t("history") },
+                    { href: "/history", label: `${t("history")} — ${t("clubOverview")}` },
+                    { href: "/gallery", label: `${t("history")} — ${t("clubGallery")}` },
                     { href: "/about", label: t("about") },
                   ].map(({ href, label }) => {
                     const url = new URL(href, "http://localhost");

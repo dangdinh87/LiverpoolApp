@@ -4,6 +4,17 @@ import { useState, useEffect } from "react";
 import { Heart, Bookmark, Share2, ExternalLink, Check } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toggleSavedArticle } from "@/app/actions/profile";
+import { useToast } from "@/stores/toast-store";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import {
   getSavedArticles as getLocalSaved,
   toggleSave as toggleLocalSave,
@@ -30,12 +41,15 @@ export function ArticleActions({
   articleMeta,
 }: ArticleActionsProps) {
   const t = useTranslations("News.actions");
+  const tp = useTranslations("Profile");
+  const { show: showToast } = useToast();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [shared, setShared] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Fetch like state from DB + saved state from localStorage
   useEffect(() => {
@@ -89,7 +103,7 @@ export function ArticleActions({
     }
   }
 
-  async function handleSave() {
+  async function doSaveToggle() {
     if (saveLoading) return;
     setSaveLoading(true);
 
@@ -116,11 +130,24 @@ export function ArticleActions({
         // Revert on real error
         setSaved(wasSaved);
         toggleLocalSave(articleUrl);
+      } else {
+        showToast({
+          type: "success",
+          message: wasSaved ? t("articleUnsaved") : t("articleSaved"),
+        });
       }
     } catch {
       // Keep localStorage state, don't revert
     } finally {
       setSaveLoading(false);
+    }
+  }
+
+  function handleSave() {
+    if (saved) {
+      setShowConfirm(true);
+    } else {
+      doSaveToggle();
     }
   }
 
@@ -136,74 +163,100 @@ export function ArticleActions({
   }
 
   return (
-    <div className="bg-stadium-surface border border-stadium-border p-4">
-      <div className="flex items-center justify-between">
-        {/* Like */}
-        <button
-          onClick={handleLike}
-          className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={t("like")}
-        >
-          <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${liked ? "bg-rose-500/20" : "hover:bg-white/10"}`}>
-            <Heart
-              className={`w-[18px] h-[18px] transition-all ${liked ? "text-rose-500 fill-rose-500 scale-110" : "text-white/50 group-hover:text-rose-400"}`}
-            />
-          </div>
-          <span className={`font-barlow text-[9px] uppercase tracking-wider ${liked ? "text-rose-400" : "text-white/40"}`}>
-            {likeCount > 0 ? likeCount : t("like")}
-          </span>
-        </button>
+    <>
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent className="bg-stadium-surface border-stadium-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider">
+              {t("confirmUnsave")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stadium-muted font-inter">
+              {t("confirmUnsaveDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-stadium-surface2 border-stadium-border text-white hover:bg-stadium-surface hover:text-white cursor-pointer">
+              {tp("cancelAction")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setShowConfirm(false); doSaveToggle(); }}
+              className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer"
+            >
+              {tp("confirmAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        {/* Save */}
-        <button
-          onClick={handleSave}
-          disabled={saveLoading}
-          className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={t("save")}
-        >
-          <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${saved ? "bg-amber-500/20" : "hover:bg-white/10"}`}>
-            <Bookmark
-              className={`w-[18px] h-[18px] transition-all ${saved ? "text-amber-400 fill-amber-400 scale-110" : "text-white/50 group-hover:text-amber-400"}`}
-            />
-          </div>
-          <span className={`font-barlow text-[9px] uppercase tracking-wider ${saved ? "text-amber-400" : "text-white/40"}`}>
-            {t("save")}
-          </span>
-        </button>
+      <div className="bg-stadium-surface border border-stadium-border p-4">
+        <div className="flex items-center justify-between">
+          {/* Like */}
+          <button
+            onClick={handleLike}
+            className="group flex flex-col items-center gap-1 cursor-pointer"
+            aria-label={t("like")}
+          >
+            <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${liked ? "bg-rose-500/20" : "hover:bg-white/10"}`}>
+              <Heart
+                className={`w-[18px] h-[18px] transition-all ${liked ? "text-rose-500 fill-rose-500 scale-110" : "text-white/50 group-hover:text-rose-400"}`}
+              />
+            </div>
+            <span className={`font-barlow text-[9px] uppercase tracking-wider ${liked ? "text-rose-400" : "text-white/40"}`}>
+              {likeCount > 0 ? likeCount : t("like")}
+            </span>
+          </button>
 
-        {/* Share */}
-        <button
-          onClick={handleShare}
-          className="group flex flex-col items-center gap-1 cursor-pointer"
-          aria-label={t("share")}
-        >
-          <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${shared ? "bg-green-500/20" : "hover:bg-white/10"}`}>
-            {shared ? (
-              <Check className="w-[18px] h-[18px] text-green-400" />
-            ) : (
-              <Share2 className="w-[18px] h-[18px] text-white/50 group-hover:text-sky-400 transition-colors" />
-            )}
-          </div>
-          <span className={`font-barlow text-[9px] uppercase tracking-wider ${shared ? "text-green-400" : "text-white/40"}`}>
-            {shared ? t("copied") : t("share")}
-          </span>
-        </button>
+          {/* Save */}
+          <button
+            onClick={handleSave}
+            disabled={saveLoading}
+            className="group flex flex-col items-center gap-1 cursor-pointer"
+            aria-label={saved ? t("unsave") : t("save")}
+          >
+            <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${saved ? "bg-amber-500/20" : "hover:bg-white/10"}`}>
+              <Bookmark
+                className={`w-[18px] h-[18px] transition-all ${saved ? "text-amber-400 fill-amber-400 scale-110" : "text-white/50 group-hover:text-amber-400"}`}
+              />
+            </div>
+            <span className={`font-barlow text-[9px] uppercase tracking-wider ${saved ? "text-amber-400" : "text-white/40"}`}>
+              {saved ? t("saved") : t("save")}
+            </span>
+          </button>
 
-        {/* Original */}
-        <a
-          href={articleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex flex-col items-center gap-1"
-        >
-          <div className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 transition-all">
-            <ExternalLink className="w-[18px] h-[18px] text-white/50 group-hover:text-lfc-red transition-colors" />
-          </div>
-          <span className="font-barlow text-[9px] uppercase tracking-wider text-white/40">
-            {t("original")}
-          </span>
-        </a>
+          {/* Share */}
+          <button
+            onClick={handleShare}
+            className="group flex flex-col items-center gap-1 cursor-pointer"
+            aria-label={t("share")}
+          >
+            <div className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${shared ? "bg-green-500/20" : "hover:bg-white/10"}`}>
+              {shared ? (
+                <Check className="w-[18px] h-[18px] text-green-400" />
+              ) : (
+                <Share2 className="w-[18px] h-[18px] text-white/50 group-hover:text-sky-400 transition-colors" />
+              )}
+            </div>
+            <span className={`font-barlow text-[9px] uppercase tracking-wider ${shared ? "text-green-400" : "text-white/40"}`}>
+              {shared ? t("copied") : t("share")}
+            </span>
+          </button>
+
+          {/* Original */}
+          <a
+            href={articleUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col items-center gap-1"
+          >
+            <div className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 transition-all">
+              <ExternalLink className="w-[18px] h-[18px] text-white/50 group-hover:text-lfc-red transition-colors" />
+            </div>
+            <span className="font-barlow text-[9px] uppercase tracking-wider text-white/40">
+              {t("original")}
+            </span>
+          </a>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

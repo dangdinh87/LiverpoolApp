@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PlayerCard } from "./player-card";
+import { useFavourites } from "@/hooks/use-favourites";
+import { useToast } from "@/stores/toast-store";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { POSITION_DISPLAY, POSITION_ORDER } from "@/lib/squad-data";
 import { cn } from "@/lib/utils";
@@ -45,6 +47,18 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
   const [filter, setFilter] = useState<PositionFilter>("All");
   const [search, setSearch] = useState("");
   const t = useTranslations("Squad");
+  const { ids: favouriteIds, isLoggedIn, toggle: toggleFavourite } = useFavourites();
+  const { show: showToast } = useToast();
+  const pt = useTranslations("Profile");
+
+  const handleNotify = useCallback((playerName: string, added: boolean) => {
+    showToast({
+      type: "favourite",
+      message: added
+        ? pt("favAdded", { name: playerName })
+        : pt("favRemoved", { name: playerName }),
+    });
+  }, [pt, showToast]);
 
   const FILTERS: { label: string; value: PositionFilter }[] = [
     { label: t("positions.all"), value: "All" },
@@ -131,7 +145,14 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
       {/* Player grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {sorted.map((player) => (
-          <PlayerCard key={player.id} player={player} />
+          <PlayerCard
+            key={player.id}
+            player={player}
+            isFavourited={favouriteIds.has(player.id)}
+            isLoggedIn={isLoggedIn}
+            onToggleFavourite={toggleFavourite}
+            onFavNotify={handleNotify}
+          />
         ))}
       </div>
 

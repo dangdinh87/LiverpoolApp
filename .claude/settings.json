@@ -22,7 +22,13 @@
       "WebFetch(domain:www.thisisanfield.com)",
       "WebFetch(domain:www.anfieldwatch.co.uk)",
       "WebFetch(domain:www.empireofthekop.com)",
-      "WebFetch(domain:www.reddit.com)"
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:www.goal.com)",
+      "WebFetch(domain:news.google.com)",
+      "mcp__supabase__search_docs",
+      "WebFetch(domain:www.pinterest.com)",
+      "WebFetch(domain:unsplash.com)",
+      "WebFetch(domain:www.pexels.com)"
     ]
   }
 }

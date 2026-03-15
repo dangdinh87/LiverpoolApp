@@ -73,18 +73,14 @@ export function DigestCard(props: DigestProps) {
                 try {
                   const result = await refreshDigest();
                   if (result.ok) {
-                    // Update card inline — no reload needed
                     if (result.title) setDisplayTitle(result.title);
                     if (result.summary) setDisplaySummary(result.summary);
                     if (result.generatedAt) setDisplayTime(result.generatedAt);
                   } else {
                     setError(result.error || "Failed");
-                    console.error("[DigestCard] refresh failed:", result.error);
                   }
                 } catch (err) {
-                  const msg = err instanceof Error ? err.message : "Network error";
-                  setError(msg);
-                  console.error("[DigestCard] refresh error:", err);
+                  setError(err instanceof Error ? err.message : "Network error");
                 } finally {
                   setIsRefreshing(false);
                 }

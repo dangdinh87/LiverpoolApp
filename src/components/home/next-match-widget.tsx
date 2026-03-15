@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
+import {
+  OverviewCardHeader,
+  OverviewDivider,
+} from "./overview-card-shared";
 
-/* Locale-aware date formatting */
 function formatMatchDate(date: Date, locale: string): string {
   const loc = locale === "vi" ? "vi-VN" : "en-GB";
   const weekday = date.toLocaleDateString(loc, { weekday: "short" });
@@ -20,20 +23,12 @@ function formatMatchDate(date: Date, locale: string): string {
   return `${weekday}, ${day} ${monthName} · ${time}`;
 }
 
-function formatShortDate(date: Date, locale: string): string {
-  const loc = locale === "vi" ? "vi-VN" : "en-GB";
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-
-  if (locale === "vi") {
-    return `${day}/${month}`;
-  }
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-}
-
-function formatTime(date: Date, locale: string): string {
-  const loc = locale === "vi" ? "vi-VN" : "en-GB";
-  return date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+function isSameCalendarDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 interface NextMatchWidgetProps {
@@ -78,43 +73,51 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
   const isLive = ["1H", "HT", "2H", "ET", "P", "BT", "LIVE"].includes(f.status.short);
   const elapsed = f.status.elapsed;
   const isHT = f.status.short === "HT";
+  const isToday = isSameCalendarDay(date, new Date());
+  const roundName = league.round.includes(" - ")
+    ? league.round.split(" - ").at(-1) ?? league.round
+    : league.round;
 
   return (
-    <div className="flex flex-col gap-4 p-5 h-full">
-      <div className="flex items-center justify-between">
-        <span className="font-barlow text-stadium-muted text-xs uppercase tracking-widest font-semibold">
-          {t("title")}
-        </span>
-        {isLive && (
-          <span className="flex items-center gap-1.5 text-xs font-barlow font-semibold text-green-400 uppercase tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            {t("live")}
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col gap-3 p-4 h-full">
+      <OverviewCardHeader
+        title={t("title")}
+        action={
+          isLive ? (
+            <span className="flex items-center gap-1.5 text-xs font-barlow font-semibold text-green-400 uppercase tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              {t("live")}
+            </span>
+          ) : isToday ? (
+            <span className="border border-lfc-red/40 bg-lfc-red/10 px-2 py-1 font-barlow text-[10px] font-semibold text-lfc-red uppercase tracking-wider">
+              {t("today")}
+            </span>
+          ) : null
+        }
+      />
 
-      <div className="flex items-center justify-between gap-2 flex-1">
+      <div className="flex items-center justify-between gap-2 flex-1 min-h-0">
         {/* Home team */}
-        <div className="flex flex-col items-center gap-2.5 flex-1">
-          <div className="relative w-14 h-14">
+        <div className="flex flex-col items-center gap-2 flex-1">
+          <div className="relative w-12 h-12">
             <Image
               src={teams.home.logo}
               alt={teams.home.name}
               fill
-              sizes="56px"
+              sizes="48px"
               className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
             />
           </div>
-          <span className="font-inter text-xs text-white text-center font-semibold leading-tight">
+          <span className="font-inter text-[11px] text-white text-center font-semibold leading-tight">
             {teams.home.name}
           </span>
         </div>
 
         {/* Center: live score OR VS/countdown */}
-        <div className="flex flex-col items-center gap-1.5 px-3">
+        <div className="flex flex-col items-center gap-1 px-2">
           {isLive ? (
             <>
-              <span className="font-bebas text-4xl text-white leading-none">
+              <span className="font-bebas text-3xl text-white leading-none">
                 {fixture.goals.home ?? 0} - {fixture.goals.away ?? 0}
               </span>
               <span className={`font-barlow text-xs font-semibold uppercase ${isHT ? "text-lfc-gold" : "text-lfc-red"}`}>
@@ -123,74 +126,68 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
             </>
           ) : (
             <>
-              <span className="font-bebas text-3xl text-stadium-muted/60">VS</span>
+              <span className="font-bebas text-[2rem] text-stadium-muted/60 leading-none">VS</span>
               {countdown ? (
                 <div className="flex items-center gap-1.5 text-center">
                   {countdown.days > 0 && (
                     <div className="flex flex-col items-center">
-                      <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.days}</span>
+                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.days}</span>
                       <span className="font-barlow text-[9px] text-stadium-muted uppercase">d</span>
                     </div>
                   )}
                   <div className="flex flex-col items-center">
-                    <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.hours}</span>
+                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.hours}</span>
                     <span className="font-barlow text-[9px] text-stadium-muted uppercase">h</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="font-bebas text-lg text-lfc-red leading-none">{countdown.mins}</span>
+                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.mins}</span>
                     <span className="font-barlow text-[9px] text-stadium-muted uppercase">m</span>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <span className="font-barlow text-xs text-lfc-red font-semibold">
-                    {formatShortDate(date, locale)}
-                  </span>
-                  <span className="font-inter text-[11px] text-stadium-muted">
-                    {formatTime(date, locale)}
-                  </span>
-                </>
-              )}
+              ) : null}
             </>
           )}
         </div>
 
         {/* Away team */}
-        <div className="flex flex-col items-center gap-2.5 flex-1">
-          <div className="relative w-14 h-14">
+        <div className="flex flex-col items-center gap-2 flex-1">
+          <div className="relative w-12 h-12">
             <Image
               src={teams.away.logo}
               alt={teams.away.name}
               fill
-              sizes="56px"
+              sizes="48px"
               className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
             />
           </div>
-          <span className="font-inter text-xs text-white text-center font-semibold leading-tight">
+          <span className="font-inter text-[11px] text-white text-center font-semibold leading-tight">
             {teams.away.name}
           </span>
         </div>
       </div>
 
-      {/* Date line + competition */}
-      <div className="border-t border-stadium-border/50 pt-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="relative w-4 h-4 shrink-0">
-            <Image
-              src={league.logo}
-              alt={league.name}
-              fill
-              sizes="16px"
-              className="object-contain"
-            />
+      {/* Footer: competition + round + date */}
+      <div className="mt-auto">
+        <OverviewDivider />
+        <div className="pt-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="relative w-4 h-4 shrink-0">
+              <Image
+                src={league.logo}
+                alt={league.name}
+                fill
+                sizes="16px"
+                className="object-contain"
+              />
+            </div>
+            <span className="font-inter text-[11px] text-stadium-muted truncate">
+              {league.name} · {roundName}
+            </span>
           </div>
-          <span className="font-inter text-[11px] text-stadium-muted truncate">
-            {league.name}
+          <span className="font-inter text-[11px] text-stadium-muted text-right shrink-0">
+            {formatMatchDate(date, locale)}
           </span>
         </div>
-        <span className="font-inter text-[11px] text-stadium-muted">
-          {formatMatchDate(date, locale)}
-        </span>
       </div>
     </div>
   );

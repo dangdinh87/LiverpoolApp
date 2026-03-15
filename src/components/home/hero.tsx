@@ -77,15 +77,22 @@ const LINES = [
   { words: ["WALK", "ALONE"], isRed: true, startIdx: "YOU'LLNEVER".length },
 ] as const;
 
-export function Hero() {
+const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg.avif";
+
+interface HeroProps {
+  backgroundUrl?: string;
+}
+
+export function Hero({ backgroundUrl }: HeroProps) {
   const t = useTranslations("Hero");
+  const heroImage = backgroundUrl || DEFAULT_HERO_BG;
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden snap-start">
       {/* Background image with slow zoom */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105 animate-[subtleZoom_25s_infinite_alternate]"
         style={{
-          backgroundImage: `url('/assets/lfc/stadium/anfield-champions-league.webp')`,
+          backgroundImage: `url('${heroImage}')`,
         }}
       />
 

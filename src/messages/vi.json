@@ -29,7 +29,10 @@
       "days": "ngày",
       "memberLogin": "Đăng nhập thành viên",
       "standings": "Bảng xếp hạng",
-      "fixtures": "Lịch thi đấu"
+      "fixtures": "Lịch thi đấu",
+      "gallery": "Thư viện ảnh",
+      "clubOverview": "Tổng quan",
+      "clubGallery": "Thư viện ảnh"
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -80,7 +83,19 @@
     "allNews": "Xem tất cả",
     "squad": "Đội hình",
     "premierLeague": "Ngoại hạng Anh",
-    "fullTable": "Xem đầy đủ"
+    "fullTable": "Xem đầy đủ",
+    "currentPosition": "Vị trí hiện tại",
+    "points": "Điểm",
+    "goalDiff": "Hiệu số",
+    "record": "Thành tích",
+    "top4Gap": "Cách top 4",
+    "leaderGap": "Cách đầu bảng",
+    "leading": "Đang dẫn đầu",
+    "unbeatenRun": "{count} trận bất bại",
+    "winsLast5": "Thắng {count}/5 trận gần nhất",
+    "toughRun": "Chuỗi phong độ chưa ổn",
+    "goalsFor": "Bàn thắng",
+    "goalsAgainst": "Bàn thua"
   },
   "News": {
     "metadata": {
@@ -190,9 +205,15 @@
     "actions": {
       "like": "Thích",
       "save": "Lưu",
+      "saved": "Đã lưu",
+      "unsave": "Bỏ lưu",
       "share": "Chia sẻ",
       "copied": "Đã sao chép",
-      "original": "Bản gốc"
+      "original": "Bản gốc",
+      "confirmUnsave": "Bỏ lưu bài viết?",
+      "confirmUnsaveDesc": "Bài viết sẽ bị xóa khỏi danh sách đã lưu.",
+      "articleSaved": "Đã lưu bài viết",
+      "articleUnsaved": "Đã bỏ lưu bài viết"
     },
     "digest": {
       "badge": "Tóm tắt bởi AI",
@@ -212,7 +233,11 @@
   "NextMatch": {
     "title": "Trận tiếp theo",
     "live": "Trực tiếp",
-    "noMatch": "Không có trận đấu sắp tới"
+    "noMatch": "Không có trận đấu sắp tới",
+    "today": "Hôm nay",
+    "home": "Sân nhà",
+    "away": "Sân khách",
+    "round": "Vòng"
   },
   "LiveBanner": {
     "live": "TRỰC TIẾP",
@@ -542,7 +567,8 @@
       "masterminds": "Bộ não chiến lược",
       "managers": "Huấn luyện viên vĩ đại",
       "immortals": "Những người bất tử",
-      "legends": "Huyền thoại"
+      "legends": "Huyền thoại",
+      "stadiumImages": "Hình ảnh sân vận động"
     },
     "facts": {
       "fullName": "Tên đầy đủ",
@@ -787,6 +813,17 @@
     "favouritePlayers": "Cầu thủ yêu thích",
     "favouritePlayersEmpty": "Chưa có cầu thủ yêu thích. Hãy vào trang cầu thủ để thêm.",
     "removeFav": "Bỏ",
+    "browseSquad": "Xem đội hình →",
+    "confirmRemoveFav": "Bỏ {name} khỏi yêu thích?",
+    "confirmRemoveFavDesc": "Bạn luôn có thể thêm lại sau.",
+    "cancelAction": "Hủy",
+    "confirmAction": "Bỏ",
+    "favAdded": "Đã thêm {name} vào yêu thích",
+    "favRemoved": "Đã bỏ {name} khỏi yêu thích",
+    "favError": "Có lỗi xảy ra. Vui lòng thử lại.",
+    "favourite": "Yêu thích",
+    "favourited": "Đã yêu thích",
+    "loginToFav": "Đăng nhập để lưu cầu thủ yêu thích",
     "avatar": {
       "title": "Ảnh đại diện",
       "upload": "Tải lên",
@@ -799,11 +836,20 @@
     "savedArticles": "Bài viết đã lưu",
     "savedArticlesEmpty": "Chưa có bài viết nào được lưu. Hãy đánh dấu bài viết từ trang Tin tức.",
     "unsave": "Bỏ lưu",
+    "confirmUnsave": "Bỏ lưu bài viết?",
+    "confirmUnsaveDesc": "Bài viết sẽ bị xóa khỏi danh sách đã lưu.",
     "savedAt": "Đã lưu {date}",
     "viewArticle": "Đọc",
     "saveSuccess": "Đã lưu bài viết!",
     "unsaveSuccess": "Đã bỏ lưu bài viết.",
-    "loginToSave": "Đăng nhập để lưu bài viết"
+    "loginToSave": "Đăng nhập để lưu bài viết",
+    "coverTitle": "Ảnh nền trang chủ",
+    "coverUpdated": "Đã cập nhật ảnh nền trang chủ!",
+    "coverReset": "Đặt lại mặc định",
+    "coverResetDone": "Đã đặt lại ảnh nền mặc định.",
+    "coverError": "Không thể cập nhật ảnh nền.",
+    "streakCount": "Chuỗi {count} ngày",
+    "streakLabel": "Số ngày truy cập liên tiếp"
   },
   "Match": {
     "live": "TRỰC TIẾP",
@@ -921,5 +967,66 @@
   },
   "auth": {
     "pleaseLogin": "Vui lòng đăng nhập để tiếp tục"
+  },
+  "Gallery": {
+    "metadata": {
+      "title": "Thư viện ảnh — Liverpool FC",
+      "description": "Anfield, đội hình hiện tại, huyền thoại và những khoảnh khắc lịch sử — những hình ảnh đẹp nhất của Liverpool FC."
+    },
+    "hero": {
+      "label": "Thư viện ảnh",
+      "title": "Thư Viện Ảnh",
+      "subtitle": "Anfield, đội hình hiện tại, huyền thoại và những khoảnh khắc lịch sử — những hình ảnh đẹp nhất của Liverpool FC."
+    },
+    "categories": {
+      "all": "Tất cả",
+      "anfield": "Anfield",
+      "squad": "Đội hình",
+      "matches": "Trận đấu",
+      "fans": "Cổ động viên",
+      "legends": "Huyền thoại",
+      "trophies": "Danh hiệu",
+      "history": "Lịch sử"
+    },
+    "attribution": "Thư viện ảnh Liverpool FC",
+    "upload": {
+      "button": "Tải ảnh lên",
+      "title": "Tải ảnh mới",
+      "dropzone": "Nhấn để chọn ảnh",
+      "altLabel": "Mô tả",
+      "altPlaceholder": "VD: Salah ăn mừng tại Anfield",
+      "categoryLabel": "Danh mục",
+      "uploading": "Đang tải...",
+      "success": "Đã tải lên!",
+      "submit": "Tải lên"
+    },
+    "admin": {
+      "delete": "Xoá ảnh",
+      "deleteConfirm": "Xoá ảnh này? Hành động không thể hoàn tác.",
+      "deleteSuccess": "Đã xoá ảnh",
+      "setHomepage": "Đặt làm ảnh nền trang chủ",
+      "setHomepageConfirm": "Dùng ảnh này làm ảnh nền trang chủ?",
+      "setHomepageSuccess": "Đã cập nhật ảnh nền trang chủ",
+      "setHeroBg": "Đặt làm banner thư viện",
+      "setHeroBgConfirm": "Dùng ảnh này làm banner trang thư viện?",
+      "setHeroBgSuccess": "Đã cập nhật banner thư viện",
+      "download": "Tải xuống",
+      "cancel": "Huỷ",
+      "confirm": "Xác nhận",
+      "actionError": "Thao tác thất bại. Vui lòng thử lại.",
+      "resetHomepage": "Đặt lại mặc định",
+      "resetHomepageSuccess": "Đã đặt lại ảnh nền mặc định"
+    },
+    "loadMore": {
+      "button": "Xem thêm",
+      "loading": "Đang tải..."
+    },
+    "viewMode": {
+      "card": "Dạng thẻ",
+      "list": "Dạng danh sách"
+    },
+    "search": {
+      "placeholder": "Tìm kiếm ảnh..."
+    }
   }
 }

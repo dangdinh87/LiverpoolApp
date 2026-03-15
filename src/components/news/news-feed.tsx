@@ -9,7 +9,7 @@ import {
   SlidersHorizontal, TrendingUp, ArrowDownWideNarrow,
   Globe, Flag, Earth,
   Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
-  Loader2, RefreshCw,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -26,7 +26,7 @@ import { getReadArticles } from "@/lib/news/read-history";
 import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { loadMoreNews, syncNews } from "@/app/news/actions";
+import { loadMoreNews } from "@/app/news/actions";
 
 // hero(1) + grid(6) + compact(n) — keep compact divisible by 3 for clean grid rows
 // 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
@@ -433,8 +433,6 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
   const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
   const [serverHasMore, setServerHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   useEffect(() => {
     setLangFilter(getSavedFilter());
     setReadSet(getReadArticles());
@@ -574,26 +572,6 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
             </button>
           )}
         </div>
-
-        <button
-          onClick={async () => {
-            setIsRefreshing(true);
-            try {
-              await syncNews();
-              window.location.reload();
-            } finally {
-              setIsRefreshing(false);
-            }
-          }}
-          disabled={isRefreshing}
-          className="flex items-center gap-1.5 px-3 py-2 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
-          title={t("refreshNews")}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span className="font-barlow text-sm font-bold uppercase tracking-wider hidden sm:inline">
-            {isRefreshing ? t("refreshing") : t("refreshNews")}
-          </span>
-        </button>
 
         <FilterSheet
           sortMode={sortMode}

@@ -9,16 +9,15 @@ import {
   type KeyboardEvent,
 } from "react";
 import { motion } from "framer-motion";
-import { Info, MapPin, Trophy, Users, History, Camera } from "lucide-react";
+import { Info, MapPin, Trophy, Users, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const TAB_IDS = ["overview", "anfield", "honours", "timeline", "legends", "gallery"] as const;
+const TAB_IDS = ["overview", "anfield", "honours", "timeline", "legends"] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const TAB_ICONS: Record<TabId, React.ElementType> = {
   overview: Info,
   anfield: MapPin,
-  gallery: Camera,
   honours: Trophy,
   timeline: History,
   legends: Users,
@@ -27,7 +26,6 @@ const TAB_ICONS: Record<TabId, React.ElementType> = {
 interface ClubTabsProps {
   overviewPanel: ReactNode;
   anfieldPanel: ReactNode;
-  galleryPanel: ReactNode;
   honoursPanel: ReactNode;
   timelinePanel: ReactNode;
   legendsPanel: ReactNode;
@@ -38,7 +36,6 @@ interface ClubTabsProps {
 export function ClubTabs({
   overviewPanel,
   anfieldPanel,
-  galleryPanel,
   honoursPanel,
   timelinePanel,
   legendsPanel,
@@ -101,7 +98,6 @@ export function ClubTabs({
   const panels: Record<TabId, ReactNode> = {
     overview: overviewPanel,
     anfield: anfieldPanel,
-    gallery: galleryPanel,
     honours: honoursPanel,
     timeline: timelinePanel,
     legends: legendsPanel,

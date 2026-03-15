@@ -19,6 +19,7 @@
  * │ tuoitre.vn           │ .detail-cmain → .detail-content                 │
  * │ thanhnien.vn         │ .detail-content → .detail__content              │
  * │ vietnamnet.vn        │ .maincontent → .content-detail                  │
+ * │ webthethao.vn        │ #abody.shortcode-content.ck-content             │
  * └─────────────────────┴──────────────────────────────────────────────────┘
  */
 import "server-only";
@@ -768,9 +769,10 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
   };
 }
 
+// Verified via DevTools: `#abody.shortcode-content.ck-content` (15p, 3img), no <article> tag
 function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    ".detail-content, .article-content, article, [role=main]",
+    "#abody, .shortcode-content.ck-content, .detail-content, .article-content, [role=main]",
     "Webthethao"
   );
 }

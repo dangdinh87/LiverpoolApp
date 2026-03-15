@@ -7,6 +7,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { Badge } from "@/components/ui/badge";
+import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
 import { cn } from "@/lib/utils";
 import { makePageMeta } from "@/lib/seo";
 
@@ -216,6 +217,15 @@ export default async function PlayerPage({ params }: PageProps) {
               <InfoPill icon={<Shirt size={14} />} label={`#${player.shirtNumber}`} />
               {player.height && <InfoPill icon={<Ruler size={14} />} label={player.height} />}
               {player.weight && <InfoPill icon={<Weight size={14} />} label={player.weight} />}
+            </div>
+
+            {/* Favourite button */}
+            <div className="mt-6">
+              <PlayerFavouriteButton
+                playerId={player.id}
+                playerName={player.name}
+                playerPhoto={player.photo}
+              />
             </div>
           </div>
 

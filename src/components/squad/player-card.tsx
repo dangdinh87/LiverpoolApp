@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
+import { FavouriteHeart } from "./favourite-heart";
 import type { LfcPlayer, PlayerPosition } from "@/lib/squad-data";
 import { cn } from "@/lib/utils";
 
@@ -23,9 +24,13 @@ const POSITION_TRANSLATION_KEYS: Record<PlayerPosition, string> = {
 
 interface PlayerCardProps {
   player: LfcPlayer;
+  isFavourited?: boolean;
+  isLoggedIn?: boolean;
+  onToggleFavourite?: (playerId: number, added: boolean) => void;
+  onFavNotify?: (playerName: string, added: boolean) => void;
 }
 
-export function PlayerCard({ player }: PlayerCardProps) {
+export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, onToggleFavourite, onFavNotify }: PlayerCardProps) {
   const t = useTranslations("Squad");
   return (
     <Link href={`/player/${player.slug}`} className="group block">
@@ -49,6 +54,17 @@ export function PlayerCard({ player }: PlayerCardProps) {
 
         {/* Player photo */}
         <div className="relative h-48 bg-gradient-to-b from-stadium-surface2 to-stadium-surface overflow-hidden">
+          {onToggleFavourite && (
+            <FavouriteHeart
+              playerId={player.id}
+              playerName={player.name}
+              playerPhoto={player.photo}
+              isFavourited={isFavourited}
+              isLoggedIn={isLoggedIn}
+              onToggle={onToggleFavourite}
+              onNotify={onFavNotify}
+            />
+          )}
           <Image
             src={player.localPhoto}
             alt={player.name}

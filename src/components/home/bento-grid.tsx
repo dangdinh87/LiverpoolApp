@@ -13,7 +13,7 @@ interface BentoGridProps {
 }
 
 const CARD_BASE =
-  "relative bg-stadium-surface/80 backdrop-blur-sm border-t-2 border-t-lfc-red border border-stadium-border/60 rounded-xl overflow-hidden transition-all duration-300 hover:border-lfc-red/30 hover:shadow-[0_4px_30px_rgba(0,0,0,0.4)]";
+  "relative bg-stadium-surface border border-stadium-border/70 overflow-hidden transition-all duration-300 hover:border-lfc-red/40 hover:shadow-[0_4px_24px_rgba(200,16,46,0.08)]";
 
 function BentoCard({
   children,
@@ -50,27 +50,24 @@ export function BentoGrid({ nextMatch, standings }: BentoGridProps) {
         transition={{ duration: 0.4 }}
         className="mb-10"
       >
-        <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-1">
+        <p className="font-barlow text-stadium-muted uppercase tracking-widest text-xs font-semibold mb-1">
           {t("season")}
         </p>
-        <h2 className="font-bebas text-5xl md:text-6xl text-white tracking-wider drop-shadow-[0_0_20px_rgba(200,16,46,0.3)]">
+        <h2 className="font-bebas text-4xl sm:text-5xl md:text-6xl text-white tracking-wider">
           {t("title")}
         </h2>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto">
-        {/* Next match — wider card */}
-        <BentoCard className="min-h-[220px]" delay={0.05}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-auto items-stretch">
+        <BentoCard className="min-h-[280px] md:min-h-0 md:aspect-square" delay={0.05}>
           <NextMatchWidget fixture={nextMatch} />
         </BentoCard>
 
-        {/* Form */}
-        <BentoCard className="min-h-[220px]" delay={0.1}>
+        <BentoCard className="min-h-[280px] md:min-h-0 md:aspect-square" delay={0.1}>
           <FormWidget standing={lfcStanding} />
         </BentoCard>
 
-        {/* Standings preview */}
-        <BentoCard className="min-h-[220px]" delay={0.15}>
+        <BentoCard className="min-h-[280px] md:min-h-0 md:aspect-square" delay={0.15}>
           <StandingsPreview standings={standings} />
         </BentoCard>
       </div>
