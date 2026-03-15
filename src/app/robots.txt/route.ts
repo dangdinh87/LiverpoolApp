@@ -3,8 +3,11 @@ export function GET() {
   const body = `User-agent: *
 Allow: /
 Disallow: /profile
+Disallow: /profile/
 Disallow: /api/
 Disallow: /auth/
+Disallow: /chat
+Disallow: /*?*
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;

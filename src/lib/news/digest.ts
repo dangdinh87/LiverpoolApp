@@ -260,3 +260,18 @@ export const getDigestByDate = cache(async function getDigestByDate(
     .maybeSingle();
   return data;
 });
+
+/** Lightweight query for sitemap: all digest dates + generated timestamps */
+export async function getAllDigestDates(): Promise<{ digest_date: string; generated_at: string }[]> {
+  try {
+    const supabase = getServiceClient();
+    const { data } = await supabase
+      .from("news_digests")
+      .select("digest_date, generated_at")
+      .order("digest_date", { ascending: false })
+      .limit(90);
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}

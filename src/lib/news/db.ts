@@ -278,3 +278,21 @@ export async function getArticleTitlesByUrls(
     return {};
   }
 }
+
+/** Lightweight query for sitemap: active article URLs + publish dates (last 90 days) */
+export async function getArticleSitemapData(): Promise<{ url: string; published_at: string }[]> {
+  try {
+    const supabase = getServiceClient();
+    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from("articles")
+      .select("url, published_at")
+      .gte("published_at", cutoff)
+      .eq("is_active", true)
+      .order("published_at", { ascending: false })
+      .limit(500);
+    return (data ?? []).filter((r) => r.url && r.published_at);
+  } catch {
+    return [];
+  }
+}
