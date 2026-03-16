@@ -944,6 +944,7 @@
   "chat": {
     "thinking": "Đang suy nghĩ...",
     "searching": "Đang tìm kiếm trên web...",
+    "sources": "nguồn",
     "newChat": "Cuộc trò chuyện mới",
     "subtitle": "Trợ lý AI",
     "historyTitle": "Lịch sử trò chuyện",

@@ -147,12 +147,13 @@ const defaultComponents = memoizeMarkdownComponents({
         </sup>
       );
     }
-    // Regular link
+    // Internal link (relative path or liverpoolfcvn.blog) — same tab
+    const isInternal = href?.startsWith("/") || href?.includes("liverpoolfcvn.blog");
     return (
       <a
         href={href}
-        target="_blank"
-        rel="noopener noreferrer"
+        target={isInternal ? "_self" : "_blank"}
+        rel={isInternal ? undefined : "noopener noreferrer"}
         className={cn(
           "aui-md-a font-medium text-primary underline underline-offset-4",
           className,

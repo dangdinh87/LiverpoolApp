@@ -943,6 +943,7 @@
   "chat": {
     "thinking": "Thinking...",
     "searching": "Searching the web...",
+    "sources": "sources",
     "newChat": "New Chat",
     "subtitle": "AI Assistant",
     "historyTitle": "Chat History",

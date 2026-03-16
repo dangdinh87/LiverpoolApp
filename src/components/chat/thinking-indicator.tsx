@@ -62,7 +62,7 @@ export function ThinkingIndicator({ isSearching = false }: { isSearching?: boole
 			{/* Animated content */}
 			<div className="flex-1 pt-1">
 				<div className="flex items-center gap-2 mb-2">
-					<span className="text-sm font-medium text-muted-foreground" suppressHydrationWarning>
+					<span className="text-base font-medium text-muted-foreground" suppressHydrationWarning>
 						{isSearching ? t("chat.searching") : t("chat.thinking")}
 					</span>
 				</div>

@@ -3,6 +3,7 @@
 import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { Globe, ExternalLink, Loader2, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 interface SearchSource {
@@ -16,7 +17,8 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 	result,
 	status,
 }) => {
-	const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(true); // Auto-expand to show citation targets
+	const t = useTranslations("chat");
 
 	// Parse args to get the query
 	let query = "";
@@ -48,9 +50,9 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 	// Simple loading state
 	if (isRunning) {
 		return (
-			<div className="my-2 flex items-center gap-2 text-sm text-stadium-muted">
+			<div className="my-2 flex items-center gap-2 text-base text-stadium-muted">
 				<Loader2 className="size-4 animate-spin text-lfc-red" />
-				<span>Searching the web...</span>
+				<span>{t("searching")}</span>
 			</div>
 		);
 	}
@@ -63,10 +65,10 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 			<button
 				type="button"
 				onClick={() => setIsExpanded(!isExpanded)}
-				className="flex items-center gap-1.5 text-xs text-stadium-muted hover:text-white transition-colors"
+				className="flex items-center gap-1.5 text-sm text-stadium-muted hover:text-white transition-colors"
 			>
 				<Globe className="size-3.5" />
-				<span>{sources.length} source{sources.length !== 1 ? "s" : ""}</span>
+				<span>{sources.length} {t("sources")}</span>
 				<ChevronDown className={cn(
 					"size-3 transition-transform",
 					isExpanded && "rotate-180",
@@ -88,11 +90,11 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 								{i + 1}
 							</span>
 							<div className="min-w-0">
-								<p className="text-xs font-medium truncate group-hover:text-lfc-red transition-colors">
+								<p className="text-sm font-medium truncate group-hover:text-lfc-red transition-colors">
 									{s.title || new URL(s.url).hostname}
 								</p>
 								{s.snippet && (
-									<p className="text-[11px] text-stadium-muted line-clamp-2 mt-0.5">
+									<p className="text-xs text-stadium-muted line-clamp-2 mt-0.5">
 										{s.snippet}
 									</p>
 								)}
