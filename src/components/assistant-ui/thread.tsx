@@ -110,7 +110,7 @@ const ThreadWelcome: FC<{ compact?: boolean }> = ({ compact = false }) => {
 					</p>
 					{!compact && (
 						<p
-							className="fade-in slide-in-from-bottom-1 animate-in text-stadium-muted/70 text-sm delay-150 duration-300 mt-2 max-w-md leading-relaxed"
+							className="fade-in slide-in-from-bottom-1 animate-in text-stadium-muted/70 text-base delay-150 duration-300 mt-2 max-w-md leading-relaxed"
 							suppressHydrationWarning
 						>
 							{t("chat.thread.welcomeDescription")}
@@ -171,15 +171,15 @@ const ThreadSuggestions: FC = () => {
 					<ThreadPrimitive.Suggestion prompt={suggestion.prompt} send asChild>
 						<Button
 							variant="ghost"
-							className="group h-auto w-full flex-col items-start justify-start gap-1.5 border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-sm transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40 hover:scale-[1.01]"
+							className="group h-auto w-full flex-col items-start justify-start gap-1.5 border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-base transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40 hover:scale-[1.01]"
 							aria-label={suggestion.prompt}
 						>
-							<span className="flex items-center gap-2 font-barlow font-semibold text-sm uppercase tracking-widest text-foreground/90 group-hover:text-lfc-gold transition-colors duration-200" suppressHydrationWarning>
+							<span className="flex items-center gap-2 font-barlow font-semibold text-base uppercase tracking-widest text-foreground/90 group-hover:text-lfc-gold transition-colors duration-200" suppressHydrationWarning>
 								{SUGGESTION_ICONS[index]}
 								{suggestion.title}
 							</span>
 							<span
-								className="text-stadium-muted text-sm pl-6"
+								className="text-stadium-muted text-base pl-6"
 								suppressHydrationWarning
 							>
 								{suggestion.label}
@@ -377,7 +377,7 @@ const EditComposer: FC = () => {
 		<MessagePrimitive.Root className="aui-edit-composer-wrapper mx-auto flex w-full max-w-3xl flex-col px-2 py-3">
 			<ComposerPrimitive.Root className="aui-edit-composer-root ml-auto flex w-full max-w-[85%] flex-col rounded-2xl bg-muted">
 				<ComposerPrimitive.Input
-					className="aui-edit-composer-input min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-sm outline-none"
+					className="aui-edit-composer-input min-h-14 w-full resize-none bg-transparent p-4 text-foreground text-base outline-none"
 					autoFocus
 				/>
 				<div className="aui-edit-composer-footer mx-3 mb-3 flex items-center gap-2 self-end">

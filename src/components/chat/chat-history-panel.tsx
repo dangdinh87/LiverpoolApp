@@ -132,7 +132,7 @@ export function ChatSidebar({
             key={conversation.id}
             onClick={() => onSelect(conversation.id)}
             className={cn(
-                "group relative flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg cursor-pointer overflow-hidden transition-colors",
+                "group relative flex items-center gap-2.5 px-3 py-2.5 text-base rounded-lg cursor-pointer overflow-hidden transition-colors",
                 currentConversationId === conversation.id
                     ? "bg-white/10 text-white"
                     : "text-stadium-muted hover:bg-white/5 hover:text-white"
@@ -179,7 +179,7 @@ export function ChatSidebar({
         if (items.length === 0) return null;
         return (
             <div key={group} className="mb-1">
-                <div className="px-3 py-2 text-[11px] font-semibold uppercase tracking-widest text-stadium-muted/50">
+                <div className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-stadium-muted/50">
                     {timeGroupLabels[group]}
                 </div>
                 <div className="space-y-0.5">
@@ -219,13 +219,13 @@ export function ChatSidebar({
                             <button
                                 type="button"
                                 onClick={() => router.push("/")}
-                                className="flex items-center gap-1 text-xs text-stadium-muted hover:text-white transition-colors rounded-md px-1.5 py-1 hover:bg-white/5"
+                                className="flex items-center gap-1 text-sm text-stadium-muted hover:text-white transition-colors rounded-md px-1.5 py-1 hover:bg-white/5"
                             >
                                 <ArrowLeft className="h-3.5 w-3.5" />
                                 <span>Home</span>
                             </button>
                             <span className="text-stadium-muted/30">·</span>
-                            <span className="font-bebas text-base tracking-wide text-gradient-red">
+                            <span className="font-bebas text-lg tracking-wide text-gradient-red">
                                 LiverBird AI
                             </span>
                         </div>
@@ -233,7 +233,7 @@ export function ChatSidebar({
                     <button
                         type="button"
                         onClick={onNewChat}
-                        className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                        className="flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-base text-white/80 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
                     >
                         <Plus className="h-4 w-4" />
                         {t('chat.newChat')}
@@ -248,7 +248,7 @@ export function ChatSidebar({
                             placeholder={t('common.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-8 pl-8 pr-3 text-sm rounded-lg bg-white/5 text-white placeholder:text-stadium-muted/40 outline-none focus:bg-white/8 transition-colors"
+                            className="w-full h-9 pl-8 pr-3 text-base rounded-lg bg-white/5 text-white placeholder:text-stadium-muted/40 outline-none focus:bg-white/8 transition-colors"
                         />
                     </div>
                 </div>
@@ -258,7 +258,7 @@ export function ChatSidebar({
                     {!hasConversations ? (
                         <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                             <MessageSquare className="h-8 w-8 text-stadium-muted/20 mb-3" />
-                            <p className="text-xs text-stadium-muted/50">
+                            <p className="text-sm text-stadium-muted/50">
                                 {searchQuery ? t('common.noResults') : t('chat.noConversations')}
                             </p>
                         </div>
