@@ -402,6 +402,16 @@
   background: #1a1a1a;
 }
 
+/* Prevent nested figure/figcaption visual loops from malformed HTML */
+.article-html-content figure figure {
+  border: none;
+  margin-bottom: 0;
+  background: transparent;
+}
+.article-html-content figcaption figure {
+  margin-top: 1rem;
+}
+
 .article-html-content figure img {
   width: 100%;
   height: auto;

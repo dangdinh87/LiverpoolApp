@@ -340,11 +340,21 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  // Build htmlContent — strip junk from HTML too
+  // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS);
+    const raw = sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS);
+    // bongda.com.vn often produces deeply nested <figure><figcaption>...<figure><figcaption>...
+    // Flatten: extract each figure as a standalone block
+    const $html = cheerio.load(raw, null, false);
+    // Unwrap any figure nested inside figcaption (malformed HTML)
+    $html("figcaption figure").each((_, el) => {
+      const $fig = $html(el);
+      $fig.insertAfter($fig.closest("figure"));
+    });
+    // Remove empty/orphaned closing tags left over
+    htmlContent = $html.html()?.replace(/<\/(figcaption|figure)>\s*<\/(figcaption|figure)>\s*/g, "</figcaption>\n</figure>\n") || undefined;
   }
 
   return {
