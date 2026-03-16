@@ -138,13 +138,21 @@ export async function POST(req: Request) {
 		}
 	}
 
+	// Fetch user profile for personalized greeting
+	const { data: profile } = await supabase
+		.from("profiles")
+		.select("username")
+		.eq("id", user.id)
+		.single();
+	const userName = profile?.username || user.email?.split("@")[0] || "Red";
+
 	// Convert messages to OpenAI format
 	const convertedMessages = convertMessages(messages);
 
-	// Add system prompt to restrict AI to app-related topics only
+	// Add system prompt with user context
 	const systemPrompt = {
 		role: "system",
-		content: BRO_AI_SYSTEM_PROMPT,
+		content: `${BRO_AI_SYSTEM_PROMPT}\n\n## Current User\nThe user's name is **${userName}**. Use their name naturally in conversation instead of generic nicknames. If their name sounds Vietnamese, prefer responding in Vietnamese unless they write in English.`,
 	};
 
 	// Prepend system prompt to messages
