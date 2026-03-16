@@ -215,7 +215,9 @@
       "confirmUnsave": "Bỏ lưu bài viết?",
       "confirmUnsaveDesc": "Bài viết sẽ bị xóa khỏi danh sách đã lưu.",
       "articleSaved": "Đã lưu bài viết",
-      "articleUnsaved": "Đã bỏ lưu bài viết"
+      "articleUnsaved": "Đã bỏ lưu bài viết",
+      "loginRequired": "Đăng nhập để tiếp tục",
+      "loginRequiredDesc": "Bạn cần đăng nhập để thích và lưu bài viết."
     },
     "digest": {
       "badge": "Tóm tắt bởi AI",

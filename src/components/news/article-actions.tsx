@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Bookmark, Share2, ExternalLink, Check } from "lucide-react";
+import { Heart, Bookmark, Share2, ExternalLink, Check, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toggleSavedArticle } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -43,6 +45,8 @@ export function ArticleActions({
   const t = useTranslations("News.actions");
   const tp = useTranslations("Profile");
   const { show: showToast } = useToast();
+  const router = useRouter();
+  const user = useAuthStore((s) => s.user);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
@@ -50,6 +54,7 @@ export function ArticleActions({
   const [saveLoading, setSaveLoading] = useState(false);
   const [shared, setShared] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Fetch like state from DB + saved state from localStorage
   useEffect(() => {
@@ -73,6 +78,7 @@ export function ArticleActions({
   }, [articleUrl]);
 
   async function handleLike() {
+    if (!user) { setShowLoginPrompt(true); return; }
     if (likeLoading) return;
     setLikeLoading(true);
 
@@ -144,6 +150,7 @@ export function ArticleActions({
   }
 
   function handleSave() {
+    if (!user) { setShowLoginPrompt(true); return; }
     if (saved) {
       setShowConfirm(true);
     } else {
@@ -183,6 +190,31 @@ export function ArticleActions({
               className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer"
             >
               {tp("confirmAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={showLoginPrompt} onOpenChange={setShowLoginPrompt}>
+        <AlertDialogContent className="bg-stadium-surface border-stadium-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider flex items-center gap-2">
+              <LogIn size={20} className="text-lfc-red" />
+              {t("loginRequired")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stadium-muted font-inter">
+              {t("loginRequiredDesc")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-stadium-surface2 border-stadium-border text-white hover:bg-stadium-surface hover:text-white cursor-pointer">
+              {tp("cancelAction")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { setShowLoginPrompt(false); router.push("/auth/login"); }}
+              className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer"
+            >
+              {tp("loginAction") || "Log in"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
