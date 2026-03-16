@@ -48,16 +48,17 @@ export async function fetchAllNews(
   // Dedup (URL + Jaccard title similarity)
   const unique = deduplicateArticles(all);
 
-  // Categorize + score
+  // Categorize + score, filter out irrelevant articles (score -1)
   for (const a of unique) {
     a.category = categorizeArticle(a);
     a.relevanceScore = scoreArticle(a);
   }
+  const relevant = unique.filter((a) => (a.relevanceScore ?? 0) >= 0);
 
   // Sort by relevance score desc
-  unique.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
+  relevant.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
 
-  const sliced = unique.slice(0, limit);
+  const sliced = relevant.slice(0, limit);
 
   // Enrich articles missing thumbnails/dates with OG meta (batched in chunks of 10)
   await enrichArticleMeta(sliced, 50);

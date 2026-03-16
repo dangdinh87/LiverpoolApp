@@ -20,6 +20,9 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
   webthethao: 2,
 };
 
+// LFC-dedicated sources — always relevant, no keyword filter needed
+const LFC_DEDICATED: Set<NewsSource> = new Set(["lfc", "anfield-watch", "eotk", "echo"]);
+
 export function scoreArticle(article: NewsArticle): number {
   const text = `${article.title} ${article.contentSnippet}`.toLowerCase();
 
@@ -29,6 +32,11 @@ export function scoreArticle(article: NewsArticle): number {
     if (text.includes(term)) keywordScore += weight;
   }
   keywordScore = Math.min(keywordScore, 10);
+
+  // Non-dedicated sources MUST mention Liverpool — reject irrelevant articles
+  if (!LFC_DEDICATED.has(article.source) && keywordScore === 0) {
+    return -1; // Mark for removal
+  }
 
   // Source priority (0-10)
   const srcScore = SOURCE_PRIORITY[article.source] ?? 3;

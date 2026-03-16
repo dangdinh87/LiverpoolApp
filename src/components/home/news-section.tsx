@@ -42,11 +42,15 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
     setReadSet(getReadArticles());
   }, []);
 
-  // Filter by user locale on the client (avoids cookies() on server → enables ISR)
+  // Filter by user locale, sort newest first (server data may be stale from ISR cache)
   const filtered = useMemo(() => {
     const lang = locale === "vi" ? "vi" : "en";
     const localNews = articles.filter((a) => a.language === lang);
-    return localNews.length > 0 ? localNews.slice(0, 6) : articles.slice(0, 6);
+    const pool = localNews.length > 0 ? localNews : articles;
+    // Sort by date descending to ensure freshest articles appear first
+    return [...pool]
+      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+      .slice(0, 6);
   }, [articles, locale]);
 
   if (filtered.length === 0) return null;

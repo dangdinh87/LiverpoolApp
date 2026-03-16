@@ -306,55 +306,76 @@
   initial-value: 0deg;
 }
 
+/* ─── AI Button — Aceternity-style shimmer border ─── */
 .ai-btn {
-  --border-angle: 0deg;
   position: relative;
-  background: linear-gradient(var(--color-stadium-bg), var(--color-stadium-bg)) padding-box,
-              conic-gradient(from var(--border-angle), #C8102E 0%, #F6EB61 25%, #C8102E 50%, transparent 80%) border-box;
-  border: 1.5px solid transparent;
-  animation: spin-border 3s linear infinite;
+  background: var(--color-lfc-red);
+  border: none;
+  overflow: hidden;
+  animation: ai-btn-glow 2.5s ease-in-out infinite;
 }
 
-.ai-btn::before {
-  content: "";
+@keyframes ai-btn-glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(200,16,46,0.5), 0 0 20px rgba(200,16,46,0.2); }
+  50% { box-shadow: 0 0 20px rgba(200,16,46,0.8), 0 0 40px rgba(200,16,46,0.4), 0 0 60px rgba(200,16,46,0.15); }
+}
+
+.ai-btn:hover {
+  background: #e01232;
+}
+
+/* Shimmer sweep effect (Aceternity-style) */
+.ai-btn-shimmer {
   position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: conic-gradient(from var(--border-angle), rgba(200,16,46,0.5) 0%, rgba(246,235,97,0.3) 25%, rgba(200,16,46,0.5) 50%, transparent 80%);
-  filter: blur(8px);
-  z-index: -1;
-  animation: spin-border 3s linear infinite;
-  opacity: 0.6;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(255,255,255,0.25) 50%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 3s ease-in-out infinite;
+  pointer-events: none;
 }
 
-.ai-btn:hover::before {
-  opacity: 1;
-  filter: blur(12px);
-}
-
-/* Animated gradient text inside ai-btn */
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+@keyframes shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .ai-btn-text {
-  background: linear-gradient(90deg, #C8102E, #F6EB61, #C8102E, #F6EB61);
-  background-size: 300% 100%;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  animation: gradient-shift 4s ease infinite;
-}
-
-@keyframes sparkle-float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-2px) rotate(15deg); }
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 
 .ai-btn-icon {
-  animation: sparkle-float 2s ease-in-out infinite;
+  position: relative;
+  z-index: 1;
+  animation: bird-float 2s ease-in-out infinite;
+}
+
+@keyframes bird-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* ─── HOT Badge — pulsing glow + scale ─── */
+.hot-badge {
+  animation: hot-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes hot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(200,16,46,0.6), 0 0 12px rgba(200,16,46,0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(200,16,46,0.9), 0 0 24px rgba(200,16,46,0.5);
+    transform: scale(1.1);
+  }
 }
 
 /* Live match banner glow pulse */

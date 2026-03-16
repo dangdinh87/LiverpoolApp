@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, User, LogOut, Shield, ChevronDown, Flame } from "lucide-react";
+import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { Button } from "@/components/ui/button";
@@ -90,16 +90,16 @@ export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: Navb
   return (
     <header
       className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300 overflow-visible",
         scrolled
-          ? "bg-stadium-bg border-b border-stadium-border"
-          : "bg-stadium-bg border-b border-white/8"
+          ? "bg-stadium-bg/95 backdrop-blur-md border-b border-stadium-border"
+          : "bg-transparent border-b border-transparent"
       )}
       style={{ top: "var(--live-banner-h, 0px)" }}
     >
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
         <div className={cn(
-          "flex items-center justify-between transition-all duration-300",
+          "flex items-center justify-between transition-all duration-300 overflow-visible",
           scrolled ? "h-12" : "h-16"
         )}>
           {/* Logo */}
@@ -118,7 +118,7 @@ export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: Navb
           </Link>
 
           {/* Desktop nav */}
-          <ul className="hidden md:flex items-center gap-1">
+          <ul className="hidden md:flex items-center gap-1 overflow-visible">
             {[
               { href: "/", label: t("home") || "Home" },
               { href: "/news", label: t("news"), highlight: true },
@@ -142,7 +142,7 @@ export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: Navb
                   >
                     {label}
                     {highlight && (
-                      <span className="absolute -top-2.5 -right-2 px-1.5 py-0.5 text-[9px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase">
+                      <span className="hot-badge absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] font-bold leading-none bg-lfc-red text-white rounded-sm uppercase">
                         {t("hot")}
                       </span>
                     )}
@@ -233,12 +233,14 @@ export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: Navb
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            {/* Chat AI button */}
+            {/* Chat AI button — shimmer border effect */}
             <Link
               href="/chat"
-              className="ai-btn group relative hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95"
+              className="ai-btn group relative hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95"
             >
+              <Bird size={16} className="relative z-1 text-white" />
               <span className="ai-btn-text">LiverBird AI</span>
+              <span className="ai-btn-shimmer" />
             </Link>
             <LanguageSwitcher />
             {/* Auth: member button with avatar or Members CTA */}

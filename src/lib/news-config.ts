@@ -141,7 +141,7 @@ export function formatRelativeDate(dateStr: string, lang?: "en" | "vi"): string 
   if (hours < 24) return lang === "vi" ? `${hours} giờ trước` : `${hours}h ago`;
 
   const days = Math.floor(diff / 86_400_000);
-  if (days < 7) return lang === "vi" ? `${days} ngày trước` : `${days}d ago`;
+  if (days < 3) return lang === "vi" ? `${days} ngày trước` : `${days}d ago`;
 
   return date.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB", {
     day: "numeric",
