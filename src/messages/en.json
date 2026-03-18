@@ -891,6 +891,7 @@
     "saveSuccess": "Article saved!",
     "unsaveSuccess": "Article removed from saved.",
     "loginToSave": "Log in to save articles",
+    "loginAction": "Log in",
     "coverTitle": "Homepage Background",
     "coverUpdated": "Homepage background updated!",
     "coverReset": "Reset to default",
