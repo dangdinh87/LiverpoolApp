@@ -195,10 +195,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     });
   }
 
-  // Thread structure — top-level newest first, replies oldest first (chronological)
-  const topLevel = comments
-    .filter((c) => !c.parentId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Thread structure — replies grouped by parent (chronological within thread)
   const repliesByParent = new Map<string, Comment[]>();
   for (const c of comments) {
     if (c.parentId) {
@@ -207,6 +204,15 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       repliesByParent.set(c.parentId, arr);
     }
   }
+  // Top-level: most replies first, then newest first
+  const topLevel = comments
+    .filter((c) => !c.parentId)
+    .sort((a, b) => {
+      const repliesA = repliesByParent.get(a.id)?.length ?? 0;
+      const repliesB = repliesByParent.get(b.id)?.length ?? 0;
+      if (repliesB !== repliesA) return repliesB - repliesA;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   // Inline reply form component
   const renderInlineReply = (targetId: string) => {
