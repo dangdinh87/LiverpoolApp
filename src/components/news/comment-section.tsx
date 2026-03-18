@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase";
+import { useToast } from "@/stores/toast-store";
 
 interface Comment {
   id: string;
@@ -34,6 +35,7 @@ interface CommentSectionProps {
 export function CommentSection({ articleUrl }: CommentSectionProps) {
   const t = useTranslations("News.comments");
   const locale = useLocale();
+  const toast = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -87,10 +89,20 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   }
 
   // Validate: min 2 chars, no duplicate of last comment
-  function isValid(text: string): boolean {
-    if (text.length < 2) return false;
+  function validate(text: string): boolean {
+    if (text.length < 2) {
+      toast.show({ type: "error", message: t("tooShort") });
+      return false;
+    }
+    if (text.length > 1000) {
+      toast.show({ type: "error", message: t("tooLong") });
+      return false;
+    }
     const lastOwn = [...comments].reverse().find((c) => c.userId === userId);
-    if (lastOwn && lastOwn.content === text) return false; // prevent duplicate
+    if (lastOwn && lastOwn.content === text) {
+      toast.show({ type: "error", message: t("duplicate") });
+      return false;
+    }
     return true;
   }
 
@@ -98,7 +110,8 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   async function handleSubmitTop(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
-    if (!trimmed || !isValid(trimmed) || submitting) return;
+    if (!trimmed || submitting) return;
+    if (!validate(trimmed)) return;
 
     setSubmitting(true);
     try {
@@ -111,9 +124,12 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         const data = await res.json();
         setComments((prev) => [...prev, data.comment]);
         setNewComment("");
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.show({ type: "error", message: err?.error || t("submitError") });
       }
     } catch {
-      // silent
+      toast.show({ type: "error", message: t("submitError") });
     } finally {
       setSubmitting(false);
     }
@@ -123,7 +139,8 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   async function handleSubmitReply(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = replyContent.trim();
-    if (!trimmed || !isValid(trimmed) || submitting || !replyingToId) return;
+    if (!trimmed || submitting || !replyingToId) return;
+    if (!validate(trimmed)) return;
 
     // Find the comment being replied to
     const target = comments.find((c) => c.id === replyingToId);
@@ -147,13 +164,15 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       });
       if (res.ok) {
         const data = await res.json();
-        // Attach replyToName for display
         data.comment.replyToName = target.username;
         setComments((prev) => [...prev, data.comment]);
         closeReply();
+      } else {
+        const err = await res.json().catch(() => null);
+        toast.show({ type: "error", message: err?.error || t("submitError") });
       }
     } catch {
-      // silent
+      toast.show({ type: "error", message: t("submitError") });
     } finally {
       setSubmitting(false);
     }

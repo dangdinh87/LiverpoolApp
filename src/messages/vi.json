@@ -143,7 +143,11 @@
       "totalArticle": "{count} bình luận",
       "reply": "Trả lời",
       "replyingTo": "Đang trả lời {name}",
-      "replyPlaceholder": "Viết trả lời..."
+      "replyPlaceholder": "Viết trả lời...",
+      "tooShort": "Bình luận phải có ít nhất 2 ký tự",
+      "tooLong": "Bình luận không được quá 1000 ký tự",
+      "duplicate": "Bạn vừa gửi bình luận giống hệt",
+      "submitError": "Không thể gửi bình luận. Vui lòng thử lại."
     },
     "article": {
       "backToNews": "Quay lại Tin tức",

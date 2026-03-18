@@ -142,7 +142,11 @@
       "totalArticle": "{count} comments",
       "reply": "Reply",
       "replyingTo": "Replying to {name}",
-      "replyPlaceholder": "Write a reply..."
+      "replyPlaceholder": "Write a reply...",
+      "tooShort": "Comment must be at least 2 characters",
+      "tooLong": "Comment must be under 1000 characters",
+      "duplicate": "You just posted the same comment",
+      "submitError": "Failed to post comment. Please try again."
     },
     "article": {
       "backToNews": "Back to News",
