@@ -91,6 +91,18 @@ function pushUnique(arr: string[], seen: Set<string>, value: string) {
   if (!seen.has(value)) { seen.add(value); arr.push(value); }
 }
 
+/** Resolve actual image URL, preferring data-original/data-src over placeholder src */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
+  const dataOriginal = $el.attr("data-original");
+  if (dataOriginal && dataOriginal.startsWith("http")) return dataOriginal;
+  const dataSrc = $el.attr("data-src");
+  if (dataSrc && dataSrc.startsWith("http")) return dataSrc;
+  const src = $el.attr("src");
+  if (src && src.startsWith("http")) return src;
+  return undefined;
+}
+
 function extractAuthor($: cheerio.CheerioAPI): string | undefined {
   const raw =
     $('meta[name="author"]').attr("content") ||
@@ -125,7 +137,7 @@ const extractors: Record<string, Extractor> = {
   "bbc.co.uk": extractBBC,
   "theguardian.com": extractGuardian,
   "bongda.com.vn": extractBongda,
-  "24h.com.vn": extractVietnamese,
+  "24h.com.vn": extract24h,
   "bongdaplus.vn": extractBongdaplus,
   "anfieldwatch.co.uk": extractAnfieldWatch,
   "liverpoolecho.co.uk": extractLiverpoolEcho,
@@ -463,16 +475,8 @@ function extractVietnamese(
   });
 
   container.find("img").each((_, el) => {
-    const src =
-      $(el).attr("src") ||
-      $(el).attr("data-src") ||
-      $(el).attr("data-original");
-    if (
-      src &&
-      src.startsWith("http") &&
-      !src.includes("logo") &&
-      !src.includes("icon")
-    ) {
+    const src = resolveImageSrc($(el));
+    if (src && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
@@ -487,6 +491,73 @@ function extractVietnamese(
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
+  };
+}
+
+// 24h.com.vn: uses #article_body for content, data-original for lazy images
+function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content") ||
+    $("#article_sapo").text().trim() || undefined;
+
+  // 24h nests article content inside .cate-24h-foot-arti-deta-info within #article_body
+  const container = $(
+    ".cate-24h-foot-arti-deta-info, #article_body, .detail-content, .cms-body, article"
+  ).first();
+
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
+
+  // Sapo/lead text
+  const sapo = $("#article_sapo").text().trim();
+  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+
+  // Junk patterns: save buttons, ad text, navigation, source attribution
+  const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>)/i;
+
+  container.find("p").each((_, el) => {
+    const $el = $(el);
+    // Skip ad/promo/nav elements
+    if ($el.closest("nav, .banner, .sidebar, .related-news, .box-game, [class*='banner'], [class*='game']").length) return;
+    const text = $el.text().trim();
+    if (text.length > 30 && !junkPattern.test(text)) {
+      pushUnique(paragraphs, seenP, text);
+    }
+  });
+
+  // 24h uses data-original for lazy-loaded images (src is a base64 placeholder)
+  // Filter: only keep images with meaningful alt text or from article date, skip nav/banner icons
+  const tinyImgPattern = /height\d{1,2}\b|width\d{1,2}height/;
+  container.find("img").each((_, el) => {
+    const $el = $(el);
+    // Skip ad/banner/game images
+    if ($el.closest("[class*='banner'], [class*='game'], .ad-unit, .box-game").length) return;
+    const src = resolveImageSrc($el);
+    if (
+      src &&
+      src.includes("icdn.24h.com.vn/upload") &&
+      !src.includes("logo") &&
+      !src.includes("icon") &&
+      !src.includes("close.svg") &&
+      !src.includes("banner") &&
+      !src.includes("box-game") &&
+      !tinyImgPattern.test(src)
+    ) {
+      pushUnique(images, seenI, src);
+    }
+  });
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, images,
+    sourceUrl: url,
+    sourceName: "24h",
   };
 }
 
@@ -688,8 +759,8 @@ function extractVietnameseGeneric(
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src") || $(el).attr("data-original");
-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+    const src = resolveImageSrc($(el));
+    if (src && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
@@ -780,11 +851,62 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
 }
 
 // Verified via DevTools: `#abody.shortcode-content.ck-content` (15p, 3img), no <article> tag
+// Images are interleaved inside <p> tags — must produce htmlContent for inline rendering
 function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
-  return extractVietnameseGeneric($, url,
-    "#abody, .shortcode-content.ck-content, .detail-content, .article-content, [role=main]",
-    "Webthethao"
-  );
+  const title = $("h1").first().text().trim() ||
+    $('meta[property="og:title"]').attr("content") || "Article";
+  const heroImage = $('meta[property="og:image"]').attr("content");
+  const description = $('meta[property="og:description"]').attr("content");
+
+  const container = $(
+    "#abody, .shortcode-content.ck-content, .detail-content, .article-content, [role=main]"
+  ).first();
+
+  const paragraphs: string[] = [];
+  const images: string[] = [];
+  const seenP = new Set<string>();
+  const seenI = new Set<string>();
+
+  // Junk patterns: promo links, section headers that aren't real content
+  const junkPattern = /^(>>>|Xem thêm|Tags?:|Chia sẻ|Phong độ .+ \d+ trận|Lịch sử đối đầu)/i;
+
+  container.find("p, figcaption").each((_, el) => {
+    const text = $(el).text().trim();
+    if (text.length > 20 && !junkPattern.test(text)) {
+      pushUnique(paragraphs, seenP, text);
+    }
+  });
+
+  container.find("img").each((_, el) => {
+    const src = resolveImageSrc($(el));
+    if (src && !src.includes("logo") && !src.includes("icon")) {
+      pushUnique(images, seenI, src);
+    }
+  });
+
+  // Build htmlContent — images are interleaved with text in <p> tags
+  const hasInlineImages = container.find("p img, p + img, img + p").length > 0;
+  let htmlContent: string | undefined;
+  if (hasInlineImages || container.find("img").length > 0) {
+    // Remove junk elements before building HTML
+    const clone = container.clone();
+    clone.find("script, style, .related-news, .tags, nav").remove();
+    // Remove junk paragraphs from HTML
+    clone.find("p").each((_, el) => {
+      const text = $(el).text().trim();
+      if (junkPattern.test(text)) $(el).remove();
+    });
+    htmlContent = sanitize(clone.html() || "", ARTICLE_SANITIZE_OPTS) || undefined;
+  }
+
+  return {
+    title, heroImage, description,
+    publishedAt: extractPublishedAt($),
+    author: extractAuthor($),
+    paragraphs, htmlContent, images,
+    sourceUrl: url,
+    sourceName: "Webthethao",
+  };
 }
 
 function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
