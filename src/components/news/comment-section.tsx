@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -9,7 +9,6 @@ import {
   Trash2,
   LogIn,
   Loader2,
-  Reply,
   X,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
@@ -24,6 +23,8 @@ interface Comment {
   username: string;
   avatarUrl: string | null;
   parentId: string | null;
+  /** Username being replied to (for nested replies within a thread) */
+  replyToName?: string;
 }
 
 interface CommentSectionProps {
@@ -34,12 +35,16 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   const t = useTranslations("News.comments");
   const locale = useLocale();
   const [comments, setComments] = useState<Comment[]>([]);
-  const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  // Top-level comment input
+  const [newComment, setNewComment] = useState("");
+  // Inline reply state: which comment id has the reply form open
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyContent, setReplyContent] = useState("");
+  const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,7 +73,21 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     fetchComments();
   }, [fetchComments]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  // Open inline reply form for a specific comment
+  function openReply(commentId: string) {
+    setReplyingToId(commentId);
+    setReplyContent("");
+    // Focus after render
+    setTimeout(() => replyInputRef.current?.focus(), 50);
+  }
+
+  function closeReply() {
+    setReplyingToId(null);
+    setReplyContent("");
+  }
+
+  // Submit top-level comment
+  async function handleSubmitTop(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
     if (!trimmed || submitting) return;
@@ -78,17 +97,52 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       const res = await fetch("/api/news/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          url: articleUrl,
-          content: trimmed,
-          ...(replyTo ? { parentId: replyTo.id } : {}),
-        }),
+        body: JSON.stringify({ url: articleUrl, content: trimmed }),
       });
       if (res.ok) {
         const data = await res.json();
         setComments((prev) => [...prev, data.comment]);
         setNewComment("");
-        setReplyTo(null);
+      }
+    } catch {
+      // silent
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Submit inline reply
+  async function handleSubmitReply(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = replyContent.trim();
+    if (!trimmed || submitting || !replyingToId) return;
+
+    // Find the comment being replied to
+    const target = comments.find((c) => c.id === replyingToId);
+    if (!target) return;
+
+    // Replies always nest under the top-level parent
+    const parentId = target.parentId || target.id;
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/news/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: articleUrl,
+          content: trimmed,
+          parentId,
+          // Store which username this reply is directed at
+          replyToName: target.username,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Attach replyToName for display
+        data.comment.replyToName = target.username;
+        setComments((prev) => [...prev, data.comment]);
+        closeReply();
       }
     } catch {
       // silent
@@ -107,9 +161,8 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         { method: "DELETE" }
       );
       if (res.ok) {
-        // Remove comment and its replies
         setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
-        if (replyTo?.id === commentId) setReplyTo(null);
+        if (replyingToId === commentId) closeReply();
       }
     } catch {
       // silent
@@ -120,8 +173,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
 
   function formatDate(dateStr: string) {
     const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const diffMs = Date.now() - date.getTime();
     const diffMin = Math.floor(diffMs / 60000);
     if (diffMin < 1) return t("justNow");
     if (diffMin < 60) return t("minutesAgo", { n: diffMin });
@@ -135,7 +187,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     });
   }
 
-  // Build threaded structure: top-level + replies grouped by parentId
+  // Thread structure
   const topLevel = comments.filter((c) => !c.parentId);
   const repliesByParent = new Map<string, Comment[]>();
   for (const c of comments) {
@@ -146,6 +198,59 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     }
   }
 
+  // Inline reply form component
+  const renderInlineReply = (targetId: string) => {
+    if (replyingToId !== targetId || !userId) return null;
+    const target = comments.find((c) => c.id === targetId);
+
+    return (
+      <form onSubmit={handleSubmitReply} className="mt-1.5 ml-10 sm:ml-12">
+        <div className="flex items-center gap-1.5 mb-1">
+          <span className="font-inter text-[11px] text-white/40">
+            {t("replyingTo", { name: target?.username || "" })}
+          </span>
+          <button
+            type="button"
+            onClick={closeReply}
+            className="p-0.5 text-stadium-muted hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <textarea
+            ref={replyInputRef}
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (replyContent.trim() && !submitting) handleSubmitReply(e);
+              }
+              if (e.key === "Escape") closeReply();
+            }}
+            placeholder={t("replyPlaceholder")}
+            maxLength={1000}
+            rows={1}
+            disabled={submitting}
+            className="flex-1 bg-stadium-surface border border-stadium-border/60 px-3 py-1.5 font-inter text-[13px] text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-lfc-red/50 transition-colors disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!replyContent.trim() || submitting}
+            className="self-end h-8 w-8 bg-lfc-red text-white hover:bg-lfc-red/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer shrink-0"
+          >
+            {submitting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Send className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+      </form>
+    );
+  };
+
   return (
     <div className="mt-10 pt-8 border-t border-stadium-border/50">
       <h3 className="font-bebas text-2xl text-white flex items-center gap-2 mb-6">
@@ -153,25 +258,9 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         {t("title")} {comments.length > 0 && t("count", { count: comments.length })}
       </h3>
 
-      {/* Comment form */}
+      {/* Top-level comment form */}
       {userId ? (
-        <form onSubmit={handleSubmit} className="mb-8">
-          {/* Reply indicator */}
-          {replyTo && (
-            <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-stadium-surface/60 border-l-2 border-lfc-red">
-              <Reply className="w-3.5 h-3.5 text-lfc-red shrink-0" />
-              <span className="font-inter text-xs text-white/60 truncate">
-                {t("replyingTo", { name: replyTo.username })}
-              </span>
-              <button
-                type="button"
-                onClick={() => setReplyTo(null)}
-                className="ml-auto p-0.5 text-stadium-muted hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
+        <form onSubmit={handleSubmitTop} className="mb-8">
           <div className="flex gap-3">
             <textarea
               value={newComment}
@@ -179,13 +268,10 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  if (newComment.trim() && !submitting) handleSubmit(e);
-                }
-                if (e.key === "Escape" && replyTo) {
-                  setReplyTo(null);
+                  if (newComment.trim() && !submitting) handleSubmitTop(e);
                 }
               }}
-              placeholder={replyTo ? t("replyPlaceholder") : t("placeholder")}
+              placeholder={t("placeholder")}
               maxLength={1000}
               rows={2}
               disabled={submitting}
@@ -241,33 +327,38 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
           {t("empty")}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-1">
           {topLevel.map((comment) => (
             <div key={comment.id}>
-              <CommentCard
+              {/* Parent comment */}
+              <CommentItem
                 comment={comment}
                 userId={userId}
                 deletingId={deletingId}
                 onDelete={handleDelete}
-                onReply={() => setReplyTo(comment)}
+                onReply={() => openReply(comment.id)}
                 formatDate={formatDate}
                 t={t}
               />
-              {/* Replies — indented */}
+              {renderInlineReply(comment.id)}
+
+              {/* Replies */}
               {repliesByParent.has(comment.id) && (
-                <div className="ml-8 sm:ml-12 mt-1.5 space-y-1.5 border-l-2 border-stadium-border/30 pl-3">
+                <div className="ml-10 sm:ml-12 border-l border-stadium-border/30 pl-3 space-y-0.5 mt-0.5">
                   {repliesByParent.get(comment.id)!.map((reply) => (
-                    <CommentCard
-                      key={reply.id}
-                      comment={reply}
-                      userId={userId}
-                      deletingId={deletingId}
-                      onDelete={handleDelete}
-                      onReply={() => setReplyTo(reply)}
-                      formatDate={formatDate}
-                      isReply
-                      t={t}
-                    />
+                    <div key={reply.id}>
+                      <CommentItem
+                        comment={reply}
+                        userId={userId}
+                        deletingId={deletingId}
+                        onDelete={handleDelete}
+                        onReply={() => openReply(reply.id)}
+                        formatDate={formatDate}
+                        isReply
+                        t={t}
+                      />
+                      {renderInlineReply(reply.id)}
+                    </div>
                   ))}
                 </div>
               )}
@@ -279,8 +370,8 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   );
 }
 
-// --- Single comment card ---
-function CommentCard({
+// --- Single comment item ---
+function CommentItem({
   comment,
   userId,
   deletingId,
@@ -300,21 +391,23 @@ function CommentCard({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
 }) {
+  const isDeleting = deletingId === comment.id;
+
   return (
     <div
-      className={`group flex gap-3 p-3.5 bg-stadium-surface/40 border border-stadium-border/30 hover:border-stadium-border/60 transition-colors ${
-        deletingId === comment.id ? "opacity-50" : ""
-      } ${isReply ? "py-2.5" : ""}`}
+      className={`flex gap-2.5 py-2.5 px-3 hover:bg-stadium-surface/30 transition-colors group ${
+        isDeleting ? "opacity-50" : ""
+      }`}
     >
       {/* Avatar */}
-      <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface ring-1 ring-stadium-border/50 ${isReply ? "w-7 h-7" : "w-9 h-9"}`}>
+      <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface ring-1 ring-stadium-border/40 ${isReply ? "w-6 h-6" : "w-8 h-8"}`}>
         {comment.avatarUrl ? (
           <Image
             src={comment.avatarUrl}
             alt={comment.username}
             fill
             className="object-cover"
-            sizes={isReply ? "28px" : "36px"}
+            sizes={isReply ? "24px" : "32px"}
             unoptimized
           />
         ) : (
@@ -322,53 +415,55 @@ function CommentCard({
             src="/assets/lfc/crest.webp"
             alt="LFC"
             fill
-            className="object-contain p-1.5"
-            sizes={isReply ? "28px" : "36px"}
+            className="object-contain p-1"
+            sizes={isReply ? "24px" : "32px"}
           />
         )}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-barlow text-xs text-white font-semibold tracking-wide">
+        {/* Username + content on same line for compact look */}
+        <p className={`font-inter text-white/85 leading-relaxed break-words ${isReply ? "text-[13px]" : "text-sm"}`}>
+          <span className="font-semibold text-white mr-1.5">
             {comment.username}
           </span>
+          {/* Show @mention for reply-to-reply */}
+          {comment.replyToName && (
+            <span className="text-lfc-red font-medium mr-1">
+              @{comment.replyToName}
+            </span>
+          )}
+          {comment.content}
+        </p>
+
+        {/* Meta row: time · reply · delete */}
+        <div className="flex items-center gap-3 mt-0.5">
           <span className="font-inter text-[10px] text-stadium-muted">
             {formatDate(comment.createdAt)}
           </span>
-          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {/* Reply button */}
-            {userId && (
-              <button
-                onClick={onReply}
-                className="p-1 text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer"
-                aria-label={t("reply")}
-                title={t("reply")}
-              >
-                <Reply className="w-3 h-3" />
-              </button>
-            )}
-            {/* Delete button (own comments only) */}
-            {userId === comment.userId && (
-              <button
-                onClick={() => onDelete(comment.id)}
-                disabled={deletingId === comment.id}
-                className="p-1 hover:text-rose-400 text-stadium-muted cursor-pointer disabled:cursor-not-allowed"
-                aria-label={t("deleteConfirm")}
-              >
-                {deletingId === comment.id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3 h-3" />
-                )}
-              </button>
-            )}
-          </div>
+          {userId && (
+            <button
+              onClick={onReply}
+              className="font-inter text-[11px] text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer font-medium"
+            >
+              {t("reply")}
+            </button>
+          )}
+          {userId === comment.userId && (
+            <button
+              onClick={() => onDelete(comment.id)}
+              disabled={isDeleting}
+              className="opacity-0 group-hover:opacity-100 transition-opacity font-inter text-[11px] text-stadium-muted hover:text-rose-400 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-3 h-3 animate-spin inline" />
+              ) : (
+                <Trash2 className="w-3 h-3 inline" />
+              )}
+            </button>
+          )}
         </div>
-        <p className={`font-inter text-white/80 leading-relaxed break-words ${isReply ? "text-[13px]" : "text-sm"}`}>
-          {comment.content}
-        </p>
       </div>
     </div>
   );
