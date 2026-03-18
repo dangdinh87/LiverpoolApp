@@ -518,15 +518,16 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const sapo = $("#article_sapo").text().trim();
   if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
 
-  // Junk patterns: save buttons, ad text, navigation, source attribution
+  // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
   const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>)/i;
+  const matchWidgetPattern = /^\S+\s*-\s*\S+\s+\d{1,2}\.\d{1,2}$/; // "Arsenal - Man City 22.03"
 
   container.find("p").each((_, el) => {
     const $el = $(el);
     // Skip ad/promo/nav elements
     if ($el.closest("nav, .banner, .sidebar, .related-news, .box-game, [class*='banner'], [class*='game']").length) return;
     const text = $el.text().trim();
-    if (text.length > 30 && !junkPattern.test(text)) {
+    if (text.length > 30 && !junkPattern.test(text) && !matchWidgetPattern.test(text)) {
       pushUnique(paragraphs, seenP, text);
     }
   });
@@ -560,7 +561,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     const $p = $(el);
     if ($p.find("img").length > 0) return; // keep image-containing paragraphs
     const text = $p.text().trim();
-    if (text.length < 5 || junkPattern.test(text)) $p.remove();
+    if (text.length < 5 || junkPattern.test(text) || matchWidgetPattern.test(text)) $p.remove();
   });
   // Resolve lazy-loaded images: replace data-original → src, remove junk images
   // Collect removals first to avoid mutation during iteration
