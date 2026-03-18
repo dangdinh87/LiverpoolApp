@@ -1,16 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { generateDailyDigest } from "@/lib/news/digest";
 import { getServiceClient } from "@/lib/news/supabase-service";
+import { verifyCronRequest } from "@/lib/cron";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  // Auth: validate cron secret (query param or Vercel Cron header)
-  const secret =
-    req.nextUrl.searchParams.get("key") ||
-    req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  // Auth: validate cron secret
+  if (!verifyCronRequest(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

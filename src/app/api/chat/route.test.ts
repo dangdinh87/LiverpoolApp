@@ -104,6 +104,12 @@ describe("Chat API Route Security", () => {
             }),
           }),
           select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValue({
+                data: { id: "conv-id" },
+                error: null,
+              }),
+            }),
             single: vi.fn().mockResolvedValue({
               data: { id: "conv-id" },
               error: null,
