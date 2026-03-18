@@ -9,6 +9,8 @@ import {
   Trash2,
   LogIn,
   Loader2,
+  Reply,
+  X,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase";
@@ -21,6 +23,7 @@ interface Comment {
   updatedAt: string;
   username: string;
   avatarUrl: string | null;
+  parentId: string | null;
 }
 
 interface CommentSectionProps {
@@ -36,6 +39,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -74,12 +78,17 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       const res = await fetch("/api/news/comments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: articleUrl, content: trimmed }),
+        body: JSON.stringify({
+          url: articleUrl,
+          content: trimmed,
+          ...(replyTo ? { parentId: replyTo.id } : {}),
+        }),
       });
       if (res.ok) {
         const data = await res.json();
         setComments((prev) => [...prev, data.comment]);
         setNewComment("");
+        setReplyTo(null);
       }
     } catch {
       // silent
@@ -98,7 +107,9 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         { method: "DELETE" }
       );
       if (res.ok) {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
+        // Remove comment and its replies
+        setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
+        if (replyTo?.id === commentId) setReplyTo(null);
       }
     } catch {
       // silent
@@ -124,6 +135,17 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     });
   }
 
+  // Build threaded structure: top-level + replies grouped by parentId
+  const topLevel = comments.filter((c) => !c.parentId);
+  const repliesByParent = new Map<string, Comment[]>();
+  for (const c of comments) {
+    if (c.parentId) {
+      const arr = repliesByParent.get(c.parentId) || [];
+      arr.push(c);
+      repliesByParent.set(c.parentId, arr);
+    }
+  }
+
   return (
     <div className="mt-10 pt-8 border-t border-stadium-border/50">
       <h3 className="font-bebas text-2xl text-white flex items-center gap-2 mb-6">
@@ -134,6 +156,22 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       {/* Comment form */}
       {userId ? (
         <form onSubmit={handleSubmit} className="mb-8">
+          {/* Reply indicator */}
+          {replyTo && (
+            <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-stadium-surface/60 border-l-2 border-lfc-red">
+              <Reply className="w-3.5 h-3.5 text-lfc-red shrink-0" />
+              <span className="font-inter text-xs text-white/60 truncate">
+                {t("replyingTo", { name: replyTo.username })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setReplyTo(null)}
+                className="ml-auto p-0.5 text-stadium-muted hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           <div className="flex gap-3">
             <textarea
               value={newComment}
@@ -143,8 +181,11 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
                   e.preventDefault();
                   if (newComment.trim() && !submitting) handleSubmit(e);
                 }
+                if (e.key === "Escape" && replyTo) {
+                  setReplyTo(null);
+                }
               }}
-              placeholder={t("placeholder")}
+              placeholder={replyTo ? t("replyPlaceholder") : t("placeholder")}
               maxLength={1000}
               rows={2}
               disabled={submitting}
@@ -182,7 +223,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         </div>
       )}
 
-      {/* Comments list */}
+      {/* Comments list — threaded */}
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
@@ -201,67 +242,134 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
         </p>
       ) : (
         <div className="space-y-3">
-          {comments.map((comment) => (
-            <div
-              key={comment.id}
-              className={`group flex gap-3 p-3.5 bg-stadium-surface/40 border border-stadium-border/30 hover:border-stadium-border/60 transition-colors ${
-                deletingId === comment.id ? "opacity-50" : ""
-              }`}
-            >
-              {/* Avatar */}
-              <div className="relative w-9 h-9 rounded-full overflow-hidden shrink-0 bg-stadium-surface ring-1 ring-stadium-border/50">
-                {comment.avatarUrl ? (
-                  <Image
-                    src={comment.avatarUrl}
-                    alt={comment.username}
-                    fill
-                    className="object-cover"
-                    sizes="36px"
-                    unoptimized
-                  />
-                ) : (
-                  <Image
-                    src="/assets/lfc/crest.webp"
-                    alt="LFC"
-                    fill
-                    className="object-contain p-1.5"
-                    sizes="36px"
-                  />
-                )}
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-barlow text-xs text-white font-semibold tracking-wide">
-                    {comment.username}
-                  </span>
-                  <span className="font-inter text-[10px] text-stadium-muted">
-                    {formatDate(comment.createdAt)}
-                  </span>
-                  {userId === comment.userId && (
-                    <button
-                      onClick={() => handleDelete(comment.id)}
-                      disabled={deletingId === comment.id}
-                      className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-rose-400 text-stadium-muted cursor-pointer disabled:cursor-not-allowed"
-                      aria-label={t("deleteConfirm")}
-                    >
-                      {deletingId === comment.id ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3 h-3" />
-                      )}
-                    </button>
-                  )}
+          {topLevel.map((comment) => (
+            <div key={comment.id}>
+              <CommentCard
+                comment={comment}
+                userId={userId}
+                deletingId={deletingId}
+                onDelete={handleDelete}
+                onReply={() => setReplyTo(comment)}
+                formatDate={formatDate}
+                t={t}
+              />
+              {/* Replies — indented */}
+              {repliesByParent.has(comment.id) && (
+                <div className="ml-8 sm:ml-12 mt-1.5 space-y-1.5 border-l-2 border-stadium-border/30 pl-3">
+                  {repliesByParent.get(comment.id)!.map((reply) => (
+                    <CommentCard
+                      key={reply.id}
+                      comment={reply}
+                      userId={userId}
+                      deletingId={deletingId}
+                      onDelete={handleDelete}
+                      onReply={() => setReplyTo(reply)}
+                      formatDate={formatDate}
+                      isReply
+                      t={t}
+                    />
+                  ))}
                 </div>
-                <p className="font-inter text-sm text-white/80 leading-relaxed break-words">
-                  {comment.content}
-                </p>
-              </div>
+              )}
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// --- Single comment card ---
+function CommentCard({
+  comment,
+  userId,
+  deletingId,
+  onDelete,
+  onReply,
+  formatDate,
+  isReply,
+  t,
+}: {
+  comment: Comment;
+  userId: string | null;
+  deletingId: string | null;
+  onDelete: (id: string) => void;
+  onReply: () => void;
+  formatDate: (d: string) => string;
+  isReply?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+}) {
+  return (
+    <div
+      className={`group flex gap-3 p-3.5 bg-stadium-surface/40 border border-stadium-border/30 hover:border-stadium-border/60 transition-colors ${
+        deletingId === comment.id ? "opacity-50" : ""
+      } ${isReply ? "py-2.5" : ""}`}
+    >
+      {/* Avatar */}
+      <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface ring-1 ring-stadium-border/50 ${isReply ? "w-7 h-7" : "w-9 h-9"}`}>
+        {comment.avatarUrl ? (
+          <Image
+            src={comment.avatarUrl}
+            alt={comment.username}
+            fill
+            className="object-cover"
+            sizes={isReply ? "28px" : "36px"}
+            unoptimized
+          />
+        ) : (
+          <Image
+            src="/assets/lfc/crest.webp"
+            alt="LFC"
+            fill
+            className="object-contain p-1.5"
+            sizes={isReply ? "28px" : "36px"}
+          />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-barlow text-xs text-white font-semibold tracking-wide">
+            {comment.username}
+          </span>
+          <span className="font-inter text-[10px] text-stadium-muted">
+            {formatDate(comment.createdAt)}
+          </span>
+          <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Reply button */}
+            {userId && (
+              <button
+                onClick={onReply}
+                className="p-1 text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer"
+                aria-label={t("reply")}
+                title={t("reply")}
+              >
+                <Reply className="w-3 h-3" />
+              </button>
+            )}
+            {/* Delete button (own comments only) */}
+            {userId === comment.userId && (
+              <button
+                onClick={() => onDelete(comment.id)}
+                disabled={deletingId === comment.id}
+                className="p-1 hover:text-rose-400 text-stadium-muted cursor-pointer disabled:cursor-not-allowed"
+                aria-label={t("deleteConfirm")}
+              >
+                {deletingId === comment.id ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3 h-3" />
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+        <p className={`font-inter text-white/80 leading-relaxed break-words ${isReply ? "text-[13px]" : "text-sm"}`}>
+          {comment.content}
+        </p>
+      </div>
     </div>
   );
 }

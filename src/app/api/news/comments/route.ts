@@ -13,10 +13,10 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("article_comments")
-    .select("id, user_id, content, author_name, author_avatar, created_at, updated_at")
+    .select("id, user_id, content, author_name, author_avatar, parent_id, created_at, updated_at")
     .eq("article_url", articleUrl)
     .order("created_at", { ascending: true })
-    .limit(100);
+    .limit(200);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     updatedAt: c.updated_at,
     username: c.author_name || "Fan",
     avatarUrl: c.author_avatar || null,
+    parentId: c.parent_id || null,
   }));
 
   return NextResponse.json({ comments });
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { url, content } = body;
+  const { url, content, parentId } = body;
 
   if (!url || !content) {
     return NextResponse.json({ error: "Missing url or content" }, { status: 400 });
@@ -87,8 +88,9 @@ export async function POST(req: NextRequest) {
       content: trimmed,
       author_name: authorName,
       author_avatar: authorAvatar,
+      ...(parentId ? { parent_id: parentId } : {}),
     })
-    .select("id, content, created_at")
+    .select("id, content, parent_id, created_at")
     .single();
 
   if (error) {
@@ -104,6 +106,7 @@ export async function POST(req: NextRequest) {
       updatedAt: data.created_at,
       username: authorName,
       avatarUrl: authorAvatar,
+      parentId: data.parent_id || null,
     },
   });
 }

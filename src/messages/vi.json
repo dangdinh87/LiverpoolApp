@@ -140,7 +140,10 @@
       "hoursAgo": "{n} giờ trước",
       "daysAgo": "{n} ngày trước",
       "charCount": "{n}/1000",
-      "totalArticle": "{count} bình luận"
+      "totalArticle": "{count} bình luận",
+      "reply": "Trả lời",
+      "replyingTo": "Đang trả lời {name}",
+      "replyPlaceholder": "Viết trả lời..."
     },
     "article": {
       "backToNews": "Quay lại Tin tức",
