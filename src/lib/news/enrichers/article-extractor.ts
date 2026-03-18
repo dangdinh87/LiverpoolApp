@@ -503,9 +503,11 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     $("#article_sapo").text().trim() || undefined;
 
   // 24h nests article content inside .cate-24h-foot-arti-deta-info within #article_body
-  const container = $(
-    ".cate-24h-foot-arti-deta-info, #article_body, .detail-content, .cms-body, article"
-  ).first();
+  // Use cascading fallback — .first() picks first DOM element, not first selector
+  const container =
+    $(".cate-24h-foot-arti-deta-info").first().length ? $(".cate-24h-foot-arti-deta-info").first()
+    : $("#article_body").first().length ? $("#article_body").first()
+    : $(".detail-content, .cms-body, article").first();
 
   const paragraphs: string[] = [];
   const images: string[] = [];
