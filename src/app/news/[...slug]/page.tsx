@@ -24,6 +24,7 @@ import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
+import { ArticleEndSections } from "@/components/news/article-end-sections";
 
 export const dynamic = "force-dynamic";
 
@@ -315,6 +316,12 @@ export default async function ArticlePage({
             </div>
             <CommentSection articleUrl={url} />
             <RelatedArticles articles={related} />
+            <ArticleEndSections
+              source={source}
+              allArticles={allArticles}
+              nextMatch={nextMatch}
+              currentArticleUrl={url}
+            />
           </div>
         </TranslateProvider>
       ) : (
@@ -376,6 +383,12 @@ export default async function ArticlePage({
           </div>
           <CommentSection articleUrl={url} />
           <RelatedArticles articles={related} />
+          <ArticleEndSections
+            source={source}
+            allArticles={allArticles}
+            nextMatch={nextMatch}
+            currentArticleUrl={url}
+          />
         </div>
       )}
     </div>
