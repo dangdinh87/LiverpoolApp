@@ -56,11 +56,18 @@ function getRelatedArticles(
   currentSource?: NewsSource,
   count = 6,
 ) {
+  // Filter by same language: Vietnamese articles → only Vietnamese related, English → only English
+  const isCurrentVi = currentSource ? VI_SOURCES.has(currentSource) : false;
+  const sameLangArticles = all.filter((a) => {
+    const artSource = detectArticleSource(a.link).id;
+    return VI_SOURCES.has(artSource) === isCurrentVi;
+  });
+
   const currentWords = new Set(
     currentTitle.toLowerCase().split(/\s+/)
       .filter((w) => w.length > 3 && !STOP_WORDS.has(w)),
   );
-  return all
+  return sameLangArticles
     .filter((a) => a.link !== currentUrl)
     .map((a) => {
       const words = a.title.toLowerCase().split(/\s+/)

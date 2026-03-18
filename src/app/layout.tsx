@@ -7,6 +7,7 @@ import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
 import { GlobalChat } from "@/components/chat/global-chat";
 import { GlobalToast } from "@/components/ui/toast-notification";
+import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
 import "./globals.css";
 
@@ -143,6 +144,7 @@ export default async function RootLayout({
               <main className="min-h-screen">{children}</main>
               <Footer />
               <GlobalToast />
+              <ScrollToTop />
               <GlobalChat />
             </NextIntlClientProvider>
           </QueryProvider>
