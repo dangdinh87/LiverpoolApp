@@ -532,12 +532,10 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // 24h uses data-original for lazy-loaded images (src is a base64 placeholder)
-  // Filter: only keep images with meaningful alt text or from article date, skip nav/banner icons
   const tinyImgPattern = /height\d{1,2}\b|width\d{1,2}height/;
   container.find("img").each((_, el) => {
     const $el = $(el);
-    // Skip ad/banner/game images
-    if ($el.closest("[class*='banner'], [class*='game'], .ad-unit, .box-game").length) return;
+    if ($el.closest("[class*='banner'], [class*='game'], .ad-unit, .box-game, .bv-lq").length) return;
     const src = resolveImageSrc($el);
     if (
       src &&
@@ -553,11 +551,50 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  // Build htmlContent — preserve bold headings and inline images
+  const clone = container.clone();
+  // Remove junk: ads, scripts, related articles, minigame, banners
+  clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
+  // Remove empty paragraphs and junk text (keep <p> that contain images)
+  clone.find("p").each((_, el) => {
+    const $p = $(el);
+    if ($p.find("img").length > 0) return; // keep image-containing paragraphs
+    const text = $p.text().trim();
+    if (text.length < 5 || junkPattern.test(text)) $p.remove();
+  });
+  // Resolve lazy-loaded images: replace data-original → src, remove junk images
+  // Collect removals first to avoid mutation during iteration
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const toRemove: cheerio.Cheerio<any>[] = [];
+  clone.find("img").each((_, el) => {
+    const $el = $(el);
+    const realSrc = resolveImageSrc($el);
+    const alt = $el.attr("alt")?.trim() || "";
+    const isArticleImage = realSrc
+      && realSrc.includes("icdn.24h.com.vn/upload")
+      && alt.length > 5 // 24h only sets alt text on real article images
+      && !tinyImgPattern.test(realSrc)
+      && !realSrc.includes("close.svg")
+      && !realSrc.includes("banner")
+      && !realSrc.includes("box-game")
+      && !realSrc.includes("logo");
+    if (isArticleImage) {
+      $el.attr("src", realSrc);
+      $el.removeAttr("data-original");
+      $el.removeAttr("data-src");
+      $el.attr("loading", "lazy");
+    } else {
+      toRemove.push($el);
+    }
+  });
+  for (const $el of toRemove) $el.remove();
+  const htmlContent = sanitize(clone.html() || "", ARTICLE_SANITIZE_OPTS) || undefined;
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "24h",
   };
