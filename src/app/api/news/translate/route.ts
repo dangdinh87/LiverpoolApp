@@ -93,14 +93,35 @@ export async function POST(req: NextRequest) {
     sections.push(...cleanParagraphs);
     const input = sections.join("\n|||\n");
 
-    // Call Groq for translation
+    // Call Groq with model fallback on rate limit
     const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-    const result = await generateText({
-      model: groq("llama-3.3-70b-versatile"),
-      system: TRANSLATE_PROMPT,
-      prompt: input,
-      maxOutputTokens: 4000,
-    });
+    const TRANSLATE_MODELS = [
+      "llama-3.3-70b-versatile",   // best quality for translation
+      "moonshotai/kimi-k2-instruct", // 60 RPM, strong multilingual
+      "qwen/qwen3-32b",             // good Vietnamese support
+      "llama-3.1-8b-instant",       // fast fallback, 500K TPD
+    ];
+    let result;
+    for (const modelId of TRANSLATE_MODELS) {
+      try {
+        result = await generateText({
+          model: groq(modelId),
+          system: TRANSLATE_PROMPT,
+          prompt: input,
+          maxOutputTokens: 4000,
+        });
+        break; // success
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        const isRateLimit = msg.includes("429") || msg.includes("rate limit") || msg.includes("tokens per");
+        if (isRateLimit && modelId !== TRANSLATE_MODELS[TRANSLATE_MODELS.length - 1]) {
+          console.warn(`[translate] ${modelId} rate limited, falling back...`);
+          continue;
+        }
+        throw err;
+      }
+    }
+    if (!result) throw new Error("All translation models failed");
 
     // Parse translated sections — strip any label prefixes the LLM might add
     const stripPrefix = (s: string) =>

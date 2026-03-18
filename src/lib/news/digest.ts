@@ -47,10 +47,11 @@ const CATEGORY_VI_MAP: Record<string, string> = {
 // Model fallback chain — try each model in order until one succeeds.
 // Groq free tier has per-model daily token limits (TPD).
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",   // best quality, 100K TPD
-  "qwen/qwen3-32b",            // strong fallback, 500K TPD
-  "llama-3.1-8b-instant",      // fast fallback, 500K TPD
-  "openai/gpt-oss-20b",        // last resort, 200K TPD
+  "llama-3.3-70b-versatile",     // best quality, 100K TPD
+  "moonshotai/kimi-k2-instruct", // 60 RPM, 300K TPD, strong reasoning
+  "qwen/qwen3-32b",              // 60 RPM, 500K TPD, good Vietnamese
+  "openai/gpt-oss-120b",         // 120B params, 200K TPD
+  "llama-3.1-8b-instant",        // fast fallback, 500K TPD
 ] as const;
 
 const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
@@ -139,7 +140,7 @@ export async function generateDailyDigest(): Promise<DigestResult> {
       break;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const isRateLimit = msg.includes("Rate limit") || msg.includes("429") || msg.includes("tokens per day");
+      const isRateLimit = msg.includes("Rate limit") || msg.includes("rate_limit") || msg.includes("429") || msg.includes("tokens per");
       if (isRateLimit && modelId !== GROQ_MODELS[GROQ_MODELS.length - 1]) {
         console.warn(`[digest] ${modelId} rate limited, falling back...`);
         continue;
