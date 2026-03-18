@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Heart, Info } from "lucide-react";
+import { Check, X, Heart, Info, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToastStore } from "@/stores/toast-store";
 
 const ICON_MAP = {
   success: <Check size={16} />,
-  error: <X size={16} />,
+  error: <AlertCircle size={16} />,
   favourite: <Heart size={16} className="fill-current" />,
   info: <Info size={16} />,
 };
