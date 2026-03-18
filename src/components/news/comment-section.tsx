@@ -86,11 +86,19 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     setReplyContent("");
   }
 
+  // Validate: min 2 chars, no duplicate of last comment
+  function isValid(text: string): boolean {
+    if (text.length < 2) return false;
+    const lastOwn = [...comments].reverse().find((c) => c.userId === userId);
+    if (lastOwn && lastOwn.content === text) return false; // prevent duplicate
+    return true;
+  }
+
   // Submit top-level comment
   async function handleSubmitTop(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = newComment.trim();
-    if (!trimmed || submitting) return;
+    if (!trimmed || !isValid(trimmed) || submitting) return;
 
     setSubmitting(true);
     try {
@@ -115,7 +123,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   async function handleSubmitReply(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = replyContent.trim();
-    if (!trimmed || submitting || !replyingToId) return;
+    if (!trimmed || !isValid(trimmed) || submitting || !replyingToId) return;
 
     // Find the comment being replied to
     const target = comments.find((c) => c.id === replyingToId);
@@ -187,8 +195,10 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     });
   }
 
-  // Thread structure
-  const topLevel = comments.filter((c) => !c.parentId);
+  // Thread structure — top-level newest first, replies oldest first (chronological)
+  const topLevel = comments
+    .filter((c) => !c.parentId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const repliesByParent = new Map<string, Comment[]>();
   for (const c of comments) {
     if (c.parentId) {
@@ -204,7 +214,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     const target = comments.find((c) => c.id === targetId);
 
     return (
-      <form onSubmit={handleSubmitReply} className="mt-1.5 ml-10 sm:ml-12">
+      <form onSubmit={handleSubmitReply} className="mt-1 pl-[42px] pr-3">
         <div className="flex items-center gap-1.5 mb-1">
           <span className="font-inter text-[11px] text-white/40">
             {t("replyingTo", { name: target?.username || "" })}
@@ -344,7 +354,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
 
               {/* Replies */}
               {repliesByParent.has(comment.id) && (
-                <div className="ml-10 sm:ml-12 border-l border-stadium-border/30 pl-3 space-y-0.5 mt-0.5">
+                <div className="ml-[42px] border-l-2 border-lfc-red/25 pl-3 space-y-0.5 mt-0.5">
                   {repliesByParent.get(comment.id)!.map((reply) => (
                     <div key={reply.id}>
                       <CommentItem
@@ -445,7 +455,7 @@ function CommentItem({
           {userId && (
             <button
               onClick={onReply}
-              className="font-inter text-[11px] text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer font-medium"
+              className="opacity-0 group-hover:opacity-100 transition-opacity font-inter text-[11px] text-stadium-muted hover:text-lfc-red cursor-pointer font-medium"
             >
               {t("reply")}
             </button>
