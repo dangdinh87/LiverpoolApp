@@ -91,7 +91,7 @@ export async function syncPipeline(): Promise<SyncResult> {
 
   // Re-enrich: fetch og:image for articles missing thumbnails
   let enriched = 0;
-  const { data: noThumb } = await supabase
+  const { data: noThumbData } = await supabase
     .from("articles")
     .select("url")
     .is("thumbnail", null)
@@ -99,7 +99,9 @@ export async function syncPipeline(): Promise<SyncResult> {
     .order("fetched_at", { ascending: false })
     .limit(30);
 
-  if (noThumb?.length) {
+  const noThumb: { url: string }[] = noThumbData || [];
+
+  if (noThumb.length) {
     const BATCH = 10;
     for (let i = 0; i < noThumb.length; i += BATCH) {
       const batch = noThumb.slice(i, i + BATCH);
