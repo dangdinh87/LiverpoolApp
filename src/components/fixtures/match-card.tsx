@@ -105,11 +105,14 @@ export function MatchCard({ fixture }: MatchCardProps) {
       )}
     >
       {/* Watermark competition logo — large, tilted, faded background */}
-      {league.logo && (
-        <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-52 h-52 opacity-[0.18] rotate-[-12deg] pointer-events-none select-none">
-          <Image src={league.logo} alt="" fill sizes="208px" className="object-contain brightness-200" loading="lazy" />
-        </div>
-      )}
+      {league.logo && (() => {
+        const isDarkLogo = league.name.includes("Premier") || league.name.includes("Champions");
+        return (
+          <div className="absolute -right-4 top-1/2 -translate-y-1/2 w-52 h-52 opacity-[0.12] -rotate-12 pointer-events-none select-none">
+            <Image src={league.logo} alt="" fill sizes="208px" className={`object-contain ${isDarkLogo ? "brightness-0 invert" : ""}`} loading="lazy" />
+          </div>
+        );
+      })()}
 
       {/* Result accent strip — with colored glow */}
       {isFinished && <div className={cn("absolute left-0 top-0 bottom-0 w-1", resultCfg.bg, resultCfg.glow)} />}

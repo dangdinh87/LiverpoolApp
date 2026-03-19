@@ -20,7 +20,7 @@ export default async function LegalPage() {
           {t("title")}
         </h1>
         <p className="text-stadium-muted font-inter text-sm mb-10">
-          {t("lastUpdated", { date: "January 2025" })}
+          {t("lastUpdated", { date: "March 2026" })}
         </p>
 
         <div className="space-y-10">

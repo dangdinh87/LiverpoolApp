@@ -542,7 +542,7 @@ export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureL
     const summary = await fetchSummary(espnId);
     if (!summary?.rosters?.length) return [];
 
-    return summary.rosters.map((r) => {
+    return summary.rosters.filter((r) => r.roster?.length).map((r) => {
       const starters = r.roster.filter((p) => p.starter);
       const subs = r.roster.filter((p) => !p.starter);
 

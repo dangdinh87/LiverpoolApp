@@ -3,8 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft, MapPin, Calendar, Clock, Users,
-  CircleDot, ArrowUpFromLine, ArrowDownToLine, ChevronDown,
+  ArrowLeft, MapPin, Calendar, Users,
+  CircleDot, ArrowUpFromLine, ArrowDownToLine,
 } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import {
@@ -13,8 +13,12 @@ import {
   getFixtureLineups,
   getFixtureStatistics,
   getMatchDetail,
+  computeH2H,
 } from "@/lib/football";
-import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
+import { H2HSection } from "@/components/fixtures/h2h-section";
+import { MatchDetailTabs } from "@/components/fixtures/match-detail-tabs";
+import { FormationPitch } from "@/components/fixtures/formation-pitch";
+import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical } from "@/lib/seo";
@@ -62,16 +66,41 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
   const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
 
-  const [events, lineups, providerStats, espnDetail] = await Promise.all([
+  const [events, lineups, providerStats, espnDetail, prevFixtures] = await Promise.all([
     isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
     getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
     isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
+    // Fetch previous season for richer H2H data (skip if current IS 2024)
+    league.season !== 2024
+      ? getFixtures(2024).catch(() => [] as Fixture[])
+      : Promise.resolve([] as Fixture[]),
   ]);
 
+  // H2H: compute from current + previous season fixtures
+  const opponentId = teams.home.id === LFC_ID ? teams.away.id : teams.home.id;
+  const opponentName = teams.home.id === LFC_ID ? teams.away.name : teams.home.name;
+  const allFixturesForH2H = [...fixtures, ...prevFixtures];
+  const h2h = computeH2H(allFixturesForH2H, opponentId);
+
   const date = new Date(f.date);
+  const now = Date.now();
+  const msToKickoff = date.getTime() - now;
+  const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
   const dateStr = date.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+
+  // Build stat label translation map
+  const STAT_KEYS = [
+    "Ball Possession", "Total Shots", "Shots on Target", "Shots off Target",
+    "Blocked Shots", "Saves", "Corner Kicks", "Offsides", "Fouls",
+    "Yellow Cards", "Red Cards", "Total Passes", "Accurate Passes",
+    "Pass Accuracy", "Tackles Won", "Interceptions", "Clearances", "Expected Goals",
+  ];
+  const statLabels: Record<string, string> = {};
+  for (const key of STAT_KEYS) {
+    try { statLabels[key] = tMatch(`statLabels.${key}`); } catch { statLabels[key] = key; }
+  }
 
   const matchStats = espnDetail?.stats?.length ? espnDetail.stats : providerStats;
   const homeStats = matchStats.find((s) =>
@@ -154,11 +183,14 @@ export default async function FixtureDetailPage({ params }: PageProps) {
         {/* ─── Match Header ─── */}
         <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6 mb-4 relative overflow-hidden">
           {/* Watermark competition logo */}
-          {league.logo && (
-            <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-64 h-64 opacity-[0.12] rotate-[-12deg] pointer-events-none select-none">
-              <Image src={league.logo} alt="" fill sizes="256px" className="object-contain brightness-200" loading="lazy" />
-            </div>
-          )}
+          {league.logo && (() => {
+            const isDarkLogo = league.name.includes("Premier") || league.name.includes("Champions");
+            return (
+              <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-64 h-64 opacity-[0.10] -rotate-12 pointer-events-none select-none">
+                <Image src={league.logo} alt="" fill sizes="256px" className={`object-contain ${isDarkLogo ? "brightness-0 invert" : ""}`} loading="lazy" />
+              </div>
+            );
+          })()}
 
           {/* Result accent strip */}
           {isFinished && result !== "NS" && (
@@ -295,38 +327,74 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* ─── Match Timeline (collapsible) ─── */}
-        {resolvedEvents.length > 0 && (
-          <DetailSection title={tDetail("matchTimeline")}>
-            <div>
-              {resolvedEvents.map((event, i) => (
-                <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
-              ))}
-            </div>
-          </DetailSection>
-        )}
-
-        {/* ─── Match Statistics (collapsible) ─── */}
-        {homeStats && awayStats && (
-          <DetailSection title={tDetail("statistics")}>
-            <StatsComparison home={homeStats} away={awayStats} />
-          </DetailSection>
-        )}
-
-        {/* ─── Lineups (collapsible) ─── */}
-        {(homeLineup || awayLineup) && (() => {
-          // Confirmed if match finished/live, or <1h before kickoff
-          const msToKickoff = date.getTime() - Date.now();
-          const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
+        {/* ─── Tabbed Content ─── */}
+        {(() => {
+          const hasLineups = !!(homeLineup || awayLineup);
+          const hasEvents = resolvedEvents.length > 0;
+          const hasStatistics = !!(homeStats && awayStats);
           const lineupLabel = isConfirmed ? tDetail("lineupsConfirmed") : tDetail("lineupsPredicted");
 
+          // If no tabs at all (upcoming match, no data), show placeholder
+          if (!hasEvents && !hasStatistics && !hasLineups && !h2h) {
+            return (
+              <p className="text-center text-stadium-muted font-inter text-sm py-8">
+                {tDetail("noData")}
+              </p>
+            );
+          }
+
           return (
-            <DetailSection title={tDetail("lineups")} badge={lineupLabel} badgeConfirmed={isConfirmed}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-                {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-              </div>
-            </DetailSection>
+            <MatchDetailTabs
+              hasTimeline={hasEvents}
+              hasStats={hasStatistics}
+              hasLineups={hasLineups}
+              hasH2H={!!h2h}
+              timelinePanel={
+                <div className="bg-stadium-surface border border-stadium-border p-4 sm:p-5">
+                  {resolvedEvents.map((event, i) => (
+                    <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
+                  ))}
+                </div>
+              }
+              statsPanel={
+                homeStats && awayStats ? (
+                  <div className="bg-stadium-surface border border-stadium-border p-4 sm:p-5">
+                    <StatsComparison home={homeStats} away={awayStats} statLabels={statLabels} />
+                  </div>
+                ) : null
+              }
+              lineupsPanel={
+                hasLineups ? (
+                  <div className="space-y-4">
+                    {/* Formation pitch view */}
+                    {homeLineup && awayLineup && (
+                      <FormationPitch homeLineup={homeLineup} awayLineup={awayLineup} />
+                    )}
+
+                    {/* Detailed lineup lists */}
+                    <div className="bg-stadium-surface border border-stadium-border p-4 sm:p-5">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className={cn(
+                          "px-2 py-0.5 text-[10px] font-barlow font-semibold uppercase tracking-wider border",
+                          isConfirmed
+                            ? "text-green-400 border-green-500/30 bg-green-500/10"
+                            : "text-lfc-gold border-lfc-gold/30 bg-lfc-gold/10",
+                        )}>
+                          {lineupLabel}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                        {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                      </div>
+                    </div>
+                  </div>
+                ) : null
+              }
+              h2hPanel={
+                h2h ? <H2HSection h2h={h2h} opponentName={opponentName} /> : null
+              }
+            />
           );
         })()}
       </div>
@@ -334,33 +402,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   );
 }
 
-// ─── Collapsible section using native <details> ────────────────────────────
-
-function DetailSection({ title, children, badge, badgeConfirmed }: { title: string; children: React.ReactNode; badge?: string; badgeConfirmed?: boolean }) {
-  return (
-    <details open className="group bg-stadium-surface border border-stadium-border mb-4">
-      <summary className="flex items-center justify-between cursor-pointer p-4 sm:p-5 select-none list-none [&::-webkit-details-marker]:hidden">
-        <div className="flex items-center gap-2">
-          <h2 className="font-bebas text-lg text-white tracking-wider">{title}</h2>
-          {badge && (
-            <span className={cn(
-              "px-2 py-0.5 text-[10px] font-barlow font-semibold uppercase tracking-wider border",
-              badgeConfirmed
-                ? "text-green-400 border-green-500/30 bg-green-500/10"
-                : "text-lfc-gold border-lfc-gold/30 bg-lfc-gold/10",
-            )}>
-              {badge}
-            </span>
-          )}
-        </div>
-        <ChevronDown size={18} className="text-stadium-muted transition-transform group-open:rotate-180" />
-      </summary>
-      <div className="px-4 sm:px-5 pb-4 sm:pb-5">
-        {children}
-      </div>
-    </details>
-  );
-}
 
 // ─── Timeline ───────────────────────────────────────────────────────────────
 
@@ -420,7 +461,7 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
 
 // ─── Stats (center-outward bars) ────────────────────────────────────────────
 
-function StatsComparison({ home, away }: { home: FixtureTeamStats; away: FixtureTeamStats }) {
+function StatsComparison({ home, away, statLabels }: { home: FixtureTeamStats; away: FixtureTeamStats; statLabels: Record<string, string> }) {
   const statTypes = home.statistics.map((s) => s.type);
 
   return (
@@ -442,7 +483,7 @@ function StatsComparison({ home, away }: { home: FixtureTeamStats; away: Fixture
 
         return (
           <div key={type}>
-            <p className="text-stadium-muted text-[11px] font-inter text-center mb-1">{type}</p>
+            <p className="text-stadium-muted text-[11px] font-inter text-center mb-1">{statLabels[type] ?? type}</p>
             <div className="flex items-center gap-2">
               <span className={cn("font-inter text-sm font-semibold w-14 text-right", hWins ? "text-white" : "text-stadium-muted")}>{hStr}</span>
               <div className="flex-1 flex h-2 gap-0.5">
@@ -527,10 +568,14 @@ function LineupSection({ lineup, subsLabel, coachLabel }: { lineup: FixtureLineu
 
       {/* Coach */}
       {lineup.coach.name && (
-        <div className="border-t border-stadium-border/50 pt-2 mt-3">
-          <p className="text-xs font-inter text-stadium-muted">
-            {coachLabel}: <span className="text-white font-medium">{lineup.coach.name}</span>
-          </p>
+        <div className="border-t border-stadium-border/50 pt-3 mt-3 flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full bg-stadium-surface2 flex items-center justify-center shrink-0 border border-stadium-border/50">
+            <span className="font-bebas text-sm text-stadium-muted">{lineup.coach.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</span>
+          </div>
+          <div>
+            <p className="text-[10px] font-barlow text-stadium-muted uppercase tracking-wider">{coachLabel}</p>
+            <p className="text-sm font-inter text-white font-medium">{lineup.coach.name}</p>
+          </div>
         </div>
       )}
     </div>

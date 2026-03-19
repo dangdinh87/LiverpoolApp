@@ -117,10 +117,16 @@ export function NewsSourceMarquee() {
     }, 3000);
   }, []);
 
+  // Resume immediately on mouse leave
+  const resumeAutoScroll = useCallback(() => {
+    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+    autoScrollRef.current = true;
+  }, []);
+
   return (
     <div className="bg-white/5 border-t border-white/10 pt-6 pb-4">
       {/* Description */}
-      <p className="text-center text-stadium-muted text-xs font-barlow uppercase tracking-[0.15em] mb-4">
+      <p className="text-center text-stadium-muted text-sm font-bebas uppercase tracking-[0.2em] mb-4">
         {t("newsSources")}
       </p>
 
@@ -129,8 +135,11 @@ export function NewsSourceMarquee() {
         ref={scrollRef}
         onScroll={handleScroll}
         onPointerDown={pauseAutoScroll}
+        onMouseEnter={pauseAutoScroll}
+        onMouseLeave={resumeAutoScroll}
         onWheel={pauseAutoScroll}
         onTouchStart={pauseAutoScroll}
+        onTouchEnd={resumeAutoScroll}
         className="flex overflow-x-auto scrollbar-none cursor-grab active:cursor-grabbing"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >

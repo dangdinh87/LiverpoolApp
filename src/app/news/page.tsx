@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, getLocale } from "next-intl/server";
-import { getNewsFromDB } from "@/lib/news";
+import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
+import type { ArticleEngagement } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
@@ -24,10 +25,16 @@ export default async function NewsPage() {
   ]);
   const userLang = locale === "vi" ? "vi" : "en";
   // Fetch both vi + en articles — balanced 30 each (no lang bias so both tabs have content)
-  const [allArticles, digest] = await Promise.all([
+  const [allArticles, digest, engagementMap] = await Promise.all([
     getNewsFromDB(60),
     getLatestDigest(),
+    getArticleEngagement(),
   ]);
+  // Serialize engagement map for client component
+  const engagement: Record<string, { likes: number; comments: number; total: number }> = {};
+  for (const [url, data] of engagementMap) {
+    engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
+  }
   // Always split by Vietnamese vs International (not relative to user locale)
   const localArticles = allArticles.filter((a) => a.language === "vi");
   const globalArticles = allArticles.filter((a) => a.language !== "vi");
@@ -84,6 +91,7 @@ export default async function NewsPage() {
           localArticles={localArticles}
           globalArticles={globalArticles}
           locale={userLang}
+          engagement={engagement}
         />
 
         {/* Attribution */}

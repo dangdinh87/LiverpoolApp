@@ -31,6 +31,40 @@ function isSameCalendarDay(a: Date, b: Date) {
   );
 }
 
+// Mock fixture for dev/fallback when no real upcoming match
+function createMockFixture(): Fixture {
+  const kickoff = new Date();
+  kickoff.setDate(kickoff.getDate() + 3);
+  kickoff.setHours(20, 0, 0, 0);
+  return {
+    fixture: {
+      id: 0,
+      date: kickoff.toISOString(),
+      venue: { id: null, name: "Anfield", city: "Liverpool" },
+      status: { long: "Not Started", short: "NS", elapsed: null },
+    },
+    league: {
+      id: 39,
+      name: "Premier League",
+      country: "England",
+      logo: "https://media.api-sports.io/football/leagues/39.png",
+      season: 2025,
+      round: "Regular Season - 30",
+    },
+    teams: {
+      home: { id: 40, name: "Liverpool", logo: "/assets/lfc/crest.webp", winner: null },
+      away: { id: 50, name: "Manchester City", logo: "https://media.api-sports.io/football/teams/50.png", winner: null },
+    },
+    goals: { home: null, away: null },
+    score: {
+      halftime: { home: null, away: null },
+      fulltime: { home: null, away: null },
+      extratime: { home: null, away: null },
+      penalty: { home: null, away: null },
+    },
+  };
+}
+
 interface NextMatchWidgetProps {
   fixture: Fixture | null;
 }
@@ -39,7 +73,7 @@ function useCountdown(targetDate: string) {
   const [timeLeft, setTimeLeft] = useState(() => calcTimeLeft(targetDate));
 
   useEffect(() => {
-    const id = setInterval(() => setTimeLeft(calcTimeLeft(targetDate)), 60_000);
+    const id = setInterval(() => setTimeLeft(calcTimeLeft(targetDate)), 1_000);
     return () => clearInterval(id);
   }, [targetDate]);
 
@@ -52,23 +86,19 @@ function calcTimeLeft(targetDate: string) {
   const days = Math.floor(diff / 86_400_000);
   const hours = Math.floor((diff % 86_400_000) / 3_600_000);
   const mins = Math.floor((diff % 3_600_000) / 60_000);
-  return { days, hours, mins };
+  const secs = Math.floor((diff % 60_000) / 1_000);
+  return { days, hours, mins, secs };
 }
 
 export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
   const t = useTranslations("NextMatch");
   const locale = useLocale();
-  const countdown = useCountdown(fixture?.fixture.date ?? "");
+  // Use mock data when no real fixture available
+  const isMock = !fixture;
+  const displayFixture = fixture ?? createMockFixture();
+  const countdown = useCountdown(displayFixture.fixture.date);
 
-  if (!fixture) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 py-6">
-        <p className="text-stadium-muted font-inter text-sm">{t("noMatch")}</p>
-      </div>
-    );
-  }
-
-  const { teams, league, fixture: f } = fixture;
+  const { teams, league, fixture: f } = displayFixture;
   const date = new Date(f.date);
   const isLive = ["1H", "HT", "2H", "ET", "P", "BT", "LIVE"].includes(f.status.short);
   const elapsed = f.status.elapsed;
@@ -83,7 +113,11 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
       <OverviewCardHeader
         title={t("title")}
         action={
-          isLive ? (
+          isMock ? (
+            <span className="font-barlow text-[10px] font-semibold text-stadium-muted/60 uppercase tracking-wider">
+              Preview
+            </span>
+          ) : isLive ? (
             <span className="flex items-center gap-1.5 text-xs font-barlow font-semibold text-green-400 uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               {t("live")}
@@ -118,7 +152,7 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
           {isLive ? (
             <>
               <span className="font-bebas text-3xl text-white leading-none">
-                {fixture.goals.home ?? 0} - {fixture.goals.away ?? 0}
+                {displayFixture.goals.home ?? 0} - {displayFixture.goals.away ?? 0}
               </span>
               <span className={`font-barlow text-xs font-semibold uppercase ${isHT ? "text-lfc-gold" : "text-lfc-red"}`}>
                 {isHT ? "HT" : elapsed != null ? `${elapsed}'` : t("live")}
@@ -131,18 +165,24 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
                 <div className="flex items-center gap-1.5 text-center">
                   {countdown.days > 0 && (
                     <div className="flex flex-col items-center">
-                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.days}</span>
+                      <span className="font-bebas text-base text-lfc-red leading-none">{countdown.days}</span>
                       <span className="font-barlow text-[9px] text-stadium-muted uppercase">d</span>
                     </div>
                   )}
                   <div className="flex flex-col items-center">
-                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.hours}</span>
+                    <span className="font-bebas text-base text-lfc-red leading-none">{String(countdown.hours).padStart(2, "0")}</span>
                     <span className="font-barlow text-[9px] text-stadium-muted uppercase">h</span>
                   </div>
                   <div className="flex flex-col items-center">
-                    <span className="font-bebas text-base text-lfc-red leading-none">{countdown.mins}</span>
+                    <span className="font-bebas text-base text-lfc-red leading-none">{String(countdown.mins).padStart(2, "0")}</span>
                     <span className="font-barlow text-[9px] text-stadium-muted uppercase">m</span>
                   </div>
+                  {countdown.days === 0 && countdown.hours === 0 && (
+                    <div className="flex flex-col items-center">
+                      <span className="font-bebas text-base text-lfc-gold leading-none animate-pulse">{String(countdown.secs).padStart(2, "0")}</span>
+                      <span className="font-barlow text-[9px] text-stadium-muted uppercase">s</span>
+                    </div>
+                  )}
                 </div>
               ) : null}
             </>

@@ -8,6 +8,7 @@ import { FormTimeline } from "@/components/stats/form-timeline";
 import { CompetitionBreakdown } from "@/components/stats/competition-breakdown";
 import { RecordsMilestones } from "@/components/stats/records-milestones";
 import { SeasonSelector } from "@/components/stats/season-selector";
+import { SeasonComparison } from "@/components/stats/season-comparison";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
@@ -39,6 +40,31 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   // Compute all derived stats — pure function, zero API calls
   const seasonStats = computeSeasonStats(fixtures, standings);
+
+  // Fetch comparison seasons for season comparison chart (FDO free tier: 2022-2025)
+  const comparisonSeasons = [2024, 2023, 2022].filter((s) => s !== selectedSeason);
+  const compSeasonData = await Promise.all(
+    comparisonSeasons.slice(0, 2).map(async (s) => {
+      try {
+        const [fx, st] = await Promise.all([
+          getFixtures(s),
+          getStandings(s).catch(() => []),
+        ]);
+        return { season: s, stats: computeSeasonStats(fx, st) };
+      } catch {
+        return null;
+      }
+    })
+  );
+  const seasonComparisonList = [
+    { label: `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`, overview: seasonStats.overview },
+    ...compSeasonData
+      .filter((d): d is NonNullable<typeof d> => d !== null && d.stats.overview.played > 0)
+      .map((d) => ({
+        label: `${d.season}/${(d.season + 1).toString().slice(-2)}`,
+        overview: d.stats.overview,
+      })),
+  ];
 
   // Liverpool-only scorers for the table
   const lfcScorers = scorers.filter((s) => s.statistics[0]?.team?.id === 40);
@@ -237,6 +263,25 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             }}
           />
         </section>
+        )}
+
+        {/* ─── Section 6: Season Comparison ─── */}
+        {seasonComparisonList.length >= 2 && (
+          <section className="mb-12">
+            <SectionHeader title={t("comparison.title")} subtitle={t("comparison.subtitle")} />
+            <SeasonComparison
+              seasons={seasonComparisonList}
+              labels={{
+                wins: t("overview.wins"),
+                draws: t("overview.draws"),
+                losses: t("overview.losses"),
+                goalsFor: t("overview.goalsFor"),
+                goalsAgainst: t("overview.goalsAgainst"),
+                played: t("overview.played"),
+                winRate: t("overview.winRate"),
+              }}
+            />
+          </section>
         )}
 
       </div>

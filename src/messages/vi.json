@@ -75,6 +75,12 @@
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng"
   },
+  "Home": {
+    "breaking": {
+      "label": "Nóng",
+      "read": "Đọc"
+    }
+  },
   "Bento": {
     "season": "Mùa giải 2025/26",
     "title": "Tổng quan câu lạc bộ",
@@ -195,7 +201,8 @@
       "catAnalysis": "Phân tích",
       "catOpinion": "Bình luận",
       "newsSourceLabel": "Nguồn báo",
-      "newsSourceAll": "Tất cả"
+      "newsSourceAll": "Tất cả",
+      "hot": "Nóng"
     },
     "sidebar": {
       "source": "Nguồn tin",
@@ -589,6 +596,10 @@
       "goalsShort": "BT",
       "assistsShort": "KT",
       "appsShort": "Trận"
+    },
+    "comparison": {
+      "title": "So sánh mùa giải",
+      "subtitle": "So sánh các mùa giải gần đây"
     }
   },
   "History": {
@@ -677,11 +688,11 @@
       "description": "Tìm hiểu về LFCVN — tính năng, công nghệ và người đứng sau dự án cộng đồng Liverpool FC này."
     },
     "label": "Giới thiệu",
-    "title": "Câu chuyện đằng sau",
+    "title": "Được xây dựng từ đam mê",
     "disclaimer": "LFCVN là dự án <status>độc lập & không chính thức</status>. Không được xác nhận bởi hoặc liên kết với Liverpool Football Club, Fenway Sports Group, hoặc Premier League. Tất cả các nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
       "title": "Trang web này là gì?",
-      "description": "LFCVN là nền tảng Liverpool FC tất-cả-trong-một, tổng hợp dữ liệu bóng đá thời gian thực, tin tức đa ngôn ngữ và lịch sử câu lạc bộ — thiết kế cho The Reds toàn cầu.",
+      "description": "LFCVN ra đời từ một ý tưởng đơn giản: tạo ra một nơi mà fan Liverpool Việt Nam có thể theo dõi mọi thứ về đội bóng mình yêu — bằng chính ngôn ngữ của mình. Được xây dựng bởi fan, dành cho fan, LFCVN tổng hợp dữ liệu trận đấu, tin tức song ngữ, lịch sử câu lạc bộ và trợ lý AI vào một nền tảng duy nhất. You'll Never Walk Alone.",
       "featuresTitle": "Tính năng",
       "features": {
         "squad": "Đội hình đầy đủ với thống kê FPL — phong độ, giá, xG/xA, tỷ lệ chọn, cập nhật chấn thương",
@@ -794,7 +805,8 @@
       "lineupsConfirmed": "Chính thức",
       "lineupsPredicted": "Dự kiến",
       "substitutes": "Cầu thủ dự bị",
-      "coach": "HLV"
+      "coach": "HLV",
+      "noData": "Chi tiết trận đấu sẽ có sau khi bóng lăn."
     }
   },
   "Legal": {
@@ -804,7 +816,7 @@
     },
     "title": "Thông tin pháp lý",
     "lastUpdated": "Cập nhật lần cuối: {date}",
-    "contact": "Nếu có câu hỏi hoặc thắc mắc, vui lòng liên hệ <email>contactus@liverpoolfc.com</email>",
+    "contact": "Nếu có câu hỏi hoặc thắc mắc, vui lòng liên hệ <email>nguyendangdinh47@gmail.com</email>",
     "labels": {
       "privacy": "Chính sách bảo mật",
       "terms": "Điều khoản sử dụng"
@@ -812,15 +824,15 @@
     "sections": {
       "privacy": {
         "title": "Chính sách bảo mật",
-        "content": "LFCVN là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba."
+        "content": "LFCVN là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Lịch sử trò chuyện AI được lưu để duy trì cuộc hội thoại nhưng không chia sẻ ra bên ngoài. Hình ảnh gallery được lưu trữ trên Cloudinary. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba."
       },
       "terms": {
         "title": "Điều khoản sử dụng",
-        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ API Fantasy Premier League và Football-Data.org. Nội dung tin tức được tổng hợp từ các nguồn tin của BBC Sport RSS. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
+        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Nội dung tin tức được tổng hợp từ 17+ nguồn RSS bằng tiếng Anh và tiếng Việt. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi Groq. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
       },
       "sources": {
         "title": "Nguồn dữ liệu",
-        "content": "Dữ liệu trận đấu, lịch thi đấu và thống kê cầu thủ được cung cấp bởi API Fantasy Premier League (fantasy.premierleague.com). Bảng xếp hạng các giải đấu được cung cấp bởi Football-Data.org. Các bài báo tin tức được tổng hợp từ RSS feeds của BBC Sport. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên trang web dựa trên các bản ghi công khai có sẵn."
+        "content": "Bảng xếp hạng, lịch thi đấu và dữ liệu đội hình được cung cấp bởi Football-Data.org. Lịch thi đấu cúp và diễn biến trận đấu được bổ sung từ ESPN. Tin tức được tổng hợp từ 17+ nguồn RSS — tiếng Anh gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, GOAL; tiếng Việt gồm VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Webthethao. Chat AI và dịch bài viết được hỗ trợ bởi Groq API. Hình ảnh gallery được lưu trữ trên Cloudinary. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên dựa trên các nguồn công khai."
       }
     }
   },
@@ -927,6 +939,43 @@
       "inHours": "sau {n} giờ {m} phút",
       "inDays": "sau {n} ngày {h} giờ",
       "inMonths": "sau {n} tháng"
+    },
+    "h2h": {
+      "title": "Đối đầu",
+      "subtitle": "{count} trận",
+      "dataRange": "Dữ liệu từ {from} đến {to}",
+      "goalsFor": "Bàn thắng",
+      "goalsAgainst": "Bàn thua",
+      "avgGoals": "TB bàn/trận",
+      "cleanSheets": "Sạch lưới",
+      "winRate": "Tỷ lệ thắng",
+      "lastMeetings": "Các trận gần nhất"
+    },
+    "tabs": {
+      "timeline": "Diễn biến",
+      "stats": "Thống kê",
+      "lineups": "Đội hình",
+      "h2h": "Đối đầu"
+    },
+    "statLabels": {
+      "Ball Possession": "Kiểm soát bóng",
+      "Total Shots": "Tổng số cú sút",
+      "Shots on Target": "Sút trúng đích",
+      "Shots off Target": "Sút trượt",
+      "Blocked Shots": "Cú sút bị chặn",
+      "Saves": "Cứu thua",
+      "Corner Kicks": "Phạt góc",
+      "Offsides": "Việt vị",
+      "Fouls": "Phạm lỗi",
+      "Yellow Cards": "Thẻ vàng",
+      "Red Cards": "Thẻ đỏ",
+      "Total Passes": "Tổng số đường chuyền",
+      "Accurate Passes": "Chuyền chính xác",
+      "Pass Accuracy": "Tỉ lệ chuyền chính xác",
+      "Tackles Won": "Tắc bóng thành công",
+      "Interceptions": "Cắt bóng",
+      "Clearances": "Phá bóng",
+      "Expected Goals": "Bàn thắng kỳ vọng"
     }
   },
   "Footer": {

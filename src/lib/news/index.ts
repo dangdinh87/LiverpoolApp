@@ -18,6 +18,10 @@ export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 // Re-export DB query helpers
 export { getNewsFromDB, searchArticles, getNewsPaginated, getArticleTitlesByUrls } from "./db";
 
+// Re-export engagement helpers
+export { getArticleEngagement, HOT_THRESHOLD } from "./engagement";
+export type { ArticleEngagement } from "./engagement";
+
 // Build adapter list
 const adapters = [
   new LfcAdapter(),

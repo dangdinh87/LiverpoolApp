@@ -118,7 +118,7 @@ export function Footer() {
 
             {/* Col 2: Quick links */}
             <div>
-              <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-3">
+              <h3 className="font-bebas text-white uppercase tracking-wider text-sm mb-3">
                 {t("quickLinks")}
               </h3>
               <ul className="space-y-2">
@@ -139,7 +139,7 @@ export function Footer() {
             {/* Col 3: Legal + Contact */}
             <div className="flex flex-col gap-6">
               <div>
-                <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-3">
+                <h3 className="font-bebas text-white uppercase tracking-wider text-sm mb-3">
                   {t("legal")}
                 </h3>
                 <ul className="space-y-2">
@@ -161,7 +161,7 @@ export function Footer() {
                 </ul>
               </div>
               <div>
-                <h3 className="font-barlow font-semibold text-white uppercase tracking-wider text-xs mb-3">
+                <h3 className="font-bebas text-white uppercase tracking-wider text-sm mb-3">
                   {t("contact")}
                 </h3>
                 <div className="space-y-1 text-xs font-inter text-stadium-muted">

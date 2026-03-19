@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bookmark, Newspaper } from "lucide-react";
 import { useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { unsaveArticle } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
 import {
@@ -31,6 +31,8 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
   const [isPending, startTransition] = useTransition();
   const { show: showToast } = useToast();
   const t = useTranslations("Profile");
+  const locale = useLocale();
+  const dateLoc = locale === "vi" ? "vi-VN" : "en-GB";
   const [confirmTarget, setConfirmTarget] = useState<SavedArticle | null>(null);
 
   function handleUnsave(article: SavedArticle) {
@@ -137,7 +139,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                   {article.article_published_at && (
                     <span className="font-inter text-[11px] text-stadium-muted">
                       {new Date(article.article_published_at).toLocaleDateString(
-                        undefined,
+                        dateLoc,
                         { day: "numeric", month: "short" }
                       )}
                     </span>

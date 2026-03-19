@@ -14,7 +14,6 @@ import {
   Zap,
   Globe,
   Bot,
-  Shield,
 } from "lucide-react";
 import { MomoModal } from "./momo-modal";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
@@ -109,41 +108,18 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        {/* ── Creator ── */}
-        <section className="space-y-6">
-          <h2 className="font-bebas text-3xl text-white tracking-wider">
-            {t("creator.title")}
-          </h2>
-          <div className="flex flex-col sm:flex-row items-start gap-6 bg-stadium-surface/50 border border-stadium-border/50 p-6">
-            <div className="w-16 h-16 rounded-full bg-lfc-red/20 border border-lfc-red/30 flex items-center justify-center shrink-0">
-              <Shield size={28} className="text-lfc-red" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-bebas text-xl text-white tracking-wider">
-                Nguyễn Đăng Định
-              </h3>
-              <p className="font-barlow text-lfc-red uppercase tracking-[0.15em] text-xs font-bold">
-                {t("creator.role")}
-              </p>
-              <p className="font-inter text-stadium-muted text-sm leading-relaxed">
-                {t("creator.bio")}
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* ── Contact ── */}
-        <section className="space-y-4">
-          <h2 className="font-bebas text-3xl text-white tracking-wider">
+        <section className="bg-stadium-surface/40 border border-stadium-border/60 border-t-2 border-t-lfc-red p-8 space-y-5">
+          <h2 className="font-bebas text-4xl text-white tracking-wider">
             {t("contact.title")}
           </h2>
-          <p className="font-inter text-stadium-muted text-sm leading-relaxed">
+          <p className="font-inter text-stadium-muted text-sm leading-relaxed max-w-xl">
             {t("contact.description")}
           </p>
           <div className="flex flex-wrap gap-3">
             <a
               href="mailto:nguyendangdinh47@gmail.com"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-stadium-surface border border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:border-lfc-red/50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-lfc-red text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:bg-lfc-red/85 transition-colors"
             >
               <Mail size={16} />
               {t("contact.email")}
@@ -152,14 +128,14 @@ export default async function AboutPage() {
               href={t("contact.githubUrl")}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-stadium-surface border border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:border-lfc-red/50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-stadium-surface border-2 border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:border-lfc-red/50 transition-colors"
             >
               <Github size={16} />
               {t("contact.github")}
             </a>
             <a
               href="tel:0977963775"
-              className="inline-flex items-center gap-2 px-5 py-3 bg-stadium-surface border border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:border-lfc-red/50 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-stadium-surface border-2 border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm hover:border-lfc-red/50 transition-colors"
             >
               <Phone size={16} />
               {t("contact.phone")}

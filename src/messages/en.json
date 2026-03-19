@@ -74,6 +74,12 @@
     "fixtures": "Fixtures & Results",
     "standings": "Standings"
   },
+  "Home": {
+    "breaking": {
+      "label": "Breaking",
+      "read": "Read"
+    }
+  },
   "Bento": {
     "season": "Season 2025/26",
     "title": "Club Overview",
@@ -194,7 +200,8 @@
       "catAnalysis": "Analysis",
       "catOpinion": "Opinion",
       "newsSourceLabel": "News Source",
-      "newsSourceAll": "All"
+      "newsSourceAll": "All",
+      "hot": "Hot"
     },
     "sidebar": {
       "source": "Source",
@@ -588,6 +595,10 @@
       "goalsShort": "G",
       "assistsShort": "A",
       "appsShort": "Apps"
+    },
+    "comparison": {
+      "title": "Season Comparison",
+      "subtitle": "Compare across recent seasons"
     }
   },
   "History": {
@@ -676,11 +687,11 @@
       "description": "Learn more about LFCVN — features, tech stack, and the creator behind this Liverpool FC community project."
     },
     "label": "About",
-    "title": "The Story Behind",
+    "title": "Built from Passion",
     "disclaimer": "LFCVN is an <status>unofficial & independent</status> project. Not endorsed by or affiliated with Liverpool Football Club, Fenway Sports Group, or the Premier League. All trademarks belong to their respective owners.",
     "whatIs": {
       "title": "What is this site?",
-      "description": "LFCVN is an all-in-one Liverpool FC platform that brings together real-time football data, multilingual news, and rich club history — designed for Reds worldwide.",
+      "description": "LFCVN started with a simple idea: create a place where Vietnamese Liverpool fans can follow everything about the club they love — in their own language. Built by fans, for fans, LFCVN brings together match data, bilingual news, club history, and an AI assistant in one platform. You'll Never Walk Alone.",
       "featuresTitle": "Features",
       "features": {
         "squad": "Full squad with FPL stats — form, price, xG/xA, selection %, injury updates",
@@ -793,7 +804,8 @@
       "lineupsConfirmed": "Confirmed",
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
-      "coach": "Coach"
+      "coach": "Coach",
+      "noData": "Match details will be available after kickoff."
     }
   },
   "Legal": {
@@ -803,7 +815,7 @@
     },
     "title": "Legal Information",
     "lastUpdated": "Last updated: {date}",
-    "contact": "For questions or concerns, contact <email>contactus@liverpoolfc.com</email>",
+    "contact": "For questions or concerns, contact <email>nguyendangdinh47@gmail.com</email>",
     "labels": {
       "privacy": "Privacy Policy",
       "terms": "Terms of Use"
@@ -811,15 +823,15 @@
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. We do not sell or share your data with third parties."
+        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties."
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from the Fantasy Premier League API and Football-Data.org. News content is aggregated from BBC Sport RSS feeds. Use of this site constitutes acceptance of these terms."
+        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News content is aggregated from 17+ RSS sources in English and Vietnamese. AI features (chat, translation, daily digest) are powered by Groq. Use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "Match data, fixtures, and player statistics are provided by the Fantasy Premier League API (fantasy.premierleague.com). League standings are provided by Football-Data.org. News articles are aggregated from BBC Sport RSS feeds. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures, and squad data are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. News articles are aggregated from 17+ RSS feeds — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, and Webthethao. AI chat and article translation are powered by Groq API. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
       }
     }
   },
@@ -926,6 +938,43 @@
       "inHours": "in {n}h {m}m",
       "inDays": "in {n}d {h}h",
       "inMonths": "in {n} month{s}"
+    },
+    "h2h": {
+      "title": "Head to Head",
+      "subtitle": "{count} matches",
+      "dataRange": "Data from {from} to {to}",
+      "goalsFor": "Goals For",
+      "goalsAgainst": "Goals Against",
+      "avgGoals": "Avg Goals/Match",
+      "cleanSheets": "Clean Sheets",
+      "winRate": "Win Rate",
+      "lastMeetings": "Recent Meetings"
+    },
+    "tabs": {
+      "timeline": "Timeline",
+      "stats": "Statistics",
+      "lineups": "Lineups",
+      "h2h": "H2H"
+    },
+    "statLabels": {
+      "Ball Possession": "Ball Possession",
+      "Total Shots": "Total Shots",
+      "Shots on Target": "Shots on Target",
+      "Shots off Target": "Shots off Target",
+      "Blocked Shots": "Blocked Shots",
+      "Saves": "Saves",
+      "Corner Kicks": "Corner Kicks",
+      "Offsides": "Offsides",
+      "Fouls": "Fouls",
+      "Yellow Cards": "Yellow Cards",
+      "Red Cards": "Red Cards",
+      "Total Passes": "Total Passes",
+      "Accurate Passes": "Accurate Passes",
+      "Pass Accuracy": "Pass Accuracy",
+      "Tackles Won": "Tackles Won",
+      "Interceptions": "Interceptions",
+      "Clearances": "Clearances",
+      "Expected Goals": "Expected Goals"
     }
   },
   "Footer": {

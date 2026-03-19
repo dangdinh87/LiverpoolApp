@@ -166,7 +166,7 @@ export function SeasonTabs({
   return (
     <>
       {/* ── Sticky tab bar ── */}
-      <div className="sticky top-16 z-40 bg-stadium-bg/95 backdrop-blur-md border-b border-stadium-border">
+      <div className="sticky top-16 z-40 bg-stadium-bg border-b border-stadium-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             {/* Tabs */}

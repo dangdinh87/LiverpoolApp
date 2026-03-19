@@ -9,7 +9,7 @@ import {
   SlidersHorizontal, TrendingUp, ArrowDownWideNarrow,
   Globe, Flag, Earth,
   Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
-  Loader2,
+  Loader2, Flame, LayoutGrid, LayoutList, Rows3,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -39,7 +39,10 @@ type FeedFilter = "all" | "local" | "global";
 type SortMode = "trending" | "newest";
 type CategoryFilter = "all" | ArticleCategory;
 
+type ViewMode = "default" | "compact" | "expanded";
+
 const STORAGE_KEY = "lfc-news-filter";
+const VIEW_MODE_KEY = "lfc-news-view";
 
 function getSavedFilter(): FeedFilter {
   if (typeof window === "undefined") return "local";
@@ -47,6 +50,16 @@ function getSavedFilter(): FeedFilter {
   if (saved === "all" || saved === "local" || saved === "global") return saved;
   return "local";
 }
+
+function getSavedViewMode(): ViewMode {
+  if (typeof window === "undefined") return "default";
+  const saved = localStorage.getItem(VIEW_MODE_KEY);
+  if (saved === "default" || saved === "compact" || saved === "expanded") return saved;
+  return "default";
+}
+
+/** Hot threshold — articles with engagement >= this show fire badge */
+const HOT_THRESHOLD = 3;
 
 /* ── Filter config ── */
 
@@ -105,7 +118,31 @@ function CategoryBadge({ category }: { category?: ArticleCategory }) {
   );
 }
 
-function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
+function HotBadge({ engagement }: { engagement?: { total: number } }) {
+  const t = useTranslations("News.feed");
+  if (!engagement || engagement.total < HOT_THRESHOLD) return null;
+  return (
+    <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 bg-lfc-red/20 text-lfc-red">
+      <Flame className="w-3 h-3" />
+      {t("hot")}
+    </span>
+  );
+}
+
+function EngagementBar({ engagement, maxEngagement }: { engagement?: { total: number }; maxEngagement: number }) {
+  if (!engagement || engagement.total === 0 || maxEngagement === 0) return null;
+  const pct = Math.min((engagement.total / maxEngagement) * 100, 100);
+  return (
+    <div className="w-full h-0.5 bg-stadium-surface2 overflow-hidden mt-2">
+      <div
+        style={{ width: `${pct}%` }}
+        className="h-full bg-linear-to-r from-lfc-red to-lfc-gold transition-all duration-500"
+      />
+    </div>
+  );
+}
+
+function HeroCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
   const t = useTranslations("News.feed");
   return (
     <Link
@@ -140,6 +177,7 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <Badge source={article.source} />
           <CategoryBadge category={article.category} />
+          <HotBadge engagement={engData} />
           {formatRelativeDate(article.pubDate, article.language) && (
             <span className="font-inter text-xs text-white/50 flex items-center gap-1">
               <Clock className="w-3 h-3" />
@@ -150,12 +188,13 @@ function HeroCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         <h2 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug line-clamp-2 transition-colors duration-300 group-hover:text-lfc-gold">
           {article.title}
         </h2>
+        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
       </div>
     </Link>
   );
 }
 
-function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
+function GridCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
   const t = useTranslations("News.feed");
   return (
     <Link
@@ -189,6 +228,7 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
         <div className="flex items-center gap-2 mb-2 flex-wrap min-h-[20px]">
           <Badge source={article.source} />
           <CategoryBadge category={article.category} />
+          <HotBadge engagement={engData} />
         </div>
         <h3 className="font-inter text-sm font-semibold text-white leading-snug line-clamp-3 min-h-[3.6em]">
           {article.title}
@@ -198,7 +238,102 @@ function GridCard({ article, isRead }: { article: NewsArticle; isRead: boolean }
             {formatRelativeDate(article.pubDate, article.language)}
           </span>
         )}
+        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
       </div>
+    </Link>
+  );
+}
+
+function ExpandedCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
+  const t = useTranslations("News.feed");
+  return (
+    <Link
+      href={getArticleUrl(article.link)}
+      className={`group block bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${isRead ? "opacity-50" : ""}`}
+    >
+      {article.thumbnail && (
+        <div className="relative aspect-video w-full overflow-hidden">
+          <Image
+            src={article.thumbnail}
+            alt={article.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            loading="lazy"
+            unoptimized
+          />
+          {isRead && (
+            <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm">
+              <CheckCheck className="w-3 h-3 text-green-400" />
+              <span className="font-barlow text-[9px] uppercase tracking-wider text-green-400">{t("read")}</span>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="p-5 flex flex-col gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge source={article.source} />
+          <CategoryBadge category={article.category} />
+          <HotBadge engagement={engData} />
+          {formatRelativeDate(article.pubDate, article.language) && (
+            <span className="font-inter text-[11px] text-stadium-muted flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {formatRelativeDate(article.pubDate, article.language)}
+            </span>
+          )}
+        </div>
+        <h3 className="font-inter text-base font-semibold text-white leading-snug">
+          {article.title}
+        </h3>
+        {article.contentSnippet && (
+          <p className="font-inter text-sm text-white/60 line-clamp-2 leading-relaxed">
+            {article.contentSnippet}
+          </p>
+        )}
+        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
+      </div>
+    </Link>
+  );
+}
+
+function ListCard({ article, isRead, engData }: { article: NewsArticle; isRead: boolean; engData?: { total: number } }) {
+  return (
+    <Link
+      href={getArticleUrl(article.link)}
+      className={`group flex items-center gap-3 py-3 px-3 border-b border-stadium-border/30 cursor-pointer transition-colors hover:bg-stadium-surface/60 ${isRead ? "opacity-50" : ""}`}
+    >
+      {/* Thumbnail */}
+      <div className="relative w-20 h-14 sm:w-24 sm:h-16 shrink-0 overflow-hidden bg-stadium-surface2">
+        {article.thumbnail ? (
+          <Image
+            src={article.thumbnail}
+            alt=""
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+            sizes="96px"
+            loading="lazy"
+            unoptimized
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Newspaper className="w-4 h-4 text-stadium-muted" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <Badge source={article.source} />
+          <HotBadge engagement={engData} />
+        </div>
+        <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2">
+          {article.title}
+        </p>
+      </div>
+      {formatRelativeDate(article.pubDate, article.language) && (
+        <span className="font-inter text-[11px] text-stadium-muted shrink-0 hidden sm:block">
+          {formatRelativeDate(article.pubDate, article.language)}
+        </span>
+      )}
     </Link>
   );
 }
@@ -418,25 +553,29 @@ interface NewsFeedProps {
   localArticles: NewsArticle[];
   globalArticles: NewsArticle[];
   locale: "en" | "vi";
+  engagement?: Record<string, { likes: number; comments: number; total: number }>;
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles, locale, engagement = {} }: NewsFeedProps) {
   const t = useTranslations("News.feed");
-  const [langFilter, setLangFilter] = useState<FeedFilter>("local");
+  const [langFilter, setLangFilter] = useState<FeedFilter>(getSavedFilter);
   const [sortMode, setSortMode] = useState<SortMode>("trending");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | NewsSource>("all");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [readSet, setReadSet] = useState<Set<string>>(new Set());
+  const [readSet, setReadSet] = useState<Set<string>>(getReadArticles);
+  const [viewMode, setViewMode] = useState<ViewMode>(getSavedViewMode);
   // Server-side load-more state
   const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
   const [serverHasMore, setServerHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
-  useEffect(() => {
-    setLangFilter(getSavedFilter());
-    setReadSet(getReadArticles());
-  }, []);
+
+  // Max engagement for heat bar scaling
+  const maxEngagement = useMemo(() => {
+    const values = Object.values(engagement).map((e) => e.total);
+    return Math.max(...values, 1);
+  }, [engagement]);
 
   const handleLangFilter = (f: FeedFilter) => {
     setLangFilter(f);
@@ -503,12 +642,17 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
   const sorted = useMemo(
     () => [...catFiltered].sort((a, b) => {
       if (sortMode === "trending") {
+        // Use real engagement data if available, fallback to static relevanceScore
+        const aEng = engagement[a.link]?.total ?? 0;
+        const bEng = engagement[b.link]?.total ?? 0;
+        const engDiff = bEng - aEng;
+        if (engDiff !== 0) return engDiff;
         const scoreDiff = (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
         if (scoreDiff !== 0) return scoreDiff;
       }
       return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
     }),
-    [catFiltered, sortMode]
+    [catFiltered, sortMode, engagement]
   );
 
   const articles = useMemo(() => {
@@ -573,6 +717,29 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
           )}
         </div>
 
+        {/* View mode toggle */}
+        <div className="flex items-stretch border border-stadium-border/60 overflow-hidden shrink-0 bg-stadium-surface">
+          {([
+            { value: "default" as ViewMode, icon: LayoutGrid, label: "" },
+            { value: "compact" as ViewMode, icon: LayoutList, label: "" },
+            { value: "expanded" as ViewMode, icon: Rows3, label: "" },
+          ]).map(({ value, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => {
+                setViewMode(value);
+                localStorage.setItem(VIEW_MODE_KEY, value);
+              }}
+              className={`px-2.5 py-2 transition-colors cursor-pointer ${
+                viewMode === value ? "bg-lfc-red text-white" : "text-stadium-muted hover:text-white"
+              }`}
+              title={value}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </button>
+          ))}
+        </div>
+
         <FilterSheet
           sortMode={sortMode}
           setSortMode={handleSortMode}
@@ -613,6 +780,19 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
               <button onClick={() => handleSortMode("trending")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
+          {/* Reset all */}
+          <button
+            onClick={() => {
+              setSearch("");
+              handleSortMode("trending");
+              handleCategory("all");
+              handleSourceFilter("all");
+            }}
+            className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 text-lfc-red hover:text-white transition-colors cursor-pointer"
+          >
+            <X className="w-3 h-3" />
+            {t("resetFilters")}
+          </button>
         </div>
       )}
 
@@ -631,7 +811,74 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
         <>
           {(() => {
             const visible = articles.slice(0, visibleCount);
-            const hasMore = visibleCount < articles.length || serverHasMore;
+            // Only consider serverHasMore when no client-side filters are active
+            // (server load-more doesn't apply category/source/search filters)
+            const hasClientFilters = category !== "all" || sourceFilter !== "all" || search.trim() !== "";
+            const hasMore = visibleCount < articles.length || (!hasClientFilters && serverHasMore);
+
+            const loadMoreBtn = hasMore && (
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => {
+                    if (visibleCount < articles.length) {
+                      setVisibleCount((prev) =>
+                        Math.min(prev + LOAD_MORE_COUNT, articles.length)
+                      );
+                    } else if (serverHasMore) {
+                      const currentTotal = localArticles.length + globalArticles.length + extraArticles.length;
+                      startTransition(async () => {
+                        const { articles: newArticles, hasMore: more } =
+                          await loadMoreNews(currentTotal, LOAD_MORE_COUNT, langFilter === "local" ? "vi" : langFilter === "global" ? "en" : undefined);
+                        setExtraArticles((prev) => [...prev, ...newArticles]);
+                        setServerHasMore(more);
+                        setVisibleCount((prev) => prev + newArticles.length);
+                      });
+                    }
+                  }}
+                  disabled={isPending}
+                  className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      {t("loading")}
+                    </span>
+                  ) : (
+                    t("loadMore")
+                  )}
+                </button>
+              </div>
+            );
+
+            // Compact view: flat list with thumbnails
+            if (viewMode === "compact") {
+              return (
+                <>
+                  <div className="bg-stadium-surface/50 border border-stadium-border/30 divide-y divide-stadium-border/20">
+                    {visible.map((article) => (
+                      <ListCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} />
+                    ))}
+                  </div>
+                  {loadMoreBtn}
+                </>
+              );
+            }
+
+            // Expanded view: all cards with full content
+            if (viewMode === "expanded") {
+              return (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {visible.map((article) => (
+                      <ExpandedCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} maxEngagement={maxEngagement} />
+                    ))}
+                  </div>
+                  {loadMoreBtn}
+                </>
+              );
+            }
+
+            // Default view: hero + grid + compact
             const hero = visible[0];
             const grid = visible.slice(1, 7);
             const compact = visible.slice(7);
@@ -639,13 +886,13 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
             return (
               <>
                 {hero && (
-                  <HeroCard article={hero} isRead={readSet.has(hero.link)} />
+                  <HeroCard article={hero} isRead={readSet.has(hero.link)} engData={engagement[hero.link]} maxEngagement={maxEngagement} />
                 )}
 
                 {grid.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {grid.map((article) => (
-                      <GridCard key={article.link} article={article} isRead={readSet.has(article.link)} />
+                      <GridCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} maxEngagement={maxEngagement} />
                     ))}
                   </div>
                 )}
@@ -663,41 +910,7 @@ export function NewsFeed({ localArticles, globalArticles, locale }: NewsFeedProp
                   </div>
                 )}
 
-                {hasMore && (
-                  <div className="text-center pt-4">
-                    <button
-                      onClick={() => {
-                        // First exhaust client-side articles
-                        if (visibleCount < articles.length) {
-                          setVisibleCount((prev) =>
-                            Math.min(prev + LOAD_MORE_COUNT, articles.length)
-                          );
-                        } else if (serverHasMore) {
-                          // Fetch more from server
-                          const currentTotal = localArticles.length + globalArticles.length + extraArticles.length;
-                          startTransition(async () => {
-                            const { articles: newArticles, hasMore: more } =
-                              await loadMoreNews(currentTotal, LOAD_MORE_COUNT, langFilter === "local" ? "vi" : langFilter === "global" ? "en" : undefined);
-                            setExtraArticles((prev) => [...prev, ...newArticles]);
-                            setServerHasMore(more);
-                            setVisibleCount((prev) => prev + newArticles.length);
-                          });
-                        }
-                      }}
-                      disabled={isPending}
-                      className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                      {isPending ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {t("loading")}
-                        </span>
-                      ) : (
-                        t("loadMore")
-                      )}
-                    </button>
-                  </div>
-                )}
+                {loadMoreBtn}
               </>
             );
           })()}
