@@ -373,13 +373,54 @@ CREATE TABLE news_digests (
 
 ---
 
+## Content Extraction & Video Support
+
+**File:** `src/lib/news/enrichers/article-extractor.ts`
+
+### HTML Content Scraping
+
+Per-source DOM selectors (verified 2026-03-11) extract full article HTML from publisher pages:
+
+```
+liverpoolfc.com      → #__NEXT_DATA__ (JSON) or article, main
+bbc.com              → [data-component=text-block] or article, main
+24h.com.vn           → article → .detail-content → .cms-body
+bongdaplus.vn        → .news-detail → .detail-body → .content-news
+vnexpress.net        → .fck_detail → .article-content
+[...15+ more sources with verified selectors]
+```
+
+### Features
+
+1. **24-hour cache** (CONTENT_CACHE_TTL_MS): Skips re-scraping recently extracted articles
+2. **Junk filtering**: Removes generic "next match" widget HTML and social CTAs
+3. **Video detection**: Finds embedded video URLs (HLS streams, MP4 files) and inserts placeholder divs
+4. **HTML sanitization**: Whitelist tags (p, h1–h4, img, figure, figcaption, a, em, strong, code, pre, ul, ol, li, blockquote, table)
+5. **Image extraction**: Collects all `<img src>` from article body
+6. **Reading time**: Word count ÷ 200
+7. **Thin content detection**: Flags articles <400 words as `isThinContent: true`
+
+### Article Rendering Components
+
+**`ArticleHtmlBody`** (`src/components/news/article-html-body.tsx`):
+- Renders `htmlContent` via dangerouslySetInnerHTML
+- Hydrates video player placeholders with imperative React mounting
+
+**`ArticleVideoPlayer`** (`src/components/news/article-video-player.tsx`):
+- Supports HLS streams (`.m3u8`) and MP4 files
+- Uses HLS.js for cross-browser HLS support
+- Falls back to native HTML5 video on Safari
+- Graceful error handling with link to original source
+
+---
+
 ## Cron Jobs
 
 Cấu hình trong `vercel.json`:
 
 | Route | Lịch chạy | `maxDuration` | Mục đích |
 |---|---|---|---|
-| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Đồng bộ tất cả feed RSS → Supabase |
+| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Đồng bộ tất cả feed RSS → Supabase, scrape HTML content + detect videos |
 | `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | mặc định | Soft-delete bài >30 ngày; hard-delete bài >60 ngày |
 | `/api/news/digest/generate` | `0 0 * * *` (nửa đêm UTC) | 60s | Tạo bản tóm tắt AI hàng ngày qua Groq |
 
@@ -413,7 +454,7 @@ src/lib/news/
 │   └── vietnamvn-adapter.ts   # Scraper cho vietnam.vn
 ├── enrichers/
 │   ├── og-meta.ts         # fetchOgMeta() — enrich ảnh OG / ngày đăng
-│   ├── article-extractor.ts   # Scraper nội dung bài đầy đủ (Cheerio)
+│   ├── article-extractor.ts   # Scraper nội dung bài đầy đủ (Cheerio) + video detection
 │   └── readability.ts     # Wrapper cho Mozilla Readability
 └── __tests__/
     ├── categories.test.ts

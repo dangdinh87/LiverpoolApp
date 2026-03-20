@@ -194,10 +194,12 @@ Score formula: `freshness × 0.4 + keywords × 0.3 + source_priority × 0.3`
 | `tags` | `text[]` | |
 | `published_at` | `timestamptz` | |
 | `fetched_at` | `timestamptz` | Set on upsert |
-| `content_scraped_at` | `timestamptz` | Set when full content is scraped |
+| `content_scraped_at` | `timestamptz` | Set when full content is scraped (24h cache) |
 | `word_count` | `integer` | |
-| `content_en` | `jsonb` | `{ paragraphs, description }` — 24h cache |
+| `content_en` | `jsonb` | `{ paragraphs, description, htmlContent, videoUrl, images, readingTime, isThinContent }` — 24h cache |
 | `content_vi` | `jsonb` | `{ paragraphs, description, translatedAt }` |
+| `htmlContent` | `text` | NEW: Sanitized full HTML from article page (for rich formatting + embedded videos) |
+| `videoUrl` | `text` | NEW: First detected video URL (HLS or MP4) |
 | `title_vi` | `text` | AI-translated title |
 | `snippet_vi` | `text` | AI-translated snippet |
 | `is_active` | `boolean` | `false` = soft-deleted by cleanup cron |
@@ -373,13 +375,81 @@ CREATE TABLE news_digests (
 
 ---
 
+## Content Extraction & Video Support
+
+**File:** `src/lib/news/enrichers/article-extractor.ts`
+
+### HTML Content Scraping
+
+Per-source DOM selectors (verified 2026-03-11) extract full article HTML from publisher pages:
+
+```
+liverpoolfc.com      → #__NEXT_DATA__ (JSON) or article, main
+bbc.com              → [data-component=text-block] or article, main
+24h.com.vn           → article → .detail-content → .cms-body
+bongdaplus.vn        → .news-detail → .detail-body → .content-news
+vnexpress.net        → .fck_detail → .article-content
+[...15+ more sources with verified selectors]
+```
+
+### Features
+
+1. **24-hour cache** (CONTENT_CACHE_TTL_MS): Skips re-scraping recently extracted articles to reduce load and improve latency
+2. **Junk filtering**: Removes generic "next match" widget HTML and social CTAs from articles
+3. **Video detection**: Finds embedded video URLs (HLS streams, MP4 files) and inserts placeholder divs:
+   ```html
+   <div class="article-video-player"
+        data-video-src="https://..."
+        data-poster="https://..."
+        data-source-url="..."
+        data-source-name="...">
+   </div>
+   ```
+4. **HTML sanitization**: Whitelist tags (p, h1–h4, img, figure, figcaption, a, em, strong, code, pre, ul, ol, li, blockquote, table)
+5. **Image extraction**: Collects all `<img src>` from article body
+6. **Reading time**: Word count ÷ 200
+7. **Thin content detection**: Flags articles <400 words as `isThinContent: true`
+
+### ArticleContent Type
+
+```typescript
+{
+  title: string;
+  heroImage?: string;
+  description?: string;
+  paragraphs: string[];
+  htmlContent?: string;        // NEW: Raw sanitized HTML
+  videoUrl?: string;           // NEW: First detected video URL
+  images: string[];
+  sourceUrl: string;
+  readingTime?: number;
+  isThinContent?: boolean;
+}
+```
+
+### Article Rendering Components
+
+**`ArticleHtmlBody`** (`src/components/news/article-html-body.tsx`):
+- Renders `htmlContent` via dangerouslySetInnerHTML
+- Hydrates video player placeholders with imperative React mounting (avoids re-render conflicts)
+- Uses `createRoot()` to mount `ArticleVideoPlayer` components into `data-video-src` divs
+
+**`ArticleVideoPlayer`** (`src/components/news/article-video-player.tsx`):
+- Supports HLS streams (`.m3u8`) and MP4 files
+- Uses HLS.js for cross-browser HLS support (Chrome, Firefox, Edge)
+- Falls back to native HTML5 video on Safari
+- Graceful error handling with link to original source
+- Supports custom poster image + metadata (source name, URL)
+
+---
+
 ## Cron Jobs
 
 Configured in `vercel.json`:
 
 | Route | Schedule | `maxDuration` | Purpose |
 |---|---|---|---|
-| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Sync all RSS feeds → Supabase |
+| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Sync all RSS feeds → Supabase, scrape HTML content + detect videos |
 | `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | default | Soft-delete articles >30d; hard-delete >60d |
 | `/api/news/digest/generate` | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq |
 
@@ -413,7 +483,7 @@ src/lib/news/
 │   └── vietnamvn-adapter.ts   # Scraper for vietnam.vn
 ├── enrichers/
 │   ├── og-meta.ts         # fetchOgMeta() — OG image/date enrichment
-│   ├── article-extractor.ts   # Full article content scraper (Cheerio)
+│   ├── article-extractor.ts   # Full article content scraper (Cheerio) + video detection
 │   └── readability.ts     # Mozilla Readability wrapper
 └── __tests__/
     ├── categories.test.ts
@@ -436,7 +506,16 @@ src/app/
     ├── like/route.ts      # POST — article like
     └── comments/route.ts  # GET/POST/DELETE — article comments
 
-src/components/news/       # All news UI components (cards, reader, digest, comments)
+src/components/news/
+├── news-feed.tsx          # Paginated article listing with filters
+├── article-end-sections.tsx   # Related articles, comments section
+├── article-sidebar.tsx    # Table of contents, up-next, share
+├── article-html-body.tsx  # HTML content renderer with video hydration (NEW)
+├── article-video-player.tsx   # HLS + MP4 video player (NEW)
+├── comment-section.tsx    # Comments CRUD
+├── translate-button.tsx   # EN/VI toggle
+├── digest-card.tsx        # Daily digest preview
+└── [...]                  # Other supporting components
 ```
 
 ---

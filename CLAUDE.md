@@ -88,7 +88,7 @@ src/
 │   ├── ui/                 # shadcn/ui primitives (button, dialog, tabs, etc.)
 │   ├── home/               # Homepage widgets (hero, bento-grid, next-match, standings-preview, form-widget)
 │   ├── layout/             # NavbarAuth (server) → NavbarClient (client), Footer
-│   ├── news/               # News cards, article reader, comments, digest viewer
+│   ├── news/               # News cards, article reader, comments, digest viewer, video player, HTML body
 │   ├── squad/              # Player cards, position filter, favourite-heart
 │   ├── player/             # Player detail components
 │   ├── fixtures/           # Fixture timeline, match detail
@@ -115,10 +115,12 @@ src/
 │   │   ├── sync.ts         # RSS sync pipeline
 │   │   ├── config.ts       # Source feeds config
 │   │   ├── adapters/       # Per-source RSS adapters
-│   │   ├── enrichers/      # Content enrichment (category, relevance)
+│   │   ├── enrichers/      # Content enrichment (category, relevance, article-extractor)
+│   │   │   └── article-extractor.ts # HTML scraping + video detection (per-source selectors, 24h cache)
 │   │   ├── digest.ts       # AI daily digest generation
 │   │   ├── translation-cache.ts # Groq translation
 │   │   ├── dedup.ts        # Deduplication logic
+│   │   ├── types.ts        # Shared types (ArticleContent with htmlContent + videoUrl fields)
 │   │   └── db.ts           # News DB operations
 │   ├── gallery/            # Gallery helpers
 │   ├── prompts/            # AI system prompts (BRO AI)
@@ -193,8 +195,17 @@ src/
   - **VI:** VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Webthethao
 - Sync pipeline: RSS fetch → dedup → relevance scoring → category detection → upsert to Supabase
 - Article URLs encoded as readable slugs: `/news/{source}/{path}` (e.g., `/news/bbc/sport/football/...`)
+- **Content Extraction (article-extractor.ts):**
+  - Per-source CSS selectors (verified 2026-03-11) extract `htmlContent` from article DOM
+  - 24-hour cache (CONTENT_CACHE_TTL_MS) — skips re-extraction of recently scraped articles
+  - Filters junk text from match widget articles (removes generic "next match" HTML)
+  - Inline video detection: embeds HLS/MP4 videos as `<div class="article-video-player" data-video-src="...">` placeholders
+  - Returns ArticleContent: `{ title, heroImage, paragraphs, htmlContent?, videoUrl?, images, readingTime, isThinContent }`
 - Translation: Groq API on-demand, cached in `content_en` / `content_vi` columns
 - Daily digest: AI-generated summary of top stories, stored in `news_digests` table
+- **Article Rendering Components:**
+  - `ArticleHtmlBody` — renders `htmlContent` with imperatively-mounted video player React portals (avoids dangerouslySetInnerHTML conflicts)
+  - `ArticleVideoPlayer` — HLS.js + fallback to native HTML5 video; supports HLS and MP4 formats
 
 ### i18n
 
