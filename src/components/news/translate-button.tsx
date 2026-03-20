@@ -43,7 +43,7 @@ interface TranslateState {
 
 const TranslateCtx = createContext<TranslateState | null>(null);
 
-function useTranslate() {
+export function useTranslate() {
   const ctx = useContext(TranslateCtx);
   if (!ctx) throw new Error("useTranslate must be inside TranslateProvider");
   return ctx;

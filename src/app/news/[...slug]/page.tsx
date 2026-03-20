@@ -28,6 +28,8 @@ import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
+import { FloatingActionBar } from "@/components/news/floating-action-bar";
+import { FloatingActionBarWithTranslate } from "@/components/news/floating-action-bar-translate";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
 import { ArticleHtmlBody } from "@/components/news/article-html-body";
 
@@ -190,6 +192,20 @@ export default async function ArticlePage({
   // Resolve category from DB articles for badge overlay
   const dbArticle = allArticles.find((a) => a.link === url);
   const category = dbArticle?.category as ArticleCategory | undefined;
+
+  // Common props for FloatingActionBar (mobile actions)
+  const fabProps = {
+    articleUrl: url,
+    articleTitle: content.title,
+    articleSlugUrl,
+    articleMeta: {
+      snippet: content.description,
+      thumbnail: content.heroImage,
+      source,
+      language: VI_SOURCES.has(source) ? "vi" as const : "en" as const,
+      publishedAt: content.publishedAt,
+    },
+  };
 
   const extraImages = content.htmlContent
     ? []
@@ -369,7 +385,9 @@ export default async function ArticlePage({
               </div>
               {renderSidebar()}
             </div>
-            <CommentSection articleUrl={url} />
+            <div id="comment-section">
+              <CommentSection articleUrl={url} />
+            </div>
             <RelatedArticles articles={related} />
             <ArticleEndSections
               source={source}
@@ -378,6 +396,7 @@ export default async function ArticlePage({
               currentArticleUrl={url}
             />
           </div>
+          <FloatingActionBarWithTranslate {...fabProps} />
         </TranslateProvider>
       ) : (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
@@ -421,7 +440,9 @@ export default async function ArticlePage({
             </div>
             {renderSidebar()}
           </div>
-          <CommentSection articleUrl={url} />
+          <div id="comment-section">
+            <CommentSection articleUrl={url} />
+          </div>
           <RelatedArticles articles={related} />
           <ArticleEndSections
             source={source}
@@ -429,6 +450,7 @@ export default async function ArticlePage({
             nextMatch={nextMatch}
             currentArticleUrl={url}
           />
+          <FloatingActionBar {...fabProps} />
         </div>
       )}
     </div>
