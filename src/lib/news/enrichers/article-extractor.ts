@@ -340,7 +340,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract images from <figure> > <img> (player photos, article images)
   container.find("figure img, img").each((_, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src");
+    const src = resolveImageSrc($(el));
     if (
       src &&
       src.startsWith("http") &&
@@ -522,7 +522,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>)/i;
   const matchWidgetPattern = /^\S+\s*-\s*\S+\s+\d{1,2}\.\d{1,2}$/; // "Arsenal - Man City 22.03"
 
-  container.find("p").each((_, el) => {
+  container.find("p, figcaption").each((_, el) => {
     const $el = $(el);
     // Skip ad/promo/nav elements
     if ($el.closest("nav, .banner, .sidebar, .related-news, .box-game, [class*='banner'], [class*='game']").length) return;
@@ -773,7 +773,7 @@ function extractVietnameseGeneric(
   url: string,
   containerSelectors: string,
   sourceName: string,
-  opts?: { sapoSelector?: string }
+  opts?: { sapoSelector?: string; htmlContent?: boolean }
 ): ArticleContent {
   const title = $("h1").first().text().trim() ||
     $('meta[property="og:title"]').attr("content") || "Article";
@@ -805,11 +805,20 @@ function extractVietnameseGeneric(
     }
   });
 
+  // Build htmlContent when figures present and opted in (or undefined defaults to auto-detect)
+  let htmlContent: string | undefined;
+  if (opts?.htmlContent !== false) {
+    const figureCount = container.find("figure").length;
+    if (figureCount > 0) {
+      htmlContent = sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS);
+    }
+  }
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, images, htmlContent,
     sourceUrl: url,
     sourceName,
   };
@@ -974,7 +983,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src");
+    const src = resolveImageSrc($(el));
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
@@ -1025,17 +1034,22 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src");
+    const src = resolveImageSrc($(el));
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
 
+  const figureCount = container.find("figure").length;
+  const htmlContent = figureCount > 0
+    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    : undefined;
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, images, htmlContent,
     sourceUrl: url,
     sourceName: "VnExpress",
   };
