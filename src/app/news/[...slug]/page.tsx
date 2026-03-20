@@ -32,6 +32,7 @@ import { FloatingActionBar } from "@/components/news/floating-action-bar";
 import { FloatingActionBarWithTranslate } from "@/components/news/floating-action-bar-translate";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
 import { ArticleHtmlBody } from "@/components/news/article-html-body";
+import { ArticleTOC } from "@/components/news/article-toc";
 
 export const dynamic = "force-dynamic";
 
@@ -306,6 +307,7 @@ export default async function ArticlePage({
           publishedAt: content.publishedAt,
         }}
         upNextArticle={related[0]}
+        tocContent={content.htmlContent ? <ArticleTOC /> : undefined}
       />
     </aside>
   );

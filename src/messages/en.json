@@ -208,7 +208,8 @@
       "source": "Source",
       "details": "Details",
       "minRead": "{n} min read",
-      "upNext": "Up Next"
+      "upNext": "Up Next",
+      "toc": "Contents"
     },
     "related": {
       "title": "Related News"
