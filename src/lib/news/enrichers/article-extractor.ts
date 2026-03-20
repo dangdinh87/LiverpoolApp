@@ -411,7 +411,7 @@ function extractBongdaplus(
 
   if (paragraphs.length === 0) {
     const skipPatterns =
-      /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright/i;
+      /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
     $("p").each((_, el) => {
       const $el = $(el);
       if (
@@ -427,7 +427,10 @@ function extractBongdaplus(
   }
 
   $("img").each((_, el) => {
-    const src = $(el).attr("src") || $(el).attr("data-src");
+    const $el = $(el);
+    if ($el.closest(".thumb, [class*='banner'], [class*='sidebar'], [class*='related']").length > 0) return;
+
+    const src = $el.attr("src") || $el.attr("data-src");
     if (
       src &&
       src.includes("cdn.bongdaplus.vn") &&
@@ -527,8 +530,9 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     // Skip ad/promo/nav elements
     if ($el.closest("nav, .banner, .sidebar, .related-news, .box-game, [class*='banner'], [class*='game']").length) return;
     const text = $el.text().trim();
-    if (text.length > 30 && !junkPattern.test(text) && !matchWidgetPattern.test(text)) {
-      pushUnique(paragraphs, seenP, text);
+    const cleanText = text.replace(/\s+/g, ' ').trim();
+    if (cleanText.length > 30 && !junkPattern.test(cleanText) && !matchWidgetPattern.test(cleanText)) {
+      pushUnique(paragraphs, seenP, cleanText);
     }
   });
 
@@ -968,6 +972,10 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const container = $(
     ".the-article-body, .article-content, article, [role=main]"
   ).first();
+
+  // Remove related/junk elements embedded inside the container
+  container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics").remove();
+
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
