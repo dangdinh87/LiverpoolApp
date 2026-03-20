@@ -158,6 +158,7 @@
       "backToNews": "Back to News",
       "contentUnavailable": "Content Unavailable",
       "contentUnavailableDesc": "This article couldn't be loaded for in-app reading. You can read it on the original site.",
+      "minRead": "min read",
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
       "thinContentMsg": "This article is best viewed on the original site for the full reading experience.",
