@@ -159,7 +159,6 @@
       "backToNews": "Quay lại Tin tức",
       "contentUnavailable": "Không thể tải nội dung",
       "contentUnavailableDesc": "Bài viết này không thể tải để đọc trong ứng dụng. Bạn có thể đọc trên trang gốc.",
-      "minRead": "phút đọc",
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc đầy đủ trên {source}",
       "thinContentMsg": "Bài viết này nên xem trên trang gốc để có trải nghiệm đọc tốt nhất.",
@@ -208,9 +207,7 @@
     "sidebar": {
       "source": "Nguồn tin",
       "details": "Chi tiết",
-      "minRead": "{n} phút đọc",
-      "upNext": "Tiếp theo",
-      "toc": "Mục lục"
+      "minRead": "{n} phút đọc"
     },
     "related": {
       "title": "Tin liên quan"

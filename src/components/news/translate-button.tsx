@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Fragment,
   useState,
   useCallback,
   useMemo,
@@ -43,7 +42,7 @@ interface TranslateState {
 
 const TranslateCtx = createContext<TranslateState | null>(null);
 
-export function useTranslate() {
+function useTranslate() {
   const ctx = useContext(TranslateCtx);
   if (!ctx) throw new Error("useTranslate must be inside TranslateProvider");
   return ctx;
@@ -244,39 +243,34 @@ export function TranslateBody() {
       </div>
 
       {/* Article body */}
-      <div id="article-body" className="max-w-[680px]">
+      <div id="article-body">
         {loading ? (
           <div className="space-y-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="space-y-2.5 animate-pulse">
-                <div className="h-[18px] bg-stadium-surface/40 w-full" />
-                <div className="h-[18px] bg-stadium-surface/40 w-[92%]" />
-                <div className="h-[18px] bg-stadium-surface/40 w-[78%]" />
+                <div className="h-[17px] bg-stadium-surface/40 w-full" />
+                <div className="h-[17px] bg-stadium-surface/40 w-[92%]" />
+                <div className="h-[17px] bg-stadium-surface/40 w-[78%]" />
                 {i < 3 && (
-                  <div className="h-[18px] bg-stadium-surface/40 w-[60%]" />
+                  <div className="h-[17px] bg-stadium-surface/40 w-[60%]" />
                 )}
               </div>
             ))}
           </div>
         ) : (
           <div className="space-y-6">
-            {displayParagraphs.map((p, i) => {
-              const showDivider = displayParagraphs.length > 10 && i > 0 && i % 5 === 0;
-              const isFirst = i === 0;
-              const useDropCap = isFirst && mode === "original";
-              return (
-                <Fragment key={`${mode}-${i}`}>
-                  {showDivider && <div className="article-section-divider">· · ·</div>}
-                  <p className={
-                    isFirst
-                      ? `font-inter text-lg text-white/90 leading-[2] font-medium${useDropCap ? " article-drop-cap" : ""}`
-                      : "font-inter text-lg text-white/80 leading-[2]"
-                  }>
-                    {p}
-                  </p>
-                </Fragment>
-              );
-            })}
+            {displayParagraphs.map((p, i) => (
+              <p
+                key={`${mode}-${i}`}
+                className={
+                  i === 0
+                    ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
+                    : "font-inter text-[17px] text-white/80 leading-[1.85]"
+                }
+              >
+                {p}
+              </p>
+            ))}
           </div>
         )}
       </div>

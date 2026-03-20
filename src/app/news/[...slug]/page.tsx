@@ -1,4 +1,3 @@
-import React from "react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,11 +12,8 @@ import {
   decodeArticleSlug,
   encodeArticleSlug,
   formatRelativeDate,
-  CATEGORY_CONFIG,
-  SOURCE_CONFIG,
   type NewsSource,
 } from "@/lib/news-config";
-import type { ArticleCategory } from "@/lib/news/types";
 import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
@@ -28,11 +24,7 @@ import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
-import { FloatingActionBar } from "@/components/news/floating-action-bar";
-import { FloatingActionBarWithTranslate } from "@/components/news/floating-action-bar-translate";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
-import { ArticleHtmlBody } from "@/components/news/article-html-body";
-import { ArticleTOC } from "@/components/news/article-toc";
 
 export const dynamic = "force-dynamic";
 
@@ -190,24 +182,6 @@ export default async function ArticlePage({
     : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
 
-  // Resolve category from DB articles for badge overlay
-  const dbArticle = allArticles.find((a) => a.link === url);
-  const category = dbArticle?.category as ArticleCategory | undefined;
-
-  // Common props for FloatingActionBar (mobile actions)
-  const fabProps = {
-    articleUrl: url,
-    articleTitle: content.title,
-    articleSlugUrl,
-    articleMeta: {
-      snippet: content.description,
-      thumbnail: content.heroImage,
-      source,
-      language: VI_SOURCES.has(source) ? "vi" as const : "en" as const,
-      publishedAt: content.publishedAt,
-    },
-  };
-
   const extraImages = content.htmlContent
     ? []
     : content.images.filter((img) => img !== content.heroImage).slice(0, 3);
@@ -242,52 +216,6 @@ export default async function ArticlePage({
     </>
   );
 
-  // ─── Hero helpers (DRY: shared between hero-image and no-hero paths) ──────
-  const renderCategoryBadge = () =>
-    category && category !== "general" && CATEGORY_CONFIG[category] ? (
-      <span className={`absolute top-6 left-6 z-10 font-barlow text-xs uppercase tracking-widest px-3 py-1.5 ${CATEGORY_CONFIG[category].color}`}>
-        {CATEGORY_CONFIG[category].label}
-      </span>
-    ) : null;
-
-  const renderBackButton = (position: "absolute" | "relative" = "absolute") => (
-    <Link
-      href="/news"
-      className={`${position === "absolute" ? "absolute top-6 right-6 z-10" : ""} inline-flex items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-wider text-white bg-white/15 backdrop-blur-md rounded-full px-4 py-2 border border-white/20 hover:bg-lfc-red hover:border-lfc-red transition-all`}
-    >
-      <ArrowLeft aria-hidden="true" className="w-3.5 h-3.5" />
-      {t("backToNews")}
-    </Link>
-  );
-
-  const renderMetaBar = () => (
-    <div className="flex flex-wrap items-center gap-2 text-white/70 font-inter text-sm">
-      {SOURCE_CONFIG[source] && (
-        <span className={`font-barlow text-xs uppercase tracking-widest px-2.5 py-1 ${SOURCE_CONFIG[source].color}`}>
-          {SOURCE_CONFIG[source].label}
-        </span>
-      )}
-      {content.author && (
-        <>
-          <span className="text-white/30">·</span>
-          <span className="text-white/80">{content.author}</span>
-        </>
-      )}
-      {publishDate && (
-        <>
-          <span className="text-white/30">·</span>
-          <span title={publishDate.absolute}>{publishDate.relative}</span>
-        </>
-      )}
-      {content.readingTime && (
-        <>
-          <span className="text-white/30">·</span>
-          <span>{content.readingTime} {t("minRead")}</span>
-        </>
-      )}
-    </div>
-  );
-
   const renderSidebar = () => (
     <aside className="hidden lg:block">
       <ArticleSidebar
@@ -306,8 +234,6 @@ export default async function ArticlePage({
           language: VI_SOURCES.has(source) ? "vi" : "en",
           publishedAt: content.publishedAt,
         }}
-        upNextArticle={related[0]}
-        tocContent={content.htmlContent ? <ArticleTOC /> : undefined}
       />
     </aside>
   );
@@ -316,25 +242,27 @@ export default async function ArticlePage({
     <div className="min-h-screen">
       <ReadingProgress />
       <ReadTracker articleUrl={url} />
-      <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "News", url: getCanonical("/news") },
-          { name: content.title, url: getCanonical(`/news/${slug.join("/")}`) },
-        ]),
-        buildNewsArticleJsonLd({
-          title: content.title,
-          description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
-          url: getCanonical(`/news/${slug.join("/")}`),
-          image: content.heroImage,
-          author: content.author,
-          publishedAt: content.publishedAt,
-          sourceName: content.sourceName,
-        }),
-      ]} />
+      {content && (
+        <JsonLd data={[
+          buildBreadcrumbJsonLd([
+            { name: "Home", url: getCanonical("/") },
+            { name: "News", url: getCanonical("/news") },
+            { name: content.title, url: getCanonical(`/news/${slug.join("/")}`) },
+          ]),
+          buildNewsArticleJsonLd({
+            title: content.title,
+            description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
+            url: getCanonical(`/news/${slug.join("/")}`),
+            image: content.heroImage,
+            author: content.author,
+            publishedAt: content.publishedAt,
+            sourceName: content.sourceName,
+          }),
+        ]} />
+      )}
 
-      {/* Hero — cinematic with metadata overlay */}
-      {content.heroImage ? (
+      {/* Hero Image — full viewport */}
+      {content.heroImage && (
         <div className="relative w-full h-[60vh] min-h-[400px] max-h-[600px]">
           <Image
             src={content.heroImage}
@@ -343,26 +271,10 @@ export default async function ArticlePage({
             className="object-cover"
             sizes="100vw"
             priority
-            unoptimized /* External RSS image domains — cannot optimize */
+            unoptimized
           />
-          {/* 3-layer gradient: top vignette + bottom heavy fade */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
-
-          {renderCategoryBadge()}
-          {renderBackButton()}
-          <div className="absolute bottom-8 left-0 right-0 z-10 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-            {renderMetaBar()}
-          </div>
-        </div>
-      ) : (
-        /* No-hero fallback — gradient background */
-        <div className="relative w-full min-h-[300px] bg-gradient-to-br from-lfc-red/10 via-stadium-surface to-stadium-bg flex items-end">
-          <div className="absolute top-6 right-6 z-10">{renderBackButton("relative")}</div>
-          {renderCategoryBadge()}
-          <div className="px-4 sm:px-6 lg:px-8 pb-8 max-w-6xl mx-auto w-full">
-            {renderMetaBar()}
-          </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-stadium-bg to-transparent" />
         </div>
       )}
 
@@ -376,7 +288,21 @@ export default async function ArticlePage({
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
             {/* Header area */}
-            <div className={content.heroImage ? "-mt-32 relative z-10" : "pt-10"}>
+            <div className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}>
+              <Link
+                href="/news"
+                className="inline-flex items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-wider text-white bg-white/15 backdrop-blur-md px-4 py-2 border border-white/20 hover:bg-lfc-red hover:border-lfc-red hover:text-white transition-all mb-8"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                {t("backToNews")}
+              </Link>
+              {publishDate && (
+                <div className="flex items-center gap-3 mb-4 lg:mb-3">
+                  <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
+                    {publishDate.relative}
+                  </span>
+                </div>
+              )}
               <TranslateHeader originalDescription={content.description} />
             </div>
 
@@ -388,16 +314,8 @@ export default async function ArticlePage({
               </div>
               {renderSidebar()}
             </div>
-            {/* Article end marker */}
-            <div className="flex items-center gap-4 my-12 opacity-30">
-              <div className="flex-1 h-px bg-stadium-border" />
-              <span className="font-barlow text-xs text-stadium-muted uppercase tracking-[0.3em]">End</span>
-              <div className="flex-1 h-px bg-stadium-border" />
-            </div>
-            <div id="comment-section">
-              <CommentSection articleUrl={url} />
-            </div>
-            <RelatedArticles articles={related} source={source} allArticles={allArticles} currentUrl={url} />
+            <CommentSection articleUrl={url} />
+            <RelatedArticles articles={related} />
             <ArticleEndSections
               source={source}
               allArticles={allArticles}
@@ -405,12 +323,25 @@ export default async function ArticlePage({
               currentArticleUrl={url}
             />
           </div>
-          <FloatingActionBarWithTranslate {...fabProps} />
         </TranslateProvider>
       ) : (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
           {/* Header area */}
-          <div className={content.heroImage ? "-mt-32 relative z-10" : "pt-10"}>
+          <div className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}>
+            <Link
+              href="/news"
+              className="inline-flex items-center gap-2 font-barlow text-sm text-white/70 hover:text-white bg-white/10 backdrop-blur-sm px-3.5 py-1.5 border border-white/10 hover:border-white/25 transition-all mb-8"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              {t("backToNews")}
+            </Link>
+            {publishDate && (
+              <div className="flex items-center gap-3 mb-4 lg:mb-3">
+                <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
+                  {publishDate.relative}
+                </span>
+              </div>
+            )}
             <h1 className="font-inter text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.15] mb-6 max-w-4xl">
               {content.title}
             </h1>
@@ -425,47 +356,39 @@ export default async function ArticlePage({
           <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
             <div>
               {content.htmlContent ? (
-                <ArticleHtmlBody html={content.htmlContent} />
+                <div
+                  id="article-body"
+                  className="article-html-content space-y-6"
+                  dangerouslySetInnerHTML={{ __html: content.htmlContent }}
+                />
               ) : (
-                <div id="article-body" className="space-y-6 max-w-[680px]">
-                  {content.paragraphs.map((p, i) => {
-                    const showDivider = content.paragraphs.length > 10 && i > 0 && i % 5 === 0;
-                    return (
-                      <React.Fragment key={i}>
-                        {showDivider && <div className="article-section-divider">· · ·</div>}
-                        <p className={
-                          i === 0
-                            ? "font-inter text-lg text-white/90 leading-[2] font-medium article-drop-cap"
-                            : "font-inter text-lg text-white/80 leading-[2]"
-                        }>
-                          {p}
-                        </p>
-                      </React.Fragment>
-                    );
-                  })}
+                <div id="article-body" className="space-y-6">
+                  {content.paragraphs.map((p, i) => (
+                    <p
+                      key={i}
+                      className={
+                        i === 0
+                          ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
+                          : "font-inter text-[17px] text-white/80 leading-[1.85]"
+                      }
+                    >
+                      {p}
+                    </p>
+                  ))}
                 </div>
               )}
               {renderExtras()}
             </div>
             {renderSidebar()}
           </div>
-          {/* Article end marker */}
-          <div className="flex items-center gap-4 my-12 opacity-30">
-            <div className="flex-1 h-px bg-stadium-border" />
-            <span className="font-barlow text-xs text-stadium-muted uppercase tracking-[0.3em]">End</span>
-            <div className="flex-1 h-px bg-stadium-border" />
-          </div>
-          <div id="comment-section">
-            <CommentSection articleUrl={url} />
-          </div>
-          <RelatedArticles articles={related} source={source} allArticles={allArticles} currentUrl={url} />
+          <CommentSection articleUrl={url} />
+          <RelatedArticles articles={related} />
           <ArticleEndSections
             source={source}
             allArticles={allArticles}
             nextMatch={nextMatch}
             currentArticleUrl={url}
           />
-          <FloatingActionBar {...fabProps} />
         </div>
       )}
     </div>

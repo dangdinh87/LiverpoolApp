@@ -10,7 +10,6 @@ import {
   LogIn,
   Loader2,
   X,
-  ChevronDown,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase";
@@ -287,36 +286,12 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     );
   };
 
-  const [expanded, setExpanded] = useState(false);
-
   return (
     <div className="mt-10 pt-8 border-t border-stadium-border/50">
-      {/* Collapsible header */}
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        aria-controls="comment-content"
-        className="w-full flex items-center justify-between mb-4 cursor-pointer group"
-      >
-        <h3 className="font-bebas text-2xl text-white flex items-center gap-2">
-          <MessageSquareText className="w-5 h-5 text-lfc-red" />
-          {t("title")}
-          {comments.length > 0 && (
-            <span className="font-inter text-sm font-normal text-stadium-muted ml-1">
-              ({comments.length})
-            </span>
-          )}
-        </h3>
-        <ChevronDown className={`w-5 h-5 text-stadium-muted transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
-      </button>
-
-      {/* Collapsible content */}
-      <div
-        id="comment-content"
-        className="grid transition-[grid-template-rows] duration-300 ease-in-out"
-        style={{ gridTemplateRows: expanded ? "1fr" : "0fr" }}
-      >
-        <div className="overflow-hidden">
+      <h3 className="font-bebas text-2xl text-white flex items-center gap-2 mb-6">
+        <MessageSquareText className="w-5 h-5 text-lfc-red" />
+        {t("title")} {comments.length > 0 && t("count", { count: comments.length })}
+      </h3>
 
       {/* Top-level comment form */}
       {userId ? (
@@ -426,9 +401,6 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
           ))}
         </div>
       )}
-
-        </div>{/* end overflow-hidden */}
-      </div>{/* end collapsible grid */}
     </div>
   );
 }
