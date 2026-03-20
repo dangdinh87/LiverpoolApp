@@ -42,6 +42,7 @@ export interface ArticleContent {
   sourceName: string;
   readingTime?: number;
   isThinContent?: boolean;
+  videoUrl?: string;
 }
 
 export interface FeedConfig {

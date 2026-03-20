@@ -77,7 +77,11 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
   ]),
   allowedAttributes: {
     ...sanitize.defaults.allowedAttributes,
+    a: ["href", "name", "target", "rel"],
     img: ["src", "alt", "width", "height", "loading"],
+    div: ["class", "data-video-src", "data-poster", "data-source-url", "data-source-name"],
+    figure: ["class"],
+    span: ["class"],
   },
   allowedSchemes: ["https", "http"],
 };
@@ -499,6 +503,7 @@ function extractVietnamese(
 
 // 24h.com.vn: uses #article_body for content, data-original for lazy images
 function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
+  const sourceName = "24h";
   const title = $("h1").first().text().trim() ||
     $('meta[property="og:title"]').attr("content") || "Article";
   const heroImage = $('meta[property="og:image"]').attr("content");
@@ -522,7 +527,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
 
   // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
-  const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>)/i;
+  const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>|To view this video)/i;
   const matchWidgetPattern = /^\S+\s*-\s*\S+\s+\d{1,2}\.\d{1,2}$/; // "Arsenal - Man City 22.03"
 
   container.find("p, figcaption").each((_, el) => {
@@ -556,10 +561,76 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  // Extract video info from JSON-LD or page metadata before building htmlContent
+  // 24h has multiple ld+json blocks — iterate all to find VideoObject
+  let videoThumbnail: string | undefined;
+  let videoUrl: string | undefined;
+  $('script[type="application/ld+json"]').each((_, el) => {
+    if (videoUrl) return; // already found
+    try {
+      const raw = $(el).html();
+      if (!raw) return;
+      const ld = JSON.parse(raw);
+      const videoObj = ld?.video || (ld?.["@type"] === "VideoObject" ? ld : undefined);
+      if (videoObj) {
+        videoThumbnail = videoObj.thumbnailUrl;
+        const contentUrl = videoObj.contentUrl;
+        if (contentUrl && /\.(m3u8|mp4)(\?|$)/i.test(contentUrl)) {
+          videoUrl = contentUrl;
+        }
+      }
+    } catch { /* ignore parse errors */ }
+  });
+  // Fallback: extract video URL from <source> tags in the page
+  if (!videoUrl) {
+    $("source[src]").each((_, el) => {
+      if (videoUrl) return;
+      const src = $(el).attr("src") || "";
+      if (/\.(m3u8|mp4)(\?|$)/i.test(src)) videoUrl = src;
+    });
+  }
+
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
+
+  // Replace video player divs with inline video or clickable thumbnail
+  clone.find(".viewVideoPlay").each((_, el) => {
+    const $vp = $(el);
+    const thumb = videoThumbnail || heroImage;
+    if (videoUrl) {
+      // Embed data attributes for client-side HLS/MP4 player
+      $vp.replaceWith(
+        `<div class="article-video-player" data-video-src="${videoUrl}"` +
+        (thumb ? ` data-poster="${thumb}"` : "") +
+        ` data-source-url="${url}" data-source-name="${sourceName}">` +
+        `</div>`
+      );
+    } else if (thumb) {
+      // Fallback: clickable thumbnail linking to original article
+      $vp.replaceWith(
+        `<figure class="article-video-placeholder">` +
+        `<a href="${url}" target="_blank" rel="noopener noreferrer">` +
+        `<img src="${thumb}" alt="${sanitizeText(title)}" loading="lazy" />` +
+        `<span class="video-play-overlay"></span>` +
+        `</a>` +
+        `<figcaption>Video — nhấn để xem trên ${sourceName}</figcaption>` +
+        `</figure>`
+      );
+    } else {
+      $vp.remove();
+    }
+  });
+
+  // Remove ad/promo link boxes (navigation banners inside article)
+  clone.find("div[style*='background-color:#FFFFFF']").each((_, el) => {
+    const $d = $(el);
+    // 24h inserts nav boxes with tiny banner images (width230height30 etc.)
+    if ($d.find("img[src*='width2']").length > 0) $d.remove();
+  });
+  // Remove in-image related article overlays and tracking pixels
+  clone.find("#in-image-close, .img_tin_lien_quan_trong_bai, img[style*='display:none']").remove();
   // Remove empty paragraphs and junk text (keep <p> that contain images)
   clone.find("p").each((_, el) => {
     const $p = $(el);
@@ -601,7 +672,8 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     author: extractAuthor($),
     paragraphs, htmlContent, images,
     sourceUrl: url,
-    sourceName: "24h",
+    sourceName,
+    ...(videoUrl ? { videoUrl } : {}),
   };
 }
 
