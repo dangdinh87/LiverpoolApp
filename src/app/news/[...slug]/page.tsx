@@ -386,10 +386,16 @@ export default async function ArticlePage({
               </div>
               {renderSidebar()}
             </div>
+            {/* Article end marker */}
+            <div className="flex items-center gap-4 my-12 opacity-30">
+              <div className="flex-1 h-px bg-stadium-border" />
+              <span className="font-barlow text-xs text-stadium-muted uppercase tracking-[0.3em]">End</span>
+              <div className="flex-1 h-px bg-stadium-border" />
+            </div>
             <div id="comment-section">
               <CommentSection articleUrl={url} />
             </div>
-            <RelatedArticles articles={related} />
+            <RelatedArticles articles={related} source={source} allArticles={allArticles} currentUrl={url} />
             <ArticleEndSections
               source={source}
               allArticles={allArticles}
@@ -441,10 +447,16 @@ export default async function ArticlePage({
             </div>
             {renderSidebar()}
           </div>
+          {/* Article end marker */}
+          <div className="flex items-center gap-4 my-12 opacity-30">
+            <div className="flex-1 h-px bg-stadium-border" />
+            <span className="font-barlow text-xs text-stadium-muted uppercase tracking-[0.3em]">End</span>
+            <div className="flex-1 h-px bg-stadium-border" />
+          </div>
           <div id="comment-section">
             <CommentSection articleUrl={url} />
           </div>
-          <RelatedArticles articles={related} />
+          <RelatedArticles articles={related} source={source} allArticles={allArticles} currentUrl={url} />
           <ArticleEndSections
             source={source}
             allArticles={allArticles}

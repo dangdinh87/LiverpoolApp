@@ -54,28 +54,15 @@ interface ArticleEndSectionsProps {
 }
 
 export function ArticleEndSections({
-  source,
-  allArticles,
   nextMatch,
-  currentArticleUrl,
 }: ArticleEndSectionsProps) {
+  if (!nextMatch) return null;
+
   return (
     <LazySection>
-      <div className="mt-16 space-y-12">
+      <div className="mt-16">
         {/* Next Match — mobile-first banner (hidden on lg where sidebar shows it) */}
-        {nextMatch && (
-          <NextMatchBanner fixture={nextMatch} />
-        )}
-
-        {/* More from this source */}
-        <MoreFromSource
-          source={source}
-          allArticles={allArticles}
-          currentUrl={currentArticleUrl}
-        />
-
-        {/* Scroll to top */}
-        <ScrollToTopBar />
+        <NextMatchBanner fixture={nextMatch} />
       </div>
     </LazySection>
   );
