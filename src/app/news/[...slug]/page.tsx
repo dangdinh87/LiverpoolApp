@@ -305,6 +305,7 @@ export default async function ArticlePage({
           language: VI_SOURCES.has(source) ? "vi" : "en",
           publishedAt: content.publishedAt,
         }}
+        upNextArticle={related[0]}
       />
     </aside>
   );

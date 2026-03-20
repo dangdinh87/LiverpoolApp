@@ -207,7 +207,8 @@
     "sidebar": {
       "source": "Source",
       "details": "Details",
-      "minRead": "{n} min read"
+      "minRead": "{n} min read",
+      "upNext": "Up Next"
     },
     "related": {
       "title": "Related News"

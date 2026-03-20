@@ -208,7 +208,8 @@
     "sidebar": {
       "source": "Nguồn tin",
       "details": "Chi tiết",
-      "minRead": "{n} phút đọc"
+      "minRead": "{n} phút đọc",
+      "upNext": "Tiếp theo"
     },
     "related": {
       "title": "Tin liên quan"
