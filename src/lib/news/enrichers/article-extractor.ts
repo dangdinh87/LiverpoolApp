@@ -240,15 +240,18 @@ function extractLfcOfficial(
     }
   }
 
+  const container = $(
+    "article, .article-body, [data-testid='article-body'], main"
+  ).first();
+
   if (paragraphs.length === 0) {
-    const container = $(
-      "article, .article-body, [data-testid='article-body'], main"
-    ).first();
     container.find("p").each((_, el) => {
       const text = $(el).text().trim();
       if (text.length > 20) pushUnique(paragraphs, seenP, text);
     });
   }
+
+  const htmlContent = buildHtmlContent(container, $);
 
   return {
     title,
@@ -257,6 +260,7 @@ function extractLfcOfficial(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "LiverpoolFC.com",
@@ -299,11 +303,13 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "BBC Sport",
   };
@@ -331,10 +337,7 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
-  const figureCount = container.find("figure").length;
-  const htmlContent = figureCount >= 2
-    ? buildHtmlContent(container, $)
-    : undefined;
+  const htmlContent = buildHtmlContent(container, $);
 
   return {
     title, heroImage, description,
@@ -400,11 +403,10 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
-  let htmlContent: string | undefined;
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $);
   }
+  const htmlContent = buildHtmlContent(contentDetail.length > 0 ? contentDetail : container, $);
 
   return {
     title,
@@ -479,6 +481,9 @@ function extractBongdaplus(
     }
   });
 
+  const container = $(".news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]").first();
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title,
     heroImage,
@@ -486,6 +491,7 @@ function extractBongdaplus(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "Bongdaplus.vn",
@@ -521,6 +527,8 @@ function extractVietnamese(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title,
     heroImage,
@@ -528,6 +536,7 @@ function extractVietnamese(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
@@ -748,6 +757,8 @@ function extractAnfieldWatch(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title,
     heroImage,
@@ -755,6 +766,7 @@ function extractAnfieldWatch(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "Anfield Watch",
@@ -787,6 +799,8 @@ function extractWordPress(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title,
     heroImage,
@@ -794,6 +808,7 @@ function extractWordPress(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
@@ -834,11 +849,13 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "Liverpool Echo",
   };
@@ -862,6 +879,8 @@ function extractGenericEnglish(
     if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title,
     heroImage,
@@ -869,6 +888,7 @@ function extractGenericEnglish(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
@@ -917,10 +937,7 @@ function extractVietnameseGeneric(
   // Build htmlContent when figures present and opted in (or undefined defaults to auto-detect)
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    const figureCount = container.find("figure").length;
-    if (figureCount > 0) {
-      htmlContent = buildHtmlContent(container, $);
-    }
+    htmlContent = buildHtmlContent(container, $);
   }
 
   return {
@@ -998,11 +1015,13 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "Vietnam.vn",
   };
@@ -1103,10 +1122,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich inline rendering if container has figures
-  const figureCount = container.find("figure").length;
-  const htmlContent = figureCount > 0
-    ? buildHtmlContent(container, $)
-    : undefined;
+  const htmlContent = buildHtmlContent(container, $);
 
   return {
     title, heroImage, description,
@@ -1172,6 +1188,9 @@ function extractGeneric(
   $: cheerio.CheerioAPI,
   url: string
 ): ArticleContent {
+  const container = $("article, [role=main], body").first();
+  const htmlContent = buildHtmlContent(container, $);
+
   return {
     title:
       $("h1").first().text().trim() ||
@@ -1180,6 +1199,7 @@ function extractGeneric(
     heroImage: $('meta[property="og:image"]').attr("content"),
     description: $('meta[property="og:description"]').attr("content"),
     paragraphs: [],
+    htmlContent,
     images: [],
     sourceUrl: url,
     sourceName: new URL(url).hostname,
