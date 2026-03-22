@@ -107,6 +107,49 @@ function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
   return undefined;
 }
 
+
+/**
+ * Centralized helper to build high-fidelity HTML content from a Cheerio container.
+ * - Resolves lazy-loaded images to their true sources.
+ * - Flattens malformed nested <figure><figcaption> structures (e.g. from bongda.com.vn).
+ * - Sanitizes using ARTICLE_SANITIZE_OPTS.
+ */
+function buildHtmlContent(
+  container: cheerio.Cheerio<any>,
+  $: cheerio.CheerioAPI
+): string | undefined {
+  if (!container || container.length === 0) return undefined;
+
+  // 1. Resolve lazy-loaded images to their true source
+  container.find("img").each((_, el) => {
+    const $el = $(el);
+    const realSrc = resolveImageSrc($el);
+    if (realSrc) {
+      $el.attr("src", realSrc);
+      $el.removeAttr("data-src");
+      $el.removeAttr("data-original");
+      $el.attr("loading", "lazy");
+    }
+  });
+
+  // 2. Sanitize HTML
+  const rawHtml = container.html() || "";
+  let sanitized = sanitize(rawHtml, ARTICLE_SANITIZE_OPTS);
+
+  // 3. Post-process to fix malformed nested figures (often seen in VN sites)
+  if (sanitized.includes("<figcaption>") && sanitized.includes("<figure>")) {
+    const $html = cheerio.load(sanitized, null, false);
+    $html("figcaption figure").each((_, el) => {
+      const $fig = $html(el);
+      $fig.insertAfter($fig.closest("figure"));
+    });
+    // Remove empty/orphaned closing tags left over
+    sanitized = $html.html()?.replace(/<\/(figcaption|figure)>\s*<\/(figcaption|figure)>\s*/g, "</$1>\n</$2>\n") || sanitized;
+  }
+
+  return sanitized || undefined;
+}
+
 function extractAuthor($: cheerio.CheerioAPI): string | undefined {
   const raw =
     $('meta[name="author"]').attr("content") ||
@@ -290,7 +333,7 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
   const figureCount = container.find("figure").length;
   const htmlContent = figureCount >= 2
-    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    ? buildHtmlContent(container, $)
     : undefined;
 
   return {
@@ -360,17 +403,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   let htmlContent: string | undefined;
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    const raw = sanitize(contentDetail.html() || "", ARTICLE_SANITIZE_OPTS);
-    // bongda.com.vn often produces deeply nested <figure><figcaption>...<figure><figcaption>...
-    // Flatten: extract each figure as a standalone block
-    const $html = cheerio.load(raw, null, false);
-    // Unwrap any figure nested inside figcaption (malformed HTML)
-    $html("figcaption figure").each((_, el) => {
-      const $fig = $html(el);
-      $fig.insertAfter($fig.closest("figure"));
-    });
-    // Remove empty/orphaned closing tags left over
-    htmlContent = $html.html()?.replace(/<\/(figcaption|figure)>\s*<\/(figcaption|figure)>\s*/g, "</figcaption>\n</figure>\n") || undefined;
+    htmlContent = buildHtmlContent(contentDetail, $);
   }
 
   return {
@@ -664,7 +697,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
   for (const $el of toRemove) $el.remove();
-  const htmlContent = sanitize(clone.html() || "", ARTICLE_SANITIZE_OPTS) || undefined;
+  const htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -886,7 +919,7 @@ function extractVietnameseGeneric(
   if (opts?.htmlContent !== false) {
     const figureCount = container.find("figure").length;
     if (figureCount > 0) {
-      htmlContent = sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS);
+      htmlContent = buildHtmlContent(container, $);
     }
   }
 
@@ -1021,7 +1054,7 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
       const text = $(el).text().trim();
       if (junkPattern.test(text)) $(el).remove();
     });
-    htmlContent = sanitize(clone.html() || "", ARTICLE_SANITIZE_OPTS) || undefined;
+    htmlContent = buildHtmlContent(clone, $) || undefined;
   }
 
   return {
@@ -1072,7 +1105,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Build htmlContent for rich inline rendering if container has figures
   const figureCount = container.find("figure").length;
   const htmlContent = figureCount > 0
-    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    ? buildHtmlContent(container, $)
     : undefined;
 
   return {
@@ -1122,7 +1155,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   const figureCount = container.find("figure").length;
   const htmlContent = figureCount > 0
-    ? sanitize(container.html() || "", ARTICLE_SANITIZE_OPTS)
+    ? buildHtmlContent(container, $)
     : undefined;
 
   return {
