@@ -1016,11 +1016,13 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, images, htmlContent,
     sourceUrl: url,
     sourceName: "Vietnam.vn",
   };
@@ -1182,6 +1184,9 @@ function extractGeneric(
   $: cheerio.CheerioAPI,
   url: string
 ): ArticleContent {
+  const container = $("article, [role=main], .article-body, main, body").first();
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title:
       $("h1").first().text().trim() ||
@@ -1190,6 +1195,7 @@ function extractGeneric(
     heroImage: $('meta[property="og:image"]').attr("content"),
     description: $('meta[property="og:description"]').attr("content"),
     paragraphs: [],
+    htmlContent,
     images: [],
     sourceUrl: url,
     sourceName: new URL(url).hostname,
