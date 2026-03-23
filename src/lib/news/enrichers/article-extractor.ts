@@ -240,15 +240,18 @@ function extractLfcOfficial(
     }
   }
 
+  const container = $(
+    "article, .article-body, [data-testid='article-body'], main"
+  ).first();
+
   if (paragraphs.length === 0) {
-    const container = $(
-      "article, .article-body, [data-testid='article-body'], main"
-    ).first();
     container.find("p").each((_, el) => {
       const text = $(el).text().trim();
       if (text.length > 20) pushUnique(paragraphs, seenP, text);
     });
   }
+
+  const htmlContent = buildHtmlContent(container, $) || undefined;
 
   return {
     title,
@@ -257,6 +260,7 @@ function extractLfcOfficial(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "LiverpoolFC.com",
@@ -299,11 +303,13 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "BBC Sport",
   };
@@ -331,10 +337,7 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
-  const figureCount = container.find("figure").length;
-  const htmlContent = figureCount >= 2
-    ? buildHtmlContent(container, $)
-    : undefined;
+  const htmlContent = buildHtmlContent(container, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -403,7 +406,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   let htmlContent: string | undefined;
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $);
+    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
   }
 
   return {
@@ -432,14 +435,16 @@ function extractBongdaplus(
     $('meta[property="og:description"]').attr("content") ||
     $('meta[name="description"]').attr("content");
 
+  const container = $(
+    ".news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]"
+  ).first();
+
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
   const seenI = new Set<string>();
 
-  $(
-    ".news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]"
-  )
+  container
     .find("p, .sapo")
     .each((_, el) => {
       const text = $(el).text().trim();
@@ -479,6 +484,8 @@ function extractBongdaplus(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title,
     heroImage,
@@ -486,6 +493,7 @@ function extractBongdaplus(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "Bongdaplus.vn",
@@ -520,6 +528,8 @@ function extractVietnamese(
       pushUnique(images, seenI, src);
     }
   });
+
+  const htmlContent = buildHtmlContent(container, $) || undefined;
 
   return {
     title,
@@ -748,6 +758,8 @@ function extractAnfieldWatch(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title,
     heroImage,
@@ -755,6 +767,7 @@ function extractAnfieldWatch(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: "Anfield Watch",
@@ -787,6 +800,8 @@ function extractWordPress(
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title,
     heroImage,
@@ -794,6 +809,7 @@ function extractWordPress(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
@@ -834,11 +850,13 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title, heroImage, description,
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
-    paragraphs, images,
+    paragraphs, htmlContent, images,
     sourceUrl: url,
     sourceName: "Liverpool Echo",
   };
@@ -862,6 +880,8 @@ function extractGenericEnglish(
     if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
+  const htmlContent = buildHtmlContent(container, $) || undefined;
+
   return {
     title,
     heroImage,
@@ -869,6 +889,7 @@ function extractGenericEnglish(
     publishedAt: extractPublishedAt($),
     author: extractAuthor($),
     paragraphs,
+    htmlContent,
     images,
     sourceUrl: url,
     sourceName: detectSource(url).name,
@@ -914,13 +935,10 @@ function extractVietnameseGeneric(
     }
   });
 
-  // Build htmlContent when figures present and opted in (or undefined defaults to auto-detect)
+  // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    const figureCount = container.find("figure").length;
-    if (figureCount > 0) {
-      htmlContent = buildHtmlContent(container, $);
-    }
+    htmlContent = buildHtmlContent(container, $) || undefined;
   }
 
   return {
@@ -1043,19 +1061,17 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent — images are interleaved with text in <p> tags
-  const hasInlineImages = container.find("p img, p + img, img + p").length > 0;
   let htmlContent: string | undefined;
-  if (hasInlineImages || container.find("img").length > 0) {
-    // Remove junk elements before building HTML
-    const clone = container.clone();
-    clone.find("script, style, .related-news, .tags, nav").remove();
-    // Remove junk paragraphs from HTML
-    clone.find("p").each((_, el) => {
-      const text = $(el).text().trim();
-      if (junkPattern.test(text)) $(el).remove();
-    });
-    htmlContent = buildHtmlContent(clone, $) || undefined;
-  }
+
+  // Remove junk elements before building HTML
+  const clone = container.clone();
+  clone.find("script, style, .related-news, .tags, nav").remove();
+  // Remove junk paragraphs from HTML
+  clone.find("p").each((_, el) => {
+    const text = $(el).text().trim();
+    if (junkPattern.test(text)) $(el).remove();
+  });
+  htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -1102,11 +1118,8 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  // Build htmlContent for rich inline rendering if container has figures
-  const figureCount = container.find("figure").length;
-  const htmlContent = figureCount > 0
-    ? buildHtmlContent(container, $)
-    : undefined;
+  // Build htmlContent for rich inline rendering
+  const htmlContent = buildHtmlContent(container, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -1153,10 +1166,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const figureCount = container.find("figure").length;
-  const htmlContent = figureCount > 0
-    ? buildHtmlContent(container, $)
-    : undefined;
+  const htmlContent = buildHtmlContent(container, $) || undefined;
 
   return {
     title, heroImage, description,
