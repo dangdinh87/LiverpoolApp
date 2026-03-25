@@ -436,7 +436,7 @@ function extractBongdaplus(
     $('meta[name="description"]').attr("content");
 
   const container = $(
-    ".news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]"
+    "#postContent, .content, .details, .news-detail, .detail-body, .detail-sapo, .sapo, .content-news, .cms-body, article, [role=main]"
   ).first();
 
   const paragraphs: string[] = [];
@@ -497,7 +497,7 @@ function extractBongdaplus(
     images,
     sourceUrl: url,
     sourceName: "Bongdaplus.vn",
-    isThinContent: true, // always thin — client-rendered site
+    isThinContent: paragraphs.length <= 2,
   };
 }
 
@@ -1096,6 +1096,21 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Remove related/junk elements embedded inside the container
   container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics").remove();
+
+  // Znews uses table tags for images with specific class "picture"
+  container.find("table.picture").each((_, el) => {
+    const $t = $(el);
+    const $img = $t.find("td.pic img, img").first();
+    const $caption = $t.find("td.pCaption p, td.pCaption").first();
+    if ($img.length) {
+      const captionText = $caption.text().trim();
+      const $figure = $("<figure>").append($img);
+      if (captionText) {
+        $figure.append($("<figcaption>").text(captionText));
+      }
+      $t.replaceWith($figure);
+    }
+  });
 
   const paragraphs: string[] = [];
   const images: string[] = [];
