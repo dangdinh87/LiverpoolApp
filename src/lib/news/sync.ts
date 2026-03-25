@@ -93,16 +93,20 @@ export async function syncPipeline(): Promise<SyncResult> {
   let enriched = 0;
   const { data: noThumbData } = await supabase
     .from("articles")
-    .select("url")
+    .select("*")
     .is("thumbnail", null)
     .eq("is_active", true)
     .order("fetched_at", { ascending: false })
     .limit(30);
 
-  const noThumb: { url: string }[] = noThumbData || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const noThumb: any[] = noThumbData || [];
 
   if (noThumb.length) {
     const BATCH = 10;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const upsertPayload: any[] = [];
+
     for (let i = 0; i < noThumb.length; i += BATCH) {
       const batch = noThumb.slice(i, i + BATCH);
       const results = await Promise.allSettled(
@@ -111,14 +115,27 @@ export async function syncPipeline(): Promise<SyncResult> {
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (r.status === "fulfilled" && r.value.image) {
-          await supabase
-            .from("articles")
-            .update({ thumbnail: r.value.image, hero_image: r.value.image })
-            .eq("url", batch[j].url);
+          upsertPayload.push({
+            ...batch[j],
+            thumbnail: r.value.image,
+            hero_image: r.value.image,
+            updated_at: new Date().toISOString(),
+          });
           enriched++;
         }
       }
     }
+
+    if (upsertPayload.length > 0) {
+      const { error } = await supabase
+        .from("articles")
+        .upsert(upsertPayload, { onConflict: "url", ignoreDuplicates: false });
+
+      if (error) {
+        console.error(`[sync] Re-enrich batch upsert failed: ${error.message}`);
+      }
+    }
+
     console.log(`[sync] Re-enriched ${enriched}/${noThumb.length} thumbnails`);
   }
 
