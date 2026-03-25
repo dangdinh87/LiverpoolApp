@@ -1,0 +1,45 @@
+
+> liverpool-app@0.1.0 test
+> vitest run src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts -t extracts from ZNews
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/app[39m
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from ZNews
+[22m[39m[extractor] ZNews | method=cheerio | paragraphs=8 | thin=false
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from ZNews
+[22m[39m=== ZNEWS ===
+{
+  "title": "Apple hủy bỏ dự án quan trọng",
+  "heroImage": "https://photo.znews.vn/w1250/Uploaded/ovhunst/2025_02_01/1x_1_1.jpg",
+  "description": "Việc Apple tiếp tục hủy bỏ dự án quan trọng sau khi thất bại trong việc phát triển xe điện đã làm giới công nghệ nghi ngờ về kế hoạch trong tương lai của công ty.",
+  "publishedAt": "2025-02-02T05:01:08.000+07:00",
+  "author": "Minh Hoàng",
+  "paragraphs": [
+    "Việc Apple tiếp tục hủy bỏ dự án quan trọng sau khi thất bại trong việc phát triển xe điện đã làm giới công nghệ nghi ngờ về kế hoạch trong tương lai của công ty.",
+    "Apple tiếp tục hủy bỏ một dự án phát triển kính AR. Ảnh:  Bloomberg.",
+    "Trong     khi Mark Zuckerberg và Meta tiếp tục thúc đẩy các dự án kính tăng cường, tác giả     Mark Gurman của Bloomberg cho biết Apple vừa dừng một dự án kính AR. Với tên mã N107,     thiết bị của Táo khuyết được mô tả là sản phẩm trông giống như kính thông thường     nhưng có thêm màn hình trên mắt kính và có thể kết nối với máy Mac.",
+    "Một     vấn đề lớn đối với kính AR của Apple là nó khó hoạt động tốt trong khi vẫn phải     tiết kiệm chi phí. Ban đầu, công ty muốn N107 kết nối với iPhone, nhưng nó lại quá     tốn pin và một chiếc smartphone không đủ năng lượng để giúp kính AR hoạt động     mượt mà. Trong khi đó, các quản lý cấp cao của Táo khuyết không muốn sản phẩm     liên kết với máy Mac.",
+    "Việc     hủy bỏ dự án đã đặt ra một dấu hỏi lớn về chiến lược sản phẩm thực tế tăng cường (AR)     và thực tế ảo mở rộng (XR) trong tương lai của Apple. Công ty đã hủy một dự án     kính AR vào năm 2023 và có tin đồn rằng việc phát triển Vision Pro 2 đã bị hoãn     lại để ưu tiên cho một phiên bản rẻ hơn. Trong khi đó, bản thân kính thực tế ảo     của Táo khuyết cũng đang phải vật lộn tìm chỗ đứng.",
+    "Theo     The Verge, Apple đang dần tụt hậu so với đối thủ cạnh tranh trong lĩnh vực thực     tế tăng cường. Sự kiện CES 2025 vào tháng 1 là sân chơi cho đủ loại kính thông     minh và Google gần đây đã tham gia cuộc chơi với Android XR. Samsung cũng không     kém cạnh khi khi mang đến kính Project Moohan.",
+    "Năm     2024, Meta đã giới thiệu Orion, một nguyên mẫu kính AR với màn hình Micro LED     tiên tiến và điều khiển qua vòng đeo tay. Mark Zuckerberg, Giám đốc điều hành     Meta tỏ ra rất lạc quan về kính thông minh và coi nó như một thiết bị tối ưu     cho trợ lý AI.",
+    "Trong     khi đó, Vision Pro với mức giá 3.499 USD đang trở thành trở ngại lớn đối với     Apple trong việc mở rộng thị trường và dần để các đối thủ trong ngành vượt qua."
+  ],
+  "htmlContent": "\n        \n        <header>\n            \n            <p>\n                \n                <a href=\"https://znews.vn/cong-nghe.html\">Công nghệ</a>\n                \n            </p>\n            \n            <h1>Apple hủy bỏ dự án quan trọng</h1>\n            <ul>\n                <li>Chủ nhật, 2/2/2025 05:01 (GMT+7)</li>\n                <li>05:01 2/2/2025</li>\n                \n            </ul>\n            \n            \n        </header>\n        <section>\n            \n\n            <p>Việc Apple tiếp tục hủy bỏ dự án quan trọng sau khi thất bại trong việc phát triển xe điện đã làm giới công nghệ nghi ngờ về kế hoạch trong tương lai của công ty.</p>\n            \n<div class=\"the-article-body\">\n    \n    <table>\n        <tbody>\n            <tr>\n                <td>\n                    <img src=\"https://photo.znews.vn/w960/Uploaded/ovhunst/2025_02_01/1x_1_1.jpg\" alt=\"\" loading=\"lazy\" />\n                </td>\n            </tr>\n            \n            <tr>\n                <td>\n                    <p>Apple tiếp tục hủy bỏ một dự án phát triển kính AR. Ảnh: <em> Bloomberg</em>.</p>\n                </td>\n            </tr>\n            \n        </tbody>\n    </table>\n    \n    <p>Trong     khi <a href=\"https://znews.vn/tieu-diem/mark-zuckerberg.html\">Mark Zuckerberg</a> và Meta tiếp tục thúc đẩy các dự án kính tăng cường, tác giả     Mark Gurman của <em>Bloomberg </em>cho biết <a href=\"https://znews.vn/tieu-diem/cong-ty-apple.html\">Apple</a> vừa dừng một dự án kính AR. Với tên mã N107,     thiết bị của Táo khuyết được mô tả là sản phẩm trông giống như kính thông thường     nhưng có thêm màn hình trên mắt kính và có thể kết nối với máy Mac.</p> <p>Một     vấn đề lớn đối với kính AR của Apple là nó khó hoạt động tốt trong khi vẫn phải     tiết kiệm chi phí. Ban đầu, công ty muốn N107 kết nối với <a href=\"https://znews.vn/tieu-diem/iphone.html\">iPhone</a>, nhưng nó lại quá     tốn pin và một chiếc smartphone không đủ năng lượng để giúp kính AR hoạt động     mượt mà. Trong khi đó, các quản lý cấp cao của Táo khuyết không muốn sản phẩm     liên kết với máy Mac.</p> <p>Việc     hủy bỏ dự án đã đặt ra một dấu hỏi lớn về chiến lược sản phẩm thực tế tăng cường (AR)     và thực tế ảo mở rộng (XR) trong tương lai của Apple. Công ty đã hủy một dự án     kính AR vào năm 2023 và có tin đồn rằng việc phát triển Vision Pro 2 đã bị hoãn     lại để ưu tiên cho một phiên bản rẻ hơn. Trong khi đó, bản thân kính thực tế ảo     của Táo khuyết cũng đang phải vật lộn tìm chỗ đứng. </p> <p>Theo     <em>The Verge</em>, Apple đang dần tụt hậu so với đối thủ cạnh tranh trong lĩnh vực thực     tế tăng cường. Sự kiện CES 2025 vào tháng 1 là sân chơi cho đủ loại kính thông     minh và Google gần đây đã tham gia cuộc chơi với Android XR. Samsung cũng không     kém cạnh khi khi mang đến kính Project Moohan.</p> <p>Năm     2024, Meta đã giới thiệu Orion, một nguyên mẫu kính AR với màn hình Micro LED     tiên tiến và điều khiển qua vòng đeo tay. Mark Zuckerberg, Giám đốc điều hành     Meta tỏ ra rất lạc quan về kính thông minh và coi nó như một thiết bị tối ưu     cho trợ lý AI.</p> <p>Trong     khi đó, Vision Pro với mức giá <abbr>3.499 USD</abbr> đang trở thành trở ngại lớn đối với     Apple trong việc mở rộng thị trường và dần để các đối thủ trong ngành vượt qua.</p>    \n    \n    \n    \n    \n    \n</div>\n\n\n\n\n\n\n\n\n\n\n<div class=\"the-article-credit\">\n    \n    <p>Minh Hoàng</p>   \n    \n    \n    \n</div>\n\n\n\n\n\n\n            <div></div>\n            \n            \n        </section>\n        <div></div>\n        \n        <section>\n    <header>\n        <h2>Bạn có thể quan tâm</h2>\n    </header>\n    <div class=\"section-content\">\n        <div class=\"article-list layout-grid-3\">\n        </div>\n    </div>\n</section>\n        \n        \n        \n\n        \n        \n        \n    ",
+  "images": [
+    "https://photo.znews.vn/w960/Uploaded/ovhunst/2025_02_01/1x_1_1.jpg"
+  ],
+  "sourceUrl": "https://znews.vn/liverpool-thang-real-madrid-lan-dau-tien-sau-15-nam-post1528657.html",
+  "sourceName": "ZNews",
+  "isThinContent": false,
+  "readingTime": 3
+}
+
+ [32m✓[39m src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts [2m([22m[2m6 tests[22m[2m | [22m[33m5 skipped[39m[2m)[22m[33m 2144[2mms[22m[39m
+     [33m[2m✓[22m[39m extracts from ZNews [33m 2141[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m1 passed[39m[22m[2m | [22m[33m5 skipped[39m[90m (6)[39m
+[2m   Start at [22m 01:14:35
+[2m   Duration [22m 2.84s[2m (transform 163ms, setup 0ms, import 498ms, tests 2.14s, environment 0ms)[22m

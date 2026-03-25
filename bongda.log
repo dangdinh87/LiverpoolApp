@@ -1,0 +1,74 @@
+
+> liverpool-app@0.1.0 test
+> vitest run src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts -t extracts from Bongda
+
+
+[1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/app[39m
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from Bongda
+[22m[39m[extractor] Bongda.com.vn | method=cheerio | paragraphs=9 | thin=false
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from Bongda
+[22m[39m=== BONGDA ===
+{
+  "title": "Sao M.U khiến cựu danh thủ Ngoại hạng Anh phấn khích",
+  "heroImage": "https://media.bongda.com.vn/files/nguyen_duc_minh_tri/2024/10/26/li4u-1729938082559.jpg",
+  "description": "Cựu sao Ngoại hạng Anh dành lời khen ngợi cho cầu thủ có phong độ ổn định bậc nhất của Manchester United.",
+  "publishedAt": "2024-10-27T07:22:02.766000+07:00",
+  "author": "Yêu Thể Thao",
+  "paragraphs": [
+    "Onana cho thấy phong độ ổn định ở Man United.",
+    "Manchester United vừa có trận hòa 1-1 trước Fenerbahce tại Istanbul trong khuôn khổ League Phase Europa League. Christian Eriksen ghi bàn thắng duy nhất cho thầy trò Erik ten Hag, nhưng Andre Onana mới là ngôi sao đóng vai trò then chốt trong việc M.U có điểm rời Thổ Nhĩ Kỳ.",
+    "Onana là một trong những cầu thủ chơi hay nhất của Man United trong trận đấu với Fenerbahce. Những pha cứu thua của thủ thành người Cameroon góp công lớn trong việc M.U giành được một điểm quý giá tại Istanbul.",
+    "Điểm nhấn trong đêm thi đấu của Andre Onana là pha cứu thua kép ở cự ly gần trước tình huống dứt điểm từ En-Nesyri trong hiệp một. Theo dõi tình huống đó, không chỉ người hâm mộ, các bình luận viên, các chuyên gia bóng đá mà ngay chính HLV Jose Mourinho cũng không thể tin được.",
+    "Phát biểu trên talkSPORT, Darren Bent - cựu sao Ngoại hạng Anh đã cảm thán pha cứu thua kép của Andre Onana là \"hoàn toàn không thể tin được\":",
+    "\"Onana là người đã tiến bộ. Cậu ấy đang cứu thua. Đúng, Onana có thể mắc lỗi, nhưng thủ môn nào mà không mắc lỗi?\"",
+    "Khi được hỏi về pha cứu thua của Onana khiến Jose Mourinho cũng trầm trồ, Bent nói rõ: \"Thật không thể tin được. Tôi nghĩ cậu ấy đã làm rất tốt.\"",
+    "Andre Onana từng đối mặt với nhiều chỉ trích khi cập bến Man United để thay David De Gea. Trong những trận đầu tiên cho M.U, cựu sao Inter Milan mắc những lỗi ngớ ngẩn. Tuy nhiên càng thi đấu, Onana càng cho thấy anh xứng đáng với sự tin tưởng từ Erik ten Hag.",
+    "Nếu không có Onana, vị trí của M.U trên bảng xếp hạng Ngoại hạng Anh có lẽ còn tệ hơn thế."
+  ],
+  "htmlContent": "\n                  \n                    \n                    <p>Manchester United vừa có <a href=\"https://www.bongda.com.vn/3-diem-sang-trong-tran-hoa-cua-mu-ten-hag-biet-sai-bom-tan-ghi-diem-d758797.html\" rel=\"noopener noreferrer nofollow\">trận hòa 1-1</a> trước Fenerbahce tại Istanbul trong khuôn khổ League Phase <a href=\"https://www.bongda.com.vn/giai-dau/24112/summary/europa-league\" rel=\"noopener noreferrer nofollow\">Europa League</a>. Christian Eriksen ghi bàn thắng duy nhất cho thầy trò Erik ten Hag, nhưng Andre Onana mới là ngôi sao đóng vai trò then chốt trong việc M.U có điểm rời Thổ Nhĩ Kỳ.</p><p><a href=\"https://www.bongda.com.vn/cau-thu/611491/andre-onana/\" rel=\"noopener noreferrer nofollow\">Onana</a> là một trong những cầu thủ chơi hay nhất của Man United trong trận đấu với Fenerbahce. Những pha cứu thua của thủ thành người Cameroon góp công lớn trong việc <a href=\"https://www.bongda.com.vn/doi-bong/389/overview/manchester-united/\" rel=\"noopener noreferrer nofollow\">M.U</a> giành được một điểm quý giá tại Istanbul.</p>\n            \n            <div class=\"ads-wrapper ads-adv_teads_video\">\n                \n            </div>\n            \n            <div class=\"ads-wrapper ads-adv_pc_in_article\">\n                \n            </div>\n            <p>Điểm nhấn trong đêm thi đấu của Andre Onana là <a href=\"https://www.bongda.com.vn/onana-tay-nhanh-hon-nao-mourinho-choang-vang-d758786.html\" rel=\"noopener noreferrer nofollow\">pha cứu thua kép</a> ở cự ly gần trước tình huống dứt điểm từ En-Nesyri trong hiệp một. Theo dõi tình huống đó, không chỉ người hâm mộ, các bình luận viên, các chuyên gia bóng đá mà ngay chính HLV Jose Mourinho cũng không thể tin được.</p><figure><img alt=\"Onana cho thấy phong độ ổn định ở Man United.\" loading=\"lazy\" src=\"https://media.bongda.com.vn/editor-upload/2024-10-26/nguyen_duc_minh_tri/onana-1.jpg\"><figcaption>Onana cho thấy phong độ ổn định ở Man United.</figcaption>\n</figure>\n<p></p><p>Phát biểu trên talkSPORT, Darren Bent - cựu sao <a href=\"https://www.bongda.com.vn/giai-dau/23685/summary/premier-league\" rel=\"noopener noreferrer nofollow\">Ngoại hạng Anh</a> đã cảm thán pha cứu thua kép của Andre Onana là \"hoàn toàn không thể tin được\":</p><p>\"<em>Onana là người đã tiến bộ. Cậu ấy đang cứu thua. Đúng, Onana có thể mắc lỗi, nhưng thủ môn nào mà không mắc lỗi?</em>\"</p><p>Khi được hỏi về pha cứu thua của Onana khiến Jose Mourinho cũng trầm trồ, Bent nói rõ: \"<strong><em>Thật không thể tin được. Tôi nghĩ cậu ấy đã làm rất tốt.</em></strong>\"</p><p>Andre Onana từng đối mặt với nhiều chỉ trích khi cập bến Man United để thay David De Gea. Trong những trận đầu tiên cho M.U, cựu sao <a href=\"https://www.bongda.com.vn/doi-bong/432/overview/inter\" rel=\"noopener noreferrer nofollow\">Inter Milan</a> mắc những lỗi ngớ ngẩn. Tuy nhiên càng thi đấu, Onana càng cho thấy anh xứng đáng với sự tin tưởng từ Erik ten Hag.</p><p>Nếu không có Onana, vị trí của M.U trên <a href=\"https://www.bongda.com.vn/doi-bong/389/table/manchester-united/\" rel=\"noopener noreferrer nofollow\">bảng xếp hạng</a> Ngoại hạng Anh có lẽ còn tệ hơn thế.</p>\n                    \n                  \n                ",
+  "images": [
+    "https://media.bongda.com.vn/editor-upload/2024-10-26/nguyen_duc_minh_tri/onana-1.jpg"
+  ],
+  "sourceUrl": "https://bongda.com.vn/danh-gia-chuyen-nhuong-arsenal-mua-nay-tuyet-voi-d758963.html",
+  "sourceName": "Bongda.com.vn",
+  "readingTime": 2
+}
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from Bongdaplus
+[22m[39m[extractor] Bongdaplus.vn | method=cheerio | paragraphs=7 | thin=true
+
+[90mstdout[2m | src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts[2m > [22m[2mExtractor Sandbox[2m > [22m[2mextracts from Bongdaplus
+[22m[39m=== BONGDAPLUS ===
+{
+  "title": "Vì sao VAR công nhận bàn của Brazil dù việt vị?",
+  "heroImage": "https://cdn.bongdaplus.vn/Assets/Media/2024/03/24/66/brazil2.jpg",
+  "description": "Pha lập công duy nhất của Endrick giúp Brazil hạ Anh 1-0 ở trận giao hữu tại Wembley vẫn hợp lệ, bất chấp VAR xác định sao mai 17 tuổi việt vị.\n\n",
+  "publishedAt": "3/24/2024 7:12:35 AM",
+  "paragraphs": [
+    "Phút 80, thời điểm tỷ số đang là 0-0, Vinicius Junior thoát xuống sau khi đón đường chuyền của đồng đội. Cú dứt điểm của anh không thắng được Jordan Pickford, nhưng bóng nảy ra đúng chỗ Endrick và sao mai 17 tuổi dễ dàng dứt điểm vào gôn trống.",
+    "Các cầu thủ Anh đồng loạt giơ tay với trọng tài biên, cho rằng Endrick đã việt vị rõ ràng kể từ thời điểm anh chạy xuống cùng Vinicius. Khi VAR vào cuộc, Endrick đúng là đã việt vị song bàn thắng vẫn được công nhận cho Brazil. Vì sao như vậy?",
+    "Endrick đã việt vị nhưng tiền đạo trẻ này không can thiệp khi bóng được chuyền cho Vinicius. Sau đó, Endrick đã ở tư thế không việt vị khi cú đá của Vinicius bị Pickfor đẩy ra, qua đó bàn thắng được tính cho Brazil.",
+    "Chia sẻ trên sóng bình luận, cựu thủ thành Rob Green nói: \"Endrick đã việt vị nhưng không can thiệp vào tình huống. Vinicius Junior đã tính toán thời gian một cách hoàn hảo. Chúng ta đã biết kết quả từ pha bóng ấy\".",
+    "Trong khi vẫn còn nhiều tranh cãi xoay quanh bàn thắng của Endrick, cựu danh thủ Joe Cole đã hết lời khen ngợi tài năng trẻ phía Brazil. Bày tỏ quan điểm sau tiếng còi mãn cuộc, Cole cho biết: \"Cậu ấy sẽ không thể ghi bàn nào dễ hơn như vậy được nữa. Đó là những gì tôi đang đề cập, khả năng dự đoán tình huống để ghi bàn của Endrick.",
+    "Anh đã bộc lộ nhiều lỗ hổng và phải trả giá. Brazil đã chơi tốt suốt cả trận với nhiều tình huống xuyên phá. Gomes đã có một đường chuyền tuyệt vời, và Endrick đã ghi một bàn không thể dễ hơn. Tôi nghĩ cậu ấy có chút gì đó của Romario, từ vóc dáng, cách dứt điểm cho đến biểu cảm niềm vui trên gương mặt\".",
+    "Endrick sẽ đặt mục tiêu ghi thêm bàn cho Brazil ở đợt tập trung lần này, khi Brazil sẽ làm khách trước Tây Ban Nha tại Bernabeu - sân nhà tương lai của anh ở Real Madrid."
+  ],
+  "images": [
+    "https://cdn.bongdaplus.vn/Assets/Media/2024/03/24/66/brazil1.jpg"
+  ],
+  "sourceUrl": "https://bongdaplus.vn/ngoai-hang-anh/liverpool-lap-ky-luc-vo-tien-khoang-hau-o-champions-league-sau-khi-ha-real-4261892403.html",
+  "sourceName": "Bongdaplus.vn",
+  "isThinContent": true,
+  "readingTime": 2
+}
+
+ [32m✓[39m src/lib/news/enrichers/__tests__/extractor-sandbox.test.ts [2m([22m[2m6 tests[22m[2m | [22m[33m4 skipped[39m[2m)[22m[33m 3700[2mms[22m[39m
+     [33m[2m✓[22m[39m extracts from Bongda [33m 2379[2mms[22m[39m
+     [33m[2m✓[22m[39m extracts from Bongdaplus [33m 1318[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m2 passed[39m[22m[2m | [22m[33m4 skipped[39m[90m (6)[39m
+[2m   Start at [22m 01:14:20
+[2m   Duration [22m 4.32s[2m (transform 168ms, setup 0ms, import 436ms, tests 3.70s, environment 0ms)[22m
