@@ -87,6 +87,16 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     th: ["colspan", "rowspan"],
   },
   allowedSchemes: ["https", "http"],
+  exclusiveFilter: (frame) => {
+    // Drop known ad or junk classes
+    if (frame.tag === "div" && frame.attribs.class) {
+      const cls = frame.attribs.class.toLowerCase();
+      if (cls.includes("ads-wrapper") || cls.includes("ads-adv_teads_video") || cls.includes("ads-adv_pc_in_article")) {
+        return true;
+      }
+    }
+    return false;
+  }
 };
 
 type Extractor = ($: cheerio.CheerioAPI, url: string) => ArticleContent;
@@ -141,6 +151,21 @@ function buildHtmlContent(
     }
   });
 
+  // Normalize nested tables with images (like ZNews) into standard figure > img
+  container.find("table").each((_, el) => {
+    const $tbl = $(el);
+    if ($tbl.find("img").length > 0) {
+      const $img = $tbl.find("img").first();
+      const $caption = $tbl.find("p, figcaption, em").not($img.parent()).first();
+      const figure = $("<figure></figure>");
+      figure.append($img.clone());
+      if ($caption.length > 0 && $caption.text().trim().length > 0) {
+        figure.append($("<figcaption></figcaption>").text($caption.text().trim()));
+      }
+      $tbl.replaceWith(figure);
+    }
+  });
+
   // 2. Sanitize HTML
   const rawHtml = container.html() || "";
   let sanitized = sanitize(rawHtml, ARTICLE_SANITIZE_OPTS);
@@ -155,6 +180,18 @@ function buildHtmlContent(
     // Remove empty/orphaned closing tags left over
     sanitized = $html.html()?.replace(/<\/(figcaption|figure)>\s*<\/(figcaption|figure)>\s*/g, "</$1>\n</$2>\n") || sanitized;
   }
+
+  // Final cleanup of unwrapped images into figures if they contain alt text
+  const $final = cheerio.load(sanitized, null, false);
+  $final("div > img:only-child").each((_, el) => {
+    const $el = $final(el);
+    const $div = $el.parent();
+    const figure = $final("<figure></figure>");
+    figure.append($el.clone());
+    $div.replaceWith(figure);
+  });
+
+  sanitized = $final.html() || sanitized;
 
   return sanitized || undefined;
 }
@@ -416,6 +453,8 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
     htmlContent = buildHtmlContent(contentDetail, $) || undefined;
+  } else {
+    htmlContent = buildHtmlContent(container, $) || undefined;
   }
 
   return {
@@ -453,16 +492,24 @@ function extractBongdaplus(
   const seenP = new Set<string>();
   const seenI = new Set<string>();
 
+  const skipPatterns =
+    /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
+
   container
     .find("p, .sapo")
     .each((_, el) => {
-      const text = $(el).text().trim();
-      if (text.length > 20) pushUnique(paragraphs, seenP, text);
+      const $el = $(el);
+      if (
+        $el.closest(
+          "nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright"
+        ).length
+      )
+        return;
+      const text = $el.text().trim();
+      if (text.length > 20 && !skipPatterns.test(text)) pushUnique(paragraphs, seenP, text);
     });
 
   if (paragraphs.length === 0) {
-    const skipPatterns =
-      /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
     $("p").each((_, el) => {
       const $el = $(el);
       if (
@@ -476,6 +523,9 @@ function extractBongdaplus(
         pushUnique(paragraphs, seenP, text);
     });
   }
+
+  const contentClone = container.clone();
+  contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
   $("img").each((_, el) => {
     const $el = $(el);
@@ -493,7 +543,7 @@ function extractBongdaplus(
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title,
@@ -1104,7 +1154,11 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   ).first();
 
   // Remove related/junk elements embedded inside the container
-  container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics").remove();
+  container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics, .the-article-credit").remove();
+
+  // Clean up nested headers before cloning for htmlContent
+  const contentClone = container.clone();
+  contentClone.find("header").remove();
 
   const paragraphs: string[] = [];
   const images: string[] = [];
@@ -1128,7 +1182,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich inline rendering
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
