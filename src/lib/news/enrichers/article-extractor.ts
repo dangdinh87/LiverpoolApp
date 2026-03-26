@@ -73,7 +73,7 @@ async function cacheContent(url: string, content: ArticleContent): Promise<void>
 
 const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
   allowedTags: sanitize.defaults.allowedTags.concat([
-    "img", "figure", "figcaption", "h1", "h2", "h3", "h4",
+    "img"
   ]),
   allowedAttributes: {
     ...sanitize.defaults.allowedAttributes,
@@ -82,6 +82,9 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     div: ["class", "data-video-src", "data-poster", "data-source-url", "data-source-name"],
     figure: ["class"],
     span: ["class"],
+    table: ["class", "border", "cellpadding", "cellspacing"],
+    td: ["colspan", "rowspan"],
+    th: ["colspan", "rowspan"],
   },
   allowedSchemes: ["https", "http"],
 };
@@ -119,6 +122,12 @@ function buildHtmlContent(
   $: cheerio.CheerioAPI
 ): string | undefined {
   if (!container || container.length === 0) return undefined;
+
+  // Remove generic ad classes, related news widgets, etc. to clean up content
+  container.find(
+    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
+    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+  ).remove();
 
   // 1. Resolve lazy-loaded images to their true source
   container.find("img").each((_, el) => {
@@ -497,7 +506,7 @@ function extractBongdaplus(
     images,
     sourceUrl: url,
     sourceName: "Bongdaplus.vn",
-    isThinContent: true, // always thin — client-rendered site
+    isThinContent: paragraphs.length <= 1,
   };
 }
 
