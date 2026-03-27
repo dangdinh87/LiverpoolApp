@@ -79,7 +79,7 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     ...sanitize.defaults.allowedAttributes,
     a: ["href", "name", "target", "rel"],
     img: ["src", "alt", "width", "height", "loading"],
-    div: ["class", "data-video-src", "data-poster", "data-source-url", "data-source-name"],
+    div: ["class", "data-video-src", "data-poster", "data-source-url", "data-source-name", "type", "data-type"],
     figure: ["class"],
     span: ["class"],
     table: ["class", "border", "cellpadding", "cellspacing"],
@@ -91,6 +91,9 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     // Drop known ad or junk classes
     if (frame.tag === "div" && frame.attribs.class) {
       const cls = frame.attribs.class.toLowerCase();
+      if (cls.includes("vcsortableinpreviewmode")) {
+        return false;
+      }
       if (cls.includes("ads-wrapper") || cls.includes("ads-adv_teads_video") || cls.includes("ads-adv_pc_in_article")) {
         return true;
       }
@@ -137,7 +140,7 @@ function buildHtmlContent(
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
     "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
-  ).remove();
+  ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source
   container.find("img").each((_, el) => {
