@@ -61,12 +61,39 @@ export async function syncPipeline(): Promise<SyncResult> {
   for (let i = 0; i < articles.length; i += batchSize) {
     const batch = articles.slice(i, i + batchSize);
     const rows = batch.map(articleToRow);
+    const urls = rows.map((r) => r.url);
 
     const retries = 1;
     for (let attempt = 0; attempt <= retries; attempt++) {
+      // Fetch existing rows first to prevent omitted columns from being overwritten with NULL
+      const { data: existingData, error: fetchError } = await supabase
+        .from("articles")
+        .select("*")
+        .in("url", urls);
+
+      if (fetchError) {
+        if (attempt < retries) {
+          console.warn(`[sync] Batch ${i} fetch failed (${fetchError.message}), retrying...`);
+          await new Promise((r) => setTimeout(r, 2000));
+          continue;
+        } else {
+          failed += batch.length;
+          errors.push({ url: `batch-${i}-fetch`, error: fetchError.message });
+          console.error(`[sync] Batch ${i} fetch error: ${fetchError.message}`);
+          break;
+        }
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existingMap = new Map((existingData || []).map((row: any) => [row.url, row]));
+      const safeRows = rows.map((row) => {
+        const old = existingMap.get(row.url);
+        return old ? { ...old, ...row } : row;
+      });
+
       const { data, error } = await supabase
         .from("articles")
-        .upsert(rows, { onConflict: "url", ignoreDuplicates: false })
+        .upsert(safeRows, { onConflict: "url", ignoreDuplicates: false })
         .select("url");
 
       if (!error) {
