@@ -73,7 +73,7 @@ async function cacheContent(url: string, content: ArticleContent): Promise<void>
 
 const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
   allowedTags: sanitize.defaults.allowedTags.concat([
-    "img"
+    "img", "iframe", "video", "source"
   ]),
   allowedAttributes: {
     ...sanitize.defaults.allowedAttributes,
@@ -85,6 +85,9 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     table: ["class", "border", "cellpadding", "cellspacing"],
     td: ["colspan", "rowspan"],
     th: ["colspan", "rowspan"],
+    iframe: ["src", "width", "height", "frameborder", "allowfullscreen", "allow"],
+    video: ["controls", "width", "height", "poster", "autoplay", "loop", "muted"],
+    source: ["src", "type"],
   },
   allowedSchemes: ["https", "http"],
   exclusiveFilter: (frame) => {
@@ -155,11 +158,11 @@ function buildHtmlContent(
   });
 
   // Normalize nested tables with images (like ZNews) into standard figure > img
-  container.find("table").each((_, el) => {
+  container.find("table.picture, table").each((_, el) => {
     const $tbl = $(el);
     if ($tbl.find("img").length > 0) {
       const $img = $tbl.find("img").first();
-      const $caption = $tbl.find("p, figcaption, em").not($img.parent()).first();
+      const $caption = $tbl.find("p, figcaption, em, td.caption, .caption").not($img.parent()).first();
       const figure = $("<figure></figure>");
       figure.append($img.clone());
       if ($caption.length > 0 && $caption.text().trim().length > 0) {
@@ -1042,9 +1045,9 @@ function extractTuoitre($: cheerio.CheerioAPI, url: string): ArticleContent {
 // Verified via DevTools: `.detail-content` (15p, 3fig), sapo in `.detail-sapo`
 function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    ".detail-content, .detail__content, .article-body, article, [role=main]",
+    ".detail-cmain, .detail-content, .detail__cmain-main, .detail__content, .article-body, article, [role=main]",
     "Thanh Niên",
-    { sapoSelector: ".detail-sapo" }
+    { sapoSelector: ".detail-sapo, .detail__sapo" }
   );
 }
 
@@ -1163,7 +1166,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Clean up nested headers before cloning for htmlContent
   const contentClone = container.clone();
-  contentClone.find("header").remove();
+  contentClone.find("header.the-article-header, header").remove();
 
   const paragraphs: string[] = [];
   const images: string[] = [];
