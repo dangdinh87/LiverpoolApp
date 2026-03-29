@@ -73,7 +73,10 @@ async function cacheContent(url: string, content: ArticleContent): Promise<void>
 
 const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
   allowedTags: sanitize.defaults.allowedTags.concat([
-    "img"
+    "img",
+    "iframe",
+    "video",
+    "source"
   ]),
   allowedAttributes: {
     ...sanitize.defaults.allowedAttributes,
@@ -85,6 +88,9 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     table: ["class", "border", "cellpadding", "cellspacing"],
     td: ["colspan", "rowspan"],
     th: ["colspan", "rowspan"],
+    iframe: ["src", "width", "height", "allowfullscreen", "allow", "frameborder", "scrolling", "data-src", "class"],
+    video: ["src", "width", "height", "controls", "poster", "preload", "autoplay", "loop", "muted", "data-src", "class"],
+    source: ["src", "type"],
   },
   allowedSchemes: ["https", "http"],
   exclusiveFilter: (frame) => {
