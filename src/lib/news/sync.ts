@@ -40,18 +40,8 @@ function articleToRow(a: NewsArticle) {
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-export async function syncPipeline(): Promise<SyncResult> {
-  const start = Date.now();
-  const adapters = [
-    new LfcAdapter(),
-    ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
-    new BongdaplusAdapter(),
-  ];
-
-  const { articles, stats: sourceStats } = await fetchAllNews(adapters, 300);
-  console.log(`[sync] Fetched ${articles.length} articles from adapters`);
-
-  const supabase = getServiceClient();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function bulkUpsertArticles(articles: NewsArticle[], supabase: any) {
   let upserted = 0;
   let failed = 0;
   const errors: { url: string; error: string }[] = [];
@@ -115,6 +105,31 @@ export async function syncPipeline(): Promise<SyncResult> {
       }
     }
   }
+
+  return { upserted, failed, errors };
+}
+
+/**
+ * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
+ * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
+ */
+export async function syncPipeline(): Promise<SyncResult> {
+  const start = Date.now();
+  const adapters = [
+    new LfcAdapter(),
+    ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
+    new BongdaplusAdapter(),
+  ];
+
+  const { articles, stats: sourceStats } = await fetchAllNews(adapters, 300);
+  console.log(`[sync] Fetched ${articles.length} articles from adapters`);
+
+  const supabase = getServiceClient();
+
+  const upsertResult = await bulkUpsertArticles(articles, supabase);
+  const upserted = upsertResult.upserted;
+  const failed = upsertResult.failed;
+  const errors = upsertResult.errors;
 
   // Re-enrich: fetch og:image for articles missing thumbnails
   let enriched = 0;
