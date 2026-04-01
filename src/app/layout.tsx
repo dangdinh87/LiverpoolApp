@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+`ximport type { Metadata } from "next";
 import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
@@ -9,6 +9,8 @@ import { GlobalChat } from "@/components/chat/global-chat";
 import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
+import { StructuredData } from "@/components/analytics/structured-data";
 import "./globals.css";
 
 // League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
@@ -43,7 +45,7 @@ export const metadata: Metadata = {
     default: "Liverpool FC Việt Nam — Tin tức, Đội hình, Lịch thi đấu | YNWA",
   },
   description:
-    "Trang fan Liverpool FC — Đội hình, lịch thi đấu, bảng xếp hạng, thống kê và lịch sử CLB. The ultimate Liverpool FC fan site.",
+    "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
   keywords: [
     "Liverpool FC", "LFC", "Premier League", "Anfield", "YNWA",
     "Liverpool FC Việt Nam", "tin tức Liverpool", "lịch thi đấu Liverpool",
@@ -55,14 +57,14 @@ export const metadata: Metadata = {
     type: "website",
     locale: "vi_VN",
     alternateLocale: "en_GB",
-    siteName: "Liverpool FC Fan Site",
-    title: "Liverpool FC — Anfield's Finest",
-    description: "Trang fan Liverpool FC — Đội hình, lịch thi đấu, bảng xếp hạng, thống kê và lịch sử CLB.",
+    siteName: "Liverpool FC Việt Nam",
+    title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
+    description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Liverpool FC — Anfield's Finest",
-    description: "Trang fan Liverpool FC — Đội hình, lịch thi đấu, bảng xếp hạng, thống kê và tin tức Liverpool.",
+    title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
+    description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
   },
   robots: { index: true, follow: true },
   alternates: {
@@ -83,56 +85,8 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
-        {/* JSON-LD Structured Data for Google Rich Results */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify([
-              {
-                "@context": "https://schema.org",
-                "@type": "WebSite",
-                name: "Liverpool FC Việt Nam",
-                alternateName: ["Liverpool FC VN", "LFC Việt Nam", "Liverpool FC Fan Site"],
-                url: SITE_URL,
-                description: "Trang fan Liverpool FC Việt Nam — Tin tức, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh và lịch sử CLB.",
-                inLanguage: ["vi", "en"],
-                potentialAction: {
-                  "@type": "SearchAction",
-                  target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/news?q={search_term_string}` },
-                  "query-input": "required name=search_term_string",
-                },
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "SportsTeam",
-                name: "Liverpool FC",
-                alternateName: ["Liverpool", "LFC", "The Reds"],
-                url: "https://www.liverpoolfc.com",
-                sport: "Football",
-                league: "Premier League",
-                location: {
-                  "@type": "StadiumOrArena",
-                  name: "Anfield",
-                  address: { "@type": "PostalAddress", addressLocality: "Liverpool", addressCountry: "GB" },
-                },
-                logo: `${SITE_URL}/assets/lfc/crest.webp`,
-              },
-              {
-                "@context": "https://schema.org",
-                "@type": "Organization",
-                name: "Liverpool FC Việt Nam Fan Site",
-                url: SITE_URL,
-                logo: `${SITE_URL}/assets/lfc/crest.webp`,
-                sameAs: [
-                  "https://www.facebook.com/LiverpoolFC",
-                  "https://twitter.com/LFC",
-                  "https://www.instagram.com/liverpoolfc",
-                  "https://www.youtube.com/liverpoolfc",
-                ],
-              },
-            ]),
-          }}
-        />
+        <GoogleTagManager />
+        <StructuredData />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"

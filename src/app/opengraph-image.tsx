@@ -1,11 +1,19 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Liverpool FC — Anfield's Finest";
+export const alt = "Liverpool FC Việt Nam — Tin tức, Đội hình, Lịch thi đấu";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export default async function OGImage() {
+  // Fetch crest as ArrayBuffer for edge runtime compatibility
+  const crestData = await fetch(new URL("/assets/lfc/crest-red.png", SITE_URL)).then(
+    (res) => res.arrayBuffer()
+  );
+  const crestBase64 = `data:image/png;base64,${Buffer.from(crestData).toString("base64")}`;
+
   return new ImageResponse(
     (
       <div
@@ -18,9 +26,10 @@ export default async function OGImage() {
           justifyContent: "center",
           background: "linear-gradient(135deg, #0D0D0D 0%, #1a0a0e 40%, #2a0a12 70%, #0D0D0D 100%)",
           fontFamily: "sans-serif",
+          position: "relative",
         }}
       >
-        {/* Red accent line at top */}
+        {/* Top accent line */}
         <div
           style={{
             position: "absolute",
@@ -34,17 +43,17 @@ export default async function OGImage() {
 
         {/* Crest */}
         <img
-          src="https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg"
+          src={crestBase64}
           alt=""
-          width={120}
-          height={120}
-          style={{ marginBottom: 24 }}
+          width={140}
+          height={254}
+          style={{ marginBottom: 20 }}
         />
 
         {/* Title */}
         <div
           style={{
-            fontSize: 64,
+            fontSize: 56,
             fontWeight: 900,
             color: "#FFFFFF",
             letterSpacing: "0.05em",
@@ -52,14 +61,14 @@ export default async function OGImage() {
             textAlign: "center",
           }}
         >
-          LIVERPOOL FC
+          LIVERPOOL FC VIỆT NAM
         </div>
 
         {/* Subtitle */}
         <div
           style={{
-            fontSize: 22,
-            color: "#C8102E",
+            fontSize: 20,
+            color: "#F6EB61",
             letterSpacing: "0.3em",
             textTransform: "uppercase",
             marginTop: 16,
@@ -72,15 +81,14 @@ export default async function OGImage() {
         {/* Description */}
         <div
           style={{
-            fontSize: 18,
+            fontSize: 16,
             color: "#a0a0a0",
-            marginTop: 20,
+            marginTop: 16,
             textAlign: "center",
-            maxWidth: 700,
             lineHeight: 1.5,
           }}
         >
-          Squad · Fixtures · Standings · Stats · News · History
+          Tin tức · Đội hình · Lịch thi đấu · Bảng xếp hạng · Thống kê · Lịch sử
         </div>
 
         {/* Bottom accent */}
