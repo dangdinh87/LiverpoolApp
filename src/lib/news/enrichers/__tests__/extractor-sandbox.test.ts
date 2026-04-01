@@ -23,7 +23,7 @@ describe("Extractor Sandbox", () => {
     const res = await scrapeArticle(url);
     console.log("=== BONGDA ===");
     console.log(JSON.stringify(res, null, 2));
-  });
+  }, 15000);
 
   it("extracts from 24h", async () => {
     // latest news 24h

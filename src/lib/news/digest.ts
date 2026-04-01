@@ -221,6 +221,7 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
       ]);
       const { data: freshDigest } = await supabase.from("news_digests").upsert(
         {
+          ...(data || {}),
           digest_date: today,
           title: digest.title,
           summary: digest.summary,
