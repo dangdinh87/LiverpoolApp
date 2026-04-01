@@ -145,6 +145,15 @@ function buildHtmlContent(
     "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
+  // Handle <picture> tags by unwrapping their inner <img>
+  container.find("picture").each((_, el) => {
+    const $pic = $(el);
+    const $img = $pic.find("img");
+    if ($img.length > 0) {
+      $pic.replaceWith($img.clone());
+    }
+  });
+
   // 1. Resolve lazy-loaded images to their true source
   container.find("img").each((_, el) => {
     const $el = $(el);
