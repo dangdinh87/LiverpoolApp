@@ -60,4 +60,25 @@ describe("Extractor Sandbox", () => {
     console.log("=== WEBTHETHAO ===");
     console.log(JSON.stringify(res, null, 2));
   });
+
+  it("extracts from Dantri", async () => {
+    const url = "https://dantri.com.vn/the-thao/bao-malaysia-hien-ke-cho-doi-nha-danh-bai-tuyen-viet-nam-20260329234030746.htm";
+    const res = await scrapeArticle(url);
+    console.log("=== DANTRI ===");
+    console.log(JSON.stringify(res, null, 2));
+  });
+
+  it("extracts from Thanhnien", async () => {
+    const url = "https://thanhnien.vn/thay-cu-cua-xuan-son-suc-nong-san-thien-truong-se-khien-malaysia-chiu-ap-luc-cuc-lon-khi-dau-viet-nam-185260328100123494.htm";
+    const res = await scrapeArticle(url);
+    console.log("=== THANHNIEN ===");
+    console.log(JSON.stringify(res, null, 2));
+  });
+
+  it("extracts from Tuoitre", async () => {
+    const url = "https://tuoitre.vn/tan-hlv-herdman-duoc-ca-ngoi-het-loi-sau-tran-ra-mat-indonesia-20260329110247195.htm";
+    const res = await scrapeArticle(url);
+    console.log("=== TUOITRE ===");
+    console.log(JSON.stringify(res, null, 2));
+  });
 });

@@ -1019,7 +1019,7 @@ function extractVietnameseGeneric(
 // Verified via DevTools: `article` tag (11p, 2fig), sapo in h2 tag
 function extractDantri($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    "article, .singular-content, .e-magazine__body, [role=main]",
+    "article, .dt-font-arial, .singular-content, .e-magazine__body, [role=main]",
     "Dân Trí",
     { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo" }
   );
@@ -1036,7 +1036,7 @@ function extractVietnamnet($: cheerio.CheerioAPI, url: string): ArticleContent {
 // Verified via DevTools: `.detail-cmain` (20p, 2fig), sapo in `h2.detail-sapo`
 function extractTuoitre($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    ".detail-cmain, .detail-content, article, [role=main]",
+    ".detail-content.afcbc-body, .detail-cmain, .detail-content, article, [role=main]",
     "Tuổi Trẻ",
     { sapoSelector: "h2.detail-sapo" }
   );
@@ -1045,7 +1045,7 @@ function extractTuoitre($: cheerio.CheerioAPI, url: string): ArticleContent {
 // Verified via DevTools: `.detail-content` (15p, 3fig), sapo in `.detail-sapo`
 function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    ".detail-cmain, .detail-content, .detail__cmain-main, .detail__content, .article-body, article, [role=main]",
+    ".detail-content.afcbc-body, .detail-cmain, .detail-content, .detail__cmain-main, .detail__content, .article-body, article, [role=main]",
     "Thanh Niên",
     { sapoSelector: ".detail-sapo, .detail__sapo" }
   );
