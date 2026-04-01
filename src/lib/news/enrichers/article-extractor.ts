@@ -145,6 +145,17 @@ function buildHtmlContent(
     "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
+  // Unwrap <picture> tags to just their <img> child to ensure proper styling
+  // and prevent sanitize-html from breaking them (since <picture> and <source>
+  // aren't fully supported without extra config, and we just need the <img>).
+  container.find("picture").each((_, el) => {
+    const $el = $(el);
+    const $img = $el.find("img").first();
+    if ($img.length > 0) {
+      $el.replaceWith($img);
+    }
+  });
+
   // 1. Resolve lazy-loaded images to their true source
   container.find("img").each((_, el) => {
     const $el = $(el);
