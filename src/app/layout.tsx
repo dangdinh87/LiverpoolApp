@@ -1,4 +1,4 @@
-`ximport type { Metadata } from "next";
+import type { Metadata } from "next";
 import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
@@ -81,7 +81,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${leagueGothic.variable} ${inter.variable} ${barlowCondensed.variable}`}
+      className={[leagueGothic.variable, inter.variable, barlowCondensed.variable].join(" ")}
       suppressHydrationWarning
     >
       <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
