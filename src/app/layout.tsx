@@ -11,6 +11,7 @@ import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { StructuredData } from "@/components/analytics/structured-data";
+import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
 
 // League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
@@ -103,6 +104,7 @@ export default async function RootLayout({
             </NextIntlClientProvider>
           </QueryProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
