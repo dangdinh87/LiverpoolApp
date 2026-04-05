@@ -7,6 +7,7 @@ import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
 import { getServiceClient } from "./supabase-service";
 import type { NewsArticle } from "./types";
+import { SupabaseClient } from "@supabase/supabase-js";
 
 export interface SyncResult {
   total: number;
@@ -41,7 +42,7 @@ function articleToRow(a: NewsArticle) {
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function bulkUpsertArticles(articles: NewsArticle[], supabase: any) {
+async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseClient<any, "public", any>) {
   let upserted = 0;
   let failed = 0;
   const errors: { url: string; error: string }[] = [];
@@ -74,8 +75,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: any) {
         }
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const existingMap = new Map((existingData || []).map((row: any) => [row.url, row]));
+      const existingMap = new Map((existingData || []).map((row) => [row.url, row]));
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
         return old ? { ...old, ...row } : row;
@@ -141,13 +141,11 @@ export async function syncPipeline(): Promise<SyncResult> {
     .order("fetched_at", { ascending: false })
     .limit(30);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const noThumb: any[] = noThumbData || [];
+  const noThumb = noThumbData || [];
 
   if (noThumb.length) {
     const BATCH = 10;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const upsertPayload: any[] = [];
+    const upsertPayload: Record<string, unknown>[] = [];
 
     for (let i = 0; i < noThumb.length; i += BATCH) {
       const batch = noThumb.slice(i, i + BATCH);
