@@ -121,6 +121,15 @@ function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
   if (dataOriginal && dataOriginal.startsWith("http")) return dataOriginal;
   const dataSrc = $el.attr("data-src");
   if (dataSrc && dataSrc.startsWith("http")) return dataSrc;
+
+  // Handling for srcset from picture/source tags that is sometimes set as data-srcset
+  const dataSrcset = $el.attr("data-srcset") || $el.attr("srcset");
+  if (dataSrcset) {
+    const parts = dataSrcset.split(",");
+    const highestRes = parts[parts.length - 1].trim().split(" ")[0];
+    if (highestRes.startsWith("http")) return highestRes;
+  }
+
   const src = $el.attr("src");
   if (src && src.startsWith("http")) return src;
   return undefined;
@@ -145,6 +154,46 @@ function buildHtmlContent(
     "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
+  // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
+  // This allows us to inspect <source> siblings within a <picture> for higher-quality srcset.
+  container.find("img").each((_, el) => {
+    const $el = $(el);
+
+    // First, look for a sibling <source> tag with a data-srcset or srcset if we are in a <picture>
+    const $parentPicture = $el.closest("picture");
+    let realSrc = undefined;
+
+    if ($parentPicture.length > 0) {
+      const $source = $parentPicture.find("source").first();
+      if ($source.length > 0) {
+        realSrc = resolveImageSrc($source);
+      }
+    }
+
+    // Fallback to the img tag itself if we didn't find anything from the picture source
+    if (!realSrc) {
+      realSrc = resolveImageSrc($el);
+    }
+
+    // Another fallback: check if there's a meta itemprop="url" sibling (e.g. vnexpress)
+    if (!realSrc) {
+      const $parentFigure = $el.closest("figure");
+      if ($parentFigure.length > 0) {
+        const metaUrl = $parentFigure.find("meta[itemprop='url']").attr("content");
+        if (metaUrl && metaUrl.startsWith("http")) {
+          realSrc = metaUrl;
+        }
+      }
+    }
+
+    if (realSrc) {
+      $el.attr("src", realSrc);
+      $el.removeAttr("data-src");
+      $el.removeAttr("data-original");
+      $el.attr("loading", "lazy");
+    }
+  });
+
   // Unwrap <picture> tags to just their <img> child to ensure proper styling
   // and prevent sanitize-html from breaking them (since <picture> and <source>
   // aren't fully supported without extra config, and we just need the <img>).
@@ -153,18 +202,6 @@ function buildHtmlContent(
     const $img = $el.find("img").first();
     if ($img.length > 0) {
       $el.replaceWith($img);
-    }
-  });
-
-  // 1. Resolve lazy-loaded images to their true source
-  container.find("img").each((_, el) => {
-    const $el = $(el);
-    const realSrc = resolveImageSrc($el);
-    if (realSrc) {
-      $el.attr("src", realSrc);
-      $el.removeAttr("data-src");
-      $el.removeAttr("data-original");
-      $el.attr("loading", "lazy");
     }
   });
 
