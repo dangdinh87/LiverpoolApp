@@ -6,6 +6,7 @@ import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
+  setRequestLocale('vi');
   const t = await getTranslations("Squad.metadata");
   const title = t("title");
   const description = t("description");
@@ -13,6 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function SquadPage() {
+  setRequestLocale('vi');
   const t = await getTranslations("Squad");
 
   const squadPlayers = getSquadPlayers({ includeLoans: true, includeForever: true });

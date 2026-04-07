@@ -1,10 +1,11 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getFixtures } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
+  setRequestLocale('vi');
   const t = await getTranslations("Fixtures.metadata");
   const title = t("title");
   const description = t("description");
@@ -14,6 +15,7 @@ export async function generateMetadata() {
 export const revalidate = 1800; // 30 minutes
 
 export default async function FixturesPage() {
+  setRequestLocale('vi');
   const t = await getTranslations("Fixtures");
   const fixtures = await getFixtures();
 

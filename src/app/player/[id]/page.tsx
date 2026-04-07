@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { getPlayerStats } from "@/lib/football";
@@ -84,6 +84,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  setRequestLocale('vi');
   const { id } = await params;
   const player = getPlayerBySlug(id);
   if (!player) return { title: "Player" };
@@ -112,6 +113,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default async function PlayerPage({ params }: PageProps) {
+  setRequestLocale('vi');
   const { id } = await params;
   const player = getPlayerBySlug(id);
   if (!player) notFound();

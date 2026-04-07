@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { makePageMeta, buildBreadcrumbJsonLd, buildImageGalleryJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { GalleryPage as GalleryClient } from "@/components/gallery/gallery-page";
@@ -9,6 +9,7 @@ import galleryFallback from "@/data/gallery.json";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 export async function generateMetadata(): Promise<Metadata> {
+  setRequestLocale('vi');
   const t = await getTranslations("Gallery.metadata");
   const title = t("title");
   const description = t("description");
@@ -29,6 +30,7 @@ interface ClientGalleryImage {
 }
 
 export default async function GalleryRoute() {
+  setRequestLocale('vi');
   let images: ClientGalleryImage[];
   let totalImages = 0;
   let categoryCounts: Record<string, number> = {};

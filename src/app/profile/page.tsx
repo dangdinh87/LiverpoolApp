@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isAdminEmail } from "@/lib/constants";
 import { getSiteSetting } from "@/lib/gallery/queries";
@@ -13,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
+  setRequestLocale('vi');
   const [supabase, t] = await Promise.all([
     createServerSupabaseClient(),
     getTranslations("Profile"),
