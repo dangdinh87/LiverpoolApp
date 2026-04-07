@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
