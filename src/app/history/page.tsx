@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/history" }) };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400; // 24 hours — static data from JSON
 
 function SectionHeader({ label, title, icon: Icon }: { label: string; title: string, icon?: React.ElementType }) {
   return (

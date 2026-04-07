@@ -33,7 +33,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/season" }) };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 1800; // 30 minutes
 
 export default async function SeasonPage({
   searchParams,

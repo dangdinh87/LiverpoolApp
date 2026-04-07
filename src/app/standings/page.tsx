@@ -11,7 +11,7 @@ export async function generateMetadata() {
   return { title, description, ...makePageMeta(title, description, { path: "/standings" }) };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 21600; // 6 hours
 
 export default async function StandingsPage() {
   const t = await getTranslations("Standings");

@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   ),
 };
 
-// Always fetch fresh data on each visit (no ISR cache)
-export const dynamic = "force-dynamic";
+// Revalidate every 5 minutes — balances freshness vs performance
+export const revalidate = 300;
 
 export default async function HomePage() {
   let fixtures: Fixture[] = [];

@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300; // 5 minutes
 
 const LFC_ID = 40;
 

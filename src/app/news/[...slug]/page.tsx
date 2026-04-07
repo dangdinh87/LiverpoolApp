@@ -26,7 +26,7 @@ import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/
 import { CommentSection } from "@/components/news/comment-section";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 600; // 10 minutes
 
 function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
   const lang = VI_SOURCES.has(source) ? "vi" : "en";

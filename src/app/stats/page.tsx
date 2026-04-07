@@ -19,7 +19,7 @@ export async function generateMetadata() {
   return { title, description, ...makePageMeta(title, description, { path: "/stats" }) };
 }
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // 1 hour
 
 const CURRENT_SEASON = 2025;
 

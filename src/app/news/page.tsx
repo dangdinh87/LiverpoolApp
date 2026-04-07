@@ -15,8 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
 }
 
-// Always fetch fresh data from DB on each request
-export const dynamic = "force-dynamic";
+export const revalidate = 300; // 5 minutes
 
 export default async function NewsPage() {
   const [t, locale] = await Promise.all([
