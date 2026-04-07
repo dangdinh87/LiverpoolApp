@@ -43,7 +43,7 @@ interface NavbarClientProps {
   isMatchLive?: boolean;
 }
 
-export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: NavbarClientProps) {
+export function NavbarClient({ user: initialUser, profile: initialProfile, nextMatchDate, isMatchLive }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -52,18 +52,35 @@ export function NavbarClient({ user, profile, nextMatchDate, isMatchLive }: Navb
   const [streak, setStreak] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [user, setUser] = useState(initialUser);
+  const [profile, setProfile] = useState(initialProfile);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Sync server auth state to client zustand store (used by chat)
+  // Client-side auth fetch — replaces server-side cookies() dependency
   const setAuthUser = useAuthStore((s) => s.setUser);
   useEffect(() => {
-    setAuthUser(
-      user
-        ? { id: user.id, email: user.email ?? undefined, name: profile?.username ?? undefined, avatarUrl: profile?.avatar_url ?? undefined }
-        : null
-    );
-  }, [user, profile, setAuthUser]);
+    const { createClient } = require("@/lib/supabase");
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: any } }) => {
+      if (u) {
+        setUser({ id: u.id, email: u.email ?? null });
+        setAuthUser({ id: u.id, email: u.email ?? undefined });
+        // Fetch profile
+        supabase.from("user_profiles").select("*").eq("user_id", u.id).single()
+          .then(({ data }: { data: any }) => {
+            if (data) {
+              setProfile(data);
+              setAuthUser({ id: u.id, email: u.email ?? undefined, name: data.username ?? undefined, avatarUrl: data.avatar_url ?? undefined });
+            }
+          });
+      } else {
+        setUser(null);
+        setProfile(null);
+        setAuthUser(null);
+      }
+    });
+  }, [setAuthUser]);
 
   // Fetch & record streak on mount (authenticated users only)
   useEffect(() => {
