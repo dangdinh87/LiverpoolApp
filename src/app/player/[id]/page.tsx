@@ -136,7 +136,7 @@ export default async function PlayerPage({ params }: PageProps) {
     getFplPlayerStats(player.name),
   ]);
 
-  const bio = getPlayerBio(player.slug, locale);
+  const bio = getPlayerBio(player.slug, "vi");
   const bioParagraphs = bio
     ? bio.split(/\n{2,}|(?<=\.)(?=\s[A-Z])/).filter(Boolean).slice(0, 6)
     : [];
