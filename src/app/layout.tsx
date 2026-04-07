@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { setRequestLocale } from 'next-intl/server';
+import { Suspense } from "react";
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
 import { GlobalChat } from "@/components/chat/global-chat";
@@ -97,7 +98,7 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <NextIntlClientProvider messages={messages}>
-              <NavbarAuth />
+              <Suspense><NavbarAuth /></Suspense>
               <main className="min-h-screen">{children}</main>
               <Footer />
               <GlobalToast />
