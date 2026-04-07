@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react";
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { getPlayerStats } from "@/lib/football";
@@ -119,10 +119,9 @@ export default async function PlayerPage({ params }: PageProps) {
   if (!player) notFound();
 
   const t = await getTranslations("PlayerDetail");
-  const locale = await getLocale();
 
   const age = calculateAge(player.dateOfBirth);
-  const dob = new Date(player.dateOfBirth).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-GB", {
+  const dob = new Date(player.dateOfBirth).toLocaleDateString("vi-VN", {
     day: "numeric",
     month: "long",
     year: "numeric",

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
 import type { ArticleEngagement } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
@@ -20,11 +20,8 @@ export const revalidate = 300; // 5 minutes
 
 export default async function NewsPage() {
   setRequestLocale('vi');
-  const [t, locale] = await Promise.all([
-    getTranslations("News"),
-    getLocale(),
-  ]);
-  const userLang = locale === "vi" ? "vi" : "en";
+  const t = await getTranslations("News");
+  const userLang = "vi";
   // Fetch both vi + en articles — balanced 30 each (no lang bias so both tabs have content)
   const [allArticles, digest, engagementMap] = await Promise.all([
     getNewsFromDB(60),

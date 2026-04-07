@@ -6,7 +6,7 @@ import {
   ArrowLeft, MapPin, Calendar, Users,
   CircleDot, ArrowUpFromLine, ArrowDownToLine,
 } from "lucide-react";
-import { getTranslations, getLocale, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
   getFixtureEvents,
@@ -53,16 +53,15 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const { id } = await params;
   const fixtureId = Number(id);
 
-  const [fixtures, tDetail, tMatch, locale] = await Promise.all([
+  const [fixtures, tDetail, tMatch] = await Promise.all([
     getFixtures(),
     getTranslations("Fixtures.detail"),
     getTranslations("Match"),
-    getLocale(),
   ]);
   const match = fixtures.find((f) => f.fixture.id === fixtureId);
   if (!match) notFound();
 
-  const loc = locale === "vi" ? "vi-VN" : "en-GB";
+  const loc = "vi-VN";
   const { fixture: f, league, teams, goals, score } = match;
   const result = getMatchResult(match);
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
