@@ -41,7 +41,7 @@ describe("Extractor Sandbox", () => {
   });
 
   it("extracts from VnExpress", async () => {
-    const url = "https://vnexpress.net/real-thua-liverpool-o-champions-league-4861876.html";
+    const url = "https://vnexpress.net/chu-nha-world-cup-2026-an-ui-cdv-italy-bang-chien-dich-doc-dao-5058793.html";
     const res = await scrapeArticle(url);
     console.log("=== VNEXPRESS ===");
     console.log(JSON.stringify(res, null, 2));
