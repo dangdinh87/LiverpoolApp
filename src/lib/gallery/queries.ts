@@ -110,7 +110,12 @@ export async function deleteGalleryImageFromDB(id: string): Promise<void> {
 
 /** Get a site setting by key */
 export async function getSiteSetting<T>(key: string): Promise<T | null> {
-  const supabase = await createServerSupabaseClient();
+  // Use anon client directly to avoid cookies() which forces dynamic rendering
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
   const { data, error } = await supabase
     .from("site_settings")
     .select("value")
