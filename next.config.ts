@@ -5,6 +5,18 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['rss-parser'],
+  headers: async () => [
+    {
+      // Cache public pages at edge for 5 minutes, stale-while-revalidate for 1 hour
+      source: '/((?!api|auth|profile|_next).*)',
+      headers: [
+        {
+          key: 'CDN-Cache-Control',
+          value: 'public, s-maxage=300, stale-while-revalidate=3600',
+        },
+      ],
+    },
+  ],
   images: {
     qualities: [75, 85],
     remotePatterns: [
