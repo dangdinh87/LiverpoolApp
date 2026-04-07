@@ -49,11 +49,14 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // For public pages: add CDN-Cache-Control to enable edge caching
+  // For public pages: override cache-control to enable edge caching.
+  // Next.js sets private/no-cache because next-intl calls headers() internally,
+  // but these pages are safe to cache at the edge (no user-specific content).
   if (!isDynamic) {
     const response = NextResponse.next();
+    response.headers.set("x-middleware-cache", "no-cache");
     response.headers.set(
-      "CDN-Cache-Control",
+      "Cache-Control",
       "public, s-maxage=300, stale-while-revalidate=3600"
     );
     return response;
