@@ -403,7 +403,17 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  // Sometimes the sapo text is different in structure, check broadly
+  const sapoPure = sapo.replace(/[^a-zA-Z0-9]/g, "");
+  const clonePure = contentClone.text().replace(/[^a-zA-Z0-9]/g, "");
+  if (sapo && sapo.length > 20 && !clonePure.includes(sapoPure)) {
+    const $p = $("<p><strong></strong></p>");
+    $p.find("strong").text(sapo);
+    contentClone.prepend($p);
+  }
+
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -504,12 +514,18 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
-  if (contentDetail.length > 0) {
-    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
-  } else {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+  const clone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+  clone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+
+  // Try to find the lead/sapo which might be outside the main content
+  const sapo = $(".exp_content_sapo, .sapo, h2").first().text().trim();
+  if (sapo && sapo.length > 20 && !clone.text().includes(sapo)) {
+    const $p = $("<p><strong></strong></p>");
+    $p.find("strong").text(sapo);
+    clone.prepend($p);
   }
+
+  htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
     title,
@@ -580,6 +596,14 @@ function extractBongdaplus(
 
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
+
+  // Try to find the lead/sapo which might be outside the main content
+  const sapo = $(".summary, #postSummary, .sapo").first().text().trim();
+  if (sapo && sapo.length > 20 && !contentClone.text().includes(sapo)) {
+    const $p = $("<p><strong></strong></p>");
+    $p.find("strong").text(sapo);
+    contentClone.prepend($p);
+  }
 
   $("img").each((_, el) => {
     const $el = $(el);
@@ -748,6 +772,18 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
+
+  // Try to prepend sapo if it isn't in the container
+  if (sapo && sapo.length > 20) {
+    const sapoPure = sapo.replace(/[^a-zA-Z0-9]/g, "");
+    const clonePure = clone.text().replace(/[^a-zA-Z0-9]/g, "");
+    if (!clonePure.includes(sapoPure)) {
+      const $p = $("<p><strong></strong></p>");
+      $p.find("strong").text(sapo);
+      clone.prepend($p);
+    }
+  }
+
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
 
@@ -1051,7 +1087,18 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const clone = container.clone();
+    if (opts?.sapoSelector) {
+      const sapo = $(opts.sapoSelector).first().text().trim();
+      const sapoPure = sapo.replace(/[^a-zA-Z0-9]/g, "");
+      const clonePure = clone.text().replace(/[^a-zA-Z0-9]/g, "");
+      if (sapo && sapo.length > 20 && !clonePure.includes(sapoPure)) {
+        const $p = $("<p><strong></strong></p>");
+        $p.find("strong").text(sapo);
+        clone.prepend($p);
+      }
+    }
+    htmlContent = buildHtmlContent(clone, $) || undefined;
   }
 
   return {
@@ -1186,6 +1233,16 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
+
+  const sapo = $(".detail-sapo, .sapo, .lead, #sapo, .post-summary, h2").first().text().trim();
+  const sapoPure = sapo.replace(/[^a-zA-Z0-9]/g, "");
+  const clonePure = clone.text().replace(/[^a-zA-Z0-9]/g, "");
+  if (sapo && sapo.length > 20 && !clonePure.includes(sapoPure)) {
+    const $p = $("<p><strong></strong></p>");
+    $p.find("strong").text(sapo);
+    clone.prepend($p);
+  }
+
   htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
