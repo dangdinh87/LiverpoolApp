@@ -1051,7 +1051,17 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+    if (opts?.sapoSelector) {
+      const sapoEl = $(opts.sapoSelector).first();
+      // If we found a sapo, and it is not already inside the container
+      if (sapoEl.length > 0 && contentClone.find(opts.sapoSelector).length === 0) {
+        const sapoClone = sapoEl.clone();
+        sapoClone.addClass("sapo");
+        contentClone.prepend(sapoClone);
+      }
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1268,8 +1278,9 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
-  if (sapo && sapo.length > 20 && sapo !== description) {
+  const sapoEl = $("p.description").first();
+  const sapo = sapoEl.text().trim();
+  if (sapo && sapo.length > 20) {
     pushUnique(paragraphs, seenP, sapo);
   }
 
@@ -1285,7 +1296,14 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapoEl.length > 0 && contentClone.find("p.description").length === 0) {
+    const sapoClone = sapoEl.clone();
+    sapoClone.addClass("sapo");
+    contentClone.prepend(sapoClone);
+  }
+
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
