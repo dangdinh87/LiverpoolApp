@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 export function verifyCronRequest(req: NextRequest): boolean {
   const secret =
@@ -10,4 +10,18 @@ export function verifyCronRequest(req: NextRequest): boolean {
   }
 
   return true;
+}
+
+type RouteHandler = (
+  req: NextRequest,
+  context: any
+) => Promise<NextResponse> | NextResponse;
+
+export function withCronAuth(handler: RouteHandler) {
+  return async (req: NextRequest, context: any) => {
+    if (!verifyCronRequest(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return handler(req, context);
+  };
 }
