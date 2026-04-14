@@ -549,6 +549,12 @@ function extractBongdaplus(
   const skipPatterns =
     /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
 
+  // Prepend sapo if it's outside the container but inside the page
+  const pageSapo = $(".sapo").first();
+  if (pageSapo.length > 0 && container.find(".sapo").length === 0) {
+    container.prepend(pageSapo.clone());
+  }
+
   container
     .find("p, .sapo")
     .each((_, el) => {
@@ -1031,8 +1037,15 @@ function extractVietnameseGeneric(
 
   // Extract sapo/lead text
   if (opts?.sapoSelector) {
-    const sapo = $(opts.sapoSelector).first().text().trim();
-    if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+    const sapoEl = $(opts.sapoSelector).first();
+    const sapo = sapoEl.text().trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      // prepend sapo to container for htmlContent so it renders
+      if (container.find(opts.sapoSelector).length === 0) {
+        container.prepend(sapoEl.clone());
+      }
+    }
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
@@ -1161,6 +1174,13 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Junk patterns: promo links, section headers that aren't real content
   const junkPattern = /^(>>>|Xem thêm|Tags?:|Chia sẻ|Phong độ .+ \d+ trận|Lịch sử đối đầu)/i;
 
+  // Sapo text usually in strong.font-semibold
+  const sapoEl = $("strong.font-semibold.text-lg.mb-4, .detail-sapo, .post-summary").first();
+  const sapo = sapoEl.text().trim();
+  if (sapo && sapo.length > 20) {
+    pushUnique(paragraphs, seenP, sapo);
+  }
+
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
     if (text.length > 20 && !junkPattern.test(text)) {
@@ -1180,6 +1200,10 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Remove junk elements before building HTML
   const clone = container.clone();
+
+  if (sapo && clone.text().indexOf(sapo.substring(0, 20)) === -1) {
+    clone.prepend($("<p></p>").html("<strong>" + sapo + "</strong>"));
+  }
   clone.find("script, style, .related-news, .tags, nav").remove();
   // Remove junk paragraphs from HTML
   clone.find("p").each((_, el) => {
@@ -1222,8 +1246,14 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+  const sapoEl = $(".the-article-summary").first();
+  const sapo = sapoEl.text().trim();
+  if (sapo && sapo.length > 20) {
+    pushUnique(paragraphs, seenP, sapo);
+    if (contentClone.find(".the-article-summary").length === 0) {
+      contentClone.prepend(sapoEl.clone());
+    }
+  }
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
@@ -1268,9 +1298,13 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
+  const sapoEl = $("p.description").first();
+  const sapo = sapoEl.text().trim();
   if (sapo && sapo.length > 20 && sapo !== description) {
     pushUnique(paragraphs, seenP, sapo);
+    if (container.find("p.description").length === 0) {
+      container.prepend(sapoEl.clone());
+    }
   }
 
   container.find("p").each((_, el) => {
