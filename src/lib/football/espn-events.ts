@@ -153,14 +153,27 @@ async function findLfcOnScoreboard(dateKey: string): Promise<string | null> {
 
 // ─── ESPN ID resolver (shared) ──────────────────────────────────────────────
 
+const espnIdCache = new Map<string, string | null>();
+
 async function resolveEspnId(fixtureDate: string): Promise<string | null> {
   const dateKey = fixtureDate.slice(0, 10);
+
+  if (espnIdCache.has(dateKey)) {
+    return espnIdCache.get(dateKey) ?? null;
+  }
+
   // Try team schedule first (covers past + near-future matches)
   const dateMap = await buildDateToEspnId();
   const fromSchedule = dateMap.get(dateKey);
-  if (fromSchedule) return fromSchedule;
+  if (fromSchedule) {
+    espnIdCache.set(dateKey, fromSchedule);
+    return fromSchedule;
+  }
+
   // Fallback: check scoreboard (covers today's & upcoming matches not yet in schedule)
-  return findLfcOnScoreboard(dateKey);
+  const fromScoreboard = await findLfcOnScoreboard(dateKey);
+  espnIdCache.set(dateKey, fromScoreboard);
+  return fromScoreboard;
 }
 
 async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
