@@ -403,7 +403,13 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  const $sapoNode = $("p.description").first();
+  if ($sapoNode.length > 0) {
+    contentClone.prepend($sapoNode.clone());
+  }
+
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -580,6 +586,11 @@ function extractBongdaplus(
 
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
+
+  const $sapoNode = $(".sapo, .detail-sapo, strong.font-semibold").first();
+  if ($sapoNode.length > 0 && contentClone.find(".sapo, .detail-sapo").length === 0) {
+    contentClone.prepend($sapoNode.clone());
+  }
 
   $("img").each((_, el) => {
     const $el = $(el);
@@ -1051,7 +1062,14 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const clone = container.clone();
+    if (opts?.sapoSelector) {
+      const $sapo = $(opts.sapoSelector).first();
+      if ($sapo.length > 0) {
+        clone.prepend($sapo.clone());
+      }
+    }
+    htmlContent = buildHtmlContent(clone, $) || undefined;
   }
 
   return {
@@ -1181,6 +1199,13 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Remove junk elements before building HTML
   const clone = container.clone();
   clone.find("script, style, .related-news, .tags, nav").remove();
+
+  // Extract and prepend the lead paragraph (sapo) to the HTML content
+  const $sapoNode = $(".sapo, .summary, p.description, strong.font-semibold").first();
+  if ($sapoNode.length > 0 && clone.find(".sapo, .summary, p.description, strong.font-semibold").length === 0) {
+    clone.prepend($sapoNode.clone());
+  }
+
   // Remove junk paragraphs from HTML
   clone.find("p").each((_, el) => {
     const text = $(el).text().trim();
@@ -1236,6 +1261,12 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
       pushUnique(images, seenI, src);
     }
   });
+
+  // Explicitly add summary back into HTML as it's outside the body container
+  const $summary = $(".the-article-summary").first();
+  if ($summary.length > 0) {
+    contentClone.prepend($summary.clone());
+  }
 
   // Build htmlContent for rich inline rendering
   const htmlContent = buildHtmlContent(contentClone, $) || undefined;
