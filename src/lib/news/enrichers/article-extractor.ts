@@ -149,9 +149,10 @@ function buildHtmlContent(
   if (!container || container.length === 0) return undefined;
 
   // Remove generic ad classes, related news widgets, etc. to clean up content
+  container.find("[type='RelatedOneNews'], [type='RelatedNewsBox'], .detail__related").remove();
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    ".related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -682,6 +683,13 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const sapo = $("#article_sapo").text().trim();
   if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
 
+  // Build htmlContent — preserve bold headings and inline images
+  const clone = container.clone();
+
+  if (sapo && sapo.length > 20) {
+    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
   // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
   const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>|To view this video)/i;
   const matchWidgetPattern = /^\S+\s*-\s*\S+\s+\d{1,2}\.\d{1,2}$/; // "Arsenal - Man City 22.03"
@@ -746,8 +754,6 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     });
   }
 
-  // Build htmlContent — preserve bold headings and inline images
-  const clone = container.clone();
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
 
@@ -1024,6 +1030,7 @@ function extractVietnameseGeneric(
   const description = $('meta[property="og:description"]').attr("content");
 
   const container = $(containerSelectors).first();
+  const contentClone = container.clone();
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
@@ -1032,7 +1039,10 @@ function extractVietnameseGeneric(
   // Extract sapo/lead text
   if (opts?.sapoSelector) {
     const sapo = $(opts.sapoSelector).first().text().trim();
-    if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+    }
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
@@ -1051,7 +1061,7 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1223,7 +1233,10 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract lead/sapo text
   const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+  if (sapo && sapo.length > 20) {
+    pushUnique(paragraphs, seenP, sapo);
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
@@ -1262,6 +1275,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const container = $(
     ".fck_detail, article.fck_detail, .article-content, article, [role=main]"
   ).first();
+  const contentClone = container.clone();
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
@@ -1271,6 +1285,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const sapo = $("p.description").first().text().trim();
   if (sapo && sapo.length > 20 && sapo !== description) {
     pushUnique(paragraphs, seenP, sapo);
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1285,7 +1300,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
