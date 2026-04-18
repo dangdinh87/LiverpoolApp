@@ -1,15 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServiceClient } from "@/lib/news/supabase-service";
-import { verifyCronRequest } from "@/lib/cron";
+import { withCronAuth } from "@/lib/cron";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  // Auth: validate cron secret
-  if (!verifyCronRequest(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth(async (req: NextRequest) => {
   const supabase = getServiceClient();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 86_400_000).toISOString();
@@ -41,4 +36,4 @@ export async function GET(req: NextRequest) {
     deleted: deleted ?? 0,
     logsDeleted: logsDeleted ?? 0,
   });
-}
+});
