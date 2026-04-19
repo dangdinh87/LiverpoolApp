@@ -151,7 +151,8 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags, " +
+    "[type='RelatedNewsBox'], .detail__related"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -403,7 +404,12 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20 && sapo !== description) {
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -751,6 +757,11 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
 
+  if (sapo && sapo.length > 20) {
+    clone.find("#article_sapo").remove();
+    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
   // Replace video player divs with inline video or clickable thumbnail
   clone.find(".viewVideoPlay").each((_, el) => {
     const $vp = $(el);
@@ -963,7 +974,12 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20) {
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -1051,7 +1067,15 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+    if (opts?.sapoSelector) {
+      const sapoText = container.find(opts.sapoSelector).first().text().trim();
+      if (sapoText && sapoText.length > 20) {
+        contentClone.find(opts.sapoSelector).remove();
+        contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+      }
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1129,7 +1153,12 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20) {
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -1238,6 +1267,9 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich inline rendering
+  if (sapo && sapo.length > 20) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
   const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
@@ -1285,7 +1317,12 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20) {
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
