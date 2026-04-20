@@ -151,7 +151,7 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .detail__related, .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -1051,7 +1051,18 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+
+    // Explicitly prepend sapo to htmlContent
+    if (opts?.sapoSelector) {
+      const sapo = $(opts.sapoSelector).first().text().trim();
+      if (sapo && sapo.length > 20) {
+        // Prepend sapo wrapped in p/strong
+        contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+      }
+    }
+
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
