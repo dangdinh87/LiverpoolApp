@@ -151,8 +151,8 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
-  ).not(".VCSortableInPreviewMode").remove();
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .box-game, .social-share, .tags"
+  ).remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
   // This allows us to inspect <source> siblings within a <picture> for higher-quality srcset.
@@ -403,7 +403,12 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && !contentClone.text().includes(sapoText)) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -504,12 +509,15 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
-  if (contentDetail.length > 0) {
-    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
-  } else {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+  const sapoText = description || "";
+  const targetContainer = contentDetail.length > 0 ? contentDetail : container;
+  const contentClone = targetContainer.clone();
+  contentClone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+
+  if (sapoText && !contentClone.text().includes(sapoText)) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
+  htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title,
@@ -580,6 +588,12 @@ function extractBongdaplus(
 
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
+
+  const sapoNode = container.find(".sapo").first();
+  const sapoText = sapoNode.length ? sapoNode.text().trim() : description;
+  if (sapoText && !contentClone.text().includes(sapoText)) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
 
   $("img").each((_, el) => {
     const $el = $(el);
@@ -820,6 +834,10 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
   for (const $el of toRemove) $el.remove();
+  const sapoText = sapo || description;
+  if (sapoText && !clone.text().includes(sapoText)) {
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
   const htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
@@ -1051,7 +1069,18 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+    let sapoText = "";
+    if (opts?.sapoSelector) {
+      sapoText = $(opts.sapoSelector).first().text().trim();
+    }
+    if (!sapoText) {
+      sapoText = description || "";
+    }
+    if (sapoText && !contentClone.text().includes(sapoText)) {
+      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1186,6 +1215,10 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
+  const sapoText = description || "";
+  if (sapoText && !clone.text().includes(sapoText)) {
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
   htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
@@ -1238,6 +1271,10 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich inline rendering
+  const sapoText = sapo || description;
+  if (sapoText && !contentClone.text().includes(sapoText)) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
   const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
