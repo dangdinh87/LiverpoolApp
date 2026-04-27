@@ -154,6 +154,9 @@ function buildHtmlContent(
     "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
+  // Unconditionally remove specific related news elements as per memory instructions
+  container.find("[type='RelatedNewsBox'], .detail__related").remove();
+
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
   // This allows us to inspect <source> siblings within a <picture> for higher-quality srcset.
   container.find("img").each((_, el) => {
@@ -403,7 +406,11 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20 && sapo !== description) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -579,6 +586,13 @@ function extractBongdaplus(
   }
 
   const contentClone = container.clone();
+
+  // Extract and prepend sapo
+  const sapo = $(".sapo, .detail-sapo").first().text().trim();
+  if (sapo && sapo.length > 20) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
   $("img").each((_, el) => {
@@ -748,6 +762,10 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
+  if (sapo && sapo.length > 20) {
+    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
 
@@ -963,7 +981,11 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20 && sapo !== description) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -1051,7 +1073,14 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const clone = container.clone();
+    if (opts?.sapoSelector) {
+      const sapo = $(opts.sapoSelector).first().text().trim();
+      if (sapo && sapo.length > 20) {
+        clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+      }
+    }
+    htmlContent = buildHtmlContent(clone, $) || undefined;
   }
 
   return {
@@ -1236,6 +1265,10 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
       pushUnique(images, seenI, src);
     }
   });
+
+  if (sapo && sapo.length > 20) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
 
   // Build htmlContent for rich inline rendering
   const htmlContent = buildHtmlContent(contentClone, $) || undefined;
