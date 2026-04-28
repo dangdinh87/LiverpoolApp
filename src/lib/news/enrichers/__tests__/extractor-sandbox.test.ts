@@ -59,7 +59,7 @@ describe("Extractor Sandbox", () => {
     const res = await scrapeArticle(url);
     console.log("=== WEBTHETHAO ===");
     console.log(JSON.stringify(res, null, 2));
-  });
+  }, 15000);
 
   it("extracts from Dantri", async () => {
     const url = "https://dantri.com.vn/the-thao/bao-malaysia-hien-ke-cho-doi-nha-danh-bai-tuyen-viet-nam-20260329234030746.htm";
