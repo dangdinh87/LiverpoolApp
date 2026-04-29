@@ -28,13 +28,13 @@ function convertMessages(messages: any[]) {
 }
 
 // Generate a conversation title using MegaLLM API
-async function generateTitle(userMessage: string): Promise<string> {
+async function generateTitle(userMessage: string, apiKey: string): Promise<string> {
 	const fallbackTitle = userMessage.trim().substring(0, 50) || "New Chat";
 	try {
 		const response = await fetch("https://ai.megallm.io/v1/chat/completions", {
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${process.env.MEGALLM_API_KEY}`,
+				Authorization: `Bearer ${apiKey}`,
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({
@@ -68,6 +68,11 @@ async function generateTitle(userMessage: string): Promise<string> {
 }
 
 export async function POST(req: Request) {
+	const apiKey = process.env.MEGALLM_API_KEY;
+	if (!apiKey) {
+		return new Response("Missing MEGALLM_API_KEY", { status: 500 });
+	}
+
 	const supabase = await createServerSupabaseClient();
 	const {
 		data: { user },
@@ -117,7 +122,7 @@ export async function POST(req: Request) {
 		}
 
 		// Generate title using MegaLLM API
-		conversationTitle = await generateTitle(titleContent);
+		conversationTitle = await generateTitle(titleContent, apiKey);
 
 		const { data: newConv, error: createError } = await supabase
 			.from("conversations")
@@ -183,7 +188,7 @@ export async function POST(req: Request) {
 					const response = await fetch("https://ai.megallm.io/v1/chat/completions", {
 						method: "POST",
 						headers: {
-							Authorization: `Bearer ${process.env.MEGALLM_API_KEY}`,
+							Authorization: `Bearer ${apiKey}`,
 							"Content-Type": "application/json",
 						},
 						body: JSON.stringify({
