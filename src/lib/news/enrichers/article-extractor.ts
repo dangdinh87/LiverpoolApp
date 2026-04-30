@@ -94,9 +94,6 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     // Drop known ad or junk classes
     if (frame.tag === "div" && frame.attribs.class) {
       const cls = frame.attribs.class.toLowerCase();
-      if (cls.includes("vcsortableinpreviewmode")) {
-        return false;
-      }
       if (cls.includes("ads-wrapper") || cls.includes("ads-adv_teads_video") || cls.includes("ads-adv_pc_in_article")) {
         return true;
       }
@@ -151,8 +148,8 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
-  ).not(".VCSortableInPreviewMode").remove();
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .detail__related, .related-news, .relate-container, .box-game, .social-share, .tags"
+  ).remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
   // This allows us to inspect <source> siblings within a <picture> for higher-quality srcset.
