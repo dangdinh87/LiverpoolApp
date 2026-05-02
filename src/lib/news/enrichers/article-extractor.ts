@@ -82,6 +82,7 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     div: ["class", "data-video-src", "data-poster", "data-source-url", "data-source-name", "type", "data-type"],
     figure: ["class"],
     span: ["class"],
+    p: ["class"],
     table: ["class", "border", "cellpadding", "cellspacing"],
     td: ["colspan", "rowspan"],
     th: ["colspan", "rowspan"],
@@ -151,7 +152,7 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .detail__related, .related-news, .relate-container, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -1051,7 +1052,30 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+    if (opts?.sapoSelector) {
+      const $sapoNodeInClone = contentClone.find(opts.sapoSelector).first();
+      const sapoGlobal = $(opts.sapoSelector).first().text().trim();
+
+      // Replace existing sapo nodes entirely, or prepend if missing
+      let prepended = false;
+      if ($sapoNodeInClone.length > 0) {
+        $sapoNodeInClone.each((_, el) => {
+          const $el = $(el);
+          const text = $el.text().trim();
+          if (text && text.length > 20) {
+            $el.replaceWith(`<p class="sapo"><strong>${text}</strong></p>`);
+            prepended = true;
+          } else {
+            $el.remove();
+          }
+        });
+      }
+      if (!prepended && sapoGlobal && sapoGlobal.length > 20) {
+        contentClone.prepend(`<p class="sapo"><strong>${sapoGlobal}</strong></p>`);
+      }
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1069,7 +1093,7 @@ function extractDantri($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
     "article, .dt-font-arial, .singular-content, .e-magazine__body, [role=main]",
     "Dân Trí",
-    { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo" }
+    { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo, h2" }
   );
 }
 
@@ -1285,7 +1309,14 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  let htmlContent: string | undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20) {
+    const $sapoNode = contentClone.find("p.description").first();
+    $sapoNode.remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+  htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
