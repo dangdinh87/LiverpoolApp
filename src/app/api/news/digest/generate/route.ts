@@ -1,17 +1,12 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { generateDailyDigest } from "@/lib/news/digest";
 import { getServiceClient } from "@/lib/news/supabase-service";
-import { verifyCronRequest } from "@/lib/cron";
+import { withCronAuth } from "@/lib/cron";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  // Auth: validate cron secret
-  if (!verifyCronRequest(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth(async () => {
   if (!process.env.GROQ_API_KEY) {
     return NextResponse.json(
       { error: "GROQ_API_KEY not configured" },
@@ -71,4 +66,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
