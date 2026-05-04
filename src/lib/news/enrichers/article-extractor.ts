@@ -151,7 +151,7 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -403,7 +403,13 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = container.clone();
+  if (sapo && sapo.length > 20 && sapo !== description) {
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
@@ -504,12 +510,17 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
-  if (contentDetail.length > 0) {
-    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
-  } else {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+  contentClone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+
+  const sapoNode = contentClone.find(".sapo, .detail-sapo, p").first();
+  const sapo = sapoNode.text().trim();
+  if (sapo && sapo.length > 20) {
+     sapoNode.remove();
+     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
+
+  htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title,
@@ -580,6 +591,13 @@ function extractBongdaplus(
 
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
+
+  const sapoNode = contentClone.find(".sapo").first();
+  const sapo = sapoNode.text().trim();
+  if (sapo && sapo.length > 20) {
+    sapoNode.remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
 
   $("img").each((_, el) => {
     const $el = $(el);
@@ -750,6 +768,11 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const clone = container.clone();
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
+
+  if (sapo && sapo.length > 20) {
+    clone.find("#article_sapo").remove();
+    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
 
   // Replace video player divs with inline video or clickable thumbnail
   clone.find(".viewVideoPlay").each((_, el) => {
@@ -1051,7 +1074,15 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    const contentClone = container.clone();
+    if (opts?.sapoSelector) {
+      const sapo = $(opts.sapoSelector).first().text().trim();
+      if (sapo && sapo.length > 20) {
+        contentClone.find(opts.sapoSelector).first().remove();
+        contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+      }
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1238,6 +1269,10 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich inline rendering
+  if (sapo && sapo.length > 20) {
+    contentClone.find(".the-article-summary").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
   const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
