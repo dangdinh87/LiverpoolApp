@@ -46,9 +46,14 @@ export function FormWidget({ standing }: FormWidgetProps) {
   const form = standing?.form?.split("") ?? [];
   const last5 = form.slice(-5);
 
-  const wins = last5.filter((r) => r === "W").length;
-  const draws = last5.filter((r) => r === "D").length;
-  const losses = last5.filter((r) => r === "L").length;
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  for (const r of last5) {
+    if (r === "W") wins++;
+    else if (r === "D") draws++;
+    else if (r === "L") losses++;
+  }
 
   const streaks = standing?.form ? computeStreaks(standing.form) : null;
 
