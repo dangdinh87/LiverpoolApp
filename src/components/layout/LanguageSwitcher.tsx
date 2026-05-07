@@ -31,7 +31,7 @@ export function LanguageSwitcher() {
 
   const switchLocale = (code: string) => {
     if (code === locale) { setOpen(false); return; }
-    Cookies.set("NEXT_LOCALE", code, { expires: 365 });
+    Cookies.set("NEXT_LOCALE", code, { expires: 365, path: "/", sameSite: "lax" });
     setOpen(false);
     router.refresh();
   };

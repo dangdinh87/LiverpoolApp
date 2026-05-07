@@ -28,16 +28,7 @@ const SOCIAL_LINKS = [
   { Icon: Linkedin, href: "https://linkedin.com/company/liverpool-football-club", label: "LinkedIn" },
 ] as const;
 
-function formatBuildVersion(date: Date): string {
-  const pad = (value: number) => value.toString().padStart(2, "0");
-  const hours = pad(date.getHours());
-  const minutes = pad(date.getMinutes());
-  const seconds = pad(date.getSeconds());
-  const day = pad(date.getDate());
-  const month = pad(date.getMonth() + 1);
-  const year = date.getFullYear();
-  return `${hours}:${minutes}:${seconds} ${day}-${month}-${year}`;
-}
+const FOOTER_VERSION = "10265807052026";
 
 /* ── TikTok icon (not in lucide-react) ───────────────────────────── */
 
@@ -63,7 +54,6 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
 export function Footer() {
   const t = useTranslations("Footer");
   const navT = useTranslations("Common.nav");
-  const buildVersion = formatBuildVersion(new Date());
 
   const QUICK_LINKS = [
     { href: "/squad", label: navT("squad") },
@@ -206,7 +196,7 @@ export function Footer() {
                 {t("disclaimer")}
               </p>
               <p className="text-stadium-muted/70 text-[11px] font-inter">
-                {t("buildVersion", { version: buildVersion })}
+                {t("buildVersion", { version: FOOTER_VERSION })}
               </p>
             </div>
           </div>

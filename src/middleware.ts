@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/profile"];
 
-// Routes that should NOT be edge-cached (auth-dependent or API)
+// Routes that are always dynamic (auth-dependent or API)
 const DYNAMIC_PREFIXES = ["/api/", "/auth/", "/profile"];
 
 export async function middleware(request: NextRequest) {
@@ -49,16 +49,12 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // For public pages: override cache-control to enable edge caching.
-  // Next.js sets private/no-cache because next-intl calls headers() internally,
-  // but these pages are safe to cache at the edge (no user-specific content).
+  // For locale-sensitive public pages, avoid shared edge cache.
+  // next-intl resolves locale from cookie/header; shared cache can serve wrong locale.
   if (!isDynamic) {
     const response = NextResponse.next();
-    response.headers.set("x-middleware-cache", "no-cache");
-    response.headers.set(
-      "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=3600"
-    );
+    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("Vary", "Cookie, Accept-Language");
     return response;
   }
 

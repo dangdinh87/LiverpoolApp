@@ -995,7 +995,7 @@
     "contact": "Contact",
     "rights": "All rights reserved.",
     "disclaimer": "LFCVN is a Liverpool FC page built for the Vietnamese Reds community.",
-    "buildVersion": "Build: {version}",
+    "buildVersion": "Version: {version}",
     "newsSources": "Aggregated from trusted news sources worldwide",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
