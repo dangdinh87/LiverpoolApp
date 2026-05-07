@@ -1,17 +1,12 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { syncPipeline } from "@/lib/news/sync";
-import { verifyCronRequest } from "@/lib/cron";
+import { withCronAuth } from "@/lib/cron";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  // Auth: validate cron secret
-  if (!verifyCronRequest(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export const GET = withCronAuth(async () => {
   try {
     const result = await syncPipeline();
 
@@ -31,4 +26,4 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
