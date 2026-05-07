@@ -1,4 +1,5 @@
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Standing } from "@/lib/types/football";
 import {
@@ -108,6 +109,20 @@ export function FormWidget({ standing }: FormWidgetProps) {
         <OverviewFooterMetric label="W" value={wins} valueClassName="text-green-400" />
         <OverviewFooterMetric label="D" value={draws} valueClassName="text-amber-400" />
         <OverviewFooterMetric label="L" value={losses} valueClassName="text-red-400" />
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <Link
+          href="/season?tab=fixtures"
+          className="inline-flex items-center justify-center border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-lfc-red/20"
+        >
+          {bt("viewFixtures")}
+        </Link>
+        <Link
+          href="/season?tab=standings"
+          className="inline-flex items-center justify-center border border-stadium-border bg-stadium-surface2 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
+        >
+          {bt("viewTable")}
+        </Link>
       </div>
     </div>
   );

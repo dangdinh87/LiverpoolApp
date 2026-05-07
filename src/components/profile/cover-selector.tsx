@@ -10,15 +10,15 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/stores/toast-store";
 
 // Default hero background — must match DEFAULT_HERO_BG in hero.tsx
-const DEFAULT_COVER_URL = "/assets/lfc/stadium/bg_3.jpg";
+const DEFAULT_COVER_URL = "/assets/lfc/stadium/bg_5.jpg";
 
 // Hero background presets — curated high-quality Anfield/Liverpool images
 const COVER_PRESETS = [
   // === Default first ===
   {
-    id: "dalglish-stand-matchday",
+    id: "anfield-panorama-interior",
     url: DEFAULT_COVER_URL,
-    alt: "Sir Kenny Dalglish Stand on matchday",
+    alt: "Anfield Stadium panoramic interior",
     isDefault: true,
   },
   {
@@ -35,11 +35,6 @@ const COVER_PRESETS = [
     id: "anfield-aerial-dusk",
     url: "/assets/lfc/stadium/bg_4.jpg",
     alt: "Anfield aerial view at dusk",
-  },
-  {
-    id: "anfield-panorama-interior",
-    url: "/assets/lfc/stadium/bg_5.jpg",
-    alt: "Anfield Stadium panoramic interior",
   },
   {
     id: "anfield-pitch-kop-view",
@@ -73,22 +68,38 @@ interface CoverSelectorProps {
   currentCoverUrl: string | null;
 }
 
+function toOptimizedCloudinary(url: string): string {
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+    return url;
+  }
+  // Keep a single optimized transform segment for fast hero delivery.
+  if (url.includes("/upload/w_1920,h_1080,c_fill,q_auto,f_auto/")) {
+    return url;
+  }
+  return url.replace(
+    "/upload/",
+    "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/"
+  );
+}
+
 export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
   const t = useTranslations("Profile");
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState<string | null>(currentCoverUrl);
   const { show: showToast } = useToast();
+  const effectiveDefaultUrl = selected ?? DEFAULT_COVER_URL;
 
   function handleSelect(url: string | null) {
     const prev = selected;
-    setSelected(url);
+    const normalizedUrl = url ? toOptimizedCloudinary(url) : null;
+    setSelected(normalizedUrl);
 
     startTransition(async () => {
       try {
         const res = await fetch("/api/gallery/homepage", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(url ? { cloudinaryUrl: url } : {}),
+          body: JSON.stringify(normalizedUrl ? { cloudinaryUrl: normalizedUrl } : {}),
         });
         if (!res.ok) {
           setSelected(prev); // revert
@@ -97,7 +108,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
         }
         showToast({
           type: "success",
-          message: url ? t("coverUpdated") : t("coverResetDone"),
+          message: normalizedUrl ? t("coverUpdated") : t("coverResetDone"),
         });
       } catch {
         setSelected(prev);
@@ -131,13 +142,14 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
       {/* Preset grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
         {COVER_PRESETS.map((preset) => {
-          const isActive = selected === preset.url;
-          const isDefault = "isDefault" in preset && preset.isDefault;
+          const optimizedPresetUrl = toOptimizedCloudinary(preset.url);
+          const isActive = selected === optimizedPresetUrl;
+          const isDefault = optimizedPresetUrl === effectiveDefaultUrl;
           return (
             <motion.button
               key={preset.id}
               whileTap={{ scale: 0.96 }}
-              onClick={() => handleSelect(preset.url)}
+              onClick={() => handleSelect(optimizedPresetUrl)}
               disabled={isPending}
               className={cn(
                 "relative aspect-[16/9] overflow-hidden border-2 transition-all cursor-pointer group",
@@ -150,7 +162,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
               )}
             >
               <Image
-                src={preset.url}
+                src={optimizedPresetUrl}
                 alt={preset.alt}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -159,7 +171,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
               {/* Default badge */}
-              {isDefault && !isActive && (
+              {isDefault && (
                 <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-lfc-gold/90 text-black text-[9px] font-barlow font-bold uppercase tracking-wider">
                   {t("coverDefault")}
                 </span>

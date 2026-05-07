@@ -96,6 +96,14 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Expose current navbar height so sticky children can align without visual gaps.
+  useEffect(() => {
+    document.documentElement.style.setProperty("--navbar-h", scrolled ? "48px" : "64px");
+    return () => {
+      document.documentElement.style.setProperty("--navbar-h", "64px");
+    };
+  }, [scrolled]);
+
   // Close avatar dropdown on outside click
   useEffect(() => {
     if (!avatarMenuOpen) return;

@@ -98,12 +98,20 @@ async function syncPipeline(): Promise<SyncResult> {
   // 4. Enrich lại: lấy ảnh OG cho tối đa 30 bài đang thiếu thumbnail
   await fetchOgMeta(noThumbArticles);
 
-  // 5. Ghi kết quả vào bảng sync_logs
+  // 5. Pre-scrape content_en với giới hạn linh hoạt + time budget
+  //    - lúc ít tin: 10-16 bài
+  //    - lúc nhiều tin / gần giờ đá: tối đa 36 bài
+  //    - dừng cứng sau 90 giây cho phase scrape
+  await scrapeContentForRecentArticles(...);
+
+  // 6. Ghi kết quả vào bảng sync_logs
   await supabase.from("sync_logs").insert({ inserted, failed, duration_ms, source_stats });
 
   return { total, upserted, failed, enriched, durationMs, errors };
 }
 ```
+
+`source_stats` hiện lưu thêm telemetry pre-scrape (`scrapeMode`, `scrapeAttempted`, `scraped`, `scrapeFailed`, `scrapeBudgetStop`) để theo dõi và tinh chỉnh theo dữ liệu thực tế.
 
 ### Chiến Lược Đồng Bộ Ba Tầng (`triggerSyncIfNeeded`)
 

@@ -28,6 +28,17 @@ const SOCIAL_LINKS = [
   { Icon: Linkedin, href: "https://linkedin.com/company/liverpool-football-club", label: "LinkedIn" },
 ] as const;
 
+function formatBuildVersion(date: Date): string {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+  const day = pad(date.getDate());
+  const month = pad(date.getMonth() + 1);
+  const year = date.getFullYear();
+  return `${hours}:${minutes}:${seconds} ${day}-${month}-${year}`;
+}
+
 /* ── TikTok icon (not in lucide-react) ───────────────────────────── */
 
 function TikTokIcon({ size = 18 }: { size?: number }) {
@@ -52,6 +63,7 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
 export function Footer() {
   const t = useTranslations("Footer");
   const navT = useTranslations("Common.nav");
+  const buildVersion = formatBuildVersion(new Date());
 
   const QUICK_LINKS = [
     { href: "/squad", label: navT("squad") },
@@ -64,7 +76,7 @@ export function Footer() {
   return (
     <footer className="relative mt-20">
       {/* Top accent line */}
-      <div className="h-px bg-gradient-to-r from-transparent via-lfc-red/40 to-transparent" />
+      <div className="h-px bg-linear-to-r from-transparent via-lfc-red/40 to-transparent" />
 
       {/* News sources marquee */}
       <NewsSourceMarquee />
@@ -192,6 +204,9 @@ export function Footer() {
               </p>
               <p className="text-stadium-muted/60 text-[11px] font-inter">
                 {t("disclaimer")}
+              </p>
+              <p className="text-stadium-muted/70 text-[11px] font-inter">
+                {t("buildVersion", { version: buildVersion })}
               </p>
             </div>
           </div>
