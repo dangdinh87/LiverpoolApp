@@ -6,6 +6,7 @@ import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
 import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
 import { scrapeArticle } from "./enrichers/article-extractor";
+import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
 import type { NewsArticle } from "./types";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -16,13 +17,92 @@ export interface SyncResult {
   failed: number;
   enriched: number;
   scraped: number;
+  scrapeAttempted: number;
+  scrapeFailed: number;
+  scrapeMode: MatchTrafficMode;
+  scrapeBudgetStop: boolean;
   durationMs: number;
   errors: { url: string; error: string }[];
 }
 
 const SCRAPE_BATCH = 5;
-const SCRAPE_LIMIT = 50;
+const SCRAPE_MIN_LIMIT = 10;
+const SCRAPE_BASE_LIMIT = 16;
+const SCRAPE_MAX_LIMIT = 28;
+const SCRAPE_PEAK_MAX_LIMIT = 36;
+const SCRAPE_TIME_BUDGET_MS = 90_000;
 const STALE_CONTENT_MS = 24 * 3600 * 1000;
+const MATCH_PEAK_BEFORE_HOURS = 36;
+const MATCH_PEAK_AFTER_HOURS = 18;
+const MATCH_NORMAL_BEFORE_HOURS = 120;
+
+type MatchTrafficMode = "low" | "normal" | "peak";
+
+function getAdaptiveScrapeLimit(
+  upserted: number,
+  fetchedTotal: number,
+  mode: MatchTrafficMode
+): number {
+  // Keep default scrape lower, then bump only when volume or match window justifies it.
+  let limit = SCRAPE_MIN_LIMIT;
+  if (upserted >= 25 || fetchedTotal >= 120) limit = SCRAPE_BASE_LIMIT;
+  if (upserted >= 60 || fetchedTotal >= 180) limit = 22;
+  if (upserted >= 120 || fetchedTotal >= 260) limit = SCRAPE_MAX_LIMIT;
+
+  if (mode === "normal") {
+    limit += 4;
+  } else if (mode === "peak") {
+    limit += 8;
+  }
+
+  const maxLimit = mode === "peak" ? SCRAPE_PEAK_MAX_LIMIT : SCRAPE_MAX_LIMIT;
+  return Math.max(SCRAPE_MIN_LIMIT, Math.min(maxLimit, limit));
+}
+
+async function getMatchTrafficMode(): Promise<{
+  mode: MatchTrafficMode;
+  hoursToNext: number | null;
+  hoursSinceLast: number | null;
+}> {
+  try {
+    const fixtures = await getFixtures();
+    if (!fixtures.length) {
+      return { mode: "low", hoursToNext: null, hoursSinceLast: null };
+    }
+
+    const now = Date.now();
+    let nextMs: number | null = null;
+    let lastMs: number | null = null;
+    for (const fixture of fixtures) {
+      const fixtureMs = new Date(fixture.fixture.date).getTime();
+      if (!Number.isFinite(fixtureMs)) continue;
+      if (fixtureMs >= now) {
+        if (nextMs === null || fixtureMs < nextMs) nextMs = fixtureMs;
+      } else if (lastMs === null || fixtureMs > lastMs) {
+        lastMs = fixtureMs;
+      }
+    }
+
+    const hoursToNext = nextMs === null ? null : (nextMs - now) / 3_600_000;
+    const hoursSinceLast = lastMs === null ? null : (now - lastMs) / 3_600_000;
+
+    if (
+      (hoursToNext !== null && hoursToNext <= MATCH_PEAK_BEFORE_HOURS) ||
+      (hoursSinceLast !== null && hoursSinceLast <= MATCH_PEAK_AFTER_HOURS)
+    ) {
+      return { mode: "peak", hoursToNext, hoursSinceLast };
+    }
+
+    if (hoursToNext !== null && hoursToNext <= MATCH_NORMAL_BEFORE_HOURS) {
+      return { mode: "normal", hoursToNext, hoursSinceLast };
+    }
+
+    return { mode: "low", hoursToNext, hoursSinceLast };
+  } catch (err) {
+    console.warn("[sync] Could not resolve fixture window, fallback to low mode", err);
+    return { mode: "low", hoursToNext: null, hoursSinceLast: null };
+  }
+}
 
 function articleToRow(a: NewsArticle) {
   return {
@@ -130,29 +210,47 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function scrapeContentForRecentArticles(supabase: SupabaseClient<any, "public", any>) {
+async function scrapeContentForRecentArticles(
+  supabase: SupabaseClient<any, "public", any>,
+  options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode }
+) {
+  const scrapeLimit = getAdaptiveScrapeLimit(
+    options.upserted,
+    options.fetchedTotal,
+    options.mode
+  );
   const staleCutoff = new Date(Date.now() - STALE_CONTENT_MS).toISOString();
   const { data, error } = await supabase
     .from("articles")
     .select("url")
     .eq("is_active", true)
     .or(`content_en.is.null,content_scraped_at.lt.${staleCutoff}`)
+    .order("relevance", { ascending: false })
     .order("published_at", { ascending: false })
-    .limit(SCRAPE_LIMIT);
+    .limit(scrapeLimit);
 
   if (error) {
     console.error(`[sync] scrape query failed: ${error.message}`);
-    return { scraped: 0, scrapeFailed: 0 };
+    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
   }
 
   if (!data?.length) {
-    return { scraped: 0, scrapeFailed: 0 };
+    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
   }
 
+  const startMs = Date.now();
+  const scrapeBatch = options.mode === "peak" ? SCRAPE_BATCH : 4;
+  let attempted = 0;
   let scraped = 0;
   let scrapeFailed = 0;
-  for (let i = 0; i < data.length; i += SCRAPE_BATCH) {
-    const batch = data.slice(i, i + SCRAPE_BATCH);
+  let stoppedByBudget = false;
+  for (let i = 0; i < data.length; i += scrapeBatch) {
+    if (Date.now() - startMs > SCRAPE_TIME_BUDGET_MS) {
+      stoppedByBudget = true;
+      break;
+    }
+    const batch = data.slice(i, i + scrapeBatch);
+    attempted += batch.length;
     const results = await Promise.allSettled(batch.map((row) => scrapeArticle(row.url)));
     for (let j = 0; j < results.length; j++) {
       const result = results[j];
@@ -164,8 +262,10 @@ async function scrapeContentForRecentArticles(supabase: SupabaseClient<any, "pub
     }
   }
 
-  console.log(`[sync] Pre-scraped ${scraped}/${data.length} articles (${scrapeFailed} failed)`);
-  return { scraped, scrapeFailed };
+  console.log(
+    `[sync] Pre-scraped ${scraped}/${attempted} attempted (mode=${options.mode}, limit=${scrapeLimit}, batch=${scrapeBatch}, failed=${scrapeFailed}, budgetStop=${stoppedByBudget})`
+  );
+  return { attempted, scraped, scrapeFailed, stoppedByBudget };
 }
 
 /**
@@ -238,7 +338,12 @@ export async function syncPipeline(): Promise<SyncResult> {
     console.log(`[sync] Re-enriched ${enriched}/${noThumb.length} thumbnails`);
   }
 
-  const { scraped, scrapeFailed } = await scrapeContentForRecentArticles(supabase);
+  const traffic = await getMatchTrafficMode();
+  const { attempted, scraped, scrapeFailed, stoppedByBudget } = await scrapeContentForRecentArticles(supabase, {
+    upserted,
+    fetchedTotal: articles.length,
+    mode: traffic.mode,
+  });
   const durationMs = Date.now() - start;
 
   // Log sync result with per-source stats
@@ -248,9 +353,30 @@ export async function syncPipeline(): Promise<SyncResult> {
     failed,
     duration_ms: durationMs,
     errors: errors.length > 0 ? errors : null,
-    source_stats: { ...sourceStats, scraped, scrapeFailed },
+    source_stats: {
+      ...sourceStats,
+      scrapeMode: traffic.mode,
+      scrapeHoursToNextMatch: traffic.hoursToNext,
+      scrapeHoursSinceLastMatch: traffic.hoursSinceLast,
+      scrapeAttempted: attempted,
+      scraped,
+      scrapeFailed,
+      scrapeBudgetStop: stoppedByBudget,
+    },
   });
 
   console.log(`[sync] Done in ${durationMs}ms: ${upserted} upserted, ${failed} failed`);
-  return { total: articles.length, upserted, failed, enriched, scraped, durationMs, errors };
+  return {
+    total: articles.length,
+    upserted,
+    failed,
+    enriched,
+    scraped,
+    scrapeAttempted: attempted,
+    scrapeFailed,
+    scrapeMode: traffic.mode,
+    scrapeBudgetStop: stoppedByBudget,
+    durationMs,
+    errors,
+  };
 }

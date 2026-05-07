@@ -11,19 +11,163 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Trigger /api/news/sync
+        id: trigger
         run: |
-          curl -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json" \
-            "${{ secrets.SYNC_URL }}" \
-            --max-time 300 \
-            --retry 3 \
-            --retry-delay 10 \
-            --retry-connrefused \
-            --fail \
-            --show-error \
-            --silent
+          set -euo pipefail
+          TMP_RESPONSE="$(mktemp)"
+          HTTP_CODE="$(
+            curl -X GET \
+              -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+              -H "Content-Type: application/json" \
+              "${{ secrets.SYNC_URL }}" \
+              --max-time 300 \
+              --retry 3 \
+              --retry-delay 10 \
+              --retry-connrefused \
+              --show-error \
+              --silent \
+              --output "$TMP_RESPONSE" \
+              --write-out "%{http_code}"
+          )"
+
+          echo "http_code=${HTTP_CODE}" >> "$GITHUB_OUTPUT"
+          {
+            echo "response<<EOF"
+            cat "$TMP_RESPONSE"
+            echo
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "::error::Sync endpoint returned HTTP ${HTTP_CODE}"
+            cat "$TMP_RESPONSE"
+            exit 1
+          fi
+
+          RESPONSE_BODY="$(cat "$TMP_RESPONSE")"
+          export RESPONSE_BODY
+          node <<'NODE'
+          const fs = require("fs");
+          const outputPath = process.env.GITHUB_OUTPUT;
+          const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+          const raw = process.env.RESPONSE_BODY || "{}";
+
+          let json;
+          try {
+            json = JSON.parse(raw);
+          } catch (err) {
+            console.error("Failed to parse sync JSON response:", err);
+            process.exit(1);
+          }
+
+          if (!json || typeof json !== "object") {
+            console.error("Unexpected sync response shape");
+            process.exit(1);
+          }
+
+          const errorsCount = Array.isArray(json.errors) ? json.errors.length : 0;
+          const durationMs = Number.isFinite(json.durationMs) ? Number(json.durationMs) : 0;
+          const durationSec = durationMs > 0 ? (durationMs / 1000).toFixed(1) : "0.0";
+          const lines = [
+            `sync_ok=${Boolean(json.ok)}`,
+            `sync_total=${Number(json.total ?? 0)}`,
+            `sync_upserted=${Number(json.upserted ?? 0)}`,
+            `sync_failed=${Number(json.failed ?? 0)}`,
+            `sync_enriched=${Number(json.enriched ?? 0)}`,
+            `sync_scraped=${Number(json.scraped ?? 0)}`,
+            `sync_scrape_attempted=${Number(json.scrapeAttempted ?? 0)}`,
+            `sync_scrape_failed=${Number(json.scrapeFailed ?? 0)}`,
+            `sync_scrape_mode=${String(json.scrapeMode ?? "unknown")}`,
+            `sync_scrape_budget_stop=${Boolean(json.scrapeBudgetStop ?? false)}`,
+            `sync_duration_ms=${durationMs}`,
+            `sync_errors_count=${errorsCount}`,
+            `sync_duration_sec=${durationSec}`,
+          ];
+          fs.appendFileSync(outputPath, `${lines.join("\n")}\n`);
+
+          const summary = [
+            "### Hourly News Sync Report",
+            `- Status: ${json.ok ? "ok" : "not-ok"}`,
+            `- Total fetched: ${Number(json.total ?? 0)}`,
+            `- Upserted: ${Number(json.upserted ?? 0)} | Failed: ${Number(json.failed ?? 0)}`,
+            `- Pre-scraped: ${Number(json.scraped ?? 0)} / ${Number(json.scrapeAttempted ?? 0)} attempted`,
+            `- Scrape failed: ${Number(json.scrapeFailed ?? 0)} | Mode: ${String(json.scrapeMode ?? "unknown")} | Budget stop: ${Boolean(json.scrapeBudgetStop ?? false)}`,
+            `- Re-enriched thumbs: ${Number(json.enriched ?? 0)}`,
+            `- Duration: ${durationSec}s`,
+            `- Errors array size: ${errorsCount}`,
+          ].join("\n");
+          fs.appendFileSync(summaryPath, `${summary}\n`);
+
+          if (!json.ok) {
+            console.error("Sync endpoint returned ok=false");
+            process.exit(1);
+          }
+          NODE
 
       - name: Log success
         if: success()
         run: echo "News sync completed at $(date -u)"
+
+      - name: Notify Telegram on success
+        if: success() && secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HTTP_CODE: ${{ steps.trigger.outputs.http_code }}
+          SYNC_TOTAL: ${{ steps.trigger.outputs.sync_total }}
+          SYNC_UPSERTED: ${{ steps.trigger.outputs.sync_upserted }}
+          SYNC_FAILED: ${{ steps.trigger.outputs.sync_failed }}
+          SYNC_ENRICHED: ${{ steps.trigger.outputs.sync_enriched }}
+          SYNC_SCRAPED: ${{ steps.trigger.outputs.sync_scraped }}
+          SYNC_SCRAPE_ATTEMPTED: ${{ steps.trigger.outputs.sync_scrape_attempted }}
+          SYNC_SCRAPE_FAILED: ${{ steps.trigger.outputs.sync_scrape_failed }}
+          SYNC_SCRAPE_MODE: ${{ steps.trigger.outputs.sync_scrape_mode }}
+          SYNC_SCRAPE_BUDGET_STOP: ${{ steps.trigger.outputs.sync_scrape_budget_stop }}
+          SYNC_DURATION: ${{ steps.trigger.outputs.sync_duration_sec }}
+          SYNC_ERRORS: ${{ steps.trigger.outputs.sync_errors_count }}
+        run: |
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TEXT="$(cat <<EOF
+✅ Hourly News Sync success
+Repo: ${{ github.repository }}
+Branch: ${{ github.ref_name }}
+Trigger: ${{ github.event_name }}
+HTTP: ${HTTP_CODE}
+Fetched: ${SYNC_TOTAL}
+Upserted: ${SYNC_UPSERTED} (failed: ${SYNC_FAILED})
+Pre-scraped: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (failed: ${SYNC_SCRAPE_FAILED})
+Scrape mode: ${SYNC_SCRAPE_MODE} | Budget stop: ${SYNC_SCRAPE_BUDGET_STOP}
+Re-enriched: ${SYNC_ENRICHED}
+Duration: ${SYNC_DURATION}s | Errors array: ${SYNC_ERRORS}
+Run: ${RUN_URL}
+EOF
+)"
+          curl --silent --show-error --fail \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}"
+
+      - name: Notify Telegram on failure
+        if: failure() && secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HTTP_CODE: ${{ steps.trigger.outputs.http_code }}
+          RESPONSE: ${{ steps.trigger.outputs.response }}
+        run: |
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          SHORT_RESPONSE="$(printf '%s' "${RESPONSE}" | tr '\n' ' ' | cut -c1-400)"
+          TEXT="$(cat <<EOF
+❌ Hourly News Sync failed
+Repo: ${{ github.repository }}
+Branch: ${{ github.ref_name }}
+Trigger: ${{ github.event_name }}
+HTTP: ${HTTP_CODE}
+Run: ${RUN_URL}
+Response: ${SHORT_RESPONSE}
+EOF
+)"
+          curl --silent --show-error --fail \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}"

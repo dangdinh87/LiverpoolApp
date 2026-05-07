@@ -98,12 +98,20 @@ async function syncPipeline(): Promise<SyncResult> {
   // 4. Re-enrich: fetch OG image for up to 30 articles missing thumbnails
   await fetchOgMeta(noThumbArticles);
 
-  // 5. Log result to sync_logs table
+  // 5. Pre-scrape article content_en with adaptive limit + time budget
+  //    - low volume: 10-16
+  //    - high volume / near match window: up to 36
+  //    - hard stop after 90s scrape budget
+  await scrapeContentForRecentArticles(...);
+
+  // 6. Log result to sync_logs table
   await supabase.from("sync_logs").insert({ inserted, failed, duration_ms, source_stats });
 
   return { total, upserted, failed, enriched, durationMs, errors };
 }
 ```
+
+`source_stats` now also tracks pre-scrape telemetry (`scrapeMode`, `scrapeAttempted`, `scraped`, `scrapeFailed`, `scrapeBudgetStop`) so hourly runs can be tuned from real data.
 
 ### Three-Tier Sync Strategy (`triggerSyncIfNeeded`)
 
