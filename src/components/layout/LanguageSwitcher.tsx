@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, ChevronDown } from "lucide-react";
@@ -15,7 +14,6 @@ const LOCALES = [
 export function LanguageSwitcher() {
   const t = useTranslations("Language");
   const locale = useLocale();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,7 +31,7 @@ export function LanguageSwitcher() {
     if (code === locale) { setOpen(false); return; }
     Cookies.set("NEXT_LOCALE", code, { expires: 365, path: "/", sameSite: "lax" });
     setOpen(false);
-    router.refresh();
+    window.location.reload();
   };
 
   const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];
