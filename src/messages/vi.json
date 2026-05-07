@@ -95,6 +95,8 @@
     "currentPosition": "Vị trí hiện tại",
     "points": "Điểm",
     "goalDiff": "Hiệu số",
+    "viewFixtures": "Lịch đấu",
+    "viewTable": "Bảng đấu",
     "record": "Thành tích",
     "top4Gap": "Cách top 4",
     "leaderGap": "Cách đầu bảng",
@@ -255,7 +257,9 @@
     "today": "Hôm nay",
     "home": "Sân nhà",
     "away": "Sân khách",
-    "round": "Vòng"
+    "round": "Vòng",
+    "viewMatch": "Chi tiết trận",
+    "viewAllFixtures": "Xem lịch đấu"
   },
   "LiveBanner": {
     "live": "TRỰC TIẾP",
@@ -791,11 +795,18 @@
       "filter": {
         "all": "Tất cả các giải"
       },
-      "sections": {
+      "tabs": {
         "upcoming": "Sắp tới",
+        "recent": "Mới diễn ra",
         "results": "Kết quả"
       },
-      "noFixtures": "Không tìm thấy trận đấu cho giải đấu này."
+      "sections": {
+        "upcoming": "Sắp tới",
+        "recent": "Mới diễn ra",
+        "results": "Kết quả"
+      },
+      "noFixtures": "Không tìm thấy trận đấu cho giải đấu này.",
+      "noRecentFixtures": "Không có trận mới diễn ra trong 7 ngày gần đây."
     },
     "detail": {
       "back": "Lịch đấu & BXH",
@@ -984,7 +995,8 @@
     "legal": "Pháp lý",
     "contact": "Liên hệ",
     "rights": "Bảo lưu mọi quyền.",
-    "disclaimer": "LFCVN là trang web không chính thức và không liên kết với Liverpool FC.",
+    "disclaimer": "LFCVN là page Liverpool FC dành cho cộng đồng fan The Reds tại Việt Nam.",
+    "buildVersion": "Build: {version}",
     "newsSources": "Tổng hợp tin tức từ các nguồn báo uy tín",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {

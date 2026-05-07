@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
 import {
@@ -104,6 +105,7 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
   const elapsed = f.status.elapsed;
   const isHT = f.status.short === "HT";
   const isToday = isSameCalendarDay(date, new Date());
+  const hasDetailPage = displayFixture.fixture.id > 0;
   const roundName = league.round.includes(" - ")
     ? league.round.split(" - ").at(-1) ?? league.round
     : league.round;
@@ -227,6 +229,22 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
           <span className="font-inter text-[11px] text-stadium-muted text-right shrink-0">
             {formatMatchDate(date, locale)}
           </span>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          {hasDetailPage ? (
+            <Link
+              href={`/fixtures/${displayFixture.fixture.id}`}
+              className="inline-flex items-center justify-center border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-lfc-red/20"
+            >
+              {t("viewMatch")}
+            </Link>
+          ) : null}
+          <Link
+            href="/season?tab=fixtures"
+            className="inline-flex items-center justify-center border border-stadium-border bg-stadium-surface2 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
+          >
+            {t("viewAllFixtures")}
+          </Link>
         </div>
       </div>
     </div>

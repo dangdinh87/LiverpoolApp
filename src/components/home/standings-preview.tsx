@@ -16,12 +16,15 @@ interface StandingsPreviewProps {
 function StandingRow({
   s,
   isHighlight,
+  href,
 }: {
   s: Standing;
   isHighlight: boolean;
+  href: string;
 }) {
   return (
-    <div
+    <Link
+      href={href}
       className={cn(
         "flex items-center gap-2.5 px-2.5 py-2 border-l-2 transition-colors",
         isHighlight ? "bg-lfc-red/15 border-l-lfc-red" : "border-l-transparent hover:bg-stadium-surface2/80"
@@ -60,7 +63,7 @@ function StandingRow({
       >
         {s.points}
       </span>
-    </div>
+    </Link>
   );
 }
 
@@ -86,7 +89,12 @@ export function StandingsPreview({ standings }: StandingsPreviewProps) {
 
       <div className="flex-1 flex flex-col gap-0.5 min-h-0 overflow-hidden">
         {top5.map((s) => (
-          <StandingRow key={s.team.id} s={s} isHighlight={s.team.id === LFC_TEAM_ID} />
+          <StandingRow
+            key={s.team.id}
+            s={s}
+            isHighlight={s.team.id === LFC_TEAM_ID}
+            href="/season?tab=standings"
+          />
         ))}
 
         {lfcStanding && !lfcInTop5 && (
@@ -94,9 +102,23 @@ export function StandingsPreview({ standings }: StandingsPreviewProps) {
             <p className="font-barlow text-[10px] text-lfc-red/90 uppercase tracking-wider font-semibold mb-1.5 px-2.5">
               {t("currentPosition")}
             </p>
-            <StandingRow s={lfcStanding} isHighlight />
+            <StandingRow s={lfcStanding} isHighlight href="/season?tab=standings" />
           </div>
         )}
+      </div>
+      <div className="mt-3 flex items-center gap-2">
+        <Link
+          href="/season?tab=standings"
+          className="inline-flex items-center justify-center border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-lfc-red/20"
+        >
+          {t("fullTable")}
+        </Link>
+        <Link
+          href="/season?tab=fixtures"
+          className="inline-flex items-center justify-center border border-stadium-border bg-stadium-surface2 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
+        >
+          {t("viewFixtures")}
+        </Link>
       </div>
     </div>
   );

@@ -10,6 +10,19 @@ import { LiveMatchBanner } from "@/components/home/live-match-banner";
 import { makePageMeta } from "@/lib/seo";
 import type { Fixture } from "@/lib/types/football";
 
+function getOptimizedHeroUrl(url: string): string {
+  if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
+    return url;
+  }
+  if (url.includes("/upload/w_1920,h_1080,c_fill,q_auto,f_auto/")) {
+    return url;
+  }
+  return url.replace(
+    "/upload/",
+    "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/"
+  );
+}
+
 export const metadata: Metadata = {
   title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
   description:
@@ -48,11 +61,7 @@ export default async function HomePage() {
       cloudinary_url: string;
     }>("homepage_hero_image");
     if (heroSetting?.cloudinary_url) {
-      const url = heroSetting.cloudinary_url;
-      // Apply Cloudinary transformation only for Cloudinary URLs
-      heroBackgroundUrl = url.includes("/upload/")
-        ? url.replace("/upload/", "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/")
-        : url;
+      heroBackgroundUrl = getOptimizedHeroUrl(heroSetting.cloudinary_url);
     }
   } catch {
     // Fallback to default — no error needed

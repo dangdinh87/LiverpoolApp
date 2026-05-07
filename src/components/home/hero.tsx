@@ -77,7 +77,7 @@ const LINES = [
   { words: ["WALK", "ALONE"], isRed: true, startIdx: "YOU'LLNEVER".length },
 ] as const;
 
-const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg_3.jpg";
+const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg_5.jpg";
 
 interface HeroProps {
   backgroundUrl?: string;
@@ -86,6 +86,7 @@ interface HeroProps {
 export function Hero({ backgroundUrl }: HeroProps) {
   const t = useTranslations("Hero");
   const heroImage = backgroundUrl || DEFAULT_HERO_BG;
+  const isCloudinaryHero = heroImage.includes("res.cloudinary.com");
   return (
     <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden snap-start">
       {/* Background image with slow zoom */}
@@ -94,9 +95,11 @@ export function Hero({ backgroundUrl }: HeroProps) {
         alt="Anfield Stadium"
         fill
         priority
+        fetchPriority="high"
         className="object-cover object-center"
         sizes="100vw"
         quality={80}
+        unoptimized={isCloudinaryHero}
       />
 
       {/* Lighter overlays — let more image show through */}
