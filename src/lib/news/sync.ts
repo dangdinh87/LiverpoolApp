@@ -81,7 +81,18 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
         }
       }
 
-      const existingMap = new Map((existingData || []).map((row) => [row.url, row]));
+      // Strip Postgres generated columns (e.g. `fts` tsvector) before merging —
+      // upsert rejects any non-DEFAULT value for GENERATED ALWAYS columns.
+      const GENERATED_COLS = ["fts"] as const;
+      const stripGenerated = (row: Record<string, unknown>) => {
+        const clean = { ...row };
+        for (const col of GENERATED_COLS) delete clean[col];
+        return clean;
+      };
+
+      const existingMap = new Map(
+        (existingData || []).map((row) => [row.url, stripGenerated(row)])
+      );
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
         return old ? { ...old, ...row } : row;
