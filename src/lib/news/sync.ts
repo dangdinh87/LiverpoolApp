@@ -81,17 +81,20 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
         }
       }
 
-      // Strip Postgres generated columns (e.g. `fts` tsvector) before merging —
-      // upsert rejects any non-DEFAULT value for GENERATED ALWAYS columns.
-      const GENERATED_COLS = ["fts"] as const;
-      const stripGenerated = (row: Record<string, unknown>) => {
+      // Strip columns Postgres manages itself before merging:
+      // - `fts` is GENERATED ALWAYS (rejects any value)
+      // - `id` (uuid default gen_random_uuid()) — bulk upsert with mixed
+      //   present/absent `id` fields gets serialized with null, breaking
+      //   the NOT NULL constraint. Drop it so onConflict=url handles routing.
+      const STRIPPED_COLS = ["fts", "id"] as const;
+      const stripDbManaged = (row: Record<string, unknown>) => {
         const clean = { ...row };
-        for (const col of GENERATED_COLS) delete clean[col];
+        for (const col of STRIPPED_COLS) delete clean[col];
         return clean;
       };
 
       const existingMap = new Map(
-        (existingData || []).map((row) => [row.url, stripGenerated(row)])
+        (existingData || []).map((row) => [row.url, stripDbManaged(row)])
       );
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
