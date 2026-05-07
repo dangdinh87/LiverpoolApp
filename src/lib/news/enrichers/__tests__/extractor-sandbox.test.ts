@@ -66,7 +66,7 @@ describe("Extractor Sandbox", () => {
     const res = await scrapeArticle(url);
     console.log("=== DANTRI ===");
     console.log(JSON.stringify(res, null, 2));
-  });
+  }, 15000);
 
   it("extracts from Thanhnien", async () => {
     const url = "https://thanhnien.vn/thay-cu-cua-xuan-son-suc-nong-san-thien-truong-se-khien-malaysia-chiu-ap-luc-cuc-lon-khi-dau-viet-nam-185260328100123494.htm";

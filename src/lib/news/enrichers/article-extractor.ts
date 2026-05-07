@@ -151,7 +151,7 @@ function buildHtmlContent(
   // Remove generic ad classes, related news widgets, etc. to clean up content
   container.find(
     ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], .related-news, .relate-container, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -581,6 +581,12 @@ function extractBongdaplus(
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
+  const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    contentClone.find(".sapo, .detail-sapo").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   $("img").each((_, el) => {
     const $el = $(el);
     if ($el.closest(".thumb, [class*='banner'], [class*='sidebar'], [class*='related']").length > 0) return;
@@ -748,6 +754,10 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
+  if (sapo && sapo.length > 20) {
+    clone.find("#article_sapo").remove();
+    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
 
@@ -1024,15 +1034,22 @@ function extractVietnameseGeneric(
   const description = $('meta[property="og:description"]').attr("content");
 
   const container = $(containerSelectors).first();
+  const contentClone = container.clone();
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
   const seenI = new Set<string>();
 
   // Extract sapo/lead text
+  let sapoText: string | undefined;
   if (opts?.sapoSelector) {
-    const sapo = $(opts.sapoSelector).first().text().trim();
-    if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+    const $sapo = $(opts.sapoSelector).first();
+    const sapo = $sapo.text().trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      contentClone.find(opts.sapoSelector).remove();
+    }
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
@@ -1051,7 +1068,10 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    if (sapoText) {
+      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+    }
+    htmlContent = buildHtmlContent(contentClone, $) || undefined;
   }
 
   return {
@@ -1223,7 +1243,11 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract lead/sapo text
   const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+  if (sapo && sapo.length > 20) {
+    pushUnique(paragraphs, seenP, sapo);
+    contentClone.find(".the-article-summary").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
 
   container.find("p").each((_, el) => {
     const text = $(el).text().trim();
@@ -1262,6 +1286,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const container = $(
     ".fck_detail, article.fck_detail, .article-content, article, [role=main]"
   ).first();
+  const contentClone = container.clone();
   const paragraphs: string[] = [];
   const images: string[] = [];
   const seenP = new Set<string>();
@@ -1269,8 +1294,12 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract lead/sapo text
   const sapo = $("p.description").first().text().trim();
-  if (sapo && sapo.length > 20 && sapo !== description) {
-    pushUnique(paragraphs, seenP, sapo);
+  if (sapo && sapo.length > 20) {
+    if (sapo !== description) {
+      pushUnique(paragraphs, seenP, sapo);
+    }
+    contentClone.find("p.description").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1285,7 +1314,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title, heroImage, description,
