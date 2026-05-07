@@ -130,7 +130,7 @@ Full-featured Next.js 16 fan site for Liverpool FC Vietnam community. Provides s
 ### 5. API Routes
 | Route | Method | Purpose | Auth | Cron? |
 |---|---|---|---|---|
-| `/api/news/sync` | GET | Sync RSS feeds → Supabase | CRON_SECRET | Yes (6 AM UTC) |
+| `/api/news/sync` | GET | Sync RSS + pre-scrape article content | CRON_SECRET | Yes (GitHub Actions hourly) |
 | `/api/news/cleanup` | GET | Soft-delete >30d, hard-delete >60d articles | CRON_SECRET | Yes (3 AM UTC) |
 | `/api/news/digest/generate` | GET | AI daily digest generation | CRON_SECRET | Yes (midnight UTC) |
 | `/api/news/translate` | POST | On-demand article translation | Supabase session | No |
@@ -328,10 +328,10 @@ Required for full functionality. See `.env.example`:
 ## Deployment
 
 - **Platform:** Vercel (Hobby plan)
-- **Cron jobs:** 3 jobs configured in `vercel.json`
-  - `/api/news/sync` — 6 AM UTC (60s timeout)
-  - `/api/news/cleanup` — 3 AM UTC
-  - `/api/news/digest/generate` — midnight UTC (60s timeout)
+- **Scheduled jobs:**
+  - GitHub Actions (`.github/workflows/news-sync.yml`) → `/api/news/sync` hourly (300s timeout)
+  - Vercel cron → `/api/news/cleanup` (3 AM UTC)
+  - Vercel cron → `/api/news/digest/generate` (midnight UTC, 60s timeout)
 - **Environment variables:** Set in Vercel project settings
 - **Database:** Supabase PostgreSQL with RLS policies
 

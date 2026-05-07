@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { syncPipeline } from "@/lib/news/sync";
 import { withCronAuth } from "@/lib/cron";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async () => {

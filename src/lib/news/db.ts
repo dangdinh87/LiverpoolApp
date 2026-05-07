@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { syncPipeline } from "./sync";
 import { getServiceClient } from "./supabase-service";
-import type { NewsArticle } from "./types";
+import type { ArticleContent, NewsArticle } from "./types";
 
 const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
@@ -11,6 +11,7 @@ const ARTICLE_COLUMNS =
 const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
 const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
+const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
 let syncInProgress = false;
@@ -186,6 +187,32 @@ export const getNewsFromDB = cache(
     } catch (err) {
       console.error("[news/db] Fatal:", err);
       return [];
+    }
+  }
+);
+
+export const getArticleContentFromDB = cache(
+  async (url: string): Promise<ArticleContent | null> => {
+    try {
+      const supabase = getServiceClient();
+      const { data } = await supabase
+        .from("articles")
+        .select("content_en, content_scraped_at")
+        .eq("url", url)
+        .maybeSingle();
+
+      if (!data?.content_en || !data.content_scraped_at) {
+        return null;
+      }
+
+      const ageMs = Date.now() - new Date(data.content_scraped_at).getTime();
+      if (ageMs > FRESH_CONTENT_TTL_MS) {
+        return null;
+      }
+
+      return data.content_en as ArticleContent;
+    } catch {
+      return null;
     }
   }
 );

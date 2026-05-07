@@ -16,7 +16,13 @@ export type { NewsArticle, ArticleContent, NewsSource, NewsLanguage, ArticleCate
 export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 
 // Re-export DB query helpers
-export { getNewsFromDB, searchArticles, getNewsPaginated, getArticleTitlesByUrls } from "./db";
+export {
+  getNewsFromDB,
+  searchArticles,
+  getNewsPaginated,
+  getArticleTitlesByUrls,
+  getArticleContentFromDB,
+} from "./db";
 
 // Re-export engagement helpers
 export { getArticleEngagement, HOT_THRESHOLD } from "./engagement";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
-import { scrapeArticle, getNewsFromDB } from "@/lib/news";
+import { scrapeArticle, getNewsFromDB, getArticleContentFromDB } from "@/lib/news";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
@@ -132,8 +132,9 @@ export default async function ArticlePage({
   const url = decodeArticleSlug(slug);
   if (!url) notFound();
 
+  const dbContent = await getArticleContentFromDB(url);
   const [content, allArticles, fixtures, t] = await Promise.all([
-    scrapeArticle(url),
+    dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
     getNewsFromDB(100),
     getFixtures(),
     getTranslations("News.article"),

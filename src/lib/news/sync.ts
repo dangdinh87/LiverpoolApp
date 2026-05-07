@@ -5,6 +5,7 @@ import { LfcAdapter } from "./adapters/lfc-adapter";
 import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
 import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
+import { scrapeArticle } from "./enrichers/article-extractor";
 import { getServiceClient } from "./supabase-service";
 import type { NewsArticle } from "./types";
 import { SupabaseClient } from "@supabase/supabase-js";
@@ -14,9 +15,14 @@ export interface SyncResult {
   upserted: number;
   failed: number;
   enriched: number;
+  scraped: number;
   durationMs: number;
   errors: { url: string; error: string }[];
 }
+
+const SCRAPE_BATCH = 5;
+const SCRAPE_LIMIT = 50;
+const STALE_CONTENT_MS = 24 * 3600 * 1000;
 
 function articleToRow(a: NewsArticle) {
   return {
@@ -109,6 +115,45 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
   return { upserted, failed, errors };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function scrapeContentForRecentArticles(supabase: SupabaseClient<any, "public", any>) {
+  const staleCutoff = new Date(Date.now() - STALE_CONTENT_MS).toISOString();
+  const { data, error } = await supabase
+    .from("articles")
+    .select("url")
+    .eq("is_active", true)
+    .or(`content_en.is.null,content_scraped_at.lt.${staleCutoff}`)
+    .order("published_at", { ascending: false })
+    .limit(SCRAPE_LIMIT);
+
+  if (error) {
+    console.error(`[sync] scrape query failed: ${error.message}`);
+    return { scraped: 0, scrapeFailed: 0 };
+  }
+
+  if (!data?.length) {
+    return { scraped: 0, scrapeFailed: 0 };
+  }
+
+  let scraped = 0;
+  let scrapeFailed = 0;
+  for (let i = 0; i < data.length; i += SCRAPE_BATCH) {
+    const batch = data.slice(i, i + SCRAPE_BATCH);
+    const results = await Promise.allSettled(batch.map((row) => scrapeArticle(row.url)));
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j];
+      if (result.status === "fulfilled" && result.value) {
+        scraped++;
+      } else {
+        scrapeFailed++;
+      }
+    }
+  }
+
+  console.log(`[sync] Pre-scraped ${scraped}/${data.length} articles (${scrapeFailed} failed)`);
+  return { scraped, scrapeFailed };
+}
+
 /**
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
@@ -179,6 +224,7 @@ export async function syncPipeline(): Promise<SyncResult> {
     console.log(`[sync] Re-enriched ${enriched}/${noThumb.length} thumbnails`);
   }
 
+  const { scraped, scrapeFailed } = await scrapeContentForRecentArticles(supabase);
   const durationMs = Date.now() - start;
 
   // Log sync result with per-source stats
@@ -188,9 +234,9 @@ export async function syncPipeline(): Promise<SyncResult> {
     failed,
     duration_ms: durationMs,
     errors: errors.length > 0 ? errors : null,
-    source_stats: sourceStats,
+    source_stats: { ...sourceStats, scraped, scrapeFailed },
   });
 
   console.log(`[sync] Done in ${durationMs}ms: ${upserted} upserted, ${failed} failed`);
-  return { total: articles.length, upserted, failed, enriched, durationMs, errors };
+  return { total: articles.length, upserted, failed, enriched, scraped, durationMs, errors };
 }

@@ -79,7 +79,7 @@ RSS/Scraper Adapters (17+ nguồn)
 
 | Kích hoạt | Vị trí | Ghi chú |
 |---|---|---|
-| Cron job (hàng ngày 6 AM UTC) | `POST /api/news/sync` | Xác thực qua `CRON_SECRET` |
+| GitHub Actions cron (mỗi giờ UTC) | `GET /api/news/sync` | Xác thực qua `CRON_SECRET` |
 | Tự động đồng bộ nền | `db.ts → triggerSyncIfNeeded()` | Kích hoạt khi dữ liệu lỗi thời lúc tải trang |
 
 ### `syncPipeline()` — `src/lib/news/sync.ts`
@@ -416,11 +416,11 @@ vnexpress.net        → .fck_detail → .article-content
 
 ## Cron Jobs
 
-Cấu hình trong `vercel.json`:
+Cấu hình theo GitHub Actions (sync) + `vercel.json` (cleanup, digest):
 
 | Route | Lịch chạy | `maxDuration` | Mục đích |
 |---|---|---|---|
-| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Đồng bộ tất cả feed RSS → Supabase, scrape HTML content + detect videos |
+| `/api/news/sync` (GitHub Actions) | `0 * * * *` (mỗi giờ UTC) | 300s | Đồng bộ RSS → Supabase, pre-scrape `content_en` theo batch |
 | `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | mặc định | Soft-delete bài >30 ngày; hard-delete bài >60 ngày |
 | `/api/news/digest/generate` | `0 0 * * *` (nửa đêm UTC) | 60s | Tạo bản tóm tắt AI hàng ngày qua Groq |
 

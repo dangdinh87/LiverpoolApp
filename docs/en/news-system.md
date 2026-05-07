@@ -79,7 +79,7 @@ RSS/Scraper Adapters (17+ sources)
 
 | Trigger | Location | Notes |
 |---|---|---|
-| Cron job (daily 6 AM UTC) | `POST /api/news/sync` | Authorized via `CRON_SECRET` |
+| GitHub Actions cron (hourly UTC) | `GET /api/news/sync` | Authorized via `CRON_SECRET` |
 | Background auto-sync | `db.ts → triggerSyncIfNeeded()` | Fires when data is stale on page load |
 
 ### `syncPipeline()` — `src/lib/news/sync.ts`
@@ -445,11 +445,11 @@ vnexpress.net        → .fck_detail → .article-content
 
 ## Cron Jobs
 
-Configured in `vercel.json`:
+Configured with GitHub Actions (sync) + `vercel.json` (cleanup, digest):
 
 | Route | Schedule | `maxDuration` | Purpose |
 |---|---|---|---|
-| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Sync all RSS feeds → Supabase, scrape HTML content + detect videos |
+| `/api/news/sync` (GitHub Actions) | `0 * * * *` (hourly UTC) | 300s | Sync RSS feeds → Supabase, pre-scrape `content_en` in batches |
 | `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | default | Soft-delete articles >30d; hard-delete >60d |
 | `/api/news/digest/generate` | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq |
 

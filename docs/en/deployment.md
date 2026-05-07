@@ -42,12 +42,16 @@ After setting env vars: Deployments → latest deployment → three-dot menu →
 
 ## Cron Jobs
 
-Cron jobs are configured in `vercel.json` at the project root:
+Cron jobs are split between GitHub Actions and Vercel:
+
+- `.github/workflows/news-sync.yml` triggers `/api/news/sync` hourly.
+- `vercel.json` keeps cleanup + digest daily.
+
+Vercel cron config at project root:
 
 ```json
 {
   "crons": [
-    { "path": "/api/news/sync",            "schedule": "0 6 * * *" },
     { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
     { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
   ]
@@ -56,13 +60,13 @@ Cron jobs are configured in `vercel.json` at the project root:
 
 | Route | Schedule | Purpose | Max Duration |
 |---|---|---|---|
-| `/api/news/sync` | 6:00 AM UTC daily | Sync RSS feeds → Supabase articles | 60s |
+| `/api/news/sync` (GitHub Actions) | Every hour (`0 * * * *`) | Sync RSS feeds + pre-scrape article content | 300s |
 | `/api/news/cleanup` | 3:00 AM UTC daily | Soft-delete >30d, hard-delete >60d articles | default (10s) |
 | `/api/news/digest/generate` | 00:00 UTC daily | Generate AI daily digest via Groq | 60s |
 
 ### How Cron Auth Works
 
-Vercel automatically sends `Authorization: Bearer <CRON_SECRET>` on all cron requests. All three routes validate this:
+Vercel automatically sends `Authorization: Bearer <CRON_SECRET>` on Vercel cron requests. GitHub Actions sends the same header to `/api/news/sync`.
 
 ```typescript
 // Inside each cron route handler
@@ -73,18 +77,18 @@ if (secret !== process.env.CRON_SECRET) {
 }
 ```
 
-You can also trigger them manually for testing:
+You can also trigger sync manually for testing:
 
 ```bash
-curl -X GET https://www.liverpoolfcvn.blog/api/news/sync \
+curl -fsS https://www.liverpoolfcvn.blog/api/news/sync \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
 ### Vercel Hobby Plan — Cron Limitations
 
-- Maximum **2 cron jobs** per project on Hobby plan
-- This project uses 3 — you need to upgrade to **Pro** ($20/mo) or consolidate
-- Workaround: combine cleanup + sync into one endpoint, or trigger cleanup from sync handler
+- Maximum **2 Vercel cron jobs** per project on Hobby plan
+- This project uses exactly 2 Vercel jobs (cleanup + digest)
+- Hourly sync is moved to GitHub Actions to bypass the once/day Vercel Hobby cron limit
 - Cron jobs only run when the deployment is active (not on preview deployments)
 
 ---
@@ -244,23 +248,23 @@ npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/databas
 ### Cron Jobs Not Running
 
 1. Verify `vercel.json` is committed and deployed
-2. Check Vercel Dashboard → Project → Settings → Crons — should list all 3 jobs
-3. On Hobby plan, only 2 crons are supported — third will silently not run
+2. Check Vercel Dashboard → Project → Settings → Crons — should list cleanup + digest
+3. Check GitHub Actions → "Hourly News Sync" runs for `/api/news/sync`
 4. Check function logs: Vercel Dashboard → Logs → filter by `/api/news/sync`
 5. Test manually with curl using `CRON_SECRET`
 
 ### 504 Timeout on Sync/Digest Cron
 
-The `maxDuration` in `vercel.json` should be set to 60s for sync and digest routes:
+The route-level `maxDuration` should allow long sync runs (300s):
 
 ```json
 {
   "crons": [
-    { "path": "/api/news/sync",            "schedule": "0 6 * * *" },
+    { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
     { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
   ],
   "functions": {
-    "src/app/api/news/sync/route.ts":            { "maxDuration": 60 },
+    "src/app/api/news/sync/route.ts":            { "maxDuration": 300 },
     "src/app/api/news/digest/generate/route.ts": { "maxDuration": 60 }
   }
 }
@@ -282,8 +286,8 @@ Hobby plan max: 60s. Pro plan max: 300s.
 | Preview deployments | Yes | Yes |
 
 Key constraints for this project:
-- **Cron limit** — only 2 of 3 cron jobs run on Hobby. Upgrade to Pro or combine cleanup into sync.
-- **Function timeout** — news sync (60s) and digest (60s) are at the Hobby limit. If feeds slow down, they may timeout.
+- **Vercel cron limit** — only 2 Vercel cron jobs on Hobby (this project uses exactly 2).
+- **Function timeout** — news sync (300s) and digest (60s) must still complete within configured limits.
 - **No background functions** — all work must complete within the timeout window.
 
 ---
@@ -302,7 +306,8 @@ Before going live:
 - [ ] DNS records configured on Hostinger
 - [ ] Domain shows "Valid Configuration" on Vercel
 - [ ] SSL certificate issued (green padlock in browser)
-- [ ] Cron jobs visible in Vercel Dashboard → Settings → Crons
+- [ ] Vercel cron jobs visible in Vercel Dashboard → Settings → Crons
+- [ ] GitHub Actions "Hourly News Sync" succeeds with hourly schedule
 - [ ] Manual cron test: `curl -H "Authorization: Bearer SECRET" https://domain/api/news/sync`
 - [ ] Homepage loads, news articles appear
 - [ ] Login/register flow works

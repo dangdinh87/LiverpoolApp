@@ -257,15 +257,17 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 5. `005_gallery.sql` — gallery images metadata
 6. `chat_schema.sql` — `conversations`, `messages` for AI chat persistence
 
-## Cron Jobs (Vercel)
+## Scheduled Jobs
 
-Configured in `vercel.json`. All routes require `CRON_SECRET` via `Authorization: Bearer` header (auto-sent by Vercel) or `?key=` query param.
+- **GitHub Actions (`.github/workflows/news-sync.yml`)** calls `/api/news/sync` hourly (`0 * * * *`) with `CRON_SECRET` bearer auth.
+- **Vercel Cron (`vercel.json`)** keeps daily jobs for cleanup and digest only.
+- All routes require `CRON_SECRET` via `Authorization: Bearer` header (auto-sent by Vercel cron) or `?key=` query param.
 
-| Route | Schedule | maxDuration | Purpose |
-|---|---|---|---|
-| `/api/news/sync` | `0 6 * * *` (6 AM UTC) | 60s | Sync RSS feeds → Supabase, revalidate homepage |
-| `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | default | Soft-delete >30d articles, hard-delete >60d |
-| `/api/news/digest/generate` | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq, skip if already generated |
+| Route | Scheduler | Schedule | maxDuration | Purpose |
+|---|---|---|---|---|
+| `/api/news/sync` | GitHub Actions | `0 * * * *` | 300s | Sync RSS feeds, pre-scrape article content, revalidate homepage |
+| `/api/news/cleanup` | Vercel cron | `0 3 * * *` (3 AM UTC) | default | Soft-delete >30d, clear cached content >60d, hard-delete >60d |
+| `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq, skip if already generated |
 
 ## Protected Routes
 

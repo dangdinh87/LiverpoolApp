@@ -109,11 +109,11 @@ Vercel **tu dong** cap SSL qua Let's Encrypt khi domain verified. Ban khong can 
 
 **Cron Job** = tac vu tu dong chay theo lich (khong can ai bam).
 
-Website co 3 cron jobs:
+Website co 3 tac vu dinh ky:
 
 | Cron | Lich | Lam gi |
 |---|---|---|
-| `/api/news/sync` | 6h sang UTC moi ngay | Lay tin moi tu 17+ nguon RSS → luu vao database |
+| `/api/news/sync` (GitHub Actions) | Moi gio (`0 * * * *`) | Lay tin moi + pre-scrape noi dung bai |
 | `/api/news/cleanup` | 3h sang UTC moi ngay | Xoa tin cu >30 ngay (soft), >60 ngay (hard) |
 | `/api/news/digest/generate` | 0h UTC moi ngay | AI tao ban tom tat tin tuc hang ngay |
 
@@ -121,17 +121,18 @@ Website co 3 cron jobs:
 
 **CRON_SECRET** la mat khau bao ve cac API nay. Khong co no, ai cung co the goi `/api/news/sync` va spam database.
 
-### Cau hinh trong vercel.json
+### Cau hinh vercel.json (chi cleanup + digest)
 
 ```json
 {
   "crons": [
-    { "path": "/api/news/sync", "schedule": "0 6 * * *" },
     { "path": "/api/news/cleanup", "schedule": "0 3 * * *" },
     { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
   ]
 }
 ```
+
+`/api/news/sync` duoc goi boi GitHub Actions workflow `.github/workflows/news-sync.yml`.
 
 Vercel tu dong gui request kem header `Authorization: Bearer <CRON_SECRET>`.
 

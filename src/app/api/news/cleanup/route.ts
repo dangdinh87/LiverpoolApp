@@ -16,6 +16,13 @@ export const GET = withCronAuth(async () => {
     .eq("is_active", true)
     .lt("published_at", thirtyDaysAgo);
 
+  // Free heavy cached content for old articles while keeping metadata rows.
+  const { count: contentCleared } = await supabase
+    .from("articles")
+    .update({ content_en: null, content_scraped_at: null }, { count: "exact" })
+    .lt("published_at", sixtyDaysAgo)
+    .not("content_en", "is", null);
+
   // Hard-delete: remove already-deactivated articles >60 days with no cached content
   const { count: deleted } = await supabase
     .from("articles")
@@ -33,6 +40,7 @@ export const GET = withCronAuth(async () => {
   return NextResponse.json({
     ok: true,
     deactivated: deactivated ?? 0,
+    contentCleared: contentCleared ?? 0,
     deleted: deleted ?? 0,
     logsDeleted: logsDeleted ?? 0,
   });
