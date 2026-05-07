@@ -86,17 +86,23 @@ export function NewsSourceMarquee() {
     }
   }, []);
 
-  // Auto-scroll with requestAnimationFrame
+  // Auto-scroll with time-based delta — consistent speed on any refresh rate.
+  // Frame-based scroll (e.g. `+= 0.5 px/frame`) runs 2-4x faster on 144Hz/240Hz
+  // displays compared to 60Hz, so we compute delta time and scale by it.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     let rafId: number;
-    const speed = 0.5; // px per frame
+    let lastTime: number | null = null;
+    const SPEED_PX_PER_SEC = 30; // ~30 px/s — matches old 0.5 px/frame at 60Hz
 
-    const tick = () => {
+    const tick = (now: number) => {
+      if (lastTime === null) lastTime = now;
+      const delta = (now - lastTime) / 1000; // seconds since last frame
+      lastTime = now;
+
       if (autoScrollRef.current && el) {
-        el.scrollLeft += speed;
-        // Infinite loop reset
+        el.scrollLeft += SPEED_PX_PER_SEC * delta;
         const half = el.scrollWidth / 2;
         if (el.scrollLeft >= half) {
           el.scrollLeft -= half;

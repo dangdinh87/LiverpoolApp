@@ -6,7 +6,7 @@ import {
   ArrowLeft, MapPin, Calendar, Users,
   CircleDot, ArrowUpFromLine, ArrowDownToLine,
 } from "lucide-react";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import {
   getFixtures,
   getFixtureEvents,
@@ -37,7 +37,6 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  setRequestLocale('vi');
   const { id } = await params;
   const fixtures = await getFixtures();
   const match = fixtures.find((f) => f.fixture.id === Number(id));
@@ -49,7 +48,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function FixtureDetailPage({ params }: PageProps) {
-  setRequestLocale('vi');
   const { id } = await params;
   const fixtureId = Number(id);
 

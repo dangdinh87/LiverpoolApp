@@ -1,7 +1,6 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
 export async function generateMetadata() {
-  setRequestLocale('vi');
   const t = await getTranslations("Legal.metadata");
   return {
     title: t("title"),
@@ -10,7 +9,6 @@ export async function generateMetadata() {
 }
 
 export default async function LegalPage() {
-  setRequestLocale('vi');
   const t = await getTranslations("Legal");
 
   const sectionKeys = ["privacy", "terms", "sources"] as const;

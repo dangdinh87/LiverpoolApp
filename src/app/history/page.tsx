@@ -15,12 +15,11 @@ import { ClubTabs } from "@/components/history/club-tabs";
 import { ManagerAvatar } from "@/components/history/manager-avatar";
 import { StadiumShowcase } from "@/components/history/stadium-showcase";
 import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink, Camera } from "lucide-react";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
-  setRequestLocale('vi');
   const t = await getTranslations("History.metadata");
   const title = t("title");
   const description = t("description");
@@ -50,10 +49,10 @@ export default async function HistoryPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  setRequestLocale('vi');
   const { tab } = await searchParams;
   const t = await getTranslations("History");
-  const isVi = true; // Default locale is 'vi'
+  const locale = await getLocale();
+  const isVi = locale === 'vi';
 
   const trophies = isVi ? trophiesVi : trophiesEn;
   const historyEvents = isVi ? historyEventsVi : historyEventsEn;

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import {
   Coffee,
   Heart,
@@ -20,7 +20,6 @@ import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
-  setRequestLocale('vi');
   const t = await getTranslations("About.metadata");
   const title = t("title");
   const description = t("description");
@@ -50,7 +49,6 @@ const FEATURE_KEYS = [
 ] as const;
 
 export default async function AboutPage() {
-  setRequestLocale('vi');
   const t = await getTranslations("About");
 
   return (

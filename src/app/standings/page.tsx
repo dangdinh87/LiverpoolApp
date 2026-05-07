@@ -1,11 +1,10 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { getStandings } from "@/lib/football";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
-  setRequestLocale('vi');
   const t = await getTranslations("Standings.metadata");
   const title = t("title");
   const description = t("description");
@@ -15,7 +14,6 @@ export async function generateMetadata() {
 export const revalidate = 21600; // 6 hours
 
 export default async function StandingsPage() {
-  setRequestLocale('vi');
   const t = await getTranslations("Standings");
   const standings = await getStandings();
 

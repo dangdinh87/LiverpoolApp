@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import {
   getFixtures,
   getStandings,
@@ -26,7 +26,6 @@ function getCurrentSeasonYear(): number {
 }
 
 export async function generateMetadata(): Promise<Metadata> {
-  setRequestLocale('vi');
   const t = await getTranslations("Season.metadata");
   const label = seasonLabel(getCurrentSeasonYear());
   const title = t("title", { season: label });
@@ -41,7 +40,6 @@ export default async function SeasonPage({
 }: {
   searchParams: Promise<{ tab?: string; season?: string }>;
 }) {
-  setRequestLocale('vi');
   const { tab, season: seasonParam } = await searchParams;
 
   // Validate season param — fallback to current if invalid

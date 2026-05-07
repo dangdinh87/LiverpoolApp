@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
-import { setRequestLocale } from 'next-intl/server';
+import { getMessages, getLocale, setRequestLocale } from 'next-intl/server';
 import { Suspense } from "react";
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
@@ -78,9 +77,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const locale = 'vi';
+  const locale = await getLocale();
   setRequestLocale(locale);
-  const messages = await getMessages({ locale });
+  const messages = await getMessages();
 
   return (
     <html

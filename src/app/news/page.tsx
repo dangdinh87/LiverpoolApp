@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
 import type { ArticleEngagement } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
@@ -9,7 +9,6 @@ import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
-  setRequestLocale('vi');
   const t = await getTranslations("News.metadata");
   const title = t("title");
   const description = t("description");
@@ -19,7 +18,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 300; // 5 minutes
 
 export default async function NewsPage() {
-  setRequestLocale('vi');
   const t = await getTranslations("News");
   const userLang = "vi";
   // Fetch both vi + en articles — balanced 30 each (no lang bias so both tabs have content)

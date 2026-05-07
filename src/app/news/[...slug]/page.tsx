@@ -16,7 +16,7 @@ import {
 } from "@/lib/news-config";
 import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
 import { ArticleImageViewer } from "@/components/news/article-image-viewer";
@@ -90,7 +90,6 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
-  setRequestLocale('vi');
   const { slug } = await params;
   const url = decodeArticleSlug(slug);
   if (!url) return { title: "Article Not Found" };
@@ -129,7 +128,6 @@ export default async function ArticlePage({
 }: {
   params: Params;
 }) {
-  setRequestLocale('vi');
   const { slug } = await params;
   const url = decodeArticleSlug(slug);
   if (!url) notFound();

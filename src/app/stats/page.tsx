@@ -1,4 +1,4 @@
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { getTopScorers, getTopAssists, getFixtures, getStandings, computeSeasonStats } from "@/lib/football";
 import { StatChart } from "@/components/stats/stat-chart";
 import { SeasonOverview } from "@/components/stats/season-overview";
@@ -13,7 +13,6 @@ import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata() {
-  setRequestLocale('vi');
   const t = await getTranslations("Stats.metadata");
   const title = t("title");
   const description = t("description");
@@ -25,7 +24,6 @@ export const revalidate = 3600; // 1 hour
 const CURRENT_SEASON = 2025;
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
-  setRequestLocale('vi');
   const t = await getTranslations("Stats");
   const params = await searchParams;
   const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
