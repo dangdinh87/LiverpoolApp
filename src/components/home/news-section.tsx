@@ -45,6 +45,7 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
   // Prefer locale-first news, but auto-fallback if locale feed is too old/sparse.
   const filtered = useMemo(() => {
     const TARGET_COUNT = 6;
+    const MIN_VISIBLE = 4;
     const FRESH_HOURS = 48;
     const STALE_HOURS = 18;
     const nowMs = Date.now();
@@ -71,8 +72,14 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
 
     // If primary feed is stale, use global freshest pool directly.
     if (primaryIsStale) {
-      if (freshAll.length > 0) {
+      if (freshAll.length >= MIN_VISIBLE) {
         return freshAll.slice(0, TARGET_COUNT);
+      }
+      if (freshAll.length > 0) {
+        const older = sortedAll.filter(
+          (a) => new Date(a.pubDate).getTime() < freshCutoffMs
+        );
+        return [...freshAll, ...older].slice(0, TARGET_COUNT);
       }
       return sortedAll.slice(0, TARGET_COUNT);
     }
@@ -82,6 +89,17 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
     for (const article of freshSecondary) {
       if (composed.length >= TARGET_COUNT) break;
       composed.push(article);
+    }
+    if (composed.length < MIN_VISIBLE) {
+      const olderPool = sortedAll.filter(
+        (a) => new Date(a.pubDate).getTime() < freshCutoffMs
+      );
+      for (const article of olderPool) {
+        if (composed.length >= TARGET_COUNT) break;
+        if (!composed.some((x) => x.link === article.link)) {
+          composed.push(article);
+        }
+      }
     }
     if (composed.length === 0) {
       // Last-resort fallback when there are no fresh items at all.

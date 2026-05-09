@@ -33,6 +33,7 @@ import { loadMoreNews } from "@/app/news/actions";
 const INITIAL_COUNT = 13;
 const LOAD_MORE_COUNT = 12;
 const NEWS_FRESH_HOURS = 48;
+const MIN_VISIBLE_ARTICLES = 8;
 
 /* ── Filter types ── */
 
@@ -667,8 +668,13 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagem
     const fresh = searched.filter(
       (a) => new Date(a.pubDate).getTime() >= cutoffMs
     );
-    // Keep feed fresh by default; fallback to older posts only if no fresh items exist.
-    return fresh.length > 0 ? fresh : searched;
+    // Keep feed fresh first, but avoid looking "empty" when fresh pool is small.
+    if (fresh.length === 0) return searched;
+    if (fresh.length >= MIN_VISIBLE_ARTICLES) return fresh;
+    const older = searched.filter(
+      (a) => new Date(a.pubDate).getTime() < cutoffMs
+    );
+    return [...fresh, ...older.slice(0, MIN_VISIBLE_ARTICLES - fresh.length)];
   }, [sorted, search, nowMs]);
 
   return (
