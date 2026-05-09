@@ -55,8 +55,13 @@ export async function fetchAllNews(
   }
   const relevant = unique.filter((a) => (a.relevanceScore ?? 0) >= 0);
 
-  // Sort by relevance score desc
-  relevant.sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
+  // Prioritize freshness first, then relevance as tie-breaker.
+  // This prevents older but high-score posts from crowding out latest match-day news.
+  relevant.sort((a, b) => {
+    const timeDiff = new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+    if (timeDiff !== 0) return timeDiff;
+    return (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
+  });
 
   const sliced = relevant.slice(0, limit);
 

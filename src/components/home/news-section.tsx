@@ -45,6 +45,7 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
   // Prefer locale-first news, but auto-fallback if locale feed is too old/sparse.
   const filtered = useMemo(() => {
     const TARGET_COUNT = 6;
+    const FRESH_HOURS = 48;
     const STALE_HOURS = 18;
     const nowMs = Date.now();
     const lang = locale === "vi" ? "vi" : "en";
@@ -52,6 +53,13 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
     const sortedAll = [...articles].sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
+    const freshCutoffMs = nowMs - FRESH_HOURS * 3600 * 1000;
+    const freshAll = sortedAll.filter(
+      (a) => new Date(a.pubDate).getTime() >= freshCutoffMs
+    );
+    const freshPrimary = freshAll.filter((a) => a.language === lang);
+    const freshSecondary = freshAll.filter((a) => a.language !== lang);
+
     const primary = sortedAll.filter((a) => a.language === lang);
     const secondary = sortedAll.filter((a) => a.language !== lang);
 
@@ -63,14 +71,26 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
 
     // If primary feed is stale, use global freshest pool directly.
     if (primaryIsStale) {
+      if (freshAll.length > 0) {
+        return freshAll.slice(0, TARGET_COUNT);
+      }
       return sortedAll.slice(0, TARGET_COUNT);
     }
 
-    // Otherwise keep locale-first, then fill from secondary to avoid empty/short sections.
-    const composed = [...primary];
-    for (const article of secondary) {
+    // Otherwise keep locale-first from fresh pool, then fill from fresh secondary.
+    const composed = [...freshPrimary];
+    for (const article of freshSecondary) {
       if (composed.length >= TARGET_COUNT) break;
       composed.push(article);
+    }
+    if (composed.length === 0) {
+      // Last-resort fallback when there are no fresh items at all.
+      const fallback = [...primary];
+      for (const article of secondary) {
+        if (fallback.length >= TARGET_COUNT) break;
+        fallback.push(article);
+      }
+      return fallback.slice(0, TARGET_COUNT);
     }
     return composed.slice(0, TARGET_COUNT);
   }, [articles, locale]);

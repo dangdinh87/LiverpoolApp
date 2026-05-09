@@ -32,6 +32,7 @@ import { loadMoreNews } from "@/app/news/actions";
 // 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
 const INITIAL_COUNT = 13;
 const LOAD_MORE_COUNT = 12;
+const NEWS_FRESH_HOURS = 48;
 
 /* ── Filter types ── */
 
@@ -531,7 +532,7 @@ function FilterSheet({
           {activeCount > 0 && (
             <button
               onClick={() => {
-                setSortMode("trending");
+                setSortMode("newest");
                 setLangFilter("all");
                 setSourceFilter("all");
                 setCategory("all");
@@ -553,13 +554,14 @@ interface NewsFeedProps {
   localArticles: NewsArticle[];
   globalArticles: NewsArticle[];
   locale: "en" | "vi";
+  nowMs: number;
   engagement?: Record<string, { likes: number; comments: number; total: number }>;
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale, engagement = {} }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagement = {} }: NewsFeedProps) {
   const t = useTranslations("News.feed");
   const [langFilter, setLangFilter] = useState<FeedFilter>(getSavedFilter);
-  const [sortMode, setSortMode] = useState<SortMode>("trending");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | NewsSource>("all");
   const [search, setSearch] = useState("");
@@ -601,7 +603,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, engagement = {
 
   // Only count filters not visible as chips (sort + category + source)
   const activeFilterCount =
-    (sortMode !== "trending" ? 1 : 0) +
+    (sortMode !== "newest" ? 1 : 0) +
     (category !== "all" ? 1 : 0) +
     (sourceFilter !== "all" ? 1 : 0);
 
@@ -657,12 +659,17 @@ export function NewsFeed({ localArticles, globalArticles, locale, engagement = {
 
   const articles = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return sorted;
-    return sorted.filter((a) =>
+    const searched = !q ? sorted : sorted.filter((a) =>
       a.title.toLowerCase().includes(q) ||
       a.contentSnippet?.toLowerCase().includes(q)
     );
-  }, [sorted, search]);
+    const cutoffMs = nowMs - NEWS_FRESH_HOURS * 3600 * 1000;
+    const fresh = searched.filter(
+      (a) => new Date(a.pubDate).getTime() >= cutoffMs
+    );
+    // Keep feed fresh by default; fallback to older posts only if no fresh items exist.
+    return fresh.length > 0 ? fresh : searched;
+  }, [sorted, search, nowMs]);
 
   return (
     <div className="space-y-3">
@@ -774,17 +781,17 @@ export function NewsFeed({ localArticles, globalArticles, locale, engagement = {
               <button onClick={() => handleCategory("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
-          {sortMode !== "trending" && (
+          {sortMode !== "newest" && (
             <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
               {SORT_OPTIONS.find((o) => o.value === sortMode)?.labelKey && t(SORT_OPTIONS.find((o) => o.value === sortMode)!.labelKey)}
-              <button onClick={() => handleSortMode("trending")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
+              <button onClick={() => handleSortMode("newest")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
             </span>
           )}
           {/* Reset all */}
           <button
             onClick={() => {
               setSearch("");
-              handleSortMode("trending");
+              handleSortMode("newest");
               handleCategory("all");
               handleSourceFilter("all");
             }}

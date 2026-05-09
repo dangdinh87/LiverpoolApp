@@ -92,6 +92,7 @@ export default async function NewsPage() {
           localArticles={localArticles}
           globalArticles={globalArticles}
           locale={userLang}
+          nowMs={Date.now()}
           engagement={engagement}
         />
 
