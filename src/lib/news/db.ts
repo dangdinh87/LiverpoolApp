@@ -13,6 +13,7 @@ const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 const NEWS_FRESH_WINDOW_HOURS = 48; // Keep feed focused on truly recent news
+const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
 let syncInProgress = false;
@@ -163,8 +164,8 @@ export const getNewsFromDB = cache(
         let global = ((globalRes.data ?? []) as ArticleRow[]).map(rowToArticle);
         let combined = [...local, ...global].slice(0, limit);
 
-        // Backfill older posts only when there are zero fresh posts.
-        if (combined.length === 0) {
+        // Backfill older posts when fresh pool is sparse.
+        if (combined.length < Math.min(limit, MIN_NEWS_RESULTS)) {
           const [localFallback, globalFallback] = await Promise.all([
             supabase
               .from("articles")
@@ -228,8 +229,8 @@ export const getNewsFromDB = cache(
       let viArticles = ((viRes.data ?? []) as ArticleRow[]).map(rowToArticle);
       let combined = [...enArticles, ...viArticles].slice(0, limit);
 
-      // Backfill from older posts only when there are zero fresh posts.
-      if (combined.length === 0) {
+      // Backfill from older posts when fresh pool is sparse.
+      if (combined.length < Math.min(limit, MIN_NEWS_RESULTS)) {
         const [enFallback, viFallback] = await Promise.all([
           supabase
             .from("articles")
