@@ -6,6 +6,14 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
   "anfield-watch": 8,
   eotk: 8,
   echo: 7,
+  tia: 8,
+  sky: 6,
+  mirror: 5,
+  independent: 5,
+  men: 5,
+  anfieldindex: 7,
+  liverpoolcom: 6,
+  espn: 4,
   bbc: 6,
   guardian: 6,
   bongda: 4,
@@ -21,7 +29,19 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
 };
 
 // LFC-dedicated sources — always relevant, no keyword filter needed
-const LFC_DEDICATED: Set<NewsSource> = new Set(["lfc", "anfield-watch", "eotk", "echo"]);
+const LFC_DEDICATED: Set<NewsSource> = new Set([
+  "lfc",
+  "anfield-watch",
+  "eotk",
+  "echo",
+  "tia",
+  "sky",
+  "mirror",
+  "independent",
+  "men",
+  "anfieldindex",
+  "liverpoolcom",
+]);
 
 export function scoreArticle(article: NewsArticle): number {
   const text = `${article.title} ${article.contentSnippet}`.toLowerCase();

@@ -48,7 +48,7 @@ export class LfcAdapter implements FeedAdapter {
       const results: LfcNewsItem[] =
         data?.props?.pageProps?.data?.newsPage?.results ?? [];
 
-      return results.slice(0, 15).map((item) => {
+      return results.slice(0, 30).map((item) => {
         const img =
           item.coverImage?.sizes?.sm?.webpUrl ??
           item.coverImage?.sizes?.sm?.url ??

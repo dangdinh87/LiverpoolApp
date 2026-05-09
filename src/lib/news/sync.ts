@@ -35,6 +35,7 @@ const STALE_CONTENT_MS = 24 * 3600 * 1000;
 const MATCH_PEAK_BEFORE_HOURS = 36;
 const MATCH_PEAK_AFTER_HOURS = 18;
 const MATCH_NORMAL_BEFORE_HOURS = 120;
+const FETCH_LIMIT_BASE = 380;
 
 type MatchTrafficMode = "low" | "normal" | "peak";
 
@@ -280,7 +281,7 @@ export async function syncPipeline(): Promise<SyncResult> {
     new BongdaplusAdapter(),
   ];
 
-  const { articles, stats: sourceStats } = await fetchAllNews(adapters, 300);
+  const { articles, stats: sourceStats } = await fetchAllNews(adapters, FETCH_LIMIT_BASE);
   console.log(`[sync] Fetched ${articles.length} articles from adapters`);
 
   const supabase = getServiceClient();

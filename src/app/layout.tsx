@@ -39,6 +39,8 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Locale is cookie/header-driven. Keep layout request-bound to avoid static locale lock.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

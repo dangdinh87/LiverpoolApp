@@ -6,12 +6,18 @@ export const RSS_FEEDS: FeedConfig[] = [
   // English — LFC-specific feeds
   { url: "https://feeds.bbci.co.uk/sport/football/teams/liverpool/rss.xml", source: "bbc", language: "en" },
   { url: "https://www.theguardian.com/football/liverpool/rss", source: "guardian", language: "en" },
-  // thisisanfield.com disabled — persistent redirect loop (ERR_TOO_MANY_REDIRECTS)
-  // { url: "https://www.thisisanfield.com/feed", source: "tia", language: "en" },
+  { url: "https://www.thisisanfield.com/feed", source: "tia", language: "en" },
   { url: "https://www.anfieldwatch.co.uk/feed", source: "anfield-watch", language: "en" },
   { url: "https://www.empireofthekop.com/feed/", source: "eotk", language: "en" },
+  { url: "https://www.skysports.com/rss/12040", source: "sky", language: "en" },
+  { url: "https://www.mirror.co.uk/all-about/liverpool-fc/rss.xml", source: "mirror", language: "en" },
+  { url: "https://www.independent.co.uk/topic/liverpool-fc/rss", source: "independent", language: "en" },
+  { url: "https://www.manchestereveningnews.co.uk/all-about/liverpool-fc/?service=rss", source: "men", language: "en" },
+  { url: "https://anfieldindex.com/feed", source: "anfieldindex", language: "en" },
+  { url: "https://www.liverpool.com/?service=rss", source: "liverpoolcom", language: "en" },
   // English — general feeds with keyword filter
   { url: "https://www.liverpoolecho.co.uk/all-about/liverpool-fc/?service=rss", source: "echo", language: "en" },
+  { url: "https://www.espn.com/espn/rss/soccer/news", source: "espn", language: "en", filter: "lfc" },
   // Vietnamese — Liverpool-specific feed (best source, ~50 articles)
   { url: "https://bongda.com.vn/liverpool.rss", source: "bongda", language: "vi" },
   // Vietnamese — general sport feeds filtered by LFC_KEYWORDS
@@ -36,6 +42,14 @@ export const SOURCE_CONFIG: Record<
   echo: { label: "Liverpool Echo", color: "bg-purple-700 text-purple-100", language: "en" },
   "anfield-watch": { label: "Anfield Watch", color: "bg-rose-700 text-rose-100", language: "en" },
   eotk: { label: "Empire of the Kop", color: "bg-red-800 text-red-100", language: "en" },
+  sky: { label: "Sky Sports", color: "bg-sky-800 text-sky-100", language: "en" },
+  mirror: { label: "Daily Mirror", color: "bg-red-700 text-red-100", language: "en" },
+  independent: { label: "The Independent", color: "bg-zinc-700 text-zinc-100", language: "en" },
+  men: { label: "MEN", color: "bg-blue-700 text-blue-100", language: "en" },
+  anfieldindex: { label: "Anfield Index", color: "bg-amber-700 text-amber-100", language: "en" },
+  liverpoolcom: { label: "Liverpool.com", color: "bg-indigo-700 text-indigo-100", language: "en" },
+  tia: { label: "This Is Anfield", color: "bg-pink-700 text-pink-100", language: "en" },
+  espn: { label: "ESPN", color: "bg-rose-800 text-rose-100", language: "en" },
   bongda: { label: "Bóng Đá", color: "bg-emerald-700 text-emerald-100", language: "vi" },
   "24h": { label: "24h", color: "bg-orange-700 text-orange-100", language: "vi" },
   bongdaplus: { label: "Bóng Đá+", color: "bg-sky-700 text-sky-100", language: "vi" },

@@ -2,7 +2,8 @@
 
 export type NewsSource =
   | "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus"
-  | "echo" | "anfield-watch" | "eotk"
+  | "echo" | "anfield-watch" | "eotk" | "sky" | "mirror" | "independent"
+  | "men" | "anfieldindex" | "liverpoolcom" | "tia" | "espn"
   | "vnexpress" | "tuoitre" | "thanhnien"
   | "dantri" | "zingnews" | "vietnamnet" | "webthethao" | "vietnamvn"
   | "goal";

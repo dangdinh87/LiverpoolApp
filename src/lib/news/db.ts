@@ -12,6 +12,7 @@ const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
 const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
+const NEWS_FRESH_WINDOW_HOURS = 72; // Prefer <=72h news; then backfill older if sparse
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
 let syncInProgress = false;
@@ -131,12 +132,16 @@ export const getNewsFromDB = cache(
       const supabase = getServiceClient();
 
       if (preferLang) {
+        const freshCutoff = new Date(
+          Date.now() - NEWS_FRESH_WINDOW_HOURS * 60 * 60 * 1000
+        ).toISOString();
         const [localRes, globalRes] = await Promise.all([
           supabase
             .from("articles")
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
             .eq("language", preferLang)
+            .gte("published_at", freshCutoff)
             .order("relevance", { ascending: false })
             .order("published_at", { ascending: false })
             .limit(limit),
@@ -145,6 +150,7 @@ export const getNewsFromDB = cache(
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
             .neq("language", preferLang)
+            .gte("published_at", freshCutoff)
             .order("relevance", { ascending: false })
             .order("published_at", { ascending: false })
             .limit(limit),
@@ -153,13 +159,48 @@ export const getNewsFromDB = cache(
         if (localRes.error) console.error("[news/db] Local error:", localRes.error.message);
         if (globalRes.error) console.error("[news/db] Global error:", globalRes.error.message);
 
-        const local = ((localRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-        const global = ((globalRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-        return [...local, ...global].slice(0, limit);
+        let local = ((localRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+        let global = ((globalRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+        let combined = [...local, ...global].slice(0, limit);
+
+        // Backfill older posts only when fresh pool is too small.
+        if (combined.length < limit) {
+          const [localFallback, globalFallback] = await Promise.all([
+            supabase
+              .from("articles")
+              .select(ARTICLE_COLUMNS)
+              .eq("is_active", true)
+              .eq("language", preferLang)
+              .order("relevance", { ascending: false })
+              .order("published_at", { ascending: false })
+              .limit(limit),
+            supabase
+              .from("articles")
+              .select(ARTICLE_COLUMNS)
+              .eq("is_active", true)
+              .neq("language", preferLang)
+              .order("relevance", { ascending: false })
+              .order("published_at", { ascending: false })
+              .limit(limit),
+          ]);
+
+          local = ((localFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+          global = ((globalFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+          const byUrl = new Map<string, NewsArticle>();
+          for (const article of [...combined, ...local, ...global]) {
+            if (!byUrl.has(article.link)) byUrl.set(article.link, article);
+          }
+          combined = Array.from(byUrl.values()).slice(0, limit);
+        }
+
+        return combined;
       }
 
       // Balanced fetch: get top articles per language so both EN & VI are represented
       // (relevance scores differ across languages, pure relevance sort excludes VI)
+      const freshCutoff = new Date(
+        Date.now() - NEWS_FRESH_WINDOW_HOURS * 60 * 60 * 1000
+      ).toISOString();
       const perLang = Math.ceil(limit / 2);
       const [enRes, viRes] = await Promise.all([
         supabase
@@ -167,6 +208,7 @@ export const getNewsFromDB = cache(
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
           .eq("language", "en")
+          .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false })
           .limit(perLang),
         supabase
@@ -174,6 +216,7 @@ export const getNewsFromDB = cache(
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
           .eq("language", "vi")
+          .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false })
           .limit(perLang),
       ]);
@@ -181,9 +224,39 @@ export const getNewsFromDB = cache(
       if (enRes.error) console.error("[news/db] EN error:", enRes.error.message);
       if (viRes.error) console.error("[news/db] VI error:", viRes.error.message);
 
-      const enArticles = ((enRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-      const viArticles = ((viRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-      return [...enArticles, ...viArticles].slice(0, limit);
+      let enArticles = ((enRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+      let viArticles = ((viRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+      let combined = [...enArticles, ...viArticles].slice(0, limit);
+
+      // Backfill from older posts if fresh window is sparse.
+      if (combined.length < limit) {
+        const [enFallback, viFallback] = await Promise.all([
+          supabase
+            .from("articles")
+            .select(ARTICLE_COLUMNS)
+            .eq("is_active", true)
+            .eq("language", "en")
+            .order("published_at", { ascending: false })
+            .limit(perLang),
+          supabase
+            .from("articles")
+            .select(ARTICLE_COLUMNS)
+            .eq("is_active", true)
+            .eq("language", "vi")
+            .order("published_at", { ascending: false })
+            .limit(perLang),
+        ]);
+
+        enArticles = ((enFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+        viArticles = ((viFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+        const byUrl = new Map<string, NewsArticle>();
+        for (const article of [...combined, ...enArticles, ...viArticles]) {
+          if (!byUrl.has(article.link)) byUrl.set(article.link, article);
+        }
+        combined = Array.from(byUrl.values()).slice(0, limit);
+      }
+
+      return combined;
     } catch (err) {
       console.error("[news/db] Fatal:", err);
       return [];

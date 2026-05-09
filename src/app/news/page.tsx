@@ -41,7 +41,8 @@ export default async function NewsPage() {
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
-    "Liverpool Echo", "Sky Sports", "Anfield Watch",
+    "Liverpool Echo", "Sky Sports", "Anfield Watch", "Empire of the Kop",
+    "Daily Mirror", "The Independent", "MEN", "Anfield Index", "Liverpool.com", "ESPN",
     "Bóng Đá", "Bóng Đá+", "24h", "VnExpress", "Tuổi Trẻ", "Thanh Niên",
     "Dân Trí", "Zing News", "VietNamNet", "Webthethao", "Vietnam.vn",
   ].join(", ");
