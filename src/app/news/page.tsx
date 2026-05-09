@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { getLocale } from "next-intl/server";
 import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
 import type { ArticleEngagement } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
@@ -18,8 +19,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 300; // 5 minutes
 
 export default async function NewsPage() {
-  const t = await getTranslations("News");
-  const userLang = "vi";
+  const [t, locale] = await Promise.all([
+    getTranslations("News"),
+    getLocale(),
+  ]);
+  const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
   // Fetch both vi + en articles — balanced 30 each (no lang bias so both tabs have content)
   const [allArticles, digest, engagementMap] = await Promise.all([
     getNewsFromDB(60),
@@ -31,9 +35,9 @@ export default async function NewsPage() {
   for (const [url, data] of engagementMap) {
     engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
   }
-  // Always split by Vietnamese vs International (not relative to user locale)
-  const localArticles = allArticles.filter((a) => a.language === "vi");
-  const globalArticles = allArticles.filter((a) => a.language !== "vi");
+  // Split by current locale so "Local" tab aligns with active language.
+  const localArticles = allArticles.filter((a) => a.language === userLang);
+  const globalArticles = allArticles.filter((a) => a.language !== userLang);
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
@@ -57,8 +61,8 @@ export default async function NewsPage() {
               "url('/assets/lfc/fans/fans-anfield-crowd.webp')",
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-stadium-bg/80 to-transparent" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 pt-6 w-full">
           <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-wider leading-none mb-1">
             {t("title")}

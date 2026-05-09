@@ -607,14 +607,14 @@ export function NewsFeed({ localArticles, globalArticles, locale, engagement = {
 
   // Merge initial + server-loaded extra articles
   const allLocal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language === "vi");
+    const extra = extraArticles.filter((a) => a.language === locale);
     return [...localArticles, ...extra];
-  }, [localArticles, extraArticles]);
+  }, [localArticles, extraArticles, locale]);
 
   const allGlobal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language !== "vi");
+    const extra = extraArticles.filter((a) => a.language !== locale);
     return [...globalArticles, ...extra];
-  }, [globalArticles, extraArticles]);
+  }, [globalArticles, extraArticles, locale]);
 
   // Pipeline: lang → source → category → sort → search
   const langFiltered = useMemo(

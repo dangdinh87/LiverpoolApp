@@ -42,15 +42,37 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
     setReadSet(getReadArticles());
   }, []);
 
-  // Filter by user locale, sort newest first (server data may be stale from ISR cache)
+  // Prefer locale-first news, but auto-fallback if locale feed is too old/sparse.
   const filtered = useMemo(() => {
+    const TARGET_COUNT = 6;
+    const STALE_HOURS = 18;
+    const nowMs = Date.now();
     const lang = locale === "vi" ? "vi" : "en";
-    const localNews = articles.filter((a) => a.language === lang);
-    const pool = localNews.length > 0 ? localNews : articles;
-    // Sort by date descending to ensure freshest articles appear first
-    return [...pool]
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-      .slice(0, 6);
+
+    const sortedAll = [...articles].sort(
+      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+    );
+    const primary = sortedAll.filter((a) => a.language === lang);
+    const secondary = sortedAll.filter((a) => a.language !== lang);
+
+    const newestPrimaryMs = primary.length
+      ? new Date(primary[0].pubDate).getTime()
+      : 0;
+    const primaryIsStale =
+      !newestPrimaryMs || nowMs - newestPrimaryMs > STALE_HOURS * 3600 * 1000;
+
+    // If primary feed is stale, use global freshest pool directly.
+    if (primaryIsStale) {
+      return sortedAll.slice(0, TARGET_COUNT);
+    }
+
+    // Otherwise keep locale-first, then fill from secondary to avoid empty/short sections.
+    const composed = [...primary];
+    for (const article of secondary) {
+      if (composed.length >= TARGET_COUNT) break;
+      composed.push(article);
+    }
+    return composed.slice(0, TARGET_COUNT);
   }, [articles, locale]);
 
   if (filtered.length === 0) return null;
