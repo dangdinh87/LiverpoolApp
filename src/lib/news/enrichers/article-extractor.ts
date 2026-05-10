@@ -88,6 +88,7 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     iframe: ["src", "width", "height", "frameborder", "allowfullscreen", "allow"],
     video: ["controls", "width", "height", "poster", "autoplay", "loop", "muted"],
     source: ["src", "type"],
+    p: ["class"],
   },
   allowedSchemes: ["https", "http"],
   exclusiveFilter: (frame) => {
@@ -148,10 +149,14 @@ function buildHtmlContent(
 ): string | undefined {
   if (!container || container.length === 0) return undefined;
 
-  // Remove generic ad classes, related news widgets, etc. to clean up content
+  // Remove unconditionally related news widgets
   container.find(
-    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
     "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .box-game, .social-share, .tags"
+  ).remove();
+
+  // Remove generic ad classes, etc. to clean up content, preserving VCSortableInPreviewMode for generic ads wrapper
+  container.find(
+    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
