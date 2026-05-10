@@ -13,6 +13,7 @@ export const GET = withCronAuth(async () => {
     // Invalidate ISR cache so next visitor gets fresh data
     if (result.upserted > 0) {
       revalidatePath("/");
+      revalidatePath("/news");
     }
 
     return NextResponse.json({

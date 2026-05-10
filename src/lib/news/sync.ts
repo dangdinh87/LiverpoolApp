@@ -179,7 +179,9 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
       );
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
-        return old ? { ...old, ...row } : row;
+        return old 
+          ? { ...old, ...row, fetched_at: old.fetched_at || new Date().toISOString() } 
+          : { ...row, fetched_at: new Date().toISOString() };
       });
 
       const { data, error } = await supabase

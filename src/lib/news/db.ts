@@ -62,18 +62,19 @@ function rowToArticle(row: ArticleRow): NewsArticle {
  */
 async function getDbAge(): Promise<{ ageMs: number | null; empty: boolean }> {
   const supabase = getServiceClient();
-  const { data } = await supabase
-    .from("articles")
-    .select("fetched_at")
-    .order("fetched_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const [syncRes, artRes] = await Promise.all([
+    supabase.from("sync_logs").select("ran_at").order("ran_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("articles").select("url").limit(1).maybeSingle()
+  ]);
 
-  if (!data) return { ageMs: null, empty: true };
-  if (!data.fetched_at) return { ageMs: null, empty: false };
+  const empty = !artRes.data;
 
-  const ageMs = Date.now() - new Date(data.fetched_at).getTime();
-  return { ageMs, empty: false };
+  if (!syncRes.data || !syncRes.data.ran_at) {
+    return { ageMs: null, empty };
+  }
+
+  const ageMs = Date.now() - new Date(syncRes.data.ran_at).getTime();
+  return { ageMs, empty };
 }
 
 /**
@@ -143,8 +144,8 @@ export const getNewsFromDB = cache(
             .eq("is_active", true)
             .eq("language", preferLang)
             .gte("published_at", freshCutoff)
-            .order("relevance", { ascending: false })
             .order("published_at", { ascending: false })
+            .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
           supabase
             .from("articles")
@@ -152,8 +153,8 @@ export const getNewsFromDB = cache(
             .eq("is_active", true)
             .neq("language", preferLang)
             .gte("published_at", freshCutoff)
-            .order("relevance", { ascending: false })
             .order("published_at", { ascending: false })
+            .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
         ]);
 
@@ -172,16 +173,16 @@ export const getNewsFromDB = cache(
               .select(ARTICLE_COLUMNS)
               .eq("is_active", true)
               .eq("language", preferLang)
-              .order("relevance", { ascending: false })
               .order("published_at", { ascending: false })
+              .order("relevance", { ascending: false, nullsFirst: false })
               .limit(limit),
             supabase
               .from("articles")
               .select(ARTICLE_COLUMNS)
               .eq("is_active", true)
               .neq("language", preferLang)
-              .order("relevance", { ascending: false })
               .order("published_at", { ascending: false })
+              .order("relevance", { ascending: false, nullsFirst: false })
               .limit(limit),
           ]);
 
@@ -211,6 +212,7 @@ export const getNewsFromDB = cache(
           .eq("language", "en")
           .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false })
+          .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),
         supabase
           .from("articles")
@@ -219,6 +221,7 @@ export const getNewsFromDB = cache(
           .eq("language", "vi")
           .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false })
+          .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),
       ]);
 
