@@ -142,18 +142,20 @@ export const getNewsFromDB = cache(
             .from("articles")
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
+            .not("published_at", "is", null)
             .eq("language", preferLang)
             .gte("published_at", freshCutoff)
-            .order("published_at", { ascending: false })
+            .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
           supabase
             .from("articles")
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
+            .not("published_at", "is", null)
             .neq("language", preferLang)
             .gte("published_at", freshCutoff)
-            .order("published_at", { ascending: false })
+            .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
         ]);
@@ -172,16 +174,18 @@ export const getNewsFromDB = cache(
               .from("articles")
               .select(ARTICLE_COLUMNS)
               .eq("is_active", true)
+              .not("published_at", "is", null)
               .eq("language", preferLang)
-              .order("published_at", { ascending: false })
+              .order("published_at", { ascending: false, nullsFirst: false })
               .order("relevance", { ascending: false, nullsFirst: false })
               .limit(limit),
             supabase
               .from("articles")
               .select(ARTICLE_COLUMNS)
               .eq("is_active", true)
+              .not("published_at", "is", null)
               .neq("language", preferLang)
-              .order("published_at", { ascending: false })
+              .order("published_at", { ascending: false, nullsFirst: false })
               .order("relevance", { ascending: false, nullsFirst: false })
               .limit(limit),
           ]);
@@ -209,18 +213,20 @@ export const getNewsFromDB = cache(
           .from("articles")
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
+          .not("published_at", "is", null)
           .eq("language", "en")
           .gte("published_at", freshCutoff)
-          .order("published_at", { ascending: false })
+          .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),
         supabase
           .from("articles")
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
+          .not("published_at", "is", null)
           .eq("language", "vi")
           .gte("published_at", freshCutoff)
-          .order("published_at", { ascending: false })
+          .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),
       ]);
@@ -239,15 +245,17 @@ export const getNewsFromDB = cache(
             .from("articles")
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
+            .not("published_at", "is", null)
             .eq("language", "en")
-            .order("published_at", { ascending: false })
+            .order("published_at", { ascending: false, nullsFirst: false })
             .limit(perLang),
           supabase
             .from("articles")
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
+            .not("published_at", "is", null)
             .eq("language", "vi")
-            .order("published_at", { ascending: false })
+            .order("published_at", { ascending: false, nullsFirst: false })
             .limit(perLang),
         ]);
 
