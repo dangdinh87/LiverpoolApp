@@ -115,7 +115,9 @@ function articleToRow(a: NewsArticle) {
     language: a.language,
     category: a.category || "general",
     relevance: a.relevanceScore ?? 0,
-    published_at: a.pubDate ? new Date(a.pubDate).toISOString() : null,
+    published_at: a.pubDate 
+      ? new Date(a.pubDate).toISOString() 
+      : (a.fetchedAt ? new Date(a.fetchedAt).toISOString() : new Date().toISOString()),
     author: a.author || null,
     hero_image: a.heroImage || a.thumbnail || null,
     word_count: a.wordCount || null,
