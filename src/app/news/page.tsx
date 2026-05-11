@@ -35,9 +35,15 @@ export default async function NewsPage() {
   for (const [url, data] of engagementMap) {
     engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
   }
-  // Split by current locale so "Local" tab aligns with active language.
-  const localArticles = allArticles.filter((a) => a.language === userLang);
-  const globalArticles = allArticles.filter((a) => a.language !== userLang);
+  // Ensure very recent articles (last 12h) are visible in both tabs if they are highly relevant
+  const freshThreshold = Date.now() - 12 * 60 * 60 * 1000;
+  
+  const localArticles = allArticles.filter((a) => a.language === userLang || new Date(a.pubDate).getTime() > freshThreshold);
+  const globalArticles = allArticles.filter((a) => a.language !== userLang || new Date(a.pubDate).getTime() > freshThreshold);
+
+  // Re-sort both to ensure chronological order after mixing
+  localArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  globalArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
