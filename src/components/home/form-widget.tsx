@@ -20,22 +20,33 @@ const RESULT_CONFIG = {
 
 /** Compute current streaks from full form string (e.g. "WWDWWWLWWW") */
 function computeStreaks(form: string) {
-  const chars = form.split("").filter((c) => c === "W" || c === "D" || c === "L");
-  if (chars.length === 0) return null;
+  if (!form) return null;
 
-  // Current win streak (from most recent)
   let winStreak = 0;
-  for (let i = chars.length - 1; i >= 0; i--) {
-    if (chars[i] === "W") winStreak++;
-    else break;
+  let unbeatenStreak = 0;
+  let winStreakActive = true;
+  let unbeatenStreakActive = true;
+  let hasValidChars = false;
+
+  for (let i = form.length - 1; i >= 0; i--) {
+    const c = form[i];
+    if (c === "W" || c === "D" || c === "L") {
+      hasValidChars = true;
+      if (winStreakActive) {
+        if (c === "W") winStreak++;
+        else winStreakActive = false;
+      }
+      if (unbeatenStreakActive) {
+        if (c !== "L") unbeatenStreak++;
+        else unbeatenStreakActive = false;
+      }
+      if (!winStreakActive && !unbeatenStreakActive) {
+        break;
+      }
+    }
   }
 
-  // Current unbeaten streak (W or D from most recent)
-  let unbeatenStreak = 0;
-  for (let i = chars.length - 1; i >= 0; i--) {
-    if (chars[i] !== "L") unbeatenStreak++;
-    else break;
-  }
+  if (!hasValidChars) return null;
 
   // Current scoring streak — can't determine from W/D/L only, skip
   // Clean sheet streak — can't determine from W/D/L only, skip
@@ -47,9 +58,14 @@ export function FormWidget({ standing }: FormWidgetProps) {
   const form = standing?.form?.split("") ?? [];
   const last5 = form.slice(-5);
 
-  const wins = last5.filter((r) => r === "W").length;
-  const draws = last5.filter((r) => r === "D").length;
-  const losses = last5.filter((r) => r === "L").length;
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  for (const r of last5) {
+    if (r === "W") wins++;
+    else if (r === "D") draws++;
+    else if (r === "L") losses++;
+  }
 
   const streaks = standing?.form ? computeStreaks(standing.form) : null;
 
