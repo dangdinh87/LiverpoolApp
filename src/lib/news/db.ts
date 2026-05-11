@@ -134,9 +134,6 @@ export const getNewsFromDB = cache(
       const supabase = getServiceClient();
 
       if (preferLang) {
-        const freshCutoff = new Date(
-          Date.now() - NEWS_FRESH_WINDOW_HOURS * 60 * 60 * 1000
-        ).toISOString();
         const [localRes, globalRes] = await Promise.all([
           supabase
             .from("articles")
@@ -144,7 +141,6 @@ export const getNewsFromDB = cache(
             .eq("is_active", true)
             .not("published_at", "is", null)
             .eq("language", preferLang)
-            .gte("published_at", freshCutoff)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
@@ -154,7 +150,6 @@ export const getNewsFromDB = cache(
             .eq("is_active", true)
             .not("published_at", "is", null)
             .neq("language", preferLang)
-            .gte("published_at", freshCutoff)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
             .limit(limit),
@@ -204,9 +199,6 @@ export const getNewsFromDB = cache(
 
       // Balanced fetch: get top articles per language so both EN & VI are represented
       // (relevance scores differ across languages, pure relevance sort excludes VI)
-      const freshCutoff = new Date(
-        Date.now() - NEWS_FRESH_WINDOW_HOURS * 60 * 60 * 1000
-      ).toISOString();
       const perLang = Math.ceil(limit / 2);
       const [enRes, viRes] = await Promise.all([
         supabase
@@ -215,7 +207,6 @@ export const getNewsFromDB = cache(
           .eq("is_active", true)
           .not("published_at", "is", null)
           .eq("language", "en")
-          .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),
@@ -225,7 +216,6 @@ export const getNewsFromDB = cache(
           .eq("is_active", true)
           .not("published_at", "is", null)
           .eq("language", "vi")
-          .gte("published_at", freshCutoff)
           .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
           .limit(perLang),

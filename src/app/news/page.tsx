@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
 }
 
-export const revalidate = 300; // 5 minutes
+export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
   const [t, locale] = await Promise.all([
