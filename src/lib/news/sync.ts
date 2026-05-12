@@ -179,11 +179,22 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
       const existingMap = new Map(
         (existingData || []).map((row) => [row.url, stripDbManaged(row)])
       );
+      // Bulk upsert in PostgREST takes the UNION of keys across all rows;
+      // any column missing on a given row is serialized as NULL, bypassing
+      // the column DEFAULT. To preserve schema defaults for NEW rows mixed
+      // in the same batch as updates of EXISTING rows, explicitly seed the
+      // columns that have meaningful defaults (chiefly `is_active`).
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
-        return old 
-          ? { ...old, ...row, fetched_at: old.fetched_at || new Date().toISOString() } 
-          : { ...row, fetched_at: new Date().toISOString() };
+        if (old) {
+          return { ...old, ...row, fetched_at: old.fetched_at || new Date().toISOString() };
+        }
+        return {
+          ...row,
+          fetched_at: new Date().toISOString(),
+          is_active: true,
+          read_count: 0,
+        };
       });
 
       const { data, error } = await supabase
