@@ -9,10 +9,13 @@ import { scrapeArticle } from "./enrichers/article-extractor";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
 import type { NewsArticle } from "./types";
-import { SupabaseClient } from "@supabase/supabase-js";
+
+type NewsServiceClient = ReturnType<typeof getServiceClient>;
 
 export interface SyncResult {
   total: number;
+  inserted: number;
+  updated: number;
   upserted: number;
   failed: number;
   enriched: number;
@@ -22,6 +25,11 @@ export interface SyncResult {
   scrapeMode: MatchTrafficMode;
   scrapeBudgetStop: boolean;
   durationMs: number;
+  latestFetchedPublishedAt: string | null;
+  latestStoredPublishedAt: string | null;
+  latestStoredTitle: string | null;
+  latestStoredSource: string | null;
+  latestStoredUrl: string | null;
   errors: { url: string; error: string }[];
 }
 
@@ -130,8 +138,9 @@ function articleToRow(a: NewsArticle) {
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseClient<any, "public", any>) {
+async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsServiceClient) {
+  let inserted = 0;
+  let updated = 0;
   let upserted = 0;
   let failed = 0;
   const errors: { url: string; error: string }[] = [];
@@ -203,7 +212,12 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
         .select("url");
 
       if (!error) {
-        upserted += data?.length ?? 0;
+        const affected = data?.length ?? 0;
+        const existingCount = rows.filter((row) => existingMap.has(row.url)).length;
+        const insertedCount = rows.length - existingCount;
+        inserted += insertedCount;
+        updated += existingCount;
+        upserted += affected;
         break;
       }
 
@@ -222,12 +236,45 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: SupabaseCli
     }
   }
 
-  return { upserted, failed, errors };
+  return { inserted, updated, upserted, failed, errors };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getLatestFetchedPublishedAt(articles: NewsArticle[]): string | null {
+  let latestMs = 0;
+
+  for (const article of articles) {
+    const rawDate = article.pubDate || article.fetchedAt;
+    if (!rawDate) continue;
+
+    const ms = new Date(rawDate).getTime();
+    if (Number.isFinite(ms) && ms > latestMs) {
+      latestMs = ms;
+    }
+  }
+
+  return latestMs > 0 ? new Date(latestMs).toISOString() : null;
+}
+
+async function getLatestStoredArticle(supabase: NewsServiceClient) {
+  const { data, error } = await supabase
+    .from("articles")
+    .select("title, source, url, published_at")
+    .eq("is_active", true)
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(`[sync] Could not fetch latest stored article: ${error.message}`);
+    return null;
+  }
+
+  return data;
+}
+
 async function scrapeContentForRecentArticles(
-  supabase: SupabaseClient<any, "public", any>,
+  supabase: NewsServiceClient,
   options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode }
 ) {
   const scrapeLimit = getAdaptiveScrapeLimit(
@@ -302,6 +349,8 @@ export async function syncPipeline(): Promise<SyncResult> {
   const supabase = getServiceClient();
 
   const upsertResult = await bulkUpsertArticles(articles, supabase);
+  const inserted = upsertResult.inserted;
+  const updated = upsertResult.updated;
   const upserted = upsertResult.upserted;
   const failed = upsertResult.failed;
   const errors = upsertResult.errors;
@@ -361,11 +410,13 @@ export async function syncPipeline(): Promise<SyncResult> {
     mode: traffic.mode,
   });
   const durationMs = Date.now() - start;
+  const latestFetchedPublishedAt = getLatestFetchedPublishedAt(articles);
+  const latestStoredArticle = await getLatestStoredArticle(supabase);
 
   // Log sync result with per-source stats
   await supabase.from("sync_logs").insert({
-    inserted: upserted,
-    updated: 0,
+    inserted,
+    updated,
     failed,
     duration_ms: durationMs,
     errors: errors.length > 0 ? errors : null,
@@ -378,12 +429,20 @@ export async function syncPipeline(): Promise<SyncResult> {
       scraped,
       scrapeFailed,
       scrapeBudgetStop: stoppedByBudget,
+      latestFetchedPublishedAt,
+      latestStoredPublishedAt: latestStoredArticle?.published_at ?? null,
+      latestStoredTitle: latestStoredArticle?.title ?? null,
+      latestStoredSource: latestStoredArticle?.source ?? null,
     },
   });
 
-  console.log(`[sync] Done in ${durationMs}ms: ${upserted} upserted, ${failed} failed`);
+  console.log(
+    `[sync] Done in ${durationMs}ms: ${inserted} inserted, ${updated} updated, ${failed} failed`
+  );
   return {
     total: articles.length,
+    inserted,
+    updated,
     upserted,
     failed,
     enriched,
@@ -393,6 +452,11 @@ export async function syncPipeline(): Promise<SyncResult> {
     scrapeMode: traffic.mode,
     scrapeBudgetStop: stoppedByBudget,
     durationMs,
+    latestFetchedPublishedAt,
+    latestStoredPublishedAt: latestStoredArticle?.published_at ?? null,
+    latestStoredTitle: latestStoredArticle?.title ?? null,
+    latestStoredSource: latestStoredArticle?.source ?? null,
+    latestStoredUrl: latestStoredArticle?.url ?? null,
     errors,
   };
 }

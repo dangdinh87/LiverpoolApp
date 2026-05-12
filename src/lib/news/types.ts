@@ -18,6 +18,7 @@ export interface NewsArticle {
   title: string;
   link: string;
   pubDate: string;
+  fetchedAt?: string;
   contentSnippet: string;
   thumbnail?: string;
   source: NewsSource;

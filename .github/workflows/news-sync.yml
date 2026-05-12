@@ -5,6 +5,10 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch: {}
 
+concurrency:
+  group: news-sync
+  cancel-in-progress: false
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -68,31 +72,59 @@ jobs:
           const errorsCount = Array.isArray(json.errors) ? json.errors.length : 0;
           const durationMs = Number.isFinite(json.durationMs) ? Number(json.durationMs) : 0;
           const durationSec = durationMs > 0 ? (durationMs / 1000).toFixed(1) : "0.0";
+          const inserted = Number(json.inserted ?? 0);
+          const updated = Number(json.updated ?? 0);
+          const upserted = Number(json.upserted ?? 0);
+          const failed = Number(json.failed ?? 0);
+          const total = Number(json.total ?? 0);
+          const enriched = Number(json.enriched ?? 0);
+          const scraped = Number(json.scraped ?? 0);
+          const scrapeAttempted = Number(json.scrapeAttempted ?? 0);
+          const scrapeFailed = Number(json.scrapeFailed ?? 0);
+          const scrapeMode = String(json.scrapeMode ?? "unknown");
+          const scrapeBudgetStop = Boolean(json.scrapeBudgetStop ?? false);
+          const latestFetchedPublishedAt = String(json.latestFetchedPublishedAt ?? "");
+          const latestStoredPublishedAt = String(json.latestStoredPublishedAt ?? "");
+          const latestStoredTitle = String(json.latestStoredTitle ?? "");
+          const latestStoredSource = String(json.latestStoredSource ?? "");
+          const latestStoredUrl = String(json.latestStoredUrl ?? "");
+          const cleanOutput = (value) => String(value).replace(/\r?\n/g, " ").slice(0, 500);
+
           const lines = [
             `sync_ok=${Boolean(json.ok)}`,
-            `sync_total=${Number(json.total ?? 0)}`,
-            `sync_upserted=${Number(json.upserted ?? 0)}`,
-            `sync_failed=${Number(json.failed ?? 0)}`,
-            `sync_enriched=${Number(json.enriched ?? 0)}`,
-            `sync_scraped=${Number(json.scraped ?? 0)}`,
-            `sync_scrape_attempted=${Number(json.scrapeAttempted ?? 0)}`,
-            `sync_scrape_failed=${Number(json.scrapeFailed ?? 0)}`,
-            `sync_scrape_mode=${String(json.scrapeMode ?? "unknown")}`,
-            `sync_scrape_budget_stop=${Boolean(json.scrapeBudgetStop ?? false)}`,
+            `sync_total=${total}`,
+            `sync_inserted=${inserted}`,
+            `sync_updated=${updated}`,
+            `sync_upserted=${upserted}`,
+            `sync_failed=${failed}`,
+            `sync_enriched=${enriched}`,
+            `sync_scraped=${scraped}`,
+            `sync_scrape_attempted=${scrapeAttempted}`,
+            `sync_scrape_failed=${scrapeFailed}`,
+            `sync_scrape_mode=${scrapeMode}`,
+            `sync_scrape_budget_stop=${scrapeBudgetStop}`,
             `sync_duration_ms=${durationMs}`,
             `sync_errors_count=${errorsCount}`,
             `sync_duration_sec=${durationSec}`,
+            `sync_latest_fetched_published_at=${cleanOutput(latestFetchedPublishedAt)}`,
+            `sync_latest_stored_published_at=${cleanOutput(latestStoredPublishedAt)}`,
+            `sync_latest_stored_title=${cleanOutput(latestStoredTitle)}`,
+            `sync_latest_stored_source=${cleanOutput(latestStoredSource)}`,
+            `sync_latest_stored_url=${cleanOutput(latestStoredUrl)}`,
           ];
           fs.appendFileSync(outputPath, `${lines.join("\n")}\n`);
 
           const summary = [
-            "### Hourly News Sync Report",
-            `- Status: ${json.ok ? "ok" : "not-ok"}`,
-            `- Total fetched: ${Number(json.total ?? 0)}`,
-            `- Upserted: ${Number(json.upserted ?? 0)} | Failed: ${Number(json.failed ?? 0)}`,
-            `- Pre-scraped: ${Number(json.scraped ?? 0)} / ${Number(json.scrapeAttempted ?? 0)} attempted`,
-            `- Scrape failed: ${Number(json.scrapeFailed ?? 0)} | Mode: ${String(json.scrapeMode ?? "unknown")} | Budget stop: ${Boolean(json.scrapeBudgetStop ?? false)}`,
-            `- Re-enriched thumbs: ${Number(json.enriched ?? 0)}`,
+            "### Hourly News Sync Report / Báo cáo đồng bộ tin tức",
+            `- Status / Trạng thái: ${json.ok ? "ok" : "not-ok"}`,
+            `- New articles added / Bài mới thêm: ${inserted}`,
+            `- Existing articles updated / Bài cũ cập nhật: ${updated}`,
+            `- Total processed / Tổng xử lý: ${total} fetched, ${upserted} upserted, ${failed} failed`,
+            `- Latest stored article / Bài mới nhất trong DB: ${latestStoredPublishedAt || "N/A"} — ${latestStoredSource || "unknown"} — ${latestStoredTitle || "N/A"}`,
+            `- Latest fetched publish time / Thời gian bài mới nhất từ pipeline: ${latestFetchedPublishedAt || "N/A"}`,
+            `- Pre-scraped / Cào nội dung: ${scraped} / ${scrapeAttempted} attempted`,
+            `- Scrape failed / Cào lỗi: ${scrapeFailed} | Mode: ${scrapeMode} | Budget stop: ${scrapeBudgetStop}`,
+            `- Re-enriched thumbs / Cập nhật ảnh: ${enriched}`,
             `- Duration: ${durationSec}s`,
             `- Errors array size: ${errorsCount}`,
           ].join("\n");
@@ -115,6 +147,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           HTTP_CODE: ${{ steps.trigger.outputs.http_code }}
           SYNC_TOTAL: ${{ steps.trigger.outputs.sync_total }}
+          SYNC_INSERTED: ${{ steps.trigger.outputs.sync_inserted }}
+          SYNC_UPDATED: ${{ steps.trigger.outputs.sync_updated }}
           SYNC_UPSERTED: ${{ steps.trigger.outputs.sync_upserted }}
           SYNC_FAILED: ${{ steps.trigger.outputs.sync_failed }}
           SYNC_ENRICHED: ${{ steps.trigger.outputs.sync_enriched }}
@@ -125,23 +159,53 @@ jobs:
           SYNC_SCRAPE_BUDGET_STOP: ${{ steps.trigger.outputs.sync_scrape_budget_stop }}
           SYNC_DURATION: ${{ steps.trigger.outputs.sync_duration_sec }}
           SYNC_ERRORS: ${{ steps.trigger.outputs.sync_errors_count }}
+          LATEST_FETCHED_PUBLISHED_AT: ${{ steps.trigger.outputs.sync_latest_fetched_published_at }}
+          LATEST_STORED_PUBLISHED_AT: ${{ steps.trigger.outputs.sync_latest_stored_published_at }}
+          LATEST_STORED_TITLE: ${{ steps.trigger.outputs.sync_latest_stored_title }}
+          LATEST_STORED_SOURCE: ${{ steps.trigger.outputs.sync_latest_stored_source }}
+          LATEST_STORED_URL: ${{ steps.trigger.outputs.sync_latest_stored_url }}
         run: |
           if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
             echo "Telegram secrets missing, skip success notification."
             exit 0
           fi
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          TEXT="✅ Hourly News Sync success
-          Repo: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Trigger: ${{ github.event_name }}
-          HTTP: ${HTTP_CODE}
-          Fetched: ${SYNC_TOTAL}
-          Upserted: ${SYNC_UPSERTED} (failed: ${SYNC_FAILED})
-          Pre-scraped: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (failed: ${SYNC_SCRAPE_FAILED})
+          TEXT="✅ Báo cáo đồng bộ tin tức / News Sync Report
+
+          🇻🇳 Tiếng Việt
+          Trạng thái: Thành công
+          Bài mới được thêm: ${SYNC_INSERTED}
+          Bài cũ được cập nhật: ${SYNC_UPDATED}
+          Tổng bài fetch: ${SYNC_TOTAL}
+          Tổng upsert: ${SYNC_UPSERTED}
+          Lỗi upsert: ${SYNC_FAILED}
+          Bài mới nhất trong DB: ${LATEST_STORED_PUBLISHED_AT:-N/A}
+          Nguồn: ${LATEST_STORED_SOURCE:-N/A}
+          Tiêu đề: ${LATEST_STORED_TITLE:-N/A}
+          Cào nội dung: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (lỗi: ${SYNC_SCRAPE_FAILED})
+          Cập nhật ảnh thumbnail: ${SYNC_ENRICHED}
+          Thời gian chạy: ${SYNC_DURATION}s
+          Số lỗi chi tiết: ${SYNC_ERRORS}
+
+          🇬🇧 English
+          Status: Success
+          New articles added: ${SYNC_INSERTED}
+          Existing articles updated: ${SYNC_UPDATED}
+          Total fetched: ${SYNC_TOTAL}
+          Total upserted: ${SYNC_UPSERTED}
+          Upsert failures: ${SYNC_FAILED}
+          Latest stored article: ${LATEST_STORED_PUBLISHED_AT:-N/A}
+          Source: ${LATEST_STORED_SOURCE:-N/A}
+          Title: ${LATEST_STORED_TITLE:-N/A}
+          Pre-scraped content: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (failed: ${SYNC_SCRAPE_FAILED})
+          Re-enriched thumbnails: ${SYNC_ENRICHED}
+          Duration: ${SYNC_DURATION}s
+          Error details count: ${SYNC_ERRORS}
+
+          Meta: ${{ github.repository }} / ${{ github.ref_name }} / ${{ github.event_name }} / HTTP ${HTTP_CODE}
+          Latest fetched publish time: ${LATEST_FETCHED_PUBLISHED_AT:-N/A}
           Scrape mode: ${SYNC_SCRAPE_MODE} | Budget stop: ${SYNC_SCRAPE_BUDGET_STOP}
-          Re-enriched: ${SYNC_ENRICHED}
-          Duration: ${SYNC_DURATION}s | Errors array: ${SYNC_ERRORS}
+          Article: ${LATEST_STORED_URL:-N/A}
           Run: ${RUN_URL}"
           curl --silent --show-error --fail \
             -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -162,13 +226,25 @@ jobs:
           fi
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           SHORT_RESPONSE="$(printf '%s' "${RESPONSE}" | tr '\n' ' ' | cut -c1-400)"
-          TEXT="❌ Hourly News Sync failed
+          TEXT="❌ Đồng bộ tin tức thất bại / News Sync Failed
+
+          🇻🇳 Tiếng Việt
+          Trạng thái: Thất bại
           Repo: ${{ github.repository }}
           Branch: ${{ github.ref_name }}
           Trigger: ${{ github.event_name }}
           HTTP: ${HTTP_CODE}
+          Phản hồi: ${SHORT_RESPONSE}
           Run: ${RUN_URL}
-          Response: ${SHORT_RESPONSE}"
+
+          🇬🇧 English
+          Status: Failed
+          Repo: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Trigger: ${{ github.event_name }}
+          HTTP: ${HTTP_CODE}
+          Response: ${SHORT_RESPONSE}
+          Run: ${RUN_URL}"
           curl --silent --show-error --fail \
             -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             -d "chat_id=${TELEGRAM_CHAT_ID}" \
