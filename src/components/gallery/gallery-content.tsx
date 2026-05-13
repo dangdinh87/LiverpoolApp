@@ -156,7 +156,7 @@ export function GalleryContent({
       }
       const valid = images.filter((img) => !failedSrcs.has(img.src));
       if (cat === "all") return valid.length;
-      return valid.filter((img) => img.category === cat).length;
+      return valid.reduce((count, img) => count + (img.category === cat ? 1 : 0), 0);
     },
     [categoryCounts, images, failedSrcs],
   );

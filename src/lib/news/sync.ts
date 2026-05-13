@@ -213,7 +213,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
 
       if (!error) {
         const affected = data?.length ?? 0;
-        const existingCount = rows.filter((row) => existingMap.has(row.url)).length;
+        const existingCount = rows.reduce((count, row) => count + (existingMap.has(row.url) ? 1 : 0), 0);
         const insertedCount = rows.length - existingCount;
         inserted += insertedCount;
         updated += existingCount;

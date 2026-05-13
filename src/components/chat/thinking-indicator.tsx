@@ -32,7 +32,14 @@ const WEAK_SIGNALS = [
 export function detectWebSearch(message: string): boolean {
 	const lower = message.toLowerCase();
 	if (STRONG_SIGNALS.some((kw) => lower.includes(kw))) return true;
-	return WEAK_SIGNALS.filter((kw) => lower.includes(kw)).length >= 2;
+	let weakCount = 0;
+	for (const kw of WEAK_SIGNALS) {
+		if (lower.includes(kw)) {
+			weakCount++;
+			if (weakCount >= 2) return true;
+		}
+	}
+	return false;
 }
 
 // Animated thinking indicator shown while AI is processing (before first text arrives)

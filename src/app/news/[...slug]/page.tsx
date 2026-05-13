@@ -73,7 +73,7 @@ function getRelatedArticles(
     .map((a) => {
       const words = a.title.toLowerCase().split(/\s+/)
         .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
-      const overlap = words.filter((w) => currentWords.has(w)).length;
+      const overlap = words.reduce((count, w) => count + (currentWords.has(w) ? 1 : 0), 0);
       // Promote source diversity
       const sourcePenalty = a.source === currentSource ? -0.3 : 0;
       return { article: a, score: overlap + sourcePenalty };

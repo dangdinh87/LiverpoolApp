@@ -61,7 +61,7 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
     try {
       const offset = category === "all"
         ? images.length
-        : images.filter((img) => img.category === category).length;
+        : images.reduce((count, img) => count + (img.category === category ? 1 : 0), 0);
       const params = new URLSearchParams({
         offset: String(offset),
         limit: "50",

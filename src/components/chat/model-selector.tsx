@@ -135,7 +135,7 @@ export function ModelSelector<T extends string>({
     // Count models per tier
     const tierCounts = useMemo(() => {
         return tiers.reduce((acc, tier) => {
-            acc[tier] = modelsArray.filter((m) => m.tier === tier).length;
+            acc[tier] = modelsArray.reduce((count, m) => count + (m.tier === tier ? 1 : 0), 0);
             return acc;
         }, {} as Record<string, number>);
     }, [modelsArray]);
