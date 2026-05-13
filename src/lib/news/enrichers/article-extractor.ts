@@ -148,10 +148,14 @@ function buildHtmlContent(
 ): string | undefined {
   if (!container || container.length === 0) return undefined;
 
-  // Remove generic ad classes, related news widgets, etc. to clean up content
+  // Unconditionally remove related news elements and tags
   container.find(
-    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, " +
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .box-game, .social-share, .tags"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related"
+  ).remove();
+
+  // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
+  container.find(
+    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
