@@ -586,7 +586,7 @@ function extractBongdaplus(
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
-  const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
+  const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim() || description || "";
   if (sapoText && sapoText.length > 20) {
     contentClone.find(".sapo, .detail-sapo").remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
@@ -1094,7 +1094,7 @@ function extractDantri($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
     "article, .dt-font-arial, .singular-content, .e-magazine__body, [role=main]",
     "Dân Trí",
-    { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo" }
+    { sapoSelector: "h2.singular-sapo, h2.e-magazine__sapo, h2" }
   );
 }
 
