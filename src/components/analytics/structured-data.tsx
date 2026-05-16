@@ -9,10 +9,10 @@ const jsonLd = [
     url: SITE_URL,
     description: "Trang fan Liverpool FC Việt Nam — Tin tức, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh và lịch sử CLB.",
     inLanguage: ["vi", "en"],
-    potentialAction: {
-      "@type": "SearchAction",
-      target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/news?q={search_term_string}` },
-      "query-input": "required name=search_term_string",
+    publisher: {
+      "@type": "Organization",
+      name: "Liverpool FC Việt Nam Fan Site",
+      logo: `${SITE_URL}/assets/lfc/crest.webp`,
     },
   },
   {

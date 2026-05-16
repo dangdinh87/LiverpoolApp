@@ -39,6 +39,7 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const DEFAULT_OG_IMAGE = "/assets/lfc/branding/lfc-crest-main.webp";
 // Locale is cookie/header-driven. Keep layout request-bound to avoid static locale lock.
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,11 @@ export const metadata: Metadata = {
   },
   description:
     "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+  applicationName: "Liverpool FC Việt Nam",
+  authors: [{ name: "Liverpool FC Việt Nam Fan Site", url: SITE_URL }],
+  creator: "Liverpool FC Việt Nam Fan Site",
+  publisher: "Liverpool FC Việt Nam Fan Site",
+  category: "sports",
   keywords: [
     "Liverpool FC", "LFC", "Premier League", "Anfield", "YNWA",
     "Liverpool FC Việt Nam", "tin tức Liverpool", "lịch thi đấu Liverpool",
@@ -59,18 +65,46 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     type: "website",
+    url: SITE_URL,
     locale: "vi_VN",
     alternateLocale: "en_GB",
     siteName: "Liverpool FC Việt Nam",
     title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
     description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Liverpool FC Việt Nam",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
     description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
+    images: [DEFAULT_OG_IMAGE],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  manifest: "/manifest.webmanifest",
   alternates: {
     canonical: SITE_URL,
   },
