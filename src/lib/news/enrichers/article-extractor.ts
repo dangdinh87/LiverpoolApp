@@ -156,7 +156,10 @@ function buildHtmlContent(
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
   container.find(
-    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, .box-game, .social-share, .tags"
+    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, .box-game, .social-share, .tags, " +
+    ".social-top, .detail-social, .detail__comment, .detail-tab, .d-block, .cmbl, .box-comment, .detail-fb-like-share, .detail-author, .detail-info, " +
+    ".readmore-body-box, .box-author-detail, .detail-author-bot, " +
+    ".banner_201, .txtCent"
   ).not(".VCSortableInPreviewMode").remove();
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
@@ -509,12 +512,19 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
-  if (contentDetail.length > 0) {
-    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
-  } else {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+
+  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+  contentClone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+
+  const h2Sapo = contentClone.find("h2").first().text().trim();
+  let sapoText = h2Sapo && h2Sapo.length > 20 ? h2Sapo : description;
+
+  if (sapoText && sapoText.length > 20) {
+    if (h2Sapo) contentClone.find("h2").first().remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
+
+  htmlContent = buildHtmlContent(contentClone, $) || undefined;
 
   return {
     title,
@@ -1057,6 +1067,10 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1240,6 +1254,12 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Clean up nested headers before cloning for htmlContent
   const contentClone = container.clone();
   contentClone.find("header.the-article-header, header").remove();
+
+  let sapoText = $("p.the-article-summary").first().text().trim() || description;
+  if (sapoText && sapoText.length > 20) {
+    contentClone.find("p.the-article-summary").remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
 
   const paragraphs: string[] = [];
   const images: string[] = [];
