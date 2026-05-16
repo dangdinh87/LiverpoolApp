@@ -12,7 +12,6 @@ const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
 const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
-const NEWS_FRESH_WINDOW_HOURS = 48; // Keep feed focused on truly recent news
 const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
@@ -125,10 +124,16 @@ async function triggerSyncIfNeeded(): Promise<void> {
  * Always returns fresh data.
  */
 export const getNewsFromDB = cache(
-  async (limit = 30, preferLang?: string): Promise<NewsArticle[]> => {
+  async (
+    limit = 30,
+    preferLang?: string,
+    options?: { skipSync?: boolean }
+  ): Promise<NewsArticle[]> => {
     try {
       // Trigger sync in background if stale (only blocks on empty DB)
-      await triggerSyncIfNeeded();
+      if (!options?.skipSync) {
+        await triggerSyncIfNeeded();
+      }
 
       // Use service client for public article reads (no auth needed, avoids cookie issues in ISR)
       const supabase = getServiceClient();

@@ -49,11 +49,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // For locale-sensitive public pages, avoid shared edge cache.
-  // next-intl resolves locale from cookie/header; shared cache can serve wrong locale.
+  // Locale-sensitive public pages vary by cookie/header, so avoid shared CDN cache
+  // but allow a short private browser cache to improve repeat page loads.
   if (!isDynamic) {
     const response = NextResponse.next();
-    response.headers.set("Cache-Control", "private, no-store, max-age=0");
+    response.headers.set("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
     response.headers.set("Vary", "Cookie, Accept-Language");
     return response;
   }

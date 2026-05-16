@@ -126,7 +126,7 @@ export function Hero({ backgroundUrl }: HeroProps) {
             width={64}
             height={80}
             className="mx-auto drop-shadow-[0_0_40px_rgba(200,16,46,0.6)]"
-            priority
+            sizes="64px"
           />
         </motion.div>
 
