@@ -117,22 +117,38 @@ function pushUnique(arr: string[], seen: Set<string>, value: string) {
 
 /** Resolve actual image URL, preferring data-original/data-src over placeholder src */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
-  const dataOriginal = $el.attr("data-original");
-  if (dataOriginal && dataOriginal.startsWith("http")) return dataOriginal;
-  const dataSrc = $el.attr("data-src");
-  if (dataSrc && dataSrc.startsWith("http")) return dataSrc;
+function resolveImageSrc($el: cheerio.Cheerio<any>, baseUrl?: string): string | undefined {
+  const tryResolve = (val: string | undefined): string | undefined => {
+    if (!val || val.startsWith("data:image")) return undefined;
+    if (val.startsWith("http")) return val;
+    if (baseUrl) {
+      try {
+        return new URL(val, baseUrl).toString();
+      } catch {
+        return undefined;
+      }
+    }
+    return undefined;
+  };
+
+  const dataOriginal = tryResolve($el.attr("data-original"));
+  if (dataOriginal) return dataOriginal;
+
+  const dataSrc = tryResolve($el.attr("data-src"));
+  if (dataSrc) return dataSrc;
 
   // Handling for srcset from picture/source tags that is sometimes set as data-srcset
   const dataSrcset = $el.attr("data-srcset") || $el.attr("srcset");
   if (dataSrcset) {
     const parts = dataSrcset.split(",");
     const highestRes = parts[parts.length - 1].trim().split(" ")[0];
-    if (highestRes.startsWith("http")) return highestRes;
+    const resolvedHighestRes = tryResolve(highestRes);
+    if (resolvedHighestRes) return resolvedHighestRes;
   }
 
-  const src = $el.attr("src");
-  if (src && src.startsWith("http")) return src;
+  const src = tryResolve($el.attr("src"));
+  if (src) return src;
+
   return undefined;
 }
 
@@ -145,13 +161,14 @@ function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
  */
 function buildHtmlContent(
   container: cheerio.Cheerio<any>,
-  $: cheerio.CheerioAPI
+  $: cheerio.CheerioAPI,
+  baseUrl?: string
 ): string | undefined {
   if (!container || container.length === 0) return undefined;
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -171,13 +188,13 @@ function buildHtmlContent(
     if ($parentPicture.length > 0) {
       const $source = $parentPicture.find("source").first();
       if ($source.length > 0) {
-        realSrc = resolveImageSrc($source);
+        realSrc = resolveImageSrc($source, baseUrl);
       }
     }
 
     // Fallback to the img tag itself if we didn't find anything from the picture source
     if (!realSrc) {
-      realSrc = resolveImageSrc($el);
+      realSrc = resolveImageSrc($el, baseUrl);
     }
 
     // Another fallback: check if there's a meta itemprop="url" sibling (e.g. vnexpress)
@@ -356,7 +373,7 @@ function extractLfcOfficial(
     });
   }
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title,
@@ -408,7 +425,7 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -442,7 +459,7 @@ function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   // Build htmlContent for rich figure/img/figcaption layout (cheerio fallback path only)
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -495,7 +512,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract images from <figure> > <img> (player photos, article images)
   container.find("figure img, img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (
       src &&
       src.startsWith("http") &&
@@ -511,9 +528,9 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   let htmlContent: string | undefined;
   if (contentDetail.length > 0) {
     contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $) || undefined;
+    htmlContent = buildHtmlContent(contentDetail, $, url) || undefined;
   } else {
-    htmlContent = buildHtmlContent(container, $) || undefined;
+    htmlContent = buildHtmlContent(container, $, url) || undefined;
   }
 
   return {
@@ -608,7 +625,7 @@ function extractBongdaplus(
     }
   });
 
-  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title,
@@ -647,13 +664,13 @@ function extractVietnamese(
   });
 
   container.find("img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (src && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title,
@@ -713,7 +730,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   container.find("img").each((_, el) => {
     const $el = $(el);
     if ($el.closest("[class*='banner'], [class*='game'], .ad-unit, .box-game, .bv-lq").length) return;
-    const src = resolveImageSrc($el);
+    const src = resolveImageSrc($el, url);
     if (
       src &&
       src.includes("icdn.24h.com.vn/upload") &&
@@ -815,7 +832,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const toRemove: cheerio.Cheerio<any>[] = [];
   clone.find("img").each((_, el) => {
     const $el = $(el);
-    const realSrc = resolveImageSrc($el);
+    const realSrc = resolveImageSrc($el, url);
     const alt = $el.attr("alt")?.trim() || "";
     const isArticleImage = realSrc
       && realSrc.includes("icdn.24h.com.vn/upload")
@@ -835,7 +852,7 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
   for (const $el of toRemove) $el.remove();
-  const htmlContent = buildHtmlContent(clone, $) || undefined;
+  const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -886,7 +903,7 @@ function extractAnfieldWatch(
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title,
@@ -928,7 +945,7 @@ function extractWordPress(
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title,
@@ -978,7 +995,7 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1008,7 +1025,7 @@ function extractGenericEnglish(
     if (text.length > 20) pushUnique(paragraphs, seenP, text);
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title,
@@ -1053,7 +1070,7 @@ function extractVietnameseGeneric(
     if (sapo && sapo.length > 20) {
       pushUnique(paragraphs, seenP, sapo);
       sapoText = sapo;
-      contentClone.find(opts.sapoSelector).remove();
+      contentClone.find(opts.sapoSelector).first().remove();
     }
   }
 
@@ -1064,7 +1081,7 @@ function extractVietnameseGeneric(
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (src && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
@@ -1076,7 +1093,7 @@ function extractVietnameseGeneric(
     if (sapoText) {
       contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
     }
-    htmlContent = buildHtmlContent(contentClone, $) || undefined;
+    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
   return {
@@ -1154,7 +1171,7 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1194,7 +1211,7 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   container.find("img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (src && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
@@ -1211,7 +1228,7 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
-  htmlContent = buildHtmlContent(clone, $) || undefined;
+  htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1250,7 +1267,7 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const sapo = $(".the-article-summary").first().text().trim();
   if (sapo && sapo.length > 20) {
     pushUnique(paragraphs, seenP, sapo);
-    contentClone.find(".the-article-summary").remove();
+    contentClone.find(".the-article-summary").first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
@@ -1260,14 +1277,14 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
 
   // Build htmlContent for rich inline rendering
-  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1303,7 +1320,7 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
     if (sapo !== description) {
       pushUnique(paragraphs, seenP, sapo);
     }
-    contentClone.find("p.description").remove();
+    contentClone.find("p.description").first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
@@ -1313,13 +1330,13 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   });
 
   container.find("img, figure img").each((_, el) => {
-    const src = resolveImageSrc($(el));
+    const src = resolveImageSrc($(el), url);
     if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
       pushUnique(images, seenI, src);
     }
   });
 
-  const htmlContent = buildHtmlContent(contentClone, $) || undefined;
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1336,7 +1353,7 @@ function extractGeneric(
   url: string
 ): ArticleContent {
   const container = $("article, [role=main], .article-body, main, body").first();
-  const htmlContent = buildHtmlContent(container, $) || undefined;
+  const htmlContent = buildHtmlContent(container, $, url) || undefined;
 
   return {
     title:
