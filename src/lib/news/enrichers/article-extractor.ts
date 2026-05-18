@@ -526,11 +526,22 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
+
+  const sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
+  }
+
+  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+  if (sapoText && sapoText.length > 20) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   if (contentDetail.length > 0) {
-    contentDetail.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
-    htmlContent = buildHtmlContent(contentDetail, $, url) || undefined;
+    contentClone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   } else {
-    htmlContent = buildHtmlContent(container, $, url) || undefined;
+    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
   return {
@@ -605,7 +616,7 @@ function extractBongdaplus(
 
   const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
   if (sapoText && sapoText.length > 20) {
-    contentClone.find(".sapo, .detail-sapo").remove();
+    contentClone.find(".sapo, .detail-sapo").first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
