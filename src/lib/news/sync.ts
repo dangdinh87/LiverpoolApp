@@ -8,6 +8,7 @@ import { fetchOgMeta } from "./enrichers/og-meta";
 import { scrapeArticle } from "./enrichers/article-extractor";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
+import { getValidDateMs, toIsoDateOrFallback } from "./date";
 import type { NewsArticle } from "./types";
 
 type NewsServiceClient = ReturnType<typeof getServiceClient>;
@@ -114,6 +115,9 @@ async function getMatchTrafficMode(): Promise<{
 }
 
 function articleToRow(a: NewsArticle) {
+  const nowIso = new Date().toISOString();
+  const fetchedAt = toIsoDateOrFallback(a.fetchedAt, nowIso);
+
   return {
     url: a.link,
     title: a.title,
@@ -123,14 +127,12 @@ function articleToRow(a: NewsArticle) {
     language: a.language,
     category: a.category || "general",
     relevance: a.relevanceScore ?? 0,
-    published_at: a.pubDate 
-      ? new Date(a.pubDate).toISOString() 
-      : (a.fetchedAt ? new Date(a.fetchedAt).toISOString() : new Date().toISOString()),
+    published_at: toIsoDateOrFallback(a.pubDate, fetchedAt),
     author: a.author || null,
     hero_image: a.heroImage || a.thumbnail || null,
     word_count: a.wordCount || null,
     tags: a.tags || [],
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   };
 }
 
@@ -246,8 +248,8 @@ function getLatestFetchedPublishedAt(articles: NewsArticle[]): string | null {
     const rawDate = article.pubDate || article.fetchedAt;
     if (!rawDate) continue;
 
-    const ms = new Date(rawDate).getTime();
-    if (Number.isFinite(ms) && ms > latestMs) {
+    const ms = getValidDateMs(rawDate);
+    if (ms !== null && ms > latestMs) {
       latestMs = ms;
     }
   }
