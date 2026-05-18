@@ -8,7 +8,7 @@ import { fetchOgMeta } from "./enrichers/og-meta";
 import { scrapeArticle } from "./enrichers/article-extractor";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
-import { getValidDateMs, toIsoDateOrFallback } from "./date";
+import { getValidDateMs, nowIso, toIsoDateOrFallback } from "./date";
 import type { NewsArticle } from "./types";
 
 type NewsServiceClient = ReturnType<typeof getServiceClient>;
@@ -115,8 +115,8 @@ async function getMatchTrafficMode(): Promise<{
 }
 
 function articleToRow(a: NewsArticle) {
-  const nowIso = new Date().toISOString();
-  const fetchedAt = toIsoDateOrFallback(a.fetchedAt, nowIso);
+  const updatedAt = nowIso();
+  const fetchedAt = toIsoDateOrFallback(a.fetchedAt, updatedAt);
 
   return {
     url: a.link,
@@ -132,7 +132,7 @@ function articleToRow(a: NewsArticle) {
     hero_image: a.heroImage || a.thumbnail || null,
     word_count: a.wordCount || null,
     tags: a.tags || [],
-    updated_at: nowIso,
+    updated_at: updatedAt,
   };
 }
 
@@ -198,11 +198,11 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       const safeRows = rows.map((row) => {
         const old = existingMap.get(row.url);
         if (old) {
-          return { ...old, ...row, fetched_at: old.fetched_at || new Date().toISOString() };
+          return { ...old, ...row, fetched_at: old.fetched_at || nowIso() };
         }
         return {
           ...row,
-          fetched_at: new Date().toISOString(),
+          fetched_at: nowIso(),
           is_active: true,
           read_count: 0,
         };
@@ -254,7 +254,7 @@ function getLatestFetchedPublishedAt(articles: NewsArticle[]): string | null {
     }
   }
 
-  return latestMs > 0 ? new Date(latestMs).toISOString() : null;
+  return latestMs > 0 ? toIsoDateOrFallback(latestMs) : null;
 }
 
 async function getLatestStoredArticle(supabase: NewsServiceClient) {
@@ -284,7 +284,7 @@ async function scrapeContentForRecentArticles(
     options.fetchedTotal,
     options.mode
   );
-  const staleCutoff = new Date(Date.now() - STALE_CONTENT_MS).toISOString();
+  const staleCutoff = toIsoDateOrFallback(Date.now() - STALE_CONTENT_MS);
   const { data, error } = await supabase
     .from("articles")
     .select("url")
@@ -385,7 +385,7 @@ export async function syncPipeline(): Promise<SyncResult> {
             ...batch[j],
             thumbnail: r.value.image,
             hero_image: r.value.image,
-            updated_at: new Date().toISOString(),
+            updated_at: nowIso(),
           });
           enriched++;
         }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { compareDatesDesc, getValidDateMs, toIsoDateOrFallback } from "../date";
+import { compareDatesDesc, getValidDateMs, nowIso, toIsoDateOrFallback } from "../date";
 
 describe("news date helpers", () => {
   it("returns null for invalid dates", () => {
     expect(getValidDateMs("not-a-date")).toBeNull();
     expect(getValidDateMs("")).toBeNull();
+    expect(getValidDateMs(Symbol("bad-date"))).toBeNull();
   });
 
   it("normalizes valid dates to ISO strings", () => {
@@ -17,6 +18,16 @@ describe("news date helpers", () => {
     expect(toIsoDateOrFallback("not-a-date", "2026-01-01T00:00:00.000Z")).toBe(
       "2026-01-01T00:00:00.000Z"
     );
+  });
+
+  it("falls back instead of throwing for out-of-range dates", () => {
+    expect(toIsoDateOrFallback(9e15, "2026-01-01T00:00:00.000Z")).toBe(
+      "2026-01-01T00:00:00.000Z"
+    );
+  });
+
+  it("returns a valid ISO timestamp for now", () => {
+    expect(Number.isFinite(new Date(nowIso()).getTime())).toBe(true);
   });
 
   it("sorts invalid dates behind valid dates", () => {
