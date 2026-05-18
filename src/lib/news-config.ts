@@ -32,6 +32,9 @@ export const SOURCE_CONFIG: Record<
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100" },
   eotk: { label: "Empire of the Kop", color: "bg-yellow-700 text-yellow-100" },
   vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100" },
+  bongda24h: { label: "Bóng Đá 24h", color: "bg-green-700 text-green-100" },
+  thethao247: { label: "Thể Thao 247", color: "bg-red-800 text-red-100" },
+  soha: { label: "Soha", color: "bg-orange-800 text-orange-100" },
   goal: { label: "GOAL", color: "bg-[#00234B] text-white" },
 };
 
@@ -75,6 +78,9 @@ const SOURCE_HOSTS: Record<string, string> = {
   webthethao: "webthethao.vn",
   eotk: "www.empireofthekop.com",
   vietnamvn: "www.vietnam.vn",
+  bongda24h: "bongda24h.vn",
+  thethao247: "thethao247.vn",
+  soha: "soha.vn",
   goal: "www.goal.com",
 };
 

@@ -6,7 +6,7 @@ export type NewsSource =
   | "men" | "anfieldindex" | "liverpoolcom" | "tia" | "espn"
   | "vnexpress" | "tuoitre" | "thanhnien"
   | "dantri" | "zingnews" | "vietnamnet" | "webthethao" | "vietnamvn"
-  | "goal";
+  | "bongda24h" | "thethao247" | "soha" | "goal";
 
 export type NewsLanguage = "en" | "vi";
 

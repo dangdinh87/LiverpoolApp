@@ -45,8 +45,8 @@ const getCachedHomeStandings = unstable_cache(
 );
 
 const getCachedHomeNews = unstable_cache(
-  async () => getNewsFromDB(HOME_NEWS_LIMIT, undefined, { skipSync: true }),
-  ["home-news-v2"],
+  async () => getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true }),
+  ["home-news-vi-first-v1"],
   { revalidate: 300, tags: ["news"] },
 );
 

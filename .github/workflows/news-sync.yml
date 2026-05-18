@@ -83,12 +83,42 @@ jobs:
           const scrapeFailed = Number(json.scrapeFailed ?? 0);
           const scrapeMode = String(json.scrapeMode ?? "unknown");
           const scrapeBudgetStop = Boolean(json.scrapeBudgetStop ?? false);
+          const scrapeSuccessRate = scrapeAttempted > 0 ? scraped / scrapeAttempted : null;
+          const scrapeSuccessRateLabel =
+            scrapeSuccessRate === null ? "N/A" : `${(scrapeSuccessRate * 100).toFixed(1)}%`;
           const latestFetchedPublishedAt = String(json.latestFetchedPublishedAt ?? "");
           const latestStoredPublishedAt = String(json.latestStoredPublishedAt ?? "");
           const latestStoredTitle = String(json.latestStoredTitle ?? "");
           const latestStoredSource = String(json.latestStoredSource ?? "");
           const latestStoredUrl = String(json.latestStoredUrl ?? "");
           const cleanOutput = (value) => String(value).replace(/\r?\n/g, " ").slice(0, 500);
+          const escapeCommand = (value) =>
+            String(value).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+
+          const alerts = [];
+          if (inserted === 0) {
+            alerts.push({
+              code: "zero_new_article",
+              vi: `Không có bài mới nào được thêm dù đã fetch ${total} bài và upsert ${upserted} bài.`,
+              en: `No new articles were inserted even though ${total} articles were fetched and ${upserted} rows were upserted.`,
+            });
+          }
+          if (scrapeAttempted > 0 && scrapeSuccessRate !== null && scrapeSuccessRate < 0.5) {
+            alerts.push({
+              code: "bad_scrape_rate",
+              vi: `Tỷ lệ cào nội dung thấp: ${scrapeSuccessRateLabel} (${scraped}/${scrapeAttempted}, lỗi ${scrapeFailed}).`,
+              en: `Low scrape success rate: ${scrapeSuccessRateLabel} (${scraped}/${scrapeAttempted}, ${scrapeFailed} failed).`,
+            });
+          }
+
+          const alertStatus = alerts.length > 0 ? "warning" : "ok";
+          const alertCodes = alerts.map((alert) => alert.code).join(",");
+          const alertVi = alerts.map((alert) => alert.vi).join(" | ");
+          const alertEn = alerts.map((alert) => alert.en).join(" | ");
+
+          for (const alert of alerts) {
+            console.log(`::warning title=News sync alert: ${alert.code}::${escapeCommand(alert.en)}`);
+          }
 
           const lines = [
             `sync_ok=${Boolean(json.ok)}`,
@@ -103,6 +133,12 @@ jobs:
             `sync_scrape_failed=${scrapeFailed}`,
             `sync_scrape_mode=${scrapeMode}`,
             `sync_scrape_budget_stop=${scrapeBudgetStop}`,
+            `sync_scrape_success_rate=${scrapeSuccessRateLabel}`,
+            `sync_alert_status=${alertStatus}`,
+            `sync_alert_count=${alerts.length}`,
+            `sync_alert_codes=${cleanOutput(alertCodes)}`,
+            `sync_alert_vi=${cleanOutput(alertVi)}`,
+            `sync_alert_en=${cleanOutput(alertEn)}`,
             `sync_duration_ms=${durationMs}`,
             `sync_errors_count=${errorsCount}`,
             `sync_duration_sec=${durationSec}`,
@@ -124,6 +160,9 @@ jobs:
             `- Latest fetched publish time / Thời gian bài mới nhất từ pipeline: ${latestFetchedPublishedAt || "N/A"}`,
             `- Pre-scraped / Cào nội dung: ${scraped} / ${scrapeAttempted} attempted`,
             `- Scrape failed / Cào lỗi: ${scrapeFailed} | Mode: ${scrapeMode} | Budget stop: ${scrapeBudgetStop}`,
+            `- Scrape success rate / Tỷ lệ cào thành công: ${scrapeSuccessRateLabel}`,
+            `- Alert status / Trạng thái cảnh báo: ${alertStatus}${alerts.length ? ` (${alertCodes})` : ""}`,
+            alerts.length ? `- Alert details / Chi tiết cảnh báo: ${alertEn}` : "- Alert details / Chi tiết cảnh báo: none",
             `- Re-enriched thumbs / Cập nhật ảnh: ${enriched}`,
             `- Duration: ${durationSec}s`,
             `- Errors array size: ${errorsCount}`,
@@ -205,6 +244,71 @@ jobs:
           Meta: ${{ github.repository }} / ${{ github.ref_name }} / ${{ github.event_name }} / HTTP ${HTTP_CODE}
           Latest fetched publish time: ${LATEST_FETCHED_PUBLISHED_AT:-N/A}
           Scrape mode: ${SYNC_SCRAPE_MODE} | Budget stop: ${SYNC_SCRAPE_BUDGET_STOP}
+          Article: ${LATEST_STORED_URL:-N/A}
+          Run: ${RUN_URL}"
+          curl --silent --show-error --fail \
+            -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${TEXT}"
+
+      - name: Notify Telegram on stale-feed alert
+        if: success() && steps.trigger.outputs.sync_alert_count != '0'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          HTTP_CODE: ${{ steps.trigger.outputs.http_code }}
+          SYNC_TOTAL: ${{ steps.trigger.outputs.sync_total }}
+          SYNC_INSERTED: ${{ steps.trigger.outputs.sync_inserted }}
+          SYNC_UPDATED: ${{ steps.trigger.outputs.sync_updated }}
+          SYNC_UPSERTED: ${{ steps.trigger.outputs.sync_upserted }}
+          SYNC_SCRAPED: ${{ steps.trigger.outputs.sync_scraped }}
+          SYNC_SCRAPE_ATTEMPTED: ${{ steps.trigger.outputs.sync_scrape_attempted }}
+          SYNC_SCRAPE_FAILED: ${{ steps.trigger.outputs.sync_scrape_failed }}
+          SYNC_SCRAPE_SUCCESS_RATE: ${{ steps.trigger.outputs.sync_scrape_success_rate }}
+          SYNC_ALERT_CODES: ${{ steps.trigger.outputs.sync_alert_codes }}
+          SYNC_ALERT_VI: ${{ steps.trigger.outputs.sync_alert_vi }}
+          SYNC_ALERT_EN: ${{ steps.trigger.outputs.sync_alert_en }}
+          LATEST_FETCHED_PUBLISHED_AT: ${{ steps.trigger.outputs.sync_latest_fetched_published_at }}
+          LATEST_STORED_PUBLISHED_AT: ${{ steps.trigger.outputs.sync_latest_stored_published_at }}
+          LATEST_STORED_TITLE: ${{ steps.trigger.outputs.sync_latest_stored_title }}
+          LATEST_STORED_SOURCE: ${{ steps.trigger.outputs.sync_latest_stored_source }}
+          LATEST_STORED_URL: ${{ steps.trigger.outputs.sync_latest_stored_url }}
+        run: |
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "Telegram secrets missing, skip stale-feed alert notification."
+            exit 0
+          fi
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          TEXT="⚠️ Cảnh báo đồng bộ tin tức / News Sync Alert
+
+          🇻🇳 Tiếng Việt
+          Cảnh báo: ${SYNC_ALERT_CODES:-unknown}
+          Chi tiết: ${SYNC_ALERT_VI:-N/A}
+          Bài mới được thêm: ${SYNC_INSERTED}
+          Bài cũ được cập nhật: ${SYNC_UPDATED}
+          Tổng bài fetch: ${SYNC_TOTAL}
+          Tổng upsert: ${SYNC_UPSERTED}
+          Tỷ lệ cào thành công: ${SYNC_SCRAPE_SUCCESS_RATE:-N/A}
+          Cào nội dung: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (lỗi: ${SYNC_SCRAPE_FAILED})
+          Bài mới nhất trong DB: ${LATEST_STORED_PUBLISHED_AT:-N/A}
+          Nguồn: ${LATEST_STORED_SOURCE:-N/A}
+          Tiêu đề: ${LATEST_STORED_TITLE:-N/A}
+
+          🇬🇧 English
+          Alert: ${SYNC_ALERT_CODES:-unknown}
+          Details: ${SYNC_ALERT_EN:-N/A}
+          New articles added: ${SYNC_INSERTED}
+          Existing articles updated: ${SYNC_UPDATED}
+          Total fetched: ${SYNC_TOTAL}
+          Total upserted: ${SYNC_UPSERTED}
+          Scrape success rate: ${SYNC_SCRAPE_SUCCESS_RATE:-N/A}
+          Pre-scraped content: ${SYNC_SCRAPED}/${SYNC_SCRAPE_ATTEMPTED} (failed: ${SYNC_SCRAPE_FAILED})
+          Latest stored article: ${LATEST_STORED_PUBLISHED_AT:-N/A}
+          Source: ${LATEST_STORED_SOURCE:-N/A}
+          Title: ${LATEST_STORED_TITLE:-N/A}
+
+          Meta: ${{ github.repository }} / ${{ github.ref_name }} / ${{ github.event_name }} / HTTP ${HTTP_CODE}
+          Latest fetched publish time: ${LATEST_FETCHED_PUBLISHED_AT:-N/A}
           Article: ${LATEST_STORED_URL:-N/A}
           Run: ${RUN_URL}"
           curl --silent --show-error --fail \

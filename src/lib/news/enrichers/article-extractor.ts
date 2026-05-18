@@ -25,6 +25,7 @@
 import "server-only";
 import { cache } from "react";
 import * as cheerio from "cheerio";
+import type { AnyNode } from "domhandler";
 import type { ArticleContent } from "../types";
 import sanitize from "sanitize-html";
 import {
@@ -144,7 +145,7 @@ function resolveImageSrc($el: cheerio.Cheerio<any>): string | undefined {
  * - Sanitizes using ARTICLE_SANITIZE_OPTS.
  */
 function buildHtmlContent(
-  container: cheerio.Cheerio<any>,
+  container: cheerio.Cheerio<AnyNode>,
   $: cheerio.CheerioAPI
 ): string | undefined {
   if (!container || container.length === 0) return undefined;
@@ -302,6 +303,9 @@ const extractors: Record<string, Extractor> = {
   "thanhnien.vn": extractThanhnien,
   "webthethao.vn": extractWebthethao,
   "vietnam.vn": extractVietnamvn,
+  "bongda24h.vn": extractBongda24h,
+  "thethao247.vn": extractThethao247,
+  "soha.vn": extractSoha,
 };
 
 function extractLfcOfficial(
@@ -1124,6 +1128,30 @@ function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
   );
 }
 
+function extractBongda24h($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".article-content, .news-detail-content, .detail-content, .content-detail, .article-body, article, [role=main]",
+    "Bóng Đá 24h",
+    { sapoSelector: ".article-sapo, .sapo, h2" }
+  );
+}
+
+function extractThethao247($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".content-detail, .article-content, .detail-content, .post-content, article, [role=main]",
+    "Thể Thao 247",
+    { sapoSelector: ".sapo, .article-sapo, h2" }
+  );
+}
+
+function extractSoha($: cheerio.CheerioAPI, url: string): ArticleContent {
+  return extractVietnameseGeneric($, url,
+    ".detail-content, .news-content, .article-content, .content-detail, article, [role=main]",
+    "Soha",
+    { sapoSelector: ".sapo, .news-sapo, h2" }
+  );
+}
+
 // vietnam.vn uses .post-detail-body for article content (Next.js SSR site)
 function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
   const title = $("h1").first().text().trim() ||
@@ -1200,9 +1228,6 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  // Build htmlContent — images are interleaved with text in <p> tags
-  let htmlContent: string | undefined;
-
   // Remove junk elements before building HTML
   const clone = container.clone();
   clone.find("script, style, .related-news, .tags, nav").remove();
@@ -1211,7 +1236,7 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
-  htmlContent = buildHtmlContent(clone, $) || undefined;
+  const htmlContent = buildHtmlContent(clone, $) || undefined;
 
   return {
     title, heroImage, description,

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
 import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
-import type { ArticleEngagement } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
@@ -24,9 +23,9 @@ export default async function NewsPage() {
     getLocale(),
   ]);
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
-  // Fetch both vi + en articles — balanced 30 each (no lang bias so both tabs have content)
+  // Fetch both VI + EN articles, biased toward the current locale for the default tab.
   const [allArticles, digest, engagementMap] = await Promise.all([
-    getNewsFromDB(60),
+    getNewsFromDB(60, userLang),
     getLatestDigest(),
     getArticleEngagement(),
   ]);
@@ -35,8 +34,9 @@ export default async function NewsPage() {
   for (const [url, data] of engagementMap) {
     engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
   }
+  const nowMs = new Date().getTime();
   // Ensure very recent articles (last 12h) are visible in both tabs if they are highly relevant
-  const freshThreshold = Date.now() - 12 * 60 * 60 * 1000;
+  const freshThreshold = nowMs - 12 * 60 * 60 * 1000;
   
   const localArticles = allArticles.filter((a) => a.language === userLang || new Date(a.pubDate).getTime() > freshThreshold);
   const globalArticles = allArticles.filter((a) => a.language !== userLang || new Date(a.pubDate).getTime() > freshThreshold);
@@ -51,6 +51,7 @@ export default async function NewsPage() {
     "Daily Mirror", "The Independent", "MEN", "Anfield Index", "Liverpool.com", "ESPN",
     "Bóng Đá", "Bóng Đá+", "24h", "VnExpress", "Tuổi Trẻ", "Thanh Niên",
     "Dân Trí", "Zing News", "VietNamNet", "Webthethao", "Vietnam.vn",
+    "Bóng Đá 24h", "Thể Thao 247", "Soha",
   ].join(", ");
 
   return (
@@ -98,7 +99,7 @@ export default async function NewsPage() {
           localArticles={localArticles}
           globalArticles={globalArticles}
           locale={userLang}
-          nowMs={Date.now()}
+          nowMs={nowMs}
           engagement={engagement}
         />
 

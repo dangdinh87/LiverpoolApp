@@ -30,6 +30,11 @@ export const RSS_FEEDS: FeedConfig[] = [
   { url: "https://znews.vn/rss/the-thao.rss", source: "zingnews", language: "vi", filter: "lfc" },
   { url: "https://vietnamnet.vn/rss/the-thao.rss", source: "vietnamnet", language: "vi", filter: "lfc" },
   { url: "https://webthethao.vn/rss/rss.php", source: "webthethao", language: "vi", filter: "lfc" },
+  // Vietnamese — additional football feeds researched May 2026
+  { url: "https://bongda24h.vn/RSS/172.rss", source: "bongda24h", language: "vi", filter: "lfc" },
+  { url: "https://bongda24h.vn/RSS/187.rss", source: "bongda24h", language: "vi", filter: "lfc" },
+  { url: "https://thethao247.vn/ngoai-hang-anh-c8.rss", source: "thethao247", language: "vi", filter: "lfc" },
+  { url: "https://soha.vn/rss/the-thao/anh.rss", source: "soha", language: "vi", filter: "lfc" },
 ];
 
 export const SOURCE_CONFIG: Record<
@@ -61,6 +66,9 @@ export const SOURCE_CONFIG: Record<
   vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100", language: "vi" },
   webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100", language: "vi" },
   vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100", language: "vi" },
+  bongda24h: { label: "Bóng Đá 24h", color: "bg-green-700 text-green-100", language: "vi" },
+  thethao247: { label: "Thể Thao 247", color: "bg-red-800 text-red-100", language: "vi" },
+  soha: { label: "Soha", color: "bg-orange-800 text-orange-100", language: "vi" },
   goal: { label: "GOAL", color: "bg-[#00234B] text-white", language: "en" },
 };
 

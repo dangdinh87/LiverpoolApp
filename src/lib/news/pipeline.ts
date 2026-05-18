@@ -17,6 +17,20 @@ export interface PipelineResult {
   stats: Record<string, SourceStats>;
 }
 
+function addSourceStats(
+  stats: Record<string, SourceStats>,
+  source: string,
+  next: SourceStats
+) {
+  const current = stats[source] ?? { fetched: 0, parsed: 0, failed: 0, thin: 0 };
+  stats[source] = {
+    fetched: current.fetched + next.fetched,
+    parsed: current.parsed + next.parsed,
+    failed: current.failed + next.failed,
+    thin: current.thin + next.thin,
+  };
+}
+
 export async function fetchAllNews(
   adapters: FeedAdapter[],
   limit: number
@@ -35,10 +49,15 @@ export async function fetchAllNews(
     if (r.status === "fulfilled") {
       const articles = r.value;
       const thin = articles.filter((a) => (a.wordCount ?? 0) < 50).length;
-      stats[source] = { fetched: articles.length, parsed: articles.length, failed: 0, thin };
+      addSourceStats(stats, source, {
+        fetched: articles.length,
+        parsed: articles.length,
+        failed: 0,
+        thin,
+      });
       all.push(...articles);
     } else {
-      stats[source] = { fetched: 0, parsed: 0, failed: 1, thin: 0 };
+      addSourceStats(stats, source, { fetched: 0, parsed: 0, failed: 1, thin: 0 });
       console.error(`[pipeline] ${source} failed:`, r.reason);
     }
   }

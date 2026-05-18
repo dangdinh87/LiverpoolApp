@@ -13,6 +13,7 @@ const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
+const PREFERRED_LANGUAGE_SHARE = 0.8; // Vietnamese locale should read VI-first, not 50/50.
 
 // Per-instance sync lock (prevents duplicate syncs within same serverless instance)
 let syncInProgress = false;
@@ -139,6 +140,8 @@ export const getNewsFromDB = cache(
       const supabase = getServiceClient();
 
       if (preferLang) {
+        const localLimit = Math.max(1, Math.ceil(limit * PREFERRED_LANGUAGE_SHARE));
+        const globalLimit = Math.max(1, limit - localLimit);
         const [localRes, globalRes] = await Promise.all([
           supabase
             .from("articles")
@@ -148,7 +151,7 @@ export const getNewsFromDB = cache(
             .eq("language", preferLang)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
-            .limit(limit),
+            .limit(localLimit),
           supabase
             .from("articles")
             .select(ARTICLE_COLUMNS)
@@ -157,7 +160,7 @@ export const getNewsFromDB = cache(
             .neq("language", preferLang)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
-            .limit(limit),
+            .limit(globalLimit),
         ]);
 
         if (localRes.error) console.error("[news/db] Local error:", localRes.error.message);
@@ -178,7 +181,7 @@ export const getNewsFromDB = cache(
               .eq("language", preferLang)
               .order("published_at", { ascending: false, nullsFirst: false })
               .order("relevance", { ascending: false, nullsFirst: false })
-              .limit(limit),
+              .limit(localLimit),
             supabase
               .from("articles")
               .select(ARTICLE_COLUMNS)
@@ -187,7 +190,7 @@ export const getNewsFromDB = cache(
               .neq("language", preferLang)
               .order("published_at", { ascending: false, nullsFirst: false })
               .order("relevance", { ascending: false, nullsFirst: false })
-              .limit(limit),
+              .limit(globalLimit),
           ]);
 
           local = ((localFallback.data ?? []) as ArticleRow[]).map(rowToArticle);

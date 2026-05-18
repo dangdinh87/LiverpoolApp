@@ -21,6 +21,9 @@ const SOURCE_MAP: [string, NewsSource, string][] = [
   ["thanhnien.vn", "thanhnien", "Thanh Niên"],
   ["webthethao.vn", "webthethao", "Webthethao"],
   ["vietnam.vn", "vietnamvn", "Vietnam.vn"],
+  ["bongda24h.vn", "bongda24h", "Bóng Đá 24h"],
+  ["thethao247.vn", "thethao247", "Thể Thao 247"],
+  ["soha.vn", "soha", "Soha"],
   ["goal.com", "goal", "GOAL"],
 ];
 
@@ -39,4 +42,5 @@ export function detectSource(url: string): { id: NewsSource; name: string } {
 export const VI_SOURCES = new Set<NewsSource>([
   "bongda", "24h", "bongdaplus", "vnexpress", "tuoitre", "thanhnien",
   "dantri", "zingnews", "vietnamnet", "webthethao", "vietnamvn",
+  "bongda24h", "thethao247", "soha",
 ]);
