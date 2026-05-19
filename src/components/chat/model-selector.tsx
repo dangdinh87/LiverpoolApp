@@ -134,10 +134,17 @@ export function ModelSelector<T extends string>({
 
     // Count models per tier
     const tierCounts = useMemo(() => {
-        return tiers.reduce((acc, tier) => {
-            acc[tier] = modelsArray.filter((m) => m.tier === tier).length;
-            return acc;
-        }, {} as Record<string, number>);
+        const counts: Record<string, number> = {};
+        for (let i = 0; i < tiers.length; i++) {
+            counts[tiers[i]] = 0;
+        }
+        for (let i = 0; i < modelsArray.length; i++) {
+            const m = modelsArray[i];
+            if (counts[m.tier] !== undefined) {
+                counts[m.tier]++;
+            }
+        }
+        return counts;
     }, [modelsArray]);
 
     const handleSelect = (modelId: T) => {

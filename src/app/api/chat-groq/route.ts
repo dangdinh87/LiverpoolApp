@@ -15,10 +15,14 @@ export const maxDuration = 60;
 function getMessageContent(msg: Record<string, unknown>): string {
   if (typeof msg.content === 'string') return msg.content;
   if (Array.isArray(msg.parts)) {
-    return msg.parts
-      .filter((p: Record<string, unknown>) => p.type === 'text')
-      .map((p: Record<string, unknown>) => p.text)
-      .join('');
+    let result = '';
+    for (let i = 0; i < msg.parts.length; i++) {
+      const p = msg.parts[i];
+      if (p.type === 'text') {
+        result += p.text;
+      }
+    }
+    return result;
   }
   return '';
 }
@@ -28,12 +32,15 @@ type ChatRole = 'system' | 'user' | 'assistant';
 function normalizeMessages(
   messages: Record<string, unknown>[],
 ): { role: ChatRole; content: string }[] {
-  return messages
-    .map((msg) => ({
-      role: msg.role as ChatRole,
-      content: getMessageContent(msg),
-    }))
-    .filter((msg) => msg.content.length > 0);
+  const result: { role: ChatRole; content: string }[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const content = getMessageContent(msg);
+    if (content.length > 0) {
+      result.push({ role: msg.role as ChatRole, content });
+    }
+  }
+  return result;
 }
 
 // Build system prompt with numbered sources for citation references

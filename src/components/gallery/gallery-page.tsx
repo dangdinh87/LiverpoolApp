@@ -59,9 +59,16 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
 
   const handleLoadMore = useCallback(async (category: string) => {
     try {
-      const offset = category === "all"
-        ? images.length
-        : images.filter((img) => img.category === category).length;
+      let offset = 0;
+      if (category === "all") {
+        offset = images.length;
+      } else {
+        for (let i = 0; i < images.length; i++) {
+          if (images[i].category === category) {
+            offset++;
+          }
+        }
+      }
       const params = new URLSearchParams({
         offset: String(offset),
         limit: "50",

@@ -130,8 +130,16 @@ export function AnfieldGallery() {
   // Count valid images per category (excluding broken)
   const validCount = useCallback(
     (cat: Category) => {
-      if (cat === "all") return IMAGES.filter((img) => !failedSrcs.has(img.src)).length;
-      return IMAGES.filter((img) => img.category === cat && !failedSrcs.has(img.src)).length;
+      let count = 0;
+      for (let i = 0; i < IMAGES.length; i++) {
+        const img = IMAGES[i];
+        if (!failedSrcs.has(img.src)) {
+          if (cat === "all" || img.category === cat) {
+            count++;
+          }
+        }
+      }
+      return count;
     },
     [failedSrcs],
   );
