@@ -1089,6 +1089,22 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText) {
+    // Fallback: Use description or metadata
+    const sapoFallback = description || $('meta[name="description"]').attr("content");
+    if (sapoFallback && sapoFallback.length > 20) {
+      pushUnique(paragraphs, seenP, sapoFallback);
+      sapoText = sapoFallback;
+
+      // Attempt to remove any existing h2 that matches the sapo text exactly
+      contentClone.find("h2").each((_, el) => {
+        if ($(el).text().trim() === sapoFallback.trim()) {
+           $(el).remove();
+        }
+      });
+    }
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
