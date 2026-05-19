@@ -71,9 +71,16 @@ function getRelatedArticles(
   return sameLangArticles
     .filter((a) => a.link !== currentUrl)
     .map((a) => {
-      const words = a.title.toLowerCase().split(/\s+/)
-        .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
-      const overlap = words.filter((w) => currentWords.has(w)).length;
+      let overlap = 0;
+      const words = a.title.toLowerCase().split(/\s+/);
+      for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        if (w.length > 3 && !STOP_WORDS.has(w)) {
+          if (currentWords.has(w)) {
+            overlap++;
+          }
+        }
+      }
       // Promote source diversity
       const sourcePenalty = a.source === currentSource ? -0.3 : 0;
       return { article: a, score: overlap + sourcePenalty };

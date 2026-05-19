@@ -119,7 +119,7 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
                 <span className="ml-2 text-xs opacity-60">
                   {value === "All"
                     ? players.length
-                    : players.filter((p) => p.position === value).length}
+                    : players.reduce((count, p) => count + (p.position === value ? 1 : 0), 0)}
                 </span>
               </span>
             </motion.button>

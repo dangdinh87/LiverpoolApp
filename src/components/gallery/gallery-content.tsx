@@ -154,9 +154,16 @@ export function GalleryContent({
         }
         return categoryCounts[cat] ?? 0;
       }
-      const valid = images.filter((img) => !failedSrcs.has(img.src));
-      if (cat === "all") return valid.length;
-      return valid.filter((img) => img.category === cat).length;
+      let count = 0;
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (!failedSrcs.has(img.src)) {
+          if (cat === "all" || img.category === cat) {
+            count++;
+          }
+        }
+      }
+      return count;
     },
     [categoryCounts, images, failedSrcs],
   );

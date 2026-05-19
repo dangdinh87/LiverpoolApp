@@ -69,7 +69,12 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
   if (unique.length === 0) return null;
 
   // Count by severity
-  const outCount = unique.filter((i) => i.player.type === "Missing Fixture").length;
+  let outCount = 0;
+  for (let i = 0; i < unique.length; i++) {
+    if (unique[i].player.type === "Missing Fixture") {
+      outCount++;
+    }
+  }
   const doubtCount = unique.length - outCount;
 
   // Group by status type
