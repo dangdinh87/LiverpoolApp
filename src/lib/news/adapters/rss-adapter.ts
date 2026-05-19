@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import type { FeedAdapter } from "./base";
 import type { FeedConfig, NewsArticle } from "../types";
 import { LFC_KEYWORDS } from "../config";
+import { extractImageUrlFromHtml, sanitizeImageUrl } from "../image";
 
 const FETCH_TIMEOUT_MS = 15_000;
 const USER_AGENT = "Mozilla/5.0 (compatible; LiverpoolApp/1.0; +https://github.com)";
@@ -24,6 +25,13 @@ function sanitizeUrl(url: string | undefined): string | undefined {
 
 function extractUrl(raw: unknown): string | undefined {
   if (!raw) return undefined;
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const url = extractUrl(item);
+      if (url) return url;
+    }
+    return undefined;
+  }
   if (typeof raw === "string") return raw;
   if (typeof raw === "object" && raw !== null) {
     const obj = raw as Record<string, unknown>;
@@ -34,12 +42,18 @@ function extractUrl(raw: unknown): string | undefined {
   return undefined;
 }
 
-function extractImageFromItem(item: Record<string, unknown>): string | undefined {
+function extractImageFromItem(item: Record<string, unknown>, baseUrl?: string): string | undefined {
   // Prefer mediaContent/enclosure (full-size) over mediaThumbnail (often low-res)
-  for (const key of ["mediaContent", "enclosure", "mediaThumbnail"]) {
-    const url = extractUrl(item[key]);
-    if (url) return url;
+  for (const key of ["mediaContent", "enclosure", "mediaThumbnail", "image", "itunesImage"]) {
+    const image = sanitizeImageUrl(extractUrl(item[key]), baseUrl);
+    if (image) return image;
   }
+
+  for (const key of ["content", "content:encoded", "description", "summary"]) {
+    const image = extractImageUrlFromHtml(item[key], baseUrl);
+    if (image) return image;
+  }
+
   return undefined;
 }
 
@@ -79,17 +93,20 @@ export class RssAdapter implements FeedAdapter {
         });
       }
 
-      return items.map((item) => ({
-        title: item.title ?? "Untitled",
-        link: sanitizeUrl(item.link) ?? "#",
-        pubDate: item.pubDate ?? "",
-        contentSnippet: item.contentSnippet ?? item.content ?? "",
-        thumbnail: sanitizeUrl(
-          extractImageFromItem(item as unknown as Record<string, unknown>)
-        ),
-        source: this.config.source,
-        language: this.config.language,
-      }));
+      return items.map((item) => {
+        const link = sanitizeUrl(item.link) ?? "#";
+        const itemRecord = item as unknown as Record<string, unknown>;
+
+        return {
+          title: item.title ?? "Untitled",
+          link,
+          pubDate: item.pubDate ?? "",
+          contentSnippet: item.contentSnippet ?? item.content ?? "",
+          thumbnail: extractImageFromItem(itemRecord, link !== "#" ? link : this.config.url),
+          source: this.config.source,
+          language: this.config.language,
+        };
+      });
     } catch (err) {
       console.warn(
         `[rss-adapter] Failed ${this.config.source} (${this.config.url}):`,

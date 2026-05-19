@@ -48,6 +48,58 @@ const FETCH_LIMIT_BASE = 380;
 
 type MatchTrafficMode = "low" | "normal" | "peak";
 
+const STRIPPED_COLS = ["fts", "id"] as const;
+
+const stripDbManaged = (row: Record<string, unknown>) => {
+  const clean = { ...row };
+  for (const col of STRIPPED_COLS) delete clean[col];
+  return clean;
+};
+
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return null;
+}
+
+export function mergeArticleRowForUpsert(
+  row: Record<string, unknown>,
+  existing?: Record<string, unknown>,
+  fetchedAt = nowIso()
+): Record<string, unknown> {
+  if (!existing) {
+    return {
+      ...row,
+      fetched_at: fetchedAt,
+      is_active: true,
+      read_count: 0,
+    };
+  }
+
+  const old = stripDbManaged(existing);
+  const thumbnail = firstNonEmptyString(
+    row.thumbnail,
+    old.thumbnail,
+    row.hero_image,
+    old.hero_image
+  );
+  const heroImage = firstNonEmptyString(
+    row.hero_image,
+    old.hero_image,
+    row.thumbnail,
+    old.thumbnail
+  );
+
+  return {
+    ...old,
+    ...row,
+    fetched_at: old.fetched_at || fetchedAt,
+    thumbnail,
+    hero_image: heroImage,
+  };
+}
+
 function getAdaptiveScrapeLimit(
   upserted: number,
   fetchedTotal: number,
@@ -117,19 +169,20 @@ async function getMatchTrafficMode(): Promise<{
 function articleToRow(a: NewsArticle) {
   const updatedAt = nowIso();
   const fetchedAt = toIsoDateOrFallback(a.fetchedAt, updatedAt);
+  const thumbnail = a.thumbnail || a.heroImage || null;
 
   return {
     url: a.link,
     title: a.title,
     snippet: a.contentSnippet || "",
-    thumbnail: a.thumbnail || null,
+    thumbnail,
     source: a.source,
     language: a.language,
     category: a.category || "general",
     relevance: a.relevanceScore ?? 0,
     published_at: toIsoDateOrFallback(a.pubDate, fetchedAt),
     author: a.author || null,
-    hero_image: a.heroImage || a.thumbnail || null,
+    hero_image: a.heroImage || thumbnail,
     word_count: a.wordCount || null,
     tags: a.tags || [],
     updated_at: updatedAt,
@@ -175,18 +228,6 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
         }
       }
 
-      // Strip columns Postgres manages itself before merging:
-      // - `fts` is GENERATED ALWAYS (rejects any value)
-      // - `id` (uuid default gen_random_uuid()) — bulk upsert with mixed
-      //   present/absent `id` fields gets serialized with null, breaking
-      //   the NOT NULL constraint. Drop it so onConflict=url handles routing.
-      const STRIPPED_COLS = ["fts", "id"] as const;
-      const stripDbManaged = (row: Record<string, unknown>) => {
-        const clean = { ...row };
-        for (const col of STRIPPED_COLS) delete clean[col];
-        return clean;
-      };
-
       const existingMap = new Map(
         (existingData || []).map((row) => [row.url, stripDbManaged(row)])
       );
@@ -195,18 +236,10 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       // the column DEFAULT. To preserve schema defaults for NEW rows mixed
       // in the same batch as updates of EXISTING rows, explicitly seed the
       // columns that have meaningful defaults (chiefly `is_active`).
-      const safeRows = rows.map((row) => {
-        const old = existingMap.get(row.url);
-        if (old) {
-          return { ...old, ...row, fetched_at: old.fetched_at || nowIso() };
-        }
-        return {
-          ...row,
-          fetched_at: nowIso(),
-          is_active: true,
-          read_count: 0,
-        };
-      });
+      const fetchedAt = nowIso();
+      const safeRows = rows.map((row) =>
+        mergeArticleRowForUpsert(row, existingMap.get(row.url), fetchedAt)
+      );
 
       const { data, error } = await supabase
         .from("articles")
@@ -357,21 +390,25 @@ export async function syncPipeline(): Promise<SyncResult> {
   const failed = upsertResult.failed;
   const errors = upsertResult.errors;
 
-  // Re-enrich: fetch og:image for articles missing thumbnails
+  // Re-enrich: fetch og:image for articles missing thumbnails/hero images
   let enriched = 0;
   const { data: noThumbData } = await supabase
     .from("articles")
-    .select("*")
-    .is("thumbnail", null)
+    .select("url,thumbnail,hero_image")
     .eq("is_active", true)
+    .or("thumbnail.is.null,hero_image.is.null")
     .order("fetched_at", { ascending: false })
-    .limit(30);
+    .limit(80);
 
   const noThumb = noThumbData || [];
 
   if (noThumb.length) {
     const BATCH = 10;
-    const upsertPayload: Record<string, unknown>[] = [];
+    const updates: {
+      url: string;
+      thumbnail: string;
+      heroImage: string;
+    }[] = [];
 
     for (let i = 0; i < noThumb.length; i += BATCH) {
       const batch = noThumb.slice(i, i + BATCH);
@@ -381,24 +418,45 @@ export async function syncPipeline(): Promise<SyncResult> {
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
         if (r.status === "fulfilled" && r.value.image) {
-          upsertPayload.push({
-            ...batch[j],
-            thumbnail: r.value.image,
-            hero_image: r.value.image,
-            updated_at: nowIso(),
+          const row = batch[j];
+          updates.push({
+            url: row.url,
+            thumbnail: row.thumbnail || r.value.image,
+            heroImage: row.hero_image || r.value.image,
           });
-          enriched++;
         }
       }
     }
 
-    if (upsertPayload.length > 0) {
-      const { error } = await supabase
-        .from("articles")
-        .upsert(upsertPayload, { onConflict: "url", ignoreDuplicates: false });
+    for (let i = 0; i < updates.length; i += BATCH) {
+      const batch = updates.slice(i, i + BATCH);
+      const results = await Promise.allSettled(
+        batch.map((row) =>
+          supabase
+            .from("articles")
+            .update({
+              thumbnail: row.thumbnail,
+              hero_image: row.heroImage,
+              updated_at: nowIso(),
+            })
+            .eq("url", row.url)
+        )
+      );
 
-      if (error) {
-        console.error(`[sync] Re-enrich batch upsert failed: ${error.message}`);
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
+        if (result.status === "fulfilled" && !result.value.error) {
+          enriched++;
+          continue;
+        }
+
+        const error =
+          result.status === "fulfilled"
+            ? result.value.error?.message
+            : result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason);
+        console.error(`[sync] Re-enrich update failed for ${batch[j].url}: ${error}`);
       }
     }
 
