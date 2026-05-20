@@ -1089,6 +1089,17 @@ function extractVietnameseGeneric(
     }
   }
 
+  // Fallback to description metadata if no sapoText found
+  if (!sapoText && description && description.trim().length > 20) {
+    sapoText = description.trim();
+    pushUnique(paragraphs, seenP, sapoText);
+    contentClone.find("h2").each((_, el) => {
+      if ($(el).text().trim() === sapoText) {
+        $(el).remove();
+      }
+    });
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
