@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, ExternalLink, BadgeCheck, Newspaper } from "lucide-react";
+import { ArrowLeft, ExternalLink, BadgeCheck, Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
@@ -96,9 +96,8 @@ export default async function DigestPage({
         </Link>
 
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-lfc-gold" />
           <span className="font-barlow text-xs uppercase tracking-widest text-lfc-gold font-bold">
-            {t("badge")}
+            {t("by", { author: t("author") })}
           </span>
           <span className="font-inter text-xs text-stadium-muted ml-2">
             {digestDate.toLocaleDateString("vi-VN", {

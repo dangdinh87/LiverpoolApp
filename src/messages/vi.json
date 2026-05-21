@@ -236,19 +236,21 @@
       "loginRequiredDesc": "Bạn cần đăng nhập để thích và lưu bài viết."
     },
     "digest": {
-      "badge": "Tóm tắt bởi AI",
+      "badge": "Bản tin",
       "proBadge": "LFCVN Pro",
-      "sourceFromSite": "Nguồn: {source}",
-      "sourceDigestTitle": "Nguồn tổng hợp",
+      "author": "LiverpoolFCVN",
+      "by": "Bởi {author}",
+      "sourceFromSite": "Nguồn tham khảo: {source}",
+      "sourceDigestTitle": "Nguồn tham khảo",
       "dismiss": "Ẩn",
-      "expand": "Đọc tóm tắt",
+      "expand": "Đọc bài",
       "collapse": "Thu gọn",
       "readFull": "Đọc đầy đủ",
-      "articleCount": "Từ {count} bài viết",
+      "articleCount": "Tổng hợp từ {count} nguồn",
       "backToNews": "Quay lại Tin tức",
       "sourceArticle": "Nguồn #{n}",
-      "generatedBy": "Tạo bởi AI",
-      "generatedAt": "Cập nhật {time}",
+      "generatedBy": "LiverpoolFCVN",
+      "generatedAt": "Đăng {time}",
       "refresh": "Đồng bộ",
       "syncing": "Đang đồng bộ..."
     }

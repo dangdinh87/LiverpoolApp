@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, X, ArrowRight, RefreshCw, AlertCircle, BadgeCheck } from "lucide-react";
+import { X, ArrowRight, BadgeCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { refreshDigest } from "@/app/news/actions";
 
 interface DigestProps {
   date: string;
@@ -24,13 +23,10 @@ function formatDigestTime(iso: string): string {
 export function DigestCard(props: DigestProps) {
   const t = useTranslations("News.digest");
   const [dismissed, setDismissed] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Local state so we can update inline without reload
-  const [displayTitle, setDisplayTitle] = useState(props.title);
-  const [displaySummary, setDisplaySummary] = useState(props.summary);
-  const [displayTime, setDisplayTime] = useState(props.generatedAt);
+  const displayTitle = props.title;
+  const displaySummary = props.summary;
+  const displayTime = props.generatedAt;
 
   useEffect(() => {
     const last = localStorage.getItem(DISMISSED_KEY);
@@ -59,15 +55,16 @@ export function DigestCard(props: DigestProps) {
           <h3 className="font-bebas text-xl sm:text-2xl text-white tracking-wider leading-none">
             {displayTitle}
           </h3>
-          <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-[0.2em] text-lfc-red shrink-0 translate-y-px">
-            <Sparkles className="w-3 h-3" />
-            {t("badge")}
-          </span>
           <span className="inline-flex items-center gap-1 border border-lfc-gold/40 bg-lfc-gold/10 px-1.5 py-0.5 font-barlow font-bold text-[10px] uppercase tracking-[0.16em] text-lfc-gold shrink-0 translate-y-px">
             <BadgeCheck className="w-3 h-3" />
             {t("proBadge")}
           </span>
         </div>
+
+        {/* Byline */}
+        <p className="font-barlow text-[11px] uppercase tracking-[0.14em] text-stadium-muted mb-1.5">
+          {t("by", { author: t("author") })}
+        </p>
 
         {/* Summary */}
         <p className="font-inter text-sm text-white/70 leading-relaxed line-clamp-3 sm:line-clamp-none">
@@ -82,39 +79,9 @@ export function DigestCard(props: DigestProps) {
           >
             {t("readFull")} <ArrowRight className="w-3 h-3" />
           </Link>
-          <button
-            onClick={async () => {
-              setIsRefreshing(true);
-              setError(null);
-              try {
-                const result = await refreshDigest();
-                if (result.ok) {
-                  if (result.title) setDisplayTitle(result.title);
-                  if (result.summary) setDisplaySummary(result.summary);
-                  if (result.generatedAt) setDisplayTime(result.generatedAt);
-                } else {
-                  setError(result.error || "Failed");
-                }
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Network error");
-              } finally {
-                setIsRefreshing(false);
-              }
-            }}
-            disabled={isRefreshing}
-            className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-wider text-stadium-muted hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? t("syncing") : t("refresh")}
-          </button>
           {displayTime && (
             <span className="font-inter text-[11px] text-stadium-muted">
               {t("generatedAt", { time: formatDigestTime(displayTime) })}
-            </span>
-          )}
-          {error && (
-            <span className="inline-flex items-center gap-1 font-inter text-[11px] text-red-400">
-              <AlertCircle className="w-3 h-3" /> {error}
             </span>
           )}
         </div>
