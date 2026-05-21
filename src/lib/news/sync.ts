@@ -113,6 +113,15 @@ async function getMatchTrafficMode(): Promise<{
   }
 }
 
+function toIsoDateOrNow(...values: (string | undefined)[]): string {
+  for (const value of values) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (Number.isFinite(time)) return new Date(time).toISOString();
+  }
+  return new Date().toISOString();
+}
+
 function articleToRow(a: NewsArticle) {
   return {
     url: a.link,
@@ -123,9 +132,7 @@ function articleToRow(a: NewsArticle) {
     language: a.language,
     category: a.category || "general",
     relevance: a.relevanceScore ?? 0,
-    published_at: a.pubDate 
-      ? new Date(a.pubDate).toISOString() 
-      : (a.fetchedAt ? new Date(a.fetchedAt).toISOString() : new Date().toISOString()),
+    published_at: toIsoDateOrNow(a.pubDate, a.fetchedAt),
     author: a.author || null,
     hero_image: a.heroImage || a.thumbnail || null,
     word_count: a.wordCount || null,

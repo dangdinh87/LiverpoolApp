@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Sparkles, X, ArrowRight, RefreshCw, AlertCircle } from "lucide-react";
+import { Sparkles, X, ArrowRight, RefreshCw, AlertCircle, BadgeCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { refreshDigest } from "@/app/news/actions";
 
@@ -62,6 +62,10 @@ export function DigestCard(props: DigestProps) {
           <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-[0.2em] text-lfc-red shrink-0 translate-y-px">
             <Sparkles className="w-3 h-3" />
             {t("badge")}
+          </span>
+          <span className="inline-flex items-center gap-1 border border-lfc-gold/40 bg-lfc-gold/10 px-1.5 py-0.5 font-barlow font-bold text-[10px] uppercase tracking-[0.16em] text-lfc-gold shrink-0 translate-y-px">
+            <BadgeCheck className="w-3 h-3" />
+            {t("proBadge")}
           </span>
         </div>
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Sparkles, ExternalLink } from "lucide-react";
+import { ArrowLeft, Sparkles, ExternalLink, BadgeCheck, Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getDigestByDate } from "@/lib/news/digest";
+import { getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
@@ -20,12 +20,16 @@ export async function generateMetadata({
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found" };
   const digest = await getDigestByDate(date);
   if (!digest) return { title: "Digest Not Found" };
-  const description = digest.summary.slice(0, 160);
+  const description =
+    digest.seo_description ||
+    getSeoArticleFromDigest(digest)?.metaDescription ||
+    digest.summary.slice(0, 160);
+  const title = digest.seo_title || getSeoArticleFromDigest(digest)?.metaTitle || digest.title;
   const digestPath = `/news/digest/${date}`;
   return {
-    title: digest.title,
+    title,
     description,
-    ...makePageMeta(digest.title, description, {
+    ...makePageMeta(title, description, {
       path: digestPath,
       type: "article",
       publishedTime: digest.generated_at,
@@ -48,13 +52,18 @@ export default async function DigestPage({
 
   if (!digest) notFound();
 
-  const sections = digest.sections as {
+  const sections = getVisibleDigestSections(digest.sections as {
     category: string;
     categoryVi: string;
     headline: string;
     body: string;
     articleUrls: string[];
-  }[];
+  }[]);
+  const seoArticle = getSeoArticleFromDigest(digest);
+  const displayTitle = seoArticle?.title || digest.title;
+  const displayDescription =
+    seoArticle?.metaDescription || seoArticle?.excerpt || digest.summary.slice(0, 160);
+  const digestDate = new Date(`${date}T00:00:00+07:00`);
 
   // Fetch titles for all source URLs across all sections
   const allUrls = sections.flatMap((s) => s.articleUrls);
@@ -69,10 +78,11 @@ export default async function DigestPage({
           { name: "Daily Digest", url: getCanonical(`/news/digest/${date}`) },
         ]),
         buildNewsArticleJsonLd({
-          title: digest.title,
-          description: digest.summary.slice(0, 160),
+          title: displayTitle,
+          description: displayDescription,
           url: getCanonical(`/news/digest/${date}`),
           publishedAt: digest.generated_at,
+          sourceName: seoArticle?.sourceName,
         }),
       ]} />
       {/* Header */}
@@ -91,7 +101,7 @@ export default async function DigestPage({
             {t("badge")}
           </span>
           <span className="font-inter text-xs text-stadium-muted ml-2">
-            {new Date(date).toLocaleDateString("vi-VN", {
+            {digestDate.toLocaleDateString("vi-VN", {
               weekday: "long",
               day: "numeric",
               month: "long",
@@ -101,14 +111,88 @@ export default async function DigestPage({
         </div>
 
         <h1 className="font-inter text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4">
-          {digest.title}
+          {displayTitle}
         </h1>
 
-        <blockquote className="font-inter text-lg text-white/60 leading-relaxed pl-5 border-l-4 border-lfc-red italic mb-10">
-          {digest.summary}
-        </blockquote>
+        {seoArticle ? (
+          <article className="mb-12">
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              <span className="inline-flex items-center gap-1.5 border border-lfc-gold/50 bg-lfc-gold/10 px-2.5 py-1 font-barlow text-[11px] font-bold uppercase tracking-[0.18em] text-lfc-gold shadow-[0_0_24px_rgba(250,204,21,0.12)]">
+                <BadgeCheck className="w-3.5 h-3.5" />
+                {seoArticle.badgeLabel || t("proBadge")}
+              </span>
+              <span className="inline-flex items-center gap-1.5 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
+                <Newspaper className="w-3.5 h-3.5 text-lfc-red" />
+                {t("sourceFromSite", { source: seoArticle.sourceName })}
+              </span>
+            </div>
+
+            <p className="font-inter text-lg text-white/70 leading-relaxed pl-5 border-l-4 border-lfc-red mb-7">
+              {seoArticle.excerpt}
+            </p>
+
+            {(seoArticle.focusKeyword || seoArticle.secondaryKeywords?.length > 0) && (
+              <div className="flex flex-wrap gap-2 mb-9">
+                {seoArticle.focusKeyword && (
+                  <span className="border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1 font-inter text-xs text-white/80">
+                    {seoArticle.focusKeyword}
+                  </span>
+                )}
+                {seoArticle.secondaryKeywords?.slice(0, 5).map((keyword) => (
+                  <span
+                    key={keyword}
+                    className="border border-stadium-border/70 bg-stadium-surface/70 px-2.5 py-1 font-inter text-xs text-stadium-muted"
+                  >
+                    {keyword}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-9">
+              {seoArticle.body.map((section, i) => (
+                <section key={`${section.heading}-${i}`}>
+                  <h2 className="font-inter text-2xl font-extrabold text-white leading-tight mb-4">
+                    {section.heading}
+                  </h2>
+                  <div className="space-y-5">
+                    {section.paragraphs.map((paragraph, j) => (
+                      <p
+                        key={j}
+                        className="font-inter text-[17px] text-white/80 leading-[1.85]"
+                      >
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            {seoArticle.conclusion && (
+              <p className="font-inter text-[17px] text-white/85 leading-[1.85] mt-9 border-t border-stadium-border/60 pt-6">
+                {seoArticle.conclusion}
+              </p>
+            )}
+          </article>
+        ) : (
+          <blockquote className="font-inter text-lg text-white/60 leading-relaxed pl-5 border-l-4 border-lfc-red italic mb-10">
+            {digest.summary}
+          </blockquote>
+        )}
 
         {/* Sections */}
+        <div className="border-t border-stadium-border/60 pt-8 mb-5">
+          <p className="font-barlow text-xs uppercase tracking-[0.18em] text-lfc-red font-bold mb-2">
+            {t("sourceDigestTitle")}
+          </p>
+          {seoArticle && (
+            <p className="font-inter text-sm text-white/55 leading-relaxed">
+              {digest.summary}
+            </p>
+          )}
+        </div>
+
         <div className="space-y-8">
           {sections.map((section, i) => {
             const catConfig =

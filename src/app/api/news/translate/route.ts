@@ -1,9 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
+import { getEnv } from "@/lib/env";
 import { scrapeArticle } from "@/lib/news";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import type { ArticleContent } from "@/lib/news/types";
 
 export const maxDuration = 60;
 
@@ -25,28 +27,48 @@ Translation rules:
 - Keep player names, club names in English (e.g., Salah, Van Dijk, Arsenal)
 - Understand context: distinguish "move" (transfer) vs "move" (on-pitch movement)
 - Translate idioms meaningfully, not literally (e.g., "pull the trigger" = "ra quyết định")
+- Output must be Vietnamese only, with English names preserved. Translate weekdays/months fully (e.g., Wednesday = thứ Tư). Do not output Cyrillic, Russian, Chinese, or other non-Vietnamese scripts.
 
 Format rules:
 - Separate each translated section with "|||" on its own line
-- First section = title, then each paragraph follows
+- First section = title, second section = description if it is present in the input, then each paragraph follows
 - Do NOT include labels like "TITLE:", "TIÊU ĐỀ:", "P1:", etc.
 - Skip promotional text (FOLLOW OUR PAGE, Sign up, Newsletter)
 - Return ONLY the Vietnamese translation, no commentary`;
 
+const TRANSLATE_MODELS = [
+  "llama-3.3-70b-versatile",
+  "meta-llama/llama-4-scout-17b-16e-instruct",
+  "llama-3.1-8b-instant",
+] as const;
+
+interface CachedTranslationContent {
+  description?: string | null;
+  paragraphs?: string[];
+}
+
+function shouldTryNextGroqModel(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /429|rate limit|tokens per|does not exist|do not have access|model|overloaded|timeout|503|502|504|500/i.test(msg);
+}
+
+function isUsableTranslation(content: unknown): content is CachedTranslationContent {
+  if (!content || typeof content !== "object") return false;
+  const paragraphs = (content as CachedTranslationContent).paragraphs;
+  return Array.isArray(paragraphs) && paragraphs.some((p) => typeof p === "string" && p.trim().length > 0);
+}
+
+function isUsableArticleContent(content: unknown): content is ArticleContent {
+  if (!content || typeof content !== "object") return false;
+  const paragraphs = (content as ArticleContent).paragraphs;
+  return Array.isArray(paragraphs) && paragraphs.some((p) => typeof p === "string" && p.trim().length > 0);
+}
+
+function hasUnexpectedScript(text: string): boolean {
+  return /[\u0400-\u04FF\u3400-\u9FFF]/u.test(text);
+}
+
 export async function POST(req: NextRequest) {
-  // Rate limit: 10 translations per hour per IP
-  const { allowed } = checkRateLimit(`translate:${getClientIP(req)}`, 10, 3_600_000);
-  if (!allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
-
-  if (!process.env.GROQ_API_KEY) {
-    return NextResponse.json(
-      { error: "Translation service unavailable" },
-      { status: 503 }
-    );
-  }
-
   try {
     const { url } = await req.json();
     if (!url || typeof url !== "string") {
@@ -58,11 +80,11 @@ export async function POST(req: NextRequest) {
     // Check DB cache first
     const { data: cached } = await supabase
       .from("articles")
-      .select("title_vi, snippet_vi, content_vi")
+      .select("title_vi, snippet_vi, content_vi, content_en")
       .eq("url", url)
-      .single();
+      .maybeSingle();
 
-    if (cached?.content_vi) {
+    if (cached && isUsableTranslation(cached.content_vi)) {
       return NextResponse.json({
         title_vi: cached.title_vi,
         description_vi: cached.content_vi.description || null,
@@ -72,8 +94,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Scrape article content
-    const content = await scrapeArticle(url);
+    // Rate limit only uncached AI generations. Cached DB translations are free to read.
+    const { allowed } = checkRateLimit(`translate:${getClientIP(req)}`, 10, 3_600_000);
+    if (!allowed) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    }
+
+    const apiKey = getEnv("GROQ_API_KEY");
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Translation service unavailable" },
+        { status: 503 }
+      );
+    }
+
+    // Prefer pre-scraped DB content. Falling back to live scraping can be slow or blocked by sources.
+    const content = isUsableArticleContent(cached?.content_en)
+      ? cached.content_en
+      : await scrapeArticle(url);
     if (!content || content.paragraphs.length === 0) {
       return NextResponse.json(
         { error: "Could not extract article content" },
@@ -94,15 +132,10 @@ export async function POST(req: NextRequest) {
     const input = sections.join("\n|||\n");
 
     // Call Groq with model fallback on rate limit
-    const groq = createGroq({ apiKey: process.env.GROQ_API_KEY });
-    const TRANSLATE_MODELS = [
-      "llama-3.3-70b-versatile",   // best quality for translation
-      "moonshotai/kimi-k2-instruct", // 60 RPM, strong multilingual
-      "qwen/qwen3-32b",             // good Vietnamese support
-      "llama-3.1-8b-instant",       // fast fallback, 500K TPD
-    ];
+    const groq = createGroq({ apiKey });
     let result;
-    for (const modelId of TRANSLATE_MODELS) {
+    let usedModel: string = TRANSLATE_MODELS[0];
+    for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
       try {
         result = await generateText({
           model: groq(modelId),
@@ -110,12 +143,17 @@ export async function POST(req: NextRequest) {
           prompt: input,
           maxOutputTokens: 4000,
         });
+        if (hasUnexpectedScript(result.text) && index < TRANSLATE_MODELS.length - 1) {
+          console.warn(`[translate] ${modelId} returned unexpected script, falling back...`);
+          result = undefined;
+          continue;
+        }
+        usedModel = modelId;
         break; // success
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "";
-        const isRateLimit = msg.includes("429") || msg.includes("rate limit") || msg.includes("tokens per");
-        if (isRateLimit && modelId !== TRANSLATE_MODELS[TRANSLATE_MODELS.length - 1]) {
-          console.warn(`[translate] ${modelId} rate limited, falling back...`);
+        if (index < TRANSLATE_MODELS.length - 1 && shouldTryNextGroqModel(err)) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(`[translate] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
           continue;
         }
         throw err;
@@ -159,6 +197,7 @@ export async function POST(req: NextRequest) {
       description_vi: descriptionVi || null,
       snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
       paragraphs: paragraphsVi,
+      model: usedModel,
       cached: false,
     });
   } catch (err) {

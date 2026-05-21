@@ -236,6 +236,9 @@
     },
     "digest": {
       "badge": "AI Summary",
+      "proBadge": "LFCVN Pro",
+      "sourceFromSite": "Source: {source}",
+      "sourceDigestTitle": "Source Digest",
       "dismiss": "Dismiss",
       "expand": "Read summary",
       "collapse": "Collapse",

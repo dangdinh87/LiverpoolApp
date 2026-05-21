@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
-import { generateDailyDigest } from "@/lib/news/digest";
+import { getEnv } from "@/lib/env";
+import {
+  generateDailyDigest,
+  getDigestDateKey,
+  getSeoArticleFromDigest,
+  upsertDigestRecord,
+} from "@/lib/news/digest";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { withCronAuth } from "@/lib/cron";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-export const GET = withCronAuth(async () => {
-  if (!process.env.GROQ_API_KEY) {
+export const GET = withCronAuth(async (req) => {
+  if (!getEnv("GROQ_API_KEY")) {
     return NextResponse.json(
       { error: "GROQ_API_KEY not configured" },
       { status: 503 }
@@ -16,43 +22,30 @@ export const GET = withCronAuth(async () => {
 
   try {
     const supabase = getServiceClient();
-    const today = new Date().toISOString().split("T")[0];
+    const today = getDigestDateKey();
+    const force = req.nextUrl.searchParams.get("force") === "1";
 
-    // Skip if already generated today (save Groq tokens)
+    // Skip if already generated today with the SEO article payload (save Groq tokens).
     const { data: existing } = await supabase
       .from("news_digests")
-      .select("digest_date")
+      .select("*")
       .eq("digest_date", today)
       .maybeSingle();
 
-    if (existing) {
+    if (existing && getSeoArticleFromDigest(existing) && !force) {
       return NextResponse.json({ ok: true, date: today, skipped: true });
     }
 
     const digest = await generateDailyDigest();
 
-    const { error } = await supabase.from("news_digests").upsert(
-      {
-        digest_date: today,
-        title: digest.title,
-        summary: digest.summary,
-        sections: digest.sections,
-        article_ids: digest.sections.flatMap((s) => s.articleUrls),
-        article_count: digest.articleCount,
-        model: digest.model,
-        tokens_used: digest.tokensUsed,
-        generated_at: new Date().toISOString(),
-      },
-      { onConflict: "digest_date" }
-    );
-
-    if (error) throw error;
+    await upsertDigestRecord(existing, today, digest);
 
     return NextResponse.json({
       ok: true,
       date: today,
       title: digest.title,
       sections: digest.sections.length,
+      seoArticle: true,
       articleCount: digest.articleCount,
       tokensUsed: digest.tokensUsed,
       model: digest.model,

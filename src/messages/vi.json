@@ -237,6 +237,9 @@
     },
     "digest": {
       "badge": "Tóm tắt bởi AI",
+      "proBadge": "LFCVN Pro",
+      "sourceFromSite": "Nguồn: {source}",
+      "sourceDigestTitle": "Nguồn tổng hợp",
       "dismiss": "Ẩn",
       "expand": "Đọc tóm tắt",
       "collapse": "Thu gọn",
