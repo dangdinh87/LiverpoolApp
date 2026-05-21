@@ -58,7 +58,8 @@ interface EspnRosterEntry {
   starter: boolean;
   jersey: string;
   athlete: { id: string; displayName: string };
-  position: { abbreviation: string; name?: string };
+  position?: { abbreviation?: string; name?: string };
+  formationPlace?: number | string;
 }
 
 interface EspnRosterTeam {
@@ -69,6 +70,17 @@ interface EspnRosterTeam {
 }
 
 interface EspnSummary {
+  header?: {
+    competitions?: {
+      competitors?: {
+        team?: {
+          id?: string;
+          logo?: string;
+          logos?: { href: string; rel?: string[] }[];
+        };
+      }[];
+    }[];
+  };
   keyEvents?: EspnKeyEvent[];
   boxscore?: {
     teams?: EspnBoxscoreTeam[];
@@ -520,12 +532,83 @@ export async function getEspnCupFixtures(): Promise<Fixture[]> {
 // ─── Position mapping: ESPN abbreviation → canonical pos ────────────────────
 
 function mapEspnPosition(abbr: string | undefined): string {
-  if (!abbr || abbr === "SUB") return "M"; // bench players have "SUB" — no specific position
-  if (abbr === "G") return "G";
-  if (abbr.includes("D") || abbr.includes("B")) return "D"; // D, CD, CB, LB, RB
-  if (abbr.includes("M")) return "M"; // M, CM, CDM, CAM, LM, RM
-  if (abbr.includes("F") || abbr.includes("W") || abbr === "ST") return "F"; // F, CF, FW, LW, RW, ST
+  const position = abbr?.toUpperCase();
+  if (!position || position === "SUB") return "M"; // bench players have "SUB" — no specific position
+  if (position === "G") return "G";
+  if (position.includes("M")) return "M"; // M, CM, CDM, CAM, LM, RM
+  if (position.includes("D") || position.includes("B")) return "D"; // D, CD, CB, LB, RB, LWB, RWB
+  if (position.includes("F") || position.includes("W") || position === "ST") return "F"; // F, CF, FW, LW, RW, ST
   return "M"; // safe default
+}
+
+function parseFormation(formation: string | undefined): number[] {
+  if (!formation) return [];
+  return formation
+    .split("-")
+    .map((part) => Number(part))
+    .filter((part) => Number.isFinite(part) && part > 0);
+}
+
+function getLineupRow(abbr: string | undefined, formation: string | undefined): number {
+  const position = abbr?.toUpperCase() ?? "";
+  const lines = parseFormation(formation);
+  const maxRow = Math.max(4, lines.length + 1);
+  const lastLineCount = lines.at(-1) ?? 0;
+
+  if (!position || position === "SUB") return Math.min(3, maxRow);
+  if (position === "G") return 1;
+  if (position.startsWith("AM") || position === "LW" || position === "RW") return Math.max(3, maxRow - 1);
+  if (position.startsWith("CF") && lastLineCount === 1 && lines.length >= 4) return Math.max(3, maxRow - 1);
+  if (position.includes("F") || position === "ST") return maxRow;
+  if (position === "LWB" || position === "RWB") return 2;
+  if (position.includes("M") || position.includes("W")) return 3;
+  if (position.includes("D") || position.includes("B")) return 2;
+  return Math.min(3, maxRow);
+}
+
+function getSideWeight(abbr: string | undefined): number {
+  const position = abbr?.toUpperCase() ?? "";
+  if (position === "LB" || position === "LWB" || position === "LM" || position === "LW") return 1;
+  if (position.endsWith("-L")) return 2;
+  if (position === "RB" || position === "RWB" || position === "RM" || position === "RW") return 5;
+  if (position.endsWith("-R")) return 4;
+  return 3;
+}
+
+function buildStarterGrid(starters: EspnRosterEntry[], formation: string | undefined): Map<number, string> {
+  const rows = new Map<number, { index: number; side: number; place: number; name: string }[]>();
+
+  starters.forEach((player, index) => {
+    const row = getLineupRow(player.position?.abbreviation, formation);
+    const existing = rows.get(row) ?? [];
+    existing.push({
+      index,
+      side: getSideWeight(player.position?.abbreviation),
+      place: Number(player.formationPlace) || 99,
+      name: player.athlete?.displayName ?? "",
+    });
+    rows.set(row, existing);
+  });
+
+  const grid = new Map<number, string>();
+  for (const [row, rowPlayers] of rows.entries()) {
+    rowPlayers
+      .sort((a, b) => a.side - b.side || a.place - b.place || a.name.localeCompare(b.name))
+      .forEach((player, columnIndex) => {
+        grid.set(player.index, `${row}:${columnIndex + 1}`);
+      });
+  }
+
+  return grid;
+}
+
+function getSummaryTeamLogo(summary: EspnSummary, teamId: string): string {
+  const competitors = summary.header?.competitions?.[0]?.competitors ?? [];
+  const team = competitors.find((competitor) => competitor.team?.id === teamId)?.team;
+  return team?.logo
+    ?? team?.logos?.find((logo) => logo.rel?.includes("default"))?.href
+    ?? team?.logos?.[0]?.href
+    ?? "";
 }
 
 // ─── Public: Fetch match lineups from ESPN roster data ──────────────────────
@@ -545,22 +628,23 @@ export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureL
     return summary.rosters.filter((r) => r.roster?.length).map((r) => {
       const starters = r.roster.filter((p) => p.starter);
       const subs = r.roster.filter((p) => !p.starter);
+      const starterGrid = buildStarterGrid(starters, r.formation);
 
       return {
         team: {
           id: espnTeamId(r.team.id),
           name: r.team.displayName,
-          logo: r.team.logo ?? "",
+          logo: r.team.logo ?? getSummaryTeamLogo(summary, r.team.id),
           colors: null,
         },
         formation: r.formation ?? "",
-        startXI: starters.map((p) => ({
+        startXI: starters.map((p, index) => ({
           player: {
             id: parseInt(p.athlete.id, 10) || 0,
             name: p.athlete.displayName,
             number: parseInt(p.jersey, 10) || 0,
-            pos: mapEspnPosition(p.position.abbreviation),
-            grid: null,
+            pos: mapEspnPosition(p.position?.abbreviation),
+            grid: starterGrid.get(index) ?? null,
           },
         })),
         substitutes: subs.map((p) => ({
@@ -568,7 +652,7 @@ export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureL
             id: parseInt(p.athlete.id, 10) || 0,
             name: p.athlete.displayName,
             number: parseInt(p.jersey, 10) || 0,
-            pos: mapEspnPosition(p.position.abbreviation),
+            pos: mapEspnPosition(p.position?.abbreviation),
             grid: null,
           },
         })),

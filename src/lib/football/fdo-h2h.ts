@@ -6,6 +6,14 @@ import type { Fixture } from "@/lib/types/football";
 
 const LFC_ID = 40;
 
+function normalizeTeamName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\b(afc|fc|cf|the)\b/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 export interface H2HRecord {
   liverpoolWins: number;
   draws: number;
@@ -39,11 +47,28 @@ export function computeH2H(
   opponentId: number,
 ): H2HRecord | null {
   const FINISHED = new Set(["FT", "AET", "PEN"]);
+
+  const opponentAliases = new Set<string>();
+  for (const fixture of allFixtures) {
+    const teams = [fixture.teams.home, fixture.teams.away];
+    const hasLiverpool = teams.some((team) => team.id === LFC_ID);
+    if (!hasLiverpool) continue;
+
+    const opponent = teams.find((team) => team.id === opponentId);
+    if (opponent) opponentAliases.add(normalizeTeamName(opponent.name));
+  }
+
   const meetings = allFixtures
     .filter((f) => {
       if (!FINISHED.has(f.fixture.status.short)) return false;
-      const ids = [f.teams.home.id, f.teams.away.id];
-      return ids.includes(LFC_ID) && ids.includes(opponentId);
+      const teams = [f.teams.home, f.teams.away];
+      const hasLiverpool = teams.some((team) => team.id === LFC_ID);
+      if (!hasLiverpool) return false;
+
+      const opponent = teams.find((team) => team.id !== LFC_ID);
+      if (!opponent) return false;
+
+      return opponent.id === opponentId || opponentAliases.has(normalizeTeamName(opponent.name));
     })
     .sort(
       (a, b) =>
