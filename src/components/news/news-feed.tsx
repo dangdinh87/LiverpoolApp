@@ -838,10 +838,20 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagem
                         Math.min(prev + LOAD_MORE_COUNT, articles.length)
                       );
                     } else if (serverHasMore) {
-                      const currentTotal = localArticles.length + globalArticles.length + extraArticles.length;
+                      const requestLanguage: "en" | "vi" | undefined =
+                        langFilter === "local"
+                          ? locale
+                          : langFilter === "global"
+                            ? (locale === "vi" ? "en" : "vi")
+                            : undefined;
+                      const currentTotal = requestLanguage
+                        ? [...localArticles, ...globalArticles, ...extraArticles].filter(
+                          (a) => a.language === requestLanguage
+                        ).length
+                        : localArticles.length + globalArticles.length + extraArticles.length;
                       startTransition(async () => {
                         const { articles: newArticles, hasMore: more } =
-                          await loadMoreNews(currentTotal, LOAD_MORE_COUNT, langFilter === "local" ? "vi" : langFilter === "global" ? "en" : undefined);
+                          await loadMoreNews(currentTotal, LOAD_MORE_COUNT, requestLanguage);
                         setExtraArticles((prev) => [...prev, ...newArticles]);
                         setServerHasMore(more);
                         setVisibleCount((prev) => prev + newArticles.length);

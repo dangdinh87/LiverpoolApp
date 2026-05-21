@@ -6,6 +6,12 @@ const PROTECTED_ROUTES = ["/profile"];
 
 // Routes that are always dynamic (auth-dependent or API)
 const DYNAMIC_PREFIXES = ["/api/", "/auth/", "/profile"];
+const NOINDEX_PREFIXES = ["/auth/", "/profile"];
+
+function addNoIndex(response: NextResponse): NextResponse {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -43,10 +49,10 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       const loginUrl = new URL("/auth/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+      return addNoIndex(NextResponse.redirect(loginUrl));
     }
 
-    return response;
+    return addNoIndex(response);
   }
 
   // Locale-sensitive public pages vary by cookie/header, so avoid shared CDN cache
@@ -58,7 +64,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  if (NOINDEX_PREFIXES.some((r) => pathname.startsWith(r))) {
+    return addNoIndex(response);
+  }
+  return response;
 }
 
 export const config = {

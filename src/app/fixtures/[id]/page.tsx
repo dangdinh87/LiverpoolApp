@@ -21,7 +21,7 @@ import { FormationPitch } from "@/components/fixtures/formation-pitch";
 import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
-import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical, makePageMeta } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export const revalidate = 300; // 5 minutes
@@ -41,9 +41,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const fixtures = await getFixtures();
   const match = fixtures.find((f) => f.fixture.id === Number(id));
   if (!match) return { title: "Match" };
+  const title = `${match.teams.home.name} vs ${match.teams.away.name}`;
+  const description = `${match.league.name} — ${match.league.round}`;
   return {
-    title: `${match.teams.home.name} vs ${match.teams.away.name}`,
-    description: `${match.league.name} — ${match.league.round}`,
+    title,
+    description,
+    ...makePageMeta(title, description, { path: `/fixtures/${id}` }),
   };
 }
 
@@ -83,6 +86,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const h2h = computeH2H(allFixturesForH2H, opponentId);
 
   const date = new Date(f.date);
+  // Match confirmation depends on current server time.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const msToKickoff = date.getTime() - now;
   const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;

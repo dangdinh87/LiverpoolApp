@@ -453,15 +453,228 @@ vnexpress.net        → .fck_detail → .article-content
 
 ## Cron Jobs
 
-Configured with GitHub Actions (sync) + `vercel.json` (cleanup, digest):
+### Schedulers
 
-| Route | Schedule | `maxDuration` | Purpose |
-|---|---|---|---|
-| `/api/news/sync` (GitHub Actions) | `0 * * * *` (hourly UTC) | 300s | Sync RSS feeds → Supabase, pre-scrape `content_en` in batches |
-| `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | default | Soft-delete articles >30d; hard-delete >60d |
-| `/api/news/digest/generate` | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq |
+Three concurrent schedulers hit the news endpoints. **The `/api/news/sync` route is currently triggered by BOTH GitHub Actions and Vercel cron** — pick one as primary; the other is redundant.
 
-**Auth:** All cron routes check `Authorization: Bearer <CRON_SECRET>` header (Vercel sends automatically) or `?key=<CRON_SECRET>` query param.
+| Route | Scheduler | Schedule (UTC) | `maxDuration` | Purpose |
+|---|---|---|---|---|
+| `/api/news/sync` | GitHub Actions (`.github/workflows/news-sync.yml`) | `0 * * * *` (hourly) | 300s | RSS fetch → Supabase upsert → og:image enrich → content pre-scrape → ISR revalidate |
+| `/api/news/sync` | Vercel cron (`vercel.json`) | `*/15 * * * *` (every 15 min) | 300s | Same route — duplicate trigger |
+| `/api/news/cleanup` | Vercel cron | `0 3 * * *` (3 AM) | default | Soft-delete >30d; clear `content_en` >60d; hard-delete >60d inactive |
+| `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight) | 60s | AI daily digest via Groq, skip if already generated |
+
+**Auth:** All cron routes go through `withCronAuth()` ([src/lib/cron.ts](../../src/lib/cron.ts)). Accepts either:
+- `Authorization: Bearer <CRON_SECRET>` header (Vercel cron sends automatically; GH Actions sets explicitly)
+- `?key=<CRON_SECRET>` query param
+
+Missing or wrong secret → HTTP 401 `{ "error": "Unauthorized" }`.
+
+---
+
+### GitHub Actions workflow detail (`/api/news/sync`)
+
+**File:** [.github/workflows/news-sync.yml](../../.github/workflows/news-sync.yml)
+
+**Trigger:**
+- `schedule: "0 * * * *"` — every hour at minute :00 UTC (best-effort; see drift section)
+- `workflow_dispatch: {}` — manual trigger, no inputs
+
+**Step 1 — Trigger sync endpoint**
+```bash
+curl -X GET \
+  -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+  -H "Content-Type: application/json" \
+  "${{ secrets.SYNC_URL }}" \
+  --max-time 300 \
+  --retry 3 --retry-delay 10 --retry-connrefused \
+  --silent --output "$TMP_RESPONSE" \
+  --write-out "%{http_code}"
+```
+- `SYNC_URL` is stored as a repo secret (typically `https://www.liverpoolfcvn.blog/api/news/sync`)
+- Response body written to a temp file; HTTP code captured separately
+- `http_code` and `response` are pushed to `$GITHUB_OUTPUT` for downstream steps
+- HTTP code outside `[200, 299]` → `::error::` + `exit 1`
+
+**Step 2 — Parse JSON response (inline Node script)**
+
+The response is parsed and individual fields are written to both `$GITHUB_OUTPUT` and `$GITHUB_STEP_SUMMARY`:
+
+```
+sync_ok=true
+sync_total=380
+sync_upserted=380
+sync_failed=0
+sync_enriched=15
+sync_scraped=4
+sync_scrape_attempted=28
+sync_scrape_failed=24
+sync_scrape_mode=normal
+sync_scrape_budget_stop=false
+sync_duration_ms=26821
+sync_errors_count=0
+sync_duration_sec=26.8
+```
+
+If `json.ok !== true` → `process.exit(1)` even though HTTP 200.
+
+**Step 3 — Telegram notify**
+- `if: success()` → sends `✅ Hourly News Sync success` with all metrics
+- `if: failure()` → sends `❌ Hourly News Sync failed` with first 400 chars of response body
+- Both are skipped silently if `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` secrets are missing
+
+---
+
+### `/api/news/sync` response shape
+
+```jsonc
+{
+  "ok": true,                  // false → workflow exit 1
+  "total": 380,                // articles fetched from all adapters
+  "upserted": 380,             // rows passed to UPSERT (= INSERT + UPDATE combined; not new-only)
+  "failed": 0,                 // batches whose upsert failed
+  "enriched": 15,              // articles given an og:image thumbnail
+  "scraped": 4,                // articles whose full content was pre-scraped
+  "scrapeAttempted": 28,       // candidates picked for scraping
+  "scrapeFailed": 24,          // scrape attempts that failed (timeout/404/selector miss)
+  "scrapeMode": "normal",      // "low" | "normal" | "peak" — adaptive scrape budget
+  "scrapeBudgetStop": false,   // true when 90s scrape time budget exhausted
+  "durationMs": 26821,         // total pipeline duration
+  "errors": []                 // per-batch upsert error details
+}
+```
+
+Error shapes:
+- Pipeline throws → HTTP 500 `{ "error": "<message>" }`
+- Auth fail → HTTP 401 `{ "error": "Unauthorized" }`
+
+---
+
+### Important: `upserted` is NOT a freshness metric
+
+Each RSS feed returns its latest N items (sliding window, typically 15-100). Sync fetches all of them every hour (capped at `FETCH_LIMIT_BASE = 380` in [sync.ts:38](../../src/lib/news/sync.ts#L38)). Most URLs overlap with the previous hour.
+
+Postgres `ON CONFLICT (url) DO UPDATE` counts every returned row in `upserted`, regardless of whether it INSERTed a new row or UPDATEd an existing one. So `upserted: 380` mostly means "380 RSS items processed", not "380 fresh articles added".
+
+Typical breakdown per run:
+- ~376 URLs already in DB → UPDATE (idempotent, no user-facing change)
+- ~4 URLs new → INSERT (the only ones that actually move the feed forward)
+
+The `sync_logs.inserted` column is similarly misleading — its value is `upserted`, not true inserts.
+
+**To track real freshness**, monitor `published_at` of the newest active row or instrument the pipeline to separate insert vs update counts.
+
+---
+
+### Pipeline internals (`syncPipeline()` — [src/lib/news/sync.ts:280](../../src/lib/news/sync.ts#L280))
+
+```
+fetchAllNews(adapters, FETCH_LIMIT_BASE=380)
+  └─ 24 adapters in parallel: 1 LFC + 22 RSS + 1 Bongdaplus
+  └─ per-adapter failures are swallowed (graceful degradation)
+
+bulkUpsertArticles(articles, supabase)
+  ├─ batch size 50, single retry on transient errors
+  ├─ SELECT existing rows by URL → merge into existingMap
+  ├─ For new rows: explicitly seed { is_active: true, read_count: 0, fetched_at: now }
+  │    ↑ FIX as of d6125b1 — see "Known Pitfalls" below
+  ├─ For existing rows: { ...old, ...row, fetched_at: old.fetched_at || now }
+  ├─ UPSERT { onConflict: "url", ignoreDuplicates: false }
+  └─ Strip generated columns (`fts`, `id`) before merge
+
+Re-enrich thumbnails (30 articles, batch 10)
+  └─ Query thumbnail IS NULL AND is_active = true
+  └─ fetchOgMeta() parallel via Promise.allSettled
+  └─ Upsert with new hero_image/thumbnail
+
+getMatchTrafficMode() → "low" | "normal" | "peak"
+  └─ Reads nearest fixture window
+  └─ peak: ±36h around match; normal: within 120h; low: otherwise
+
+scrapeContentForRecentArticles()
+  ├─ Adaptive limit: 10-36 depending on upserted + traffic mode
+  ├─ Query: content_en IS NULL OR content_scraped_at < 24h ago
+  ├─ Sort: relevance DESC, published_at DESC
+  ├─ Parallel scrape in batches of 4-5 (Promise.allSettled)
+  └─ Stops early when 90s time budget hit
+
+INSERT sync_logs { inserted, updated, failed, duration_ms, errors, source_stats }
+
+(after return) revalidatePath("/") + revalidatePath("/news") when upserted > 0
+```
+
+---
+
+### Schedule drift (observed)
+
+GitHub Actions `schedule` is best-effort, not guaranteed. Measured over 5 days (69 runs in a 120h window):
+
+| Metric | Value |
+|---|---|
+| Expected hourly runs | 121 |
+| Actual runs | 69 |
+| **Missing rate** | **43%** |
+| Mean drift from :00 | 33.2 min |
+| Max drift | 59 min |
+| Runs at exactly :00 | 0 |
+| Mean gap between runs | 106 min |
+| Max gap | 272 min (~4.5h) |
+| Gaps >90 min | 37 |
+| Gaps >180 min | 10 |
+
+**Why:** GitHub Actions throttles cron during platform contention; private/free repos see worse drift. For tight freshness SLOs, prefer the Vercel cron path or self-host a scheduler.
+
+---
+
+### Silent failure modes
+
+The `ok: true` flag and Telegram success message **do not guarantee user-facing freshness**:
+
+1. **`upserted: 380` masks zero inserts.** All 380 rows could be updates of existing articles; new bait still drips at <5/hr.
+2. **Scrape failure rate not gated.** A run with `scraped: 4 / scrapeAttempted: 28` (86% scrape miss) returns `ok: true`. Article content quality degrades silently.
+3. **Per-source failures swallowed.** If 5 of 22 RSS feeds error out, `fetchAllNews` still returns successfully; only the remaining 17 sources contribute. The error counts surface in `sync_logs.source_stats` but are not in the API response.
+
+**Recommended alerts:**
+- Inserted < 1 for 3 consecutive hours → "feeds stale"
+- `scraped / scrapeAttempted < 0.5` → "scrape selectors broken"
+- Run gap > 120 min → "scheduler skipped"
+
+---
+
+### Known pitfalls
+
+**Bulk upsert nullifies column defaults** (fixed in [sync.ts:182-196](../../src/lib/news/sync.ts#L182-L196), commit `d6125b1`).
+PostgREST serializes a bulk upsert payload using the *union* of keys across all rows. When new rows (with the slim ~14-key shape from `articleToRow`) are batched alongside existing-merged rows (~26 keys), keys missing on the new rows get serialized as `null` — bypassing column `DEFAULT`. This previously caused fresh articles to land with `is_active = NULL`, which the app filter `.eq("is_active", true)` then excluded.
+
+The fix explicitly seeds `is_active: true` and `read_count: 0` on new rows. Any backfill of historical `is_active = NULL` rows needs a one-off migration.
+
+**`SYNC_URL` secret hardcodes domain.** Production GH Actions hit `liverpoolfcvn.blog` directly — preview deployments cannot be sync-tested via the same workflow.
+
+**No concurrency guard.** `schedule` + `workflow_dispatch` can overlap. Add:
+```yaml
+concurrency:
+  group: news-sync
+  cancel-in-progress: false
+```
+
+---
+
+### Manual operations
+
+```bash
+# Trigger GH Actions sync manually
+gh workflow run news-sync.yml
+
+# Hit the endpoint directly (requires CRON_SECRET)
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  https://www.liverpoolfcvn.blog/api/news/sync
+
+# View recent runs
+gh run list --workflow=news-sync.yml --limit 10
+
+# View last run log
+gh run view --log $(gh run list --workflow=news-sync.yml --limit 1 --json databaseId -q '.[0].databaseId')
+```
 
 ---
 

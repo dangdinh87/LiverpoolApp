@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isAdminEmail } from "@/lib/constants";
 import { getSiteSetting } from "@/lib/gallery/queries";
@@ -10,13 +9,11 @@ import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase"
 export const metadata: Metadata = {
   title: "My Profile",
   description: "Manage your Liverpool FC fan profile.",
+  robots: { index: false, follow: false },
 };
 
 export default async function ProfilePage() {
-  const [supabase, t] = await Promise.all([
-    createServerSupabaseClient(),
-    getTranslations("Profile"),
-  ]);
+  const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login?redirect=/profile");

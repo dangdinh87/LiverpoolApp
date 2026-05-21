@@ -738,10 +738,10 @@
   "Standings": {
     "metadata": {
       "title": "Standings",
-      "description": "Premier League standings 2024/25 season."
+      "description": "Premier League standings 2025/26 season."
     },
     "hero": {
-      "season": "Premier League · 2024/25",
+      "season": "Premier League · 2025/26",
       "title": "Standings",
       "lfcPosition": "Liverpool FC · {rank}{suffix} place",
       "points": "{count} points",
@@ -786,10 +786,10 @@
   "Fixtures": {
     "metadata": {
       "title": "Fixtures & Results",
-      "description": "Liverpool FC fixtures and results for the 2024/25 season."
+      "description": "Liverpool FC fixtures and results for the 2025/26 season."
     },
     "hero": {
-      "season": "2024/25 Season",
+      "season": "2025/26 Season",
       "title": "Fixtures & Results",
       "subtitle": "{count} matches · Liverpool FC"
     },

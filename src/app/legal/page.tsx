@@ -1,10 +1,14 @@
 import { getTranslations } from "next-intl/server";
+import { makePageMeta } from "@/lib/seo";
 
 export async function generateMetadata() {
   const t = await getTranslations("Legal.metadata");
+  const title = t("title");
+  const description = t("description");
   return {
-    title: t("title"),
-    description: t("description"),
+    title,
+    description,
+    ...makePageMeta(title, description, { path: "/legal" }),
   };
 }
 

@@ -5,6 +5,7 @@ import { LoginForm } from "@/components/auth/login-form";
 export const metadata: Metadata = {
   title: "Create Account",
   description: "Create your Liverpool FC fan account.",
+  robots: { index: false, follow: false },
 };
 
 export default function RegisterPage() {
