@@ -9,7 +9,6 @@ const ARTICLE_COLUMNS =
 
 // Sync thresholds
 const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
-const VERY_STALE_MS = 30 * 60 * 1000;   // 30 min — blocking sync
 const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
@@ -89,13 +88,15 @@ async function triggerSyncIfNeeded(): Promise<void> {
   // Fresh data — no sync needed
   if (ageMs !== null && ageMs < STALE_MS) return;
 
-  // Empty DB or very stale (>30 min): BLOCKING sync with timeout
-  if (empty || (ageMs !== null && ageMs >= VERY_STALE_MS)) {
+  // ONLY an empty DB blocks the request (cold bootstrap — there is nothing to
+  // show otherwise). Any stale-but-populated DB must NEVER block a page render:
+  // the hourly cron (GitHub Actions + Vercel) owns refreshing. Previously a
+  // visit landing >30min after the last sync ate an up-to-8s blocking sync —
+  // and with cron drift (frequent >30min gaps) that made /news feel very slow.
+  if (empty) {
     syncInProgress = true;
     try {
-      const label = empty ? "Empty DB — bootstrap" : `Very stale (${Math.round((ageMs ?? 0) / 60000)}min)`;
-      console.log(`[news/db] ${label} sync (blocking, ${BLOCKING_SYNC_TIMEOUT}ms timeout)...`);
-
+      console.log(`[news/db] Empty DB — bootstrap sync (blocking, ${BLOCKING_SYNC_TIMEOUT}ms timeout)...`);
       await Promise.race([
         syncPipeline(),
         new Promise<void>((_, reject) =>
@@ -103,18 +104,18 @@ async function triggerSyncIfNeeded(): Promise<void> {
         ),
       ]);
     } catch (err) {
-      // Timeout or sync error — serve whatever stale data we have
       const msg = err instanceof Error ? err.message : "Unknown error";
-      console.warn(`[news/db] Blocking sync did not complete: ${msg}`);
+      console.warn(`[news/db] Bootstrap sync did not complete: ${msg}`);
     } finally {
       syncInProgress = false;
     }
     return;
   }
 
-  // Mildly stale (15-30 min): fire-and-forget sync, serve stale data immediately
+  // Stale but populated (>15min): fire-and-forget sync, serve current data
+  // immediately so the visitor never waits on the RSS pipeline.
   syncInProgress = true;
-  console.log(`[news/db] Mildly stale (${Math.round((ageMs ?? 0) / 60000)}min) — background sync...`);
+  console.log(`[news/db] Stale (${Math.round((ageMs ?? 0) / 60000)}min) — background sync, serving cached...`);
   syncPipeline()
     .catch((err) => console.error("[news/db] Background sync failed:", err))
     .finally(() => { syncInProgress = false; });
