@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
@@ -27,16 +27,27 @@ const GlobalChatInterface = ({
 	model: string;
 	onConversationCreated?: (id: string, title: string) => void;
 }) => {
+	// Keep conversationId in a ref so the transport body always reads the latest
+	// value WITHOUT recreating the transport. Recreating it mid-stream (when a new
+	// conversation's id arrives via onConversationCreated) makes the runtime
+	// re-submit and duplicates the whole Q&A history — most visible on mobile.
+	const conversationIdRef = useRef(conversationId);
+	useEffect(() => {
+		conversationIdRef.current = conversationId;
+	}, [conversationId]);
+
 	const transport = useMemo(
 		() =>
 			new AssistantChatTransport({
 				api: "/api/chat-groq",
 				body: {
 					model: model,
-					conversationId: conversationId,
+					get conversationId() {
+						return conversationIdRef.current;
+					},
 				},
 			}),
-		[model, conversationId]
+		[model]
 	);
 
 	const runtime = useChatRuntime({

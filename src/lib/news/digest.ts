@@ -97,10 +97,18 @@ const CATEGORY_VI_MAP: Record<string, string> = {
 
 // Model fallback chain — try each model in order until one succeeds.
 // Groq free tier has per-model daily token limits (TPD).
+// The digest is a LARGE request (~7K tokens: long prompt + up to 25 articles),
+// so per-minute token caps (TPM) matter more than daily ones here. Only models
+// with a high TPM can take it in one shot:
+//   llama-3.3-70b → 12K TPM (best prose) · llama-4-scout → 30K TPM (workhorse)
+//   qwen3-32b / gpt-oss-120b → 6–8K TPM → reject this payload outright.
+// So 70b leads (quality), Scout follows (highest TPM). To keep 70b's 100K TPD
+// free for this midnight job, CHAT runs on qwen (see DEFAULT_CHAT_AI_MODEL) so
+// interactive traffic can't drain the budget the digest needs.
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",     // best quality, 100K TPD
-  "meta-llama/llama-4-scout-17b-16e-instruct", // accessible Groq fallback
-  "llama-3.1-8b-instant",        // fast fallback, 500K TPD
+  "llama-3.3-70b-versatile",                   // best prose, 12K TPM, 100K TPD
+  "meta-llama/llama-4-scout-17b-16e-instruct", // 30K TPM workhorse fallback
+  "llama-3.1-8b-instant",                      // fast last resort, 500K TPD
 ] as const;
 
 const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
@@ -145,6 +153,15 @@ Phong cách viết:
 - Được phép thể hiện cảm xúc fan: hào hứng khi thắng, lo lắng khi chấn thương, kỳ vọng trước trận lớn
 - Đặt tin trong bối cảnh rộng hơn (cuộc đua vô địch, phong độ gần đây, lịch sử đối đầu)
 - Kết thúc summary bằng câu tạo kỳ vọng hoặc nhận định ngắn gọn
+
+QUAN TRỌNG — Viết như người thật, TUYỆT ĐỐI tránh lộ chất AI:
+- CẤM các cụm sáo rỗng kiểu AI: "Trong bối cảnh", "Đáng chú ý là", "Điều thú vị là", "Không thể phủ nhận", "Có thể nói rằng", "Nhìn chung", "Tóm lại", "Hơn bao giờ hết", "đánh dấu một bước ngoặt", "không chỉ... mà còn", "Hãy cùng chờ đợi", "Thời gian sẽ trả lời"
+- ĐA DẠNG độ dài câu: xen câu ngắn gọn, dứt khoát với câu dài. KHÔNG để mọi câu cùng nhịp điệu đều đều
+- KHÔNG mở đầu nhiều đoạn bằng cùng một kiểu (tránh lặp "Liverpool...", "The Reds...", "Đội bóng...")
+- KHÔNG dùng dấu gạch ngang (—) tràn lan; ưu tiên dấu câu tự nhiên
+- KHÔNG kết bài kiểu chung chung vô thưởng vô phạt; nêu quan điểm cụ thể, có lập trường của một fan thực thụ
+- Dùng khẩu ngữ fan bóng đá Việt khi hợp lý: "The Kop", "lữ đoàn đỏ", "thầy trò Arne Slot", "đại chiến", "phong độ hủy diệt" — nhưng đừng nhồi nhét
+- Viết như đang gõ nhanh cho anh em fan đọc, có chính kiến, hơi đời thường — KHÔNG trau chuốt máy móc, KHÔNG cân bằng giả tạo kiểu "một mặt... mặt khác"
 
 Quy tắc nội dung:
 - Nhắc TẤT CẢ tên cầu thủ, HLV quan trọng — KHÔNG được bỏ sót
@@ -313,18 +330,37 @@ export async function upsertDigestRecord(
   return fallbackData;
 }
 
-export async function generateDailyDigest(): Promise<DigestResult> {
-  const supabase = getServiceClient();
-
-  // Query top 25 most relevant articles recently synced (fetched_at) or published
-  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-  const { data: articles } = await supabase
+// Fetch the top relevant active articles within the last `windowHours`.
+// Matches on either publish time or sync time so freshly-synced items count.
+async function fetchDigestArticles(
+  supabase: ReturnType<typeof getServiceClient>,
+  windowHours: number
+) {
+  const since = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
+  const { data } = await supabase
     .from("articles")
     .select("url, title, snippet, source, language, category, relevance")
     .eq("is_active", true)
     .or(`published_at.gte.${since},fetched_at.gte.${since}`)
     .order("relevance", { ascending: false })
     .limit(25);
+  return data ?? [];
+}
+
+export async function generateDailyDigest(): Promise<DigestResult> {
+  const supabase = getServiceClient();
+
+  // Query top 25 most relevant articles. Prefer the last 24h, but widen the
+  // window progressively if a quiet news day (or a sync hiccup) leaves too few
+  // — this prevents the digest cron from failing and leaving date gaps, the way
+  // it did when the is_active=null bug starved this query for ~8 days.
+  const WINDOWS_HOURS = [24, 72, 24 * 7];
+  const MIN_ARTICLES = 3;
+  let articles: NonNullable<Awaited<ReturnType<typeof fetchDigestArticles>>> = [];
+  for (const hours of WINDOWS_HOURS) {
+    articles = await fetchDigestArticles(supabase, hours);
+    if (articles.length >= MIN_ARTICLES) break;
+  }
 
   if (!articles || articles.length === 0) {
     throw new Error("No recent articles found for digest");
