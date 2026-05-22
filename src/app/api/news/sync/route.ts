@@ -10,7 +10,8 @@ export const GET = withCronAuth(async () => {
   try {
     const result = await syncPipeline();
 
-    // Invalidate ISR cache so next visitor gets fresh data
+    // Invalidate ISR cache so next visitor gets fresh data. The unstable_cache
+    // data layer (tag "news") refreshes on its own 5-min revalidate window.
     if (result.upserted > 0) {
       revalidatePath("/");
       revalidatePath("/news");

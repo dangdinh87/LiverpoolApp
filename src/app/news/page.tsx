@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
 import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
@@ -15,7 +16,30 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
 }
 
-export const dynamic = "force-dynamic";
+const NEWS_PAGE_LIMIT = 60;
+
+// Cache the heavy DB reads across requests (Next Data Cache). The page itself
+// stays dynamic because it reads the locale cookie, but the article/digest/
+// engagement queries now hit the cache instead of Supabase on every load.
+// `lang` is part of the cache key so EN/VI keep separate entries. The "news"
+// tag is busted by the sync route, so a fresh sync shows up immediately.
+const getCachedNewsList = unstable_cache(
+  async (lang: "en" | "vi") => getNewsFromDB(NEWS_PAGE_LIMIT, lang, { skipSync: true }),
+  ["news-page-list-v1"],
+  { revalidate: 300, tags: ["news"] },
+);
+
+const getCachedNewsDigest = unstable_cache(
+  async () => getLatestDigest(),
+  ["news-page-digest-v1"],
+  { revalidate: 1800, tags: ["news-digest"] },
+);
+
+const getCachedNewsEngagement = unstable_cache(
+  async () => Array.from((await getArticleEngagement()).entries()),
+  ["news-page-engagement-v1"],
+  { revalidate: 300, tags: ["news"] },
+);
 
 export default async function NewsPage() {
   const [t, locale] = await Promise.all([
@@ -24,11 +48,12 @@ export default async function NewsPage() {
   ]);
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
   // Fetch both VI + EN articles, biased toward the current locale for the default tab.
-  const [allArticles, digest, engagementMap] = await Promise.all([
-    getNewsFromDB(60, userLang),
-    getLatestDigest(),
-    getArticleEngagement(),
+  const [allArticles, digest, engagementEntries] = await Promise.all([
+    getCachedNewsList(userLang),
+    getCachedNewsDigest(),
+    getCachedNewsEngagement(),
   ]);
+  const engagementMap = new Map(engagementEntries);
   // Serialize engagement map for client component
   const engagement: Record<string, { likes: number; comments: number; total: number }> = {};
   for (const [url, data] of engagementMap) {
