@@ -60,15 +60,18 @@ export default async function NewsPage() {
     engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
   }
   const nowMs = new Date().getTime();
-  // Ensure very recent articles (last 12h) are visible in both tabs if they are highly relevant
-  const freshThreshold = nowMs - 12 * 60 * 60 * 1000;
-  
-  const localArticles = allArticles.filter((a) => a.language === userLang || new Date(a.pubDate).getTime() > freshThreshold);
-  const globalArticles = allArticles.filter((a) => a.language !== userLang || new Date(a.pubDate).getTime() > freshThreshold);
 
-  // Re-sort both to ensure chronological order after mixing
-  localArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-  globalArticles.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  // Strict language separation for the two tabs. The "local" tab must show the
+  // user's language (VI for vi-locale), the "global" tab the other language.
+  // (A previous "mix fresh <12h into both tabs" rule flooded the VI tab with
+  // English articles, since EN sources publish far more often and their newer
+  // timestamps dominated the chronological sort.)
+  const localArticles = allArticles
+    .filter((a) => a.language === userLang)
+    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  const globalArticles = allArticles
+    .filter((a) => a.language !== userLang)
+    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
