@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -1089,6 +1089,18 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, description);
+
+    // Remove any h2 inside the cloned container that exactly matches the fallback text
+    contentClone.find("h2").each((_, el) => {
+      if ($(el).text().trim() === description) {
+        $(el).remove();
+      }
+    });
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1300,11 +1312,26 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
+  let sapoText: string | undefined;
   const sapo = $(".the-article-summary").first().text().trim();
   if (sapo && sapo.length > 20) {
+    sapoText = sapo;
     pushUnique(paragraphs, seenP, sapo);
     contentClone.find(".the-article-summary").first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, description);
+    contentClone.prepend(`<p class="sapo"><strong>${description}</strong></p>`);
+
+    // Remove any h2 inside the cloned container that exactly matches the fallback text
+    contentClone.find("h2").each((_, el) => {
+      if ($(el).text().trim() === description) {
+        $(el).remove();
+      }
+    });
   }
 
   container.find("p").each((_, el) => {
@@ -1351,13 +1378,28 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
+  let sapoText: string | undefined;
   const sapo = $("p.description").first().text().trim();
   if (sapo && sapo.length > 20) {
+    sapoText = sapo;
     if (sapo !== description) {
       pushUnique(paragraphs, seenP, sapo);
     }
     contentClone.find("p.description").first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, description);
+    contentClone.prepend(`<p class="sapo"><strong>${description}</strong></p>`);
+
+    // Remove any h2 inside the cloned container that exactly matches the fallback text
+    contentClone.find("h2").each((_, el) => {
+      if ($(el).text().trim() === description) {
+        $(el).remove();
+      }
+    });
   }
 
   container.find("p").each((_, el) => {
