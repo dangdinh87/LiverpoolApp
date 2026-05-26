@@ -18,17 +18,24 @@ export async function generateMetadata(): Promise<Metadata> {
 export const dynamic = "force-dynamic";
 
 export default async function NewsPage() {
-  const [t, locale] = await Promise.all([
-    getTranslations("News"),
-    getLocale(),
+  const tPromise = getTranslations("News");
+  const localePromise = getLocale();
+  const digestPromise = getLatestDigest();
+  const engagementMapPromise = getArticleEngagement();
+
+  const allArticlesPromise = localePromise.then((locale) => {
+    const userLang = locale === "vi" ? "vi" : "en";
+    return getNewsFromDB(60, userLang);
+  });
+
+  const [t, locale, allArticles, digest, engagementMap] = await Promise.all([
+    tPromise,
+    localePromise,
+    allArticlesPromise,
+    digestPromise,
+    engagementMapPromise,
   ]);
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
-  // Fetch both VI + EN articles, biased toward the current locale for the default tab.
-  const [allArticles, digest, engagementMap] = await Promise.all([
-    getNewsFromDB(60, userLang),
-    getLatestDigest(),
-    getArticleEngagement(),
-  ]);
   // Serialize engagement map for client component
   const engagement: Record<string, { likes: number; comments: number; total: number }> = {};
   for (const [url, data] of engagementMap) {

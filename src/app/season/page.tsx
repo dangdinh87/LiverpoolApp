@@ -40,25 +40,28 @@ export default async function SeasonPage({
 }: {
   searchParams: Promise<{ tab?: string; season?: string }>;
 }) {
-  const { tab, season: seasonParam } = await searchParams;
-
-  // Validate season param — fallback to current if invalid
   const currentYear = getCurrentSeasonYear();
-  const selectedSeason = seasonParam
-    ? AVAILABLE_SEASONS.includes(Number(seasonParam) as typeof AVAILABLE_SEASONS[number])
-      ? Number(seasonParam)
-      : currentYear
-    : currentYear;
 
-  // Only pass season to API if not the current season (avoids unnecessary param)
-  const apiSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
+  const dataPromise = searchParams.then((params) => {
+    const seasonParam = params.season;
+    const selectedSeason = seasonParam
+      ? AVAILABLE_SEASONS.includes(Number(seasonParam) as typeof AVAILABLE_SEASONS[number])
+        ? Number(seasonParam)
+        : currentYear
+      : currentYear;
 
-  // UCL standings only available for current season on FDO free tier
-  const [fixtures, standings, uclStandings] = await Promise.all([
-    getFixtures(apiSeason),
-    getStandings(apiSeason),
-    apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
-  ]);
+    const apiSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
+
+    return Promise.all([
+      params.tab,
+      selectedSeason,
+      getFixtures(apiSeason),
+      getStandings(apiSeason),
+      apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
+    ] as const);
+  });
+
+  const [tab, selectedSeason, fixtures, standings, uclStandings] = await dataPromise;
 
   /* ── Tab panels ── */
   const fixturesPanel = <FixtureTimeline fixtures={fixtures} />;

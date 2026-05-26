@@ -24,19 +24,28 @@ export const revalidate = 3600; // 1 hour
 const CURRENT_SEASON = 2025;
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
-  const t = await getTranslations("Stats");
-  const params = await searchParams;
-  const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
-  const isCurrentSeason = selectedSeason === CURRENT_SEASON;
-  const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;
+  const tPromise = getTranslations("Stats");
 
-  // Fetch data — scorers only available for current season (FDO limitation)
-  const [scorers, assists, fixtures, standings] = await Promise.all([
-    isCurrentSeason ? getTopScorers() : Promise.resolve([]),
-    isCurrentSeason ? getTopAssists() : Promise.resolve([]),
-    getFixtures(selectedSeason),
-    isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []),
+  const dataPromise = searchParams.then((params) => {
+    const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
+    const isCurrentSeason = selectedSeason === CURRENT_SEASON;
+
+    return Promise.all([
+      selectedSeason,
+      isCurrentSeason,
+      isCurrentSeason ? getTopScorers() : Promise.resolve([]),
+      isCurrentSeason ? getTopAssists() : Promise.resolve([]),
+      getFixtures(selectedSeason),
+      isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []),
+    ] as const);
+  });
+
+  const [t, [selectedSeason, isCurrentSeason, scorers, assists, fixtures, standings]] = await Promise.all([
+    tPromise,
+    dataPromise,
   ]);
+
+  const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;
 
   // Compute all derived stats — pure function, zero API calls
   const seasonStats = computeSeasonStats(fixtures, standings);
