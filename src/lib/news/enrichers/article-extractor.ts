@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -1087,6 +1087,19 @@ function extractVietnameseGeneric(
       sapoText = sapo;
       contentClone.find(opts.sapoSelector).first().remove();
     }
+  }
+
+  // Fallback if no sapoText found from selectors: use description metadata
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+
+    // Remove any <h2> inside the container that matches the description exactly
+    // to avoid duplicating subheadings
+    contentClone.find("h2").each((_, el) => {
+      if ($(el).text().trim() === description) {
+        $(el).remove();
+      }
+    });
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
