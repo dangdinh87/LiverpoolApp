@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -538,6 +538,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
   if (sapoText && sapoText.length > 20) {
+    contentClone.find("h2, p").filter((_, el) => $(el).text().trim() === sapoText).first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
@@ -618,9 +619,14 @@ function extractBongdaplus(
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
-  const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
+  let sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
   if (sapoText && sapoText.length > 20) {
     contentClone.find(".sapo, .detail-sapo").first().remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  } else if (description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, sapoText);
+    contentClone.find("h2, p").filter((_, el) => $(el).text().trim() === description).first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
@@ -794,6 +800,10 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   if (sapo && sapo.length > 20) {
     clone.find("#article_sapo").remove();
     clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  } else if (description && description.length > 20) {
+    pushUnique(paragraphs, seenP, description);
+    clone.find("h2, p").filter((_, el) => $(el).text().trim() === description).first().remove();
+    clone.prepend(`<p class="sapo"><strong>${description}</strong></p>`);
   }
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
@@ -1089,6 +1099,12 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, sapoText);
+    contentClone.find("h2, p").filter((_, el) => $(el).text().trim() === description).first().remove();
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1300,10 +1316,15 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
+  let sapo = $(".the-article-summary").first().text().trim();
   if (sapo && sapo.length > 20) {
     pushUnique(paragraphs, seenP, sapo);
     contentClone.find(".the-article-summary").first().remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  } else if (description && description.length > 20) {
+    sapo = description;
+    pushUnique(paragraphs, seenP, sapo);
+    contentClone.find("h2, p").filter((_, el) => $(el).text().trim() === description).first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
@@ -1351,12 +1372,17 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
+  let sapo = $("p.description").first().text().trim();
   if (sapo && sapo.length > 20) {
     if (sapo !== description) {
       pushUnique(paragraphs, seenP, sapo);
     }
     contentClone.find("p.description").first().remove();
+    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  } else if (description && description.length > 20) {
+    sapo = description;
+    pushUnique(paragraphs, seenP, sapo);
+    contentClone.find("h2, p").filter((_, el) => $(el).text().trim() === description).first().remove();
     contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
   }
 
