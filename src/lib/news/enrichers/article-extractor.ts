@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot, .readmore-body-box"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -661,43 +661,10 @@ function extractVietnamese(
   $: cheerio.CheerioAPI,
   url: string
 ): ArticleContent {
-  const title = $("h1").first().text().trim();
-  const heroImage = $('meta[property="og:image"]').attr("content");
-  const description = $('meta[property="og:description"]').attr("content");
-
-  const container = $(
-    "article, .detail-content, .content-detail, .cms-body, .entry-body, #main-content, [role=main]"
-  ).first();
-  const paragraphs: string[] = [];
-  const images: string[] = [];
-  const seenP = new Set<string>();
-  const seenI = new Set<string>();
-
-  container.find("p").each((_, el) => {
-    const text = $(el).text().trim();
-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
-  });
-
-  container.find("img").each((_, el) => {
-    const src = resolveImageSrc($(el), url);
-    if (src && !src.includes("logo") && !src.includes("icon")) {
-      pushUnique(images, seenI, src);
-    }
-  });
-
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
-
-  return {
-    title,
-    heroImage,
-    description,
-    publishedAt: extractPublishedAt($),
-    author: extractAuthor($),
-    paragraphs,
-    images,
-    sourceUrl: url,
-    sourceName: detectSource(url).name,
-  };
+  return extractVietnameseGeneric($, url,
+    "article, .detail-content, .content-detail, .cms-body, .entry-body, #main-content, [role=main]",
+    detectSource(url).name
+  );
 }
 
 // 24h.com.vn: uses #article_body for content, data-original for lazy images
@@ -1089,6 +1056,19 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description.trim();
+    pushUnique(paragraphs, seenP, sapoText);
+
+    // Remove exactly matching p or h2
+    contentClone.find("p, h2").each((_, el) => {
+      const $el = $(el);
+      if ($el.text().trim() === sapoText) {
+        $el.remove();
+      }
+    });
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1277,111 +1257,25 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
 }
 
 function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
-  const title = $("h1").first().text().trim() ||
-    $('meta[property="og:title"]').attr("content") || "Article";
-  const heroImage = $('meta[property="og:image"]').attr("content");
-  const description = $('meta[property="og:description"]').attr("content");
+  // Znews has junk elements that should be removed before generic extraction
+  $(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics, .the-article-credit, header.the-article-header, header").remove();
 
-  // znews.vn uses .the-article-body as primary container (verified via DevTools)
-  const container = $(
-    ".the-article-body, .article-content, article, [role=main]"
-  ).first();
+  const content = extractVietnameseGeneric($, url,
+    ".the-article-body, .article-content, article, [role=main]",
+    "ZNews",
+    { sapoSelector: ".the-article-summary" }
+  );
 
-  // Remove related/junk elements embedded inside the container
-  container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics, .the-article-credit").remove();
-
-  // Clean up nested headers before cloning for htmlContent
-  const contentClone = container.clone();
-  contentClone.find("header.the-article-header, header").remove();
-
-  const paragraphs: string[] = [];
-  const images: string[] = [];
-  const seenP = new Set<string>();
-  const seenI = new Set<string>();
-
-  // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    pushUnique(paragraphs, seenP, sapo);
-    contentClone.find(".the-article-summary").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
-  }
-
-  container.find("p").each((_, el) => {
-    const text = $(el).text().trim();
-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
-  });
-
-  container.find("img, figure img").each((_, el) => {
-    const src = resolveImageSrc($(el), url);
-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
-      pushUnique(images, seenI, src);
-    }
-  });
-
-  // Build htmlContent for rich inline rendering
-  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
-
-  return {
-    title, heroImage, description,
-    publishedAt: extractPublishedAt($),
-    author: extractAuthor($),
-    paragraphs, htmlContent, images,
-    sourceUrl: url,
-    sourceName: "ZNews",
-    isThinContent: paragraphs.length <= 2,
-  };
+  content.isThinContent = content.paragraphs.length <= 2;
+  return content;
 }
 
 function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
-  const title = $("h1").first().text().trim() ||
-    $('meta[property="og:title"]').attr("content") || "Article";
-  const heroImage = $('meta[property="og:image"]').attr("content");
-  const description = $('meta[property="og:description"]').attr("content") ||
-    $("p.description").first().text().trim();
-
-  // VnExpress uses .fck_detail as primary container (verified via DevTools)
-  const container = $(
-    ".fck_detail, article.fck_detail, .article-content, article, [role=main]"
-  ).first();
-  const contentClone = container.clone();
-  const paragraphs: string[] = [];
-  const images: string[] = [];
-  const seenP = new Set<string>();
-  const seenI = new Set<string>();
-
-  // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    if (sapo !== description) {
-      pushUnique(paragraphs, seenP, sapo);
-    }
-    contentClone.find("p.description").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
-  }
-
-  container.find("p").each((_, el) => {
-    const text = $(el).text().trim();
-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
-  });
-
-  container.find("img, figure img").each((_, el) => {
-    const src = resolveImageSrc($(el), url);
-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
-      pushUnique(images, seenI, src);
-    }
-  });
-
-  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
-
-  return {
-    title, heroImage, description,
-    publishedAt: extractPublishedAt($),
-    author: extractAuthor($),
-    paragraphs, images, htmlContent,
-    sourceUrl: url,
-    sourceName: "VnExpress",
-  };
+  return extractVietnameseGeneric($, url,
+    ".fck_detail, article.fck_detail, .article-content, article, [role=main]",
+    "VnExpress",
+    { sapoSelector: "p.description" }
+  );
 }
 
 function extractGeneric(
