@@ -1,3 +1,5 @@
+import { safeJsonStringify } from "@/components/seo/json-ld";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 const jsonLd = [
@@ -49,7 +51,7 @@ export function StructuredData() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonStringify(jsonLd) }}
     />
   );
 }

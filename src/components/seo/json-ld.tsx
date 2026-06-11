@@ -1,5 +1,5 @@
 /** HTML-safe JSON serialization — escapes </script> injection vectors */
-function safeJsonStringify(data: unknown): string {
+export function safeJsonStringify(data: unknown): string {
   return JSON.stringify(data)
     .replace(/</g, "\\u003c")
     .replace(/>/g, "\\u003e")
