@@ -25,6 +25,7 @@ import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
+import { ArticleHtmlBody } from "@/components/news/article-html-body";
 
 export const revalidate = 600; // 10 minutes
 
@@ -357,11 +358,7 @@ export default async function ArticlePage({
           <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
             <div>
               {content.htmlContent ? (
-                <div
-                  id="article-body"
-                  className="article-html-content space-y-6"
-                  dangerouslySetInnerHTML={{ __html: content.htmlContent }}
-                />
+                <ArticleHtmlBody html={content.htmlContent} />
               ) : (
                 <div id="article-body" className="space-y-6">
                   {content.paragraphs.map((p, i) => (
