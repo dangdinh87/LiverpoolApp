@@ -24,8 +24,10 @@ export const revalidate = 3600; // 1 hour
 const CURRENT_SEASON = 2025;
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
-  const t = await getTranslations("Stats");
-  const params = await searchParams;
+  const [t, params] = await Promise.all([
+    getTranslations("Stats"),
+    searchParams,
+  ]);
   const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
   const isCurrentSeason = selectedSeason === CURRENT_SEASON;
   const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;

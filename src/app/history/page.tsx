@@ -49,9 +49,11 @@ export default async function HistoryPage({
 }: {
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { tab } = await searchParams;
-  const t = await getTranslations("History");
-  const locale = await getLocale();
+  const [{ tab }, t, locale] = await Promise.all([
+    searchParams,
+    getTranslations("History"),
+    getLocale(),
+  ]);
   const isVi = locale === 'vi';
 
   const trophies = isVi ? trophiesVi : trophiesEn;
