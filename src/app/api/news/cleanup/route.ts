@@ -9,33 +9,40 @@ export const GET = withCronAuth(async () => {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const sixtyDaysAgo = new Date(Date.now() - 60 * 86_400_000).toISOString();
 
-  // Soft-delete: deactivate articles >30 days old
-  const { count: deactivated } = await supabase
-    .from("articles")
-    .update({ is_active: false }, { count: "exact" })
-    .eq("is_active", true)
-    .lt("published_at", thirtyDaysAgo);
+  const [
+    { count: deactivated },
+    { count: contentCleared },
+    { count: deleted },
+    { count: logsDeleted }
+  ] = await Promise.all([
+    // Soft-delete: deactivate articles >30 days old
+    supabase
+      .from("articles")
+      .update({ is_active: false }, { count: "exact" })
+      .eq("is_active", true)
+      .lt("published_at", thirtyDaysAgo),
 
-  // Free heavy cached content for old articles while keeping metadata rows.
-  const { count: contentCleared } = await supabase
-    .from("articles")
-    .update({ content_en: null, content_scraped_at: null }, { count: "exact" })
-    .lt("published_at", sixtyDaysAgo)
-    .not("content_en", "is", null);
+    // Free heavy cached content for old articles while keeping metadata rows.
+    supabase
+      .from("articles")
+      .update({ content_en: null, content_scraped_at: null }, { count: "exact" })
+      .lt("published_at", sixtyDaysAgo)
+      .not("content_en", "is", null),
 
-  // Hard-delete: remove already-deactivated articles >60 days with no cached content
-  const { count: deleted } = await supabase
-    .from("articles")
-    .delete({ count: "exact" })
-    .eq("is_active", false)
-    .is("content_en", null)
-    .lt("published_at", sixtyDaysAgo);
+    // Hard-delete: remove already-deactivated articles >60 days with no cached content
+    supabase
+      .from("articles")
+      .delete({ count: "exact" })
+      .eq("is_active", false)
+      .is("content_en", null)
+      .lt("published_at", sixtyDaysAgo),
 
-  // Cleanup old sync_logs >30 days
-  const { count: logsDeleted } = await supabase
-    .from("sync_logs")
-    .delete({ count: "exact" })
-    .lt("created_at", thirtyDaysAgo);
+    // Cleanup old sync_logs >30 days
+    supabase
+      .from("sync_logs")
+      .delete({ count: "exact" })
+      .lt("created_at", thirtyDaysAgo)
+  ]);
 
   return NextResponse.json({
     ok: true,
