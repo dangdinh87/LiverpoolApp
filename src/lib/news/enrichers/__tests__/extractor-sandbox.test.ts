@@ -38,7 +38,7 @@ describe("Extractor Sandbox", () => {
     const res = await scrapeArticle(url);
     console.log("=== BONGDAPLUS ===");
     console.log(JSON.stringify(res, null, 2));
-  });
+  }, 30000);
 
   it("extracts from VnExpress", async () => {
     const url = "https://vnexpress.net/chu-nha-world-cup-2026-an-ui-cdv-italy-bang-chien-dich-doc-dao-5058793.html";
