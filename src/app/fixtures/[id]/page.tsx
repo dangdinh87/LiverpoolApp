@@ -569,7 +569,7 @@ function LineupSection({ lineup, subsLabel, coachLabel }: { lineup: FixtureLineu
       {lineup.coach.name && (
         <div className="border-t border-stadium-border/50 pt-3 mt-3 flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-full bg-stadium-surface2 flex items-center justify-center shrink-0 border border-stadium-border/50">
-            <span className="font-bebas text-sm text-stadium-muted">{lineup.coach.name.split(" ").map(n => n[0]).join("").slice(0, 2)}</span>
+            <span className="font-bebas text-sm text-stadium-muted">{lineup.coach.name.split(" ").slice(0, 2).reduce((acc, n) => acc + (n[0] || ""), "")}</span>
           </div>
           <div>
             <p className="text-[10px] font-barlow text-stadium-muted uppercase tracking-wider">{coachLabel}</p>
