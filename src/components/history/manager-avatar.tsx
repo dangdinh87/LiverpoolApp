@@ -9,7 +9,7 @@ interface ManagerAvatarProps {
 }
 
 function getInitials(name: string) {
-  return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  return name.split(" ").slice(0, 2).reduce((acc, w) => acc + (w[0] || ""), "").toUpperCase();
 }
 
 export function ManagerAvatar({ name, image }: ManagerAvatarProps) {

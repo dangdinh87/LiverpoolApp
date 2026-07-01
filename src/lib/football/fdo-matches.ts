@@ -201,7 +201,7 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 
   for (const [teamId, matches] of teamMatches) {
     const sorted = matches.sort((a, b) => a.date.localeCompare(b.date));
-    const last5 = sorted.slice(-5).map((m) => m.result).join("");
+    const last5 = sorted.slice(-5).reduce((acc, m) => acc + (m.result || ""), "");
     formMap.set(teamId, last5);
   }
 
