@@ -1080,13 +1080,23 @@ function extractVietnameseGeneric(
   // Extract sapo/lead text
   let sapoText: string | undefined;
   if (opts?.sapoSelector) {
-    const $sapo = $(opts.sapoSelector).first();
+    const $sapo = contentClone.find(opts.sapoSelector).first();
     const sapo = $sapo.text().trim();
     if (sapo && sapo.length > 20) {
       pushUnique(paragraphs, seenP, sapo);
       sapoText = sapo;
-      contentClone.find(opts.sapoSelector).first().remove();
+      $sapo.remove();
     }
+  }
+
+  if (!sapoText && description) {
+    sapoText = description;
+    contentClone.find("h2, p").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      if (text === description) {
+        $(el).remove();
+      }
+    });
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
