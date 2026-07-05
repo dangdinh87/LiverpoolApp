@@ -133,14 +133,21 @@ async function buildDateToEspnId(): Promise<Map<string, string>> {
 /** Check today's scoreboard for a Liverpool match (covers matches not yet in team schedule). */
 async function findLfcOnScoreboard(dateKey: string): Promise<string | null> {
   const yyyymmdd = dateKey.replace(/-/g, "");
-  for (const slug of LEAGUE_SLUGS) {
-    try {
-      const data = await espnFetch<{ events: EspnScheduleEvent[] }>(
+
+  const results = await Promise.allSettled(
+    LEAGUE_SLUGS.map((slug) =>
+      espnFetch<{ events: EspnScheduleEvent[] }>(
         `${ESPN_BASE}/${slug}/scoreboard?dates=${yyyymmdd}`,
         300, // 5min cache — scoreboard updates frequently
-      );
-      for (const ev of data.events) {
-        const comp = ev.competitions[0];
+      )
+    )
+  );
+
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    try {
+      for (const ev of result.value?.events ?? []) {
+        const comp = ev.competitions?.[0];
         const teamIds = comp?.competitors?.map((c) => c.team?.id) ?? [];
         if (teamIds.includes(ESPN_LFC_ID)) return ev.id;
       }
@@ -153,25 +160,53 @@ async function findLfcOnScoreboard(dateKey: string): Promise<string | null> {
 
 // ─── ESPN ID resolver (shared) ──────────────────────────────────────────────
 
+// Map cache to optimize ESP ID resolution. Key is date string ('YYYY-MM-DD').
+const espnIdCache = new Map<string, string | null>();
+
 async function resolveEspnId(fixtureDate: string): Promise<string | null> {
   const dateKey = fixtureDate.slice(0, 10);
+
+  if (espnIdCache.has(dateKey)) {
+    return espnIdCache.get(dateKey) ?? null;
+  }
+
   // Try team schedule first (covers past + near-future matches)
   const dateMap = await buildDateToEspnId();
   const fromSchedule = dateMap.get(dateKey);
-  if (fromSchedule) return fromSchedule;
+  if (fromSchedule) {
+    espnIdCache.set(dateKey, fromSchedule);
+    return fromSchedule;
+  }
+
   // Fallback: check scoreboard (covers today's & upcoming matches not yet in schedule)
-  return findLfcOnScoreboard(dateKey);
+  const scoreboardId = await findLfcOnScoreboard(dateKey);
+
+  // Cache null only for past matches to allow retrying future matches
+  if (scoreboardId) {
+    espnIdCache.set(dateKey, scoreboardId);
+  } else if (new Date(dateKey).getTime() < Date.now() - 86400000) {
+    espnIdCache.set(dateKey, null);
+  }
+
+  return scoreboardId;
 }
 
 async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
-  for (const slug of LEAGUE_SLUGS) {
-    try {
-      const data = await espnFetch<EspnSummary>(
+  const results = await Promise.allSettled(
+    LEAGUE_SLUGS.map((slug) =>
+      espnFetch<EspnSummary>(
         `${ESPN_BASE}/${slug}/summary?event=${espnId}`,
         3600, // 1h cache
-      );
+      )
+    )
+  );
+
+  for (const result of results) {
+    if (result.status !== "fulfilled") continue;
+    try {
+      const data = result.value;
       // Verify it has content (keyEvents or boxscore)
-      if (data.keyEvents?.length || data.boxscore?.teams?.length || data.rosters?.length) {
+      if (data?.keyEvents?.length || data?.boxscore?.teams?.length || data?.rosters?.length) {
         return data;
       }
     } catch {
