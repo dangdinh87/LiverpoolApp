@@ -1,0 +1,2 @@
+1. Add missing `contentClone.prepend(...)` to `extractVietnameseGeneric`. Wait, actually it's already there inside `opts?.htmlContent !== false` check on line 1182. So there's no bug in generic, it was handled slightly later than other extractors to conditionally apply it only when `htmlContent` isn't turned off. But to make it uniform, I will move it to the `if (sapoText)` block and let `buildHtmlContent` deal with the modified `contentClone`.
+2. Delete `plan.md`
