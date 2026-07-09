@@ -132,9 +132,10 @@ export default async function ArticlePage({
   const url = decodeArticleSlug(slug);
   if (!url) notFound();
 
-  const dbContent = await getArticleContentFromDB(url);
   const [content, allArticles, fixtures, t] = await Promise.all([
-    dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
+    getArticleContentFromDB(url).then((dbContent) =>
+      dbContent ? dbContent : scrapeArticle(url)
+    ),
     getNewsFromDB(100),
     getFixtures(),
     getTranslations("News.article"),
