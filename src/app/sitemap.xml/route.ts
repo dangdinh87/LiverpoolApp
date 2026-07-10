@@ -31,10 +31,13 @@ export async function GET() {
   let fixtureUrls: { id: number; date: string; label: string }[] = [];
 
   try {
+    const articleDataPromise = getArticleSitemapData();
+    const digestDataPromise = getAllDigestDates();
+    const fixturesPromise = getFixtures();
     const [articleData, digestData, fixtures] = await Promise.allSettled([
-      getArticleSitemapData(),
-      getAllDigestDates(),
-      getFixtures(),
+      articleDataPromise,
+      digestDataPromise,
+      fixturesPromise,
     ]);
     if (articleData.status === "fulfilled") articles = articleData.value;
     if (digestData.status === "fulfilled") digests = digestData.value;

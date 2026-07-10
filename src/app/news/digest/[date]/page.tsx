@@ -41,9 +41,11 @@ export default async function DigestPage({
   const { date } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
+  const digestPromise = getDigestByDate(date);
+  const tPromise = getTranslations("News.digest");
   const [digest, t] = await Promise.all([
-    getDigestByDate(date),
-    getTranslations("News.digest"),
+    digestPromise,
+    tPromise,
   ]);
 
   if (!digest) notFound();

@@ -133,11 +133,15 @@ export default async function ArticlePage({
   if (!url) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
+  const contentPromise = dbContent ? Promise.resolve(dbContent) : scrapeArticle(url);
+  const allArticlesPromise = getNewsFromDB(100);
+  const fixturesPromise = getFixtures();
+  const tPromise = getTranslations("News.article");
   const [content, allArticles, fixtures, t] = await Promise.all([
-    dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
-    getNewsFromDB(100),
-    getFixtures(),
-    getTranslations("News.article"),
+    contentPromise,
+    allArticlesPromise,
+    fixturesPromise,
+    tPromise,
   ]);
 
   const nextMatch: Fixture | null =

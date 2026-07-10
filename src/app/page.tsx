@@ -136,13 +136,19 @@ function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>) {
 }
 
 export default async function HomePage() {
+  const fixturesPromise = getCachedHomeFixtures();
+  const standingsPromise = getCachedHomeStandings();
+  const newsPromise = getCachedHomeNews();
+  const digestPromise = getCachedHomeDigest();
+  const heroSettingPromise = getCachedHomeHeroSetting();
+
   const [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult] =
     await Promise.allSettled([
-      getCachedHomeFixtures(),
-      getCachedHomeStandings(),
-      getCachedHomeNews(),
-      getCachedHomeDigest(),
-      getCachedHomeHeroSetting(),
+      fixturesPromise,
+      standingsPromise,
+      newsPromise,
+      digestPromise,
+      heroSettingPromise,
     ]);
 
   const fixtures = getSettledValue<Fixture[]>(fixturesResult, []);

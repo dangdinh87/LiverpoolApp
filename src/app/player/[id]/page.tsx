@@ -129,9 +129,11 @@ export default async function PlayerPage({ params }: PageProps) {
   const flag = getFlag(player.nationality);
 
   // Fetch player stats: canonical (mapped from FPL) + raw FPL data
+  const playerStatsPromise = getPlayerStats(player.id);
+  const fplStatsPromise = getFplPlayerStats(player.name);
   const [playerStats, fplStats] = await Promise.all([
-    getPlayerStats(player.id),
-    getFplPlayerStats(player.name),
+    playerStatsPromise,
+    fplStatsPromise,
   ]);
 
   const bio = getPlayerBio(player.slug, "vi");

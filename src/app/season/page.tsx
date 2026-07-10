@@ -54,10 +54,13 @@ export default async function SeasonPage({
   const apiSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
 
   // UCL standings only available for current season on FDO free tier
+  const fixturesPromise = getFixtures(apiSeason);
+  const standingsPromise = getStandings(apiSeason);
+  const uclStandingsPromise = apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings();
   const [fixtures, standings, uclStandings] = await Promise.all([
-    getFixtures(apiSeason),
-    getStandings(apiSeason),
-    apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
+    fixturesPromise,
+    standingsPromise,
+    uclStandingsPromise,
   ]);
 
   /* ── Tab panels ── */

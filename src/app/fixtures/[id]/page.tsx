@@ -51,10 +51,13 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const { id } = await params;
   const fixtureId = Number(id);
 
+  const fixturesPromise = getFixtures();
+  const tDetailPromise = getTranslations("Fixtures.detail");
+  const tMatchPromise = getTranslations("Match");
   const [fixtures, tDetail, tMatch] = await Promise.all([
-    getFixtures(),
-    getTranslations("Fixtures.detail"),
-    getTranslations("Match"),
+    fixturesPromise,
+    tDetailPromise,
+    tMatchPromise,
   ]);
   const match = fixtures.find((f) => f.fixture.id === fixtureId);
   if (!match) notFound();
@@ -65,15 +68,20 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
   const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
 
+  const eventsPromise = isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]);
+  const lineupsPromise = getFixtureLineups(fixtureId, f.date);
+  const providerStatsPromise = isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]);
+  const espnDetailPromise = isFinished ? getMatchDetail(f.date) : Promise.resolve(null);
+  const prevFixturesPromise = league.season !== 2024
+    ? getFixtures(2024).catch(() => [] as Fixture[])
+    : Promise.resolve([] as Fixture[]);
+
   const [events, lineups, providerStats, espnDetail, prevFixtures] = await Promise.all([
-    isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
-    getFixtureLineups(fixtureId, f.date),
-    isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
-    isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
-    // Fetch previous season for richer H2H data (skip if current IS 2024)
-    league.season !== 2024
-      ? getFixtures(2024).catch(() => [] as Fixture[])
-      : Promise.resolve([] as Fixture[]),
+    eventsPromise,
+    lineupsPromise,
+    providerStatsPromise,
+    espnDetailPromise,
+    prevFixturesPromise,
   ]);
 
   // H2H: compute from current + previous season fixtures
