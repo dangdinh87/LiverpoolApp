@@ -13,30 +13,36 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
+  const supabasePromise = createServerSupabaseClient();
+  const tPromise = getTranslations("Profile");
   const [supabase, t] = await Promise.all([
-    createServerSupabaseClient(),
-    getTranslations("Profile"),
+    supabasePromise,
+    tPromise,
   ]);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login?redirect=/profile");
 
+  const profilePromise = supabase
+    .from("user_profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single<UserProfile>();
+  const favouritesPromise = supabase
+    .from("favourite_players")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("added_at", { ascending: false });
+  const savedArticlesPromise = supabase
+    .from("saved_articles")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("saved_at", { ascending: false });
+
   const [{ data: profile }, { data: favourites }, { data: savedArticles }] = await Promise.all([
-    supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single<UserProfile>(),
-    supabase
-      .from("favourite_players")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("added_at", { ascending: false }),
-    supabase
-      .from("saved_articles")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("saved_at", { ascending: false }),
+    profilePromise,
+    favouritesPromise,
+    savedArticlesPromise,
   ]);
 
   const admin = isAdminEmail(user.email);

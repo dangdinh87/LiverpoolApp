@@ -31,11 +31,16 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;
 
   // Fetch data — scorers only available for current season (FDO limitation)
+  const scorersPromise = isCurrentSeason ? getTopScorers() : Promise.resolve([]);
+  const assistsPromise = isCurrentSeason ? getTopAssists() : Promise.resolve([]);
+  const fixturesPromise = getFixtures(selectedSeason);
+  const standingsPromise = isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []);
+
   const [scorers, assists, fixtures, standings] = await Promise.all([
-    isCurrentSeason ? getTopScorers() : Promise.resolve([]),
-    isCurrentSeason ? getTopAssists() : Promise.resolve([]),
-    getFixtures(selectedSeason),
-    isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []),
+    scorersPromise,
+    assistsPromise,
+    fixturesPromise,
+    standingsPromise,
   ]);
 
   // Compute all derived stats — pure function, zero API calls
@@ -43,12 +48,17 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
 
   // Fetch comparison seasons for season comparison chart (FDO free tier: 2022-2025)
   const comparisonSeasons = [2024, 2023, 2022].filter((s) => s !== selectedSeason);
+
+  // Note: the mapping functions initiate the promises as well. We can just keep the Promise.all for the mapped array.
+  // We'll refactor the inner Promise.all too:
   const compSeasonData = await Promise.all(
     comparisonSeasons.slice(0, 2).map(async (s) => {
       try {
+        const fxPromise = getFixtures(s);
+        const stPromise = getStandings(s).catch(() => []);
         const [fx, st] = await Promise.all([
-          getFixtures(s),
-          getStandings(s).catch(() => []),
+          fxPromise,
+          stPromise,
         ]);
         return { season: s, stats: computeSeasonStats(fx, st) };
       } catch {

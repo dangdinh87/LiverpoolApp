@@ -33,9 +33,11 @@ export default async function GalleryRoute() {
   let totalImages = 0;
   let categoryCounts: Record<string, number> = {};
   try {
+    const dbImagesPromise = listGalleryImagesFromDB({ limit: 50, offset: 0 });
+    const countsPromise = getGalleryCategoryCounts();
     const [{ images: dbImages, total }, counts] = await Promise.all([
-      listGalleryImagesFromDB({ limit: 50, offset: 0 }),
-      getGalleryCategoryCounts(),
+      dbImagesPromise,
+      countsPromise,
     ]);
     totalImages = total;
     categoryCounts = counts;
