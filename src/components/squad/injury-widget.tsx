@@ -24,7 +24,15 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
   // Status config: label, description, colors, severity order
   const STATUS_CONFIG: Record<
     string,
-    { label: string; description: string; bg: string; text: string; border: string; dot: string; order: number }
+    {
+      label: string;
+      description: string;
+      bg: string;
+      text: string;
+      border: string;
+      dot: string;
+      order: number;
+    }
   > = {
     "Missing Fixture": {
       label: t("statuses.OUT"),
@@ -59,7 +67,7 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
 
   // Deduplicate by player id, keep latest entry
   const unique = Array.from(
-    new Map(injuries.map((inj) => [inj.player.id, inj])).values()
+    new Map(injuries.map((inj) => [inj.player.id, inj])).values(),
   ).sort((a, b) => {
     const aOrder = (STATUS_CONFIG[a.player.type] ?? DEFAULT_STATUS).order;
     const bOrder = (STATUS_CONFIG[b.player.type] ?? DEFAULT_STATUS).order;
@@ -69,7 +77,10 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
   if (unique.length === 0) return null;
 
   // Count by severity
-  const outCount = unique.filter((i) => i.player.type === "Missing Fixture").length;
+  const outCount = unique.reduce(
+    (acc, i) => acc + (i.player.type === "Missing Fixture" ? 1 : 0),
+    0,
+  );
   const doubtCount = unique.length - outCount;
 
   // Group by status type
@@ -87,9 +98,7 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-none border text-sm transition-colors bg-stadium-surface border-stadium-border text-stadium-muted hover:border-red-500/30 hover:text-white"
-        >
+        <button className="inline-flex items-center gap-2 px-3 py-2 rounded-none border text-sm transition-colors bg-stadium-surface border-stadium-border text-stadium-muted hover:border-red-500/30 hover:text-white">
           <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           <span className="font-barlow font-semibold text-xs uppercase tracking-wider">
             {t("label")}
@@ -119,13 +128,17 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
                   {outCount > 0 && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-inter">
                       <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span className="text-red-400 font-medium">{t("out", { count: outCount })}</span>
+                      <span className="text-red-400 font-medium">
+                        {t("out", { count: outCount })}
+                      </span>
                     </span>
                   )}
                   {doubtCount > 0 && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-inter">
                       <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span className="text-yellow-400 font-medium">{t("doubtful", { count: doubtCount })}</span>
+                      <span className="text-yellow-400 font-medium">
+                        {t("doubtful", { count: doubtCount })}
+                      </span>
                     </span>
                   )}
                 </div>
@@ -144,17 +157,29 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
                 <div
                   className={cn(
                     "sticky top-0 z-10 px-6 py-2.5 flex items-center gap-2 border-b border-stadium-border/50",
-                    cfg.bg
+                    cfg.bg,
                   )}
                 >
-                  <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />
-                  <span className={cn("font-barlow font-semibold text-xs uppercase tracking-wider", cfg.text)}>
+                  <span
+                    className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)}
+                  />
+                  <span
+                    className={cn(
+                      "font-barlow font-semibold text-xs uppercase tracking-wider",
+                      cfg.text,
+                    )}
+                  >
                     {cfg.label}
                   </span>
                   <span className="text-stadium-muted font-inter text-xs">
                     — {cfg.description}
                   </span>
-                  <span className={cn("ml-auto font-bebas text-sm leading-none", cfg.text)}>
+                  <span
+                    className={cn(
+                      "ml-auto font-bebas text-sm leading-none",
+                      cfg.text,
+                    )}
+                  >
                     {players.length}
                   </span>
                 </div>
@@ -183,7 +208,12 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
                       <p className="text-white font-inter text-[15px] font-semibold truncate leading-tight">
                         {inj.player.name}
                       </p>
-                      <p className={cn("font-inter text-sm mt-1 font-medium", cfg.text)}>
+                      <p
+                        className={cn(
+                          "font-inter text-sm mt-1 font-medium",
+                          cfg.text,
+                        )}
+                      >
                         {inj.player.reason}
                       </p>
                     </div>
@@ -192,7 +222,9 @@ export function InjuryWidget({ injuries }: { injuries: Injury[] }) {
                     <span
                       className={cn(
                         "px-3 py-1 rounded-none text-xs font-bebas tracking-wider shrink-0 border",
-                        cfg.bg, cfg.text, cfg.border
+                        cfg.bg,
+                        cfg.text,
+                        cfg.border,
                       )}
                     >
                       {cfg.label}
