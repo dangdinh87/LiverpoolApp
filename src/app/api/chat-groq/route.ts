@@ -1,48 +1,59 @@
-import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { type NextRequest } from 'next/server';
-import { createGroq } from '@ai-sdk/groq';
-import { streamText } from 'ai';
-import { DEFAULT_CHAT_AI_MODEL } from '@/config/constants';
-import { webSearch, type WebSearchResult } from '@/lib/tools/web-search';
-import { classifyIntent } from '@/lib/chat/intent-classifier';
-import { buildFallbackChain, isRateLimitError } from '@/lib/chat/model-fallback';
-import { BRO_AI_SYSTEM_PROMPT } from '@/lib/prompts/bro-ai-system';
+import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { type NextRequest } from "next/server";
+import { createGroq } from "@ai-sdk/groq";
+import { streamText } from "ai";
+import { DEFAULT_CHAT_AI_MODEL } from "@/config/constants";
+import { webSearch, type WebSearchResult } from "@/lib/tools/web-search";
+import { classifyIntent } from "@/lib/chat/intent-classifier";
+import {
+  buildFallbackChain,
+  isRateLimitError,
+} from "@/lib/chat/model-fallback";
+import { BRO_AI_SYSTEM_PROMPT } from "@/lib/prompts/bro-ai-system";
 
 export const maxDuration = 60;
 
 // Convert assistant-ui parts format to plain content string
 function getMessageContent(msg: Record<string, unknown>): string {
-  if (typeof msg.content === 'string') return msg.content;
+  if (typeof msg.content === "string") return msg.content;
   if (Array.isArray(msg.parts)) {
     return msg.parts
-      .filter((p: Record<string, unknown>) => p.type === 'text')
-      .map((p: Record<string, unknown>) => p.text)
-      .join('');
+      .filter((p: Record<string, unknown>) => p.type === "text")
+      .reduce(
+        (acc, p: Record<string, unknown>) => acc + ((p.text as string) || ""),
+        "",
+      );
   }
-  return '';
+  return "";
 }
 
 // Normalize messages from assistant-ui format to OpenAI format
-type ChatRole = 'system' | 'user' | 'assistant';
+type ChatRole = "system" | "user" | "assistant";
 function normalizeMessages(
   messages: Record<string, unknown>[],
 ): { role: ChatRole; content: string }[] {
-  return messages
-    .map((msg) => ({
-      role: msg.role as ChatRole,
-      content: getMessageContent(msg),
-    }))
-    .filter((msg) => msg.content.length > 0);
+  return messages.reduce(
+    (acc, msg) => {
+      const content = getMessageContent(msg);
+      if (content.length > 0) acc.push({ role: msg.role as ChatRole, content });
+      return acc;
+    },
+    [] as { role: ChatRole; content: string }[],
+  );
 }
 
 // Build system prompt with numbered sources for citation references
 function buildSystemPrompt(searchResult: WebSearchResult | null): string {
   if (!searchResult) return BRO_AI_SYSTEM_PROMPT;
 
-  const numberedSources = searchResult.sources
-    .map((s, i) => `[${i + 1}] ${s.title || new URL(s.url).hostname}`)
-    .join('\n');
+  const numberedSources = searchResult.sources.reduce(
+    (acc, s, i) =>
+      acc +
+      (acc ? "\n" : "") +
+      `[${i + 1}] ${s.title || new URL(s.url).hostname}`,
+    "",
+  );
 
   return `${BRO_AI_SYSTEM_PROMPT}
 
@@ -65,10 +76,10 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
-    console.error('[Chat API - Groq] GROQ_API_KEY is not set');
+    console.error("[Chat API - Groq] GROQ_API_KEY is not set");
     return new Response(
-      JSON.stringify({ error: 'Groq API key not configured' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
+      JSON.stringify({ error: "Groq API key not configured" }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
 
@@ -81,9 +92,9 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
 
@@ -94,18 +105,18 @@ export async function POST(req: NextRequest) {
     const selectedModel = model || DEFAULT_CHAT_AI_MODEL;
 
     console.log(
-      `[Chat API - Groq] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || 'new'}`,
+      `[Chat API - Groq] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || "new"}`,
     );
 
     const isNewConversation = !conversationId;
     let actualConversationId = conversationId;
-    let conversationTitle = 'New Conversation';
+    let conversationTitle = "New Conversation";
 
     // Create conversation if new
     if (isNewConversation && messages.length > 0) {
       conversationTitle = messages[0].content;
       const { data: convData, error: convError } = await supabase
-        .from('conversations')
+        .from("conversations")
         .insert({
           user_id: user.id,
           title: conversationTitle,
@@ -117,27 +128,32 @@ export async function POST(req: NextRequest) {
       if (!convError && convData) {
         actualConversationId = convData.id;
       } else {
-        console.error('[Chat API - Groq] Error creating conversation:', convError);
+        console.error(
+          "[Chat API - Groq] Error creating conversation:",
+          convError,
+        );
       }
     }
 
     // Save user message
     if (actualConversationId && messages.length > 0) {
-      const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+      const lastUserMessage = [...messages]
+        .reverse()
+        .find((m) => m.role === "user");
       if (lastUserMessage) {
-        await supabase.from('messages').insert({
+        await supabase.from("messages").insert({
           conversation_id: actualConversationId,
-          role: 'user',
+          role: "user",
           content: lastUserMessage.content,
         });
       }
     }
 
     // AI-powered intent classification (replaces keyword matching)
-    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
     const { needsSearch, searchQuery } = lastUserMsg
       ? await classifyIntent(lastUserMsg.content, apiKey)
-      : { needsSearch: false, searchQuery: '' };
+      : { needsSearch: false, searchQuery: "" };
 
     const messageId = `msg-${Date.now()}`;
     const toolCallId = `search-${Date.now()}`;
@@ -145,16 +161,16 @@ export async function POST(req: NextRequest) {
     return createUIMessageStreamResponse({
       stream: createUIMessageStream({
         async execute({ writer }) {
-          let fullAssistantContent = '';
+          let fullAssistantContent = "";
           let searchResult: WebSearchResult | null = null;
 
           try {
-            writer.write({ type: 'start', messageId });
+            writer.write({ type: "start", messageId });
 
             // Emit conversation metadata for new conversations
             if (isNewConversation && actualConversationId) {
               writer.write({
-                type: 'data-conversation',
+                type: "data-conversation",
                 data: {
                   conversationId: actualConversationId,
                   conversationTitle: conversationTitle,
@@ -162,24 +178,24 @@ export async function POST(req: NextRequest) {
               });
             }
 
-            writer.write({ type: 'start-step' });
+            writer.write({ type: "start-step" });
 
             // Web search if AI classifier determined it's needed
             if (needsSearch) {
               writer.write({
-                type: 'tool-input-start',
+                type: "tool-input-start",
                 toolCallId,
-                toolName: 'web_search',
+                toolName: "web_search",
               });
               writer.write({
-                type: 'tool-input-delta',
+                type: "tool-input-delta",
                 toolCallId,
                 inputTextDelta: JSON.stringify({ query: searchQuery }),
               });
               writer.write({
-                type: 'tool-input-available',
+                type: "tool-input-available",
                 toolCallId,
-                toolName: 'web_search',
+                toolName: "web_search",
                 input: { query: searchQuery },
               });
 
@@ -189,19 +205,19 @@ export async function POST(req: NextRequest) {
                   `[Chat API - Groq] Web search done: ${searchResult.sources.length} sources`,
                 );
               } catch (err) {
-                console.error('[Chat API - Groq] Web search failed:', err);
+                console.error("[Chat API - Groq] Web search failed:", err);
               }
 
               writer.write({
-                type: 'tool-output-available',
+                type: "tool-output-available",
                 toolCallId,
                 output: searchResult
                   ? { results: searchResult.sources }
-                  : { results: [], error: 'Search failed' },
+                  : { results: [], error: "Search failed" },
               });
             }
 
-            writer.write({ type: 'text-start', id: messageId });
+            writer.write({ type: "text-start", id: messageId });
 
             // Stream with model fallback on rate limit
             const fallbackChain = buildFallbackChain(selectedModel);
@@ -218,7 +234,7 @@ export async function POST(req: NextRequest) {
                 for await (const textPart of result.textStream) {
                   fullAssistantContent += textPart;
                   writer.write({
-                    type: 'text-delta',
+                    type: "text-delta",
                     id: messageId,
                     delta: textPart,
                   });
@@ -228,7 +244,9 @@ export async function POST(req: NextRequest) {
                 break; // Success — exit fallback loop
               } catch (error) {
                 if (isRateLimitError(error)) {
-                  console.warn(`[Chat API - Groq] Rate limited on ${tryModel}, trying next...`);
+                  console.warn(
+                    `[Chat API - Groq] Rate limited on ${tryModel}, trying next...`,
+                  );
                   continue;
                 }
                 throw error; // Non-rate-limit error — bubble up
@@ -236,46 +254,48 @@ export async function POST(req: NextRequest) {
             }
 
             if (usedModel !== selectedModel) {
-              console.log(`[Chat API - Groq] Fell back from ${selectedModel} → ${usedModel}`);
+              console.log(
+                `[Chat API - Groq] Fell back from ${selectedModel} → ${usedModel}`,
+              );
             }
 
-            writer.write({ type: 'text-end', id: messageId });
-            writer.write({ type: 'finish-step' });
-            writer.write({ type: 'finish' });
+            writer.write({ type: "text-end", id: messageId });
+            writer.write({ type: "finish-step" });
+            writer.write({ type: "finish" });
 
             // Save assistant message
             if (actualConversationId && fullAssistantContent) {
-              await supabase.from('messages').insert({
+              await supabase.from("messages").insert({
                 conversation_id: actualConversationId,
-                role: 'assistant',
+                role: "assistant",
                 content: fullAssistantContent,
               });
 
               await supabase
-                .from('conversations')
+                .from("conversations")
                 .update({ updated_at: new Date().toISOString() })
-                .eq('id', actualConversationId);
+                .eq("id", actualConversationId);
             }
           } catch (error) {
-            console.error('[Chat API - Groq] Stream error:', error);
+            console.error("[Chat API - Groq] Stream error:", error);
             writer.write({
-              type: 'error',
+              type: "error",
               errorText:
-                error instanceof Error ? error.message : 'Unknown error',
+                error instanceof Error ? error.message : "Unknown error",
             });
           }
         },
       }),
     });
   } catch (error) {
-    console.error('[Chat API - Groq] Error:', error);
+    console.error("[Chat API - Groq] Error:", error);
     return new Response(
       JSON.stringify({
-        error: error instanceof Error ? error.message : 'Internal Error',
+        error: error instanceof Error ? error.message : "Internal Error",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       },
     );
   }

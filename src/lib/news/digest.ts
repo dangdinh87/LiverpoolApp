@@ -47,11 +47,11 @@ const CATEGORY_VI_MAP: Record<string, string> = {
 // Model fallback chain — try each model in order until one succeeds.
 // Groq free tier has per-model daily token limits (TPD).
 const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",     // best quality, 100K TPD
+  "llama-3.3-70b-versatile", // best quality, 100K TPD
   "moonshotai/kimi-k2-instruct", // 60 RPM, 300K TPD, strong reasoning
-  "qwen/qwen3-32b",              // 60 RPM, 500K TPD, good Vietnamese
-  "openai/gpt-oss-120b",         // 120B params, 200K TPD
-  "llama-3.1-8b-instant",        // fast fallback, 500K TPD
+  "qwen/qwen3-32b", // 60 RPM, 500K TPD, good Vietnamese
+  "openai/gpt-oss-120b", // 120B params, 200K TPD
+  "llama-3.1-8b-instant", // fast fallback, 500K TPD
 ] as const;
 
 const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
@@ -107,12 +107,13 @@ export async function generateDailyDigest(): Promise<DigestResult> {
   }
 
   // Build prompt input
-  const articleList = articles
-    .map(
-      (a, i) =>
-        `[${i + 1}] ${a.title}\n   Source: ${a.source} | Lang: ${a.language} | Category: ${a.category}\n   Snippet: ${a.snippet?.slice(0, 400) || "N/A"}\n   URL: ${a.url}`
-    )
-    .join("\n\n");
+  const articleList = articles.reduce(
+    (acc, a, i) =>
+      acc +
+      (acc ? "\n\n" : "") +
+      `[${i + 1}] ${a.title}\n   Source: ${a.source} | Lang: ${a.language} | Category: ${a.category}\n   Snippet: ${a.snippet?.slice(0, 400) || "N/A"}\n   URL: ${a.url}`,
+    "",
+  );
 
   const today = new Date().toLocaleDateString("vi-VN", {
     weekday: "long",
@@ -140,7 +141,11 @@ export async function generateDailyDigest(): Promise<DigestResult> {
       break;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      const isRateLimit = msg.includes("Rate limit") || msg.includes("rate_limit") || msg.includes("429") || msg.includes("tokens per");
+      const isRateLimit =
+        msg.includes("Rate limit") ||
+        msg.includes("rate_limit") ||
+        msg.includes("429") ||
+        msg.includes("tokens per");
       if (isRateLimit && modelId !== GROQ_MODELS[GROQ_MODELS.length - 1]) {
         console.warn(`[digest] ${modelId} rate limited, falling back...`);
         continue;
@@ -161,7 +166,7 @@ export async function generateDailyDigest(): Promise<DigestResult> {
     parsed = JSON.parse(jsonStr);
   } catch {
     throw new Error(
-      `Failed to parse digest JSON: ${result.text.slice(0, 200)}`
+      `Failed to parse digest JSON: ${result.text.slice(0, 200)}`,
     );
   }
 
@@ -212,47 +217,65 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
   if (needsGenerate && process.env.GROQ_API_KEY && !isLocked) {
     digestLockUntil = now + 30_000; // Lock for 30s max
     try {
-      console.log("[digest] Auto-generating (stale=%s, date=%s, today=%s)...", isStale, data?.digest_date, today);
+      console.log(
+        "[digest] Auto-generating (stale=%s, date=%s, today=%s)...",
+        isStale,
+        data?.digest_date,
+        today,
+      );
       const digest = await Promise.race([
         generateDailyDigest(),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Digest timeout 15s")), 15000)
+          setTimeout(() => reject(new Error("Digest timeout 15s")), 15000),
         ),
       ]);
-      const { data: freshDigest } = await supabase.from("news_digests").upsert(
-        {
-          ...(data || {}),
-          digest_date: today,
-          title: digest.title,
-          summary: digest.summary,
-          sections: digest.sections,
-          article_ids: digest.sections.flatMap((s) => s.articleUrls),
-          article_count: digest.articleCount,
-          model: digest.model,
-          tokens_used: digest.tokensUsed,
-          generated_at: new Date().toISOString(),
-        },
-        { onConflict: "digest_date" }
-      ).select("*").maybeSingle();
-      console.log("[digest] Auto-generated OK, sections:", digest.sections.length);
+      const { data: freshDigest } = await supabase
+        .from("news_digests")
+        .upsert(
+          {
+            ...(data || {}),
+            digest_date: today,
+            title: digest.title,
+            summary: digest.summary,
+            sections: digest.sections,
+            article_ids: digest.sections.flatMap((s) => s.articleUrls),
+            article_count: digest.articleCount,
+            model: digest.model,
+            tokens_used: digest.tokensUsed,
+            generated_at: new Date().toISOString(),
+          },
+          { onConflict: "digest_date" },
+        )
+        .select("*")
+        .maybeSingle();
+      console.log(
+        "[digest] Auto-generated OK, sections:",
+        digest.sections.length,
+      );
       digestLockUntil = 0;
       return freshDigest ?? data;
     } catch (err) {
-      console.warn("[digest] Auto-generation failed:", err instanceof Error ? err.message : err);
+      console.warn(
+        "[digest] Auto-generation failed:",
+        err instanceof Error ? err.message : err,
+      );
       digestLockUntil = 0; // Release lock on error so next request can retry
       return data;
     }
   }
 
   if (needsGenerate && isLocked) {
-    console.log("[digest] Skipped — locked until", new Date(digestLockUntil).toISOString());
+    console.log(
+      "[digest] Skipped — locked until",
+      new Date(digestLockUntil).toISOString(),
+    );
   }
 
   return data;
 }
 
 export const getDigestByDate = cache(async function getDigestByDate(
-  date: string
+  date: string,
 ): Promise<DigestRecord | null> {
   const supabase = getServiceClient();
   const { data } = await supabase
@@ -264,7 +287,9 @@ export const getDigestByDate = cache(async function getDigestByDate(
 });
 
 /** Lightweight query for sitemap: all digest dates + generated timestamps */
-export async function getAllDigestDates(): Promise<{ digest_date: string; generated_at: string }[]> {
+export async function getAllDigestDates(): Promise<
+  { digest_date: string; generated_at: string }[]
+> {
   try {
     const supabase = getServiceClient();
     const { data } = await supabase
