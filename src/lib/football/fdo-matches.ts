@@ -98,7 +98,11 @@ const STATUS_MAP: Record<string, { short: string; long: string }> = {
   AWARDED: { short: "FT", long: "Awarded" },
 };
 
-function mapStatus(fdoStatus: string): { short: string; long: string; elapsed: number | null } {
+function mapStatus(fdoStatus: string): {
+  short: string;
+  long: string;
+  elapsed: number | null;
+} {
   const mapped = STATUS_MAP[fdoStatus] ?? { short: "NS", long: fdoStatus };
   return { ...mapped, elapsed: fdoStatus === "FINISHED" ? 90 : null };
 }
@@ -130,7 +134,11 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
       id: m.id,
       date: m.utcDate,
       venue: { id: null, name: null, city: null },
-      status: { long: status.long, short: status.short, elapsed: status.elapsed },
+      status: {
+        long: status.long,
+        short: status.short,
+        elapsed: status.elapsed,
+      },
     },
     league: {
       id: m.competition.id,
@@ -145,13 +153,23 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
         id: mapTeamId(m.homeTeam.id),
         name: m.homeTeam.name,
         logo: m.homeTeam.crest,
-        winner: m.score.winner === "HOME_TEAM" ? true : m.score.winner === "AWAY_TEAM" ? false : null,
+        winner:
+          m.score.winner === "HOME_TEAM"
+            ? true
+            : m.score.winner === "AWAY_TEAM"
+              ? false
+              : null,
       },
       away: {
         id: mapTeamId(m.awayTeam.id),
         name: m.awayTeam.name,
         logo: m.awayTeam.crest,
-        winner: m.score.winner === "AWAY_TEAM" ? true : m.score.winner === "HOME_TEAM" ? false : null,
+        winner:
+          m.score.winner === "AWAY_TEAM"
+            ? true
+            : m.score.winner === "HOME_TEAM"
+              ? false
+              : null,
       },
     },
     goals: { home: hGoals, away: aGoals },
@@ -170,7 +188,9 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
  * Fetch all finished PL matches and derive last-5 form for each team.
  * Returns Map<canonical_team_id, form_string> e.g. Map(40 → "WDWLW")
  */
-export async function derivePLFormMap(season?: number): Promise<Map<number, string>> {
+export async function derivePLFormMap(
+  season?: number,
+): Promise<Map<number, string>> {
   const seasonParam = season ? `&season=${season}` : "";
   const data = await fdoFetch<FdoMatchesResponse>(
     `/competitions/PL/matches?status=FINISHED${seasonParam}`,
@@ -178,14 +198,19 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
   );
 
   // Group matches by team, sorted by date
-  const teamMatches = new Map<number, { date: string; result: "W" | "D" | "L" }[]>();
+  const teamMatches = new Map<
+    number,
+    { date: string; result: "W" | "D" | "L" }[]
+  >();
 
   for (const m of data.matches) {
     const hGoals = m.score.fullTime.home ?? 0;
     const aGoals = m.score.fullTime.away ?? 0;
 
-    const hResult: "W" | "D" | "L" = hGoals > aGoals ? "W" : hGoals < aGoals ? "L" : "D";
-    const aResult: "W" | "D" | "L" = aGoals > hGoals ? "W" : aGoals < hGoals ? "L" : "D";
+    const hResult: "W" | "D" | "L" =
+      hGoals > aGoals ? "W" : hGoals < aGoals ? "L" : "D";
+    const aResult: "W" | "D" | "L" =
+      aGoals > hGoals ? "W" : aGoals < hGoals ? "L" : "D";
 
     const hId = mapTeamId(m.homeTeam.id);
     const aId = mapTeamId(m.awayTeam.id);
@@ -201,7 +226,7 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 
   for (const [teamId, matches] of teamMatches) {
     const sorted = matches.sort((a, b) => a.date.localeCompare(b.date));
-    const last5 = sorted.slice(-5).map((m) => m.result).join("");
+    const last5 = sorted.slice(-5).reduce((acc, m) => acc + m.result, "");
     formMap.set(teamId, last5);
   }
 
@@ -236,7 +261,10 @@ export async function getFdoCoach(): Promise<Coach | null> {
   if (!c) return null;
 
   const age = c.dateOfBirth
-    ? Math.floor((Date.now() - new Date(c.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    ? Math.floor(
+        (Date.now() - new Date(c.dateOfBirth).getTime()) /
+          (365.25 * 24 * 60 * 60 * 1000),
+      )
     : 0;
 
   return {
