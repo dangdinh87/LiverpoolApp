@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot, .readmore-body-box"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -1080,13 +1080,29 @@ function extractVietnameseGeneric(
   // Extract sapo/lead text
   let sapoText: string | undefined;
   if (opts?.sapoSelector) {
-    const $sapo = $(opts.sapoSelector).first();
+    const $sapo = contentClone.find(opts.sapoSelector).first();
     const sapo = $sapo.text().trim();
     if (sapo && sapo.length > 20) {
       pushUnique(paragraphs, seenP, sapo);
       sapoText = sapo;
-      contentClone.find(opts.sapoSelector).first().remove();
+      $sapo.remove();
     }
+  }
+
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, sapoText);
+
+    contentClone.find("h2, p").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      if (text === sapoText!.replace(/\s+/g, " ").trim()) {
+        $(el).remove();
+      }
+    });
+  }
+
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
@@ -1105,9 +1121,6 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    if (sapoText) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
-    }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
@@ -1300,11 +1313,29 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
+  let sapoText: string | undefined;
+  const $sapo = contentClone.find(".the-article-summary").first();
+  const sapo = $sapo.text().trim();
   if (sapo && sapo.length > 20) {
     pushUnique(paragraphs, seenP, sapo);
-    contentClone.find(".the-article-summary").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+    sapoText = sapo;
+    $sapo.remove();
+  }
+
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, sapoText);
+
+    contentClone.find("h2, p").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      if (text === sapoText!.replace(/\s+/g, " ").trim()) {
+        $(el).remove();
+      }
+    });
+  }
+
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1351,13 +1382,31 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
+  let sapoText: string | undefined;
+  const $sapo = contentClone.find("p.description").first();
+  const sapo = $sapo.text().trim();
   if (sapo && sapo.length > 20) {
     if (sapo !== description) {
       pushUnique(paragraphs, seenP, sapo);
     }
-    contentClone.find("p.description").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+    sapoText = sapo;
+    $sapo.remove();
+  }
+
+  if (!sapoText && description && description.length > 20) {
+    sapoText = description;
+    pushUnique(paragraphs, seenP, sapoText);
+
+    contentClone.find("h2, p").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      if (text === sapoText!.replace(/\s+/g, " ").trim()) {
+        $(el).remove();
+      }
+    });
+  }
+
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
