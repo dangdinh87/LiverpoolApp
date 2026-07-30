@@ -49,7 +49,7 @@ export async function fetchAllNews(
     const source = adapters[i].name;
     if (r.status === "fulfilled") {
       const articles = r.value;
-      const thin = articles.filter((a) => (a.wordCount ?? 0) < 50).length;
+      const thin = articles.reduce((acc, a) => acc + ((a.wordCount ?? 0) < 50 ? 1 : 0), 0);
       addSourceStats(stats, source, {
         fetched: articles.length,
         parsed: articles.length,
