@@ -2,8 +2,17 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
-import { scrapeArticle, getNewsFromDB, getArticleContentFromDB } from "@/lib/news";
-import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
+import {
+  scrapeArticle,
+  getNewsFromDB,
+  getArticleContentFromDB,
+} from "@/lib/news";
+import {
+  getHreflangAlternates,
+  buildBreadcrumbJsonLd,
+  buildNewsArticleJsonLd,
+  getCanonical,
+} from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
 import type { NewsArticle } from "@/lib/news/types";
@@ -14,7 +23,10 @@ import {
   formatRelativeDate,
   type NewsSource,
 } from "@/lib/news-config";
-import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
+import {
+  detectSource as detectArticleSource,
+  VI_SOURCES,
+} from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
@@ -22,13 +34,20 @@ import { ReadTracker } from "@/components/news/read-tracker";
 import { ArticleImageViewer } from "@/components/news/article-image-viewer";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { RelatedArticles } from "@/components/news/related-articles";
-import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
+import {
+  TranslateProvider,
+  TranslateHeader,
+  TranslateBody,
+} from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
 
 export const revalidate = 600; // 10 minutes
 
-function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
+function formatPublishDate(
+  dateStr: string,
+  source: NewsSource,
+): { relative: string; absolute: string } {
   const lang = VI_SOURCES.has(source) ? "vi" : "en";
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return { relative: "", absolute: "" };
@@ -45,9 +64,28 @@ function formatPublishDate(dateStr: string, source: NewsSource): { relative: str
 
 // Improved keyword-based related articles with stopwords + diversity
 const STOP_WORDS = new Set([
-  "liverpool", "city", "club", "says", "news", "will", "that",
-  "this", "from", "have", "been", "with", "they", "their", "about",
-  "after", "could", "would", "make", "made", "premier", "league",
+  "liverpool",
+  "city",
+  "club",
+  "says",
+  "news",
+  "will",
+  "that",
+  "this",
+  "from",
+  "have",
+  "been",
+  "with",
+  "they",
+  "their",
+  "about",
+  "after",
+  "could",
+  "would",
+  "make",
+  "made",
+  "premier",
+  "league",
 ]);
 
 function getRelatedArticles(
@@ -65,15 +103,22 @@ function getRelatedArticles(
   });
 
   const currentWords = new Set(
-    currentTitle.toLowerCase().split(/\s+/)
+    currentTitle
+      .toLowerCase()
+      .split(/\s+/)
       .filter((w) => w.length > 3 && !STOP_WORDS.has(w)),
   );
   return sameLangArticles
     .filter((a) => a.link !== currentUrl)
     .map((a) => {
-      const words = a.title.toLowerCase().split(/\s+/)
+      const words = a.title
+        .toLowerCase()
+        .split(/\s+/)
         .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
-      const overlap = words.filter((w) => currentWords.has(w)).length;
+      const overlap = words.reduce(
+        (count, w) => count + (currentWords.has(w) ? 1 : 0),
+        0,
+      );
       // Promote source diversity
       const sourcePenalty = a.source === currentSource ? -0.3 : 0;
       return { article: a, score: overlap + sourcePenalty };
@@ -97,8 +142,11 @@ export async function generateMetadata({
   const content = await scrapeArticle(url);
   if (!content) return { title: "Article Not Found" };
 
-  const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
-  const images = content.heroImage ? [{ url: content.heroImage, width: 1200, height: 630 }] : [];
+  const description =
+    content.description || content.paragraphs[0]?.slice(0, 160) || "";
+  const images = content.heroImage
+    ? [{ url: content.heroImage, width: 1200, height: 630 }]
+    : [];
 
   const articlePath = `/news/${slug.join("/")}`;
   return {
@@ -123,11 +171,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticlePage({
-  params,
-}: {
-  params: Params;
-}) {
+export default async function ArticlePage({ params }: { params: Params }) {
   const { slug } = await params;
   const url = decodeArticleSlug(slug);
   if (!url) notFound();
@@ -143,7 +187,11 @@ export default async function ArticlePage({
   const nextMatch: Fixture | null =
     [...fixtures]
       .filter((f) => f.fixture.status.short === "NS")
-      .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
+      .sort(
+        (a, b) =>
+          new Date(a.fixture.date).getTime() -
+          new Date(b.fixture.date).getTime(),
+      )[0] ?? null;
 
   if (!content || content.paragraphs.length === 0) {
     return (
@@ -193,9 +241,17 @@ export default async function ArticlePage({
       <ArticleImageViewer extraImages={extraImages} />
       {(content.isThinContent || content.paragraphs.length <= 2) && (
         <div className="mt-8 p-5 bg-stadium-surface border border-stadium-border text-center">
-          <p className="font-inter text-sm text-white/60 mb-4">{t("thinContentMsg")}</p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-5 py-2.5 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold">
-            {t("readFullOn", { source: content.sourceName })} <ExternalLink className="w-3.5 h-3.5" />
+          <p className="font-inter text-sm text-white/60 mb-4">
+            {t("thinContentMsg")}
+          </p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-5 py-2.5 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold"
+          >
+            {t("readFullOn", { source: content.sourceName })}{" "}
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       )}
@@ -205,11 +261,23 @@ export default async function ArticlePage({
             {t.rich("sourcedFrom", {
               sourceName: content.sourceName,
               source: (chunks) => (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="text-lfc-red hover:underline">{chunks}</a>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-lfc-red hover:underline"
+                >
+                  {chunks}
+                </a>
               ),
             })}
           </p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-4 py-2 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-4 py-2 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold"
+          >
             {t("readOriginal")} <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -244,22 +312,30 @@ export default async function ArticlePage({
       <ReadingProgress />
       <ReadTracker articleUrl={url} />
       {content && (
-        <JsonLd data={[
-          buildBreadcrumbJsonLd([
-            { name: "Home", url: getCanonical("/") },
-            { name: "News", url: getCanonical("/news") },
-            { name: content.title, url: getCanonical(`/news/${slug.join("/")}`) },
-          ]),
-          buildNewsArticleJsonLd({
-            title: content.title,
-            description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
-            url: getCanonical(`/news/${slug.join("/")}`),
-            image: content.heroImage,
-            author: content.author,
-            publishedAt: content.publishedAt,
-            sourceName: content.sourceName,
-          }),
-        ]} />
+        <JsonLd
+          data={[
+            buildBreadcrumbJsonLd([
+              { name: "Home", url: getCanonical("/") },
+              { name: "News", url: getCanonical("/news") },
+              {
+                name: content.title,
+                url: getCanonical(`/news/${slug.join("/")}`),
+              },
+            ]),
+            buildNewsArticleJsonLd({
+              title: content.title,
+              description:
+                content.description ||
+                content.paragraphs[0]?.slice(0, 160) ||
+                "",
+              url: getCanonical(`/news/${slug.join("/")}`),
+              image: content.heroImage,
+              author: content.author,
+              publishedAt: content.publishedAt,
+              sourceName: content.sourceName,
+            }),
+          ]}
+        />
       )}
 
       {/* Hero Image — full viewport */}
@@ -289,7 +365,9 @@ export default async function ArticlePage({
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
             {/* Header area */}
-            <div className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}>
+            <div
+              className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}
+            >
               <Link
                 href="/news"
                 className="inline-flex items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-wider text-white bg-white/15 backdrop-blur-md px-4 py-2 border border-white/20 hover:bg-lfc-red hover:border-lfc-red hover:text-white transition-all mb-8"
@@ -299,7 +377,10 @@ export default async function ArticlePage({
               </Link>
               {publishDate && (
                 <div className="flex items-center gap-3 mb-4 lg:mb-3">
-                  <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
+                  <span
+                    className="font-inter text-xs text-white/50 lg:hidden"
+                    title={publishDate.absolute}
+                  >
                     {publishDate.relative}
                   </span>
                 </div>
@@ -338,7 +419,10 @@ export default async function ArticlePage({
             </Link>
             {publishDate && (
               <div className="flex items-center gap-3 mb-4 lg:mb-3">
-                <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
+                <span
+                  className="font-inter text-xs text-white/50 lg:hidden"
+                  title={publishDate.absolute}
+                >
                   {publishDate.relative}
                 </span>
               </div>

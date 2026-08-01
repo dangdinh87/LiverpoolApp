@@ -156,7 +156,10 @@ export function GalleryContent({
       }
       const valid = images.filter((img) => !failedSrcs.has(img.src));
       if (cat === "all") return valid.length;
-      return valid.filter((img) => img.category === cat).length;
+      return valid.reduce(
+        (count, img) => count + (img.category === cat ? 1 : 0),
+        0,
+      );
     },
     [categoryCounts, images, failedSrcs],
   );
@@ -172,19 +175,22 @@ export function GalleryContent({
     }
   }, [onLoadMore, loading, category]);
 
-  const handleCategoryChange = useCallback(async (cat: Category) => {
-    setCategory(cat);
-    setHasMore(true);
-    setSearch("");
-    if (onCategoryChange) {
-      setCategoryLoading(true);
-      try {
-        await onCategoryChange(cat);
-      } finally {
-        setCategoryLoading(false);
+  const handleCategoryChange = useCallback(
+    async (cat: Category) => {
+      setCategory(cat);
+      setHasMore(true);
+      setSearch("");
+      if (onCategoryChange) {
+        setCategoryLoading(true);
+        try {
+          await onCategoryChange(cat);
+        } finally {
+          setCategoryLoading(false);
+        }
       }
-    }
-  }, [onCategoryChange]);
+    },
+    [onCategoryChange],
+  );
 
   const categoryLabels: Record<string, string> = {
     all: t("categories.all"),
@@ -226,7 +232,10 @@ export function GalleryContent({
           const ok = await onSetHomepage?.(id);
           if (ok) {
             setHomepageSet(id);
-            showToast({ type: "success", message: t("admin.setHomepageSuccess") });
+            showToast({
+              type: "success",
+              message: t("admin.setHomepageSuccess"),
+            });
           } else {
             showToast({ type: "error", message: t("admin.actionError") });
           }
@@ -290,12 +299,18 @@ export function GalleryContent({
                     <motion.div
                       layoutId="gallery-tab-bg"
                       className="absolute inset-0 bg-lfc-red"
-                      transition={{ type: "spring", stiffness: 180, damping: 14 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 180,
+                        damping: 14,
+                      }}
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-1.5">
                     {categoryLabels[cat]}
-                    <span className="opacity-60 font-inter">{dbCount(cat)}</span>
+                    <span className="opacity-60 font-inter">
+                      {dbCount(cat)}
+                    </span>
                   </span>
                 </motion.button>
               );
@@ -395,8 +410,16 @@ export function GalleryContent({
                 key={img.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => { setIndex(i); setOpen(true); }}
-                onKeyDown={(e) => { if (e.key === "Enter") { setIndex(i); setOpen(true); } }}
+                onClick={() => {
+                  setIndex(i);
+                  setOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setIndex(i);
+                    setOpen(true);
+                  }
+                }}
                 className="relative overflow-hidden cursor-zoom-in group break-inside-avoid block w-full"
                 style={{ aspectRatio: `1 / ${aspectRatio}` }}
               >
@@ -428,7 +451,9 @@ export function GalleryContent({
                       <Download className="w-3.5 h-3.5" />
                     </a>
                   </TooltipTrigger>
-                  <TooltipContent side="left">{t("admin.download")}</TooltipContent>
+                  <TooltipContent side="left">
+                    {t("admin.download")}
+                  </TooltipContent>
                 </Tooltip>
 
                 {/* Admin: Delete */}
@@ -442,7 +467,9 @@ export function GalleryContent({
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="right">{t("admin.delete")}</TooltipContent>
+                    <TooltipContent side="right">
+                      {t("admin.delete")}
+                    </TooltipContent>
                   </Tooltip>
                 )}
 
@@ -454,13 +481,17 @@ export function GalleryContent({
                         onClick={(e) => handleSetHomepage(e, img.id)}
                         className={cn(
                           "absolute bottom-8 right-2 p-1.5 text-black opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer",
-                          homepageSet === img.id ? "bg-green-400" : "bg-lfc-gold/80 hover:bg-lfc-gold",
+                          homepageSet === img.id
+                            ? "bg-green-400"
+                            : "bg-lfc-gold/80 hover:bg-lfc-gold",
                         )}
                       >
                         <Home className="w-3.5 h-3.5" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent side="left">{t("admin.setHomepage")}</TooltipContent>
+                    <TooltipContent side="left">
+                      {t("admin.setHomepage")}
+                    </TooltipContent>
                   </Tooltip>
                 )}
 
@@ -482,7 +513,10 @@ export function GalleryContent({
               className="flex items-center gap-4 bg-stadium-surface border border-stadium-border hover:border-stadium-muted/50 transition-colors group"
             >
               <button
-                onClick={() => { setIndex(i); setOpen(true); }}
+                onClick={() => {
+                  setIndex(i);
+                  setOpen(true);
+                }}
                 className="relative shrink-0 w-24 h-16 sm:w-32 sm:h-20 overflow-hidden cursor-zoom-in"
               >
                 <div className="absolute inset-0 bg-stadium-surface2 animate-pulse" />
@@ -499,9 +533,14 @@ export function GalleryContent({
               </button>
 
               <div className="flex-1 min-w-0 py-2">
-                <p className="text-white text-xs sm:text-sm font-inter truncate">{img.alt}</p>
+                <p className="text-white text-xs sm:text-sm font-inter truncate">
+                  {img.alt}
+                </p>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                  <Badge variant="outline" className="text-[9px] font-barlow font-bold uppercase tracking-wider text-lfc-red border-lfc-red/30 px-1.5 py-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-barlow font-bold uppercase tracking-wider text-lfc-red border-lfc-red/30 px-1.5 py-0"
+                  >
                     {categoryLabels[img.category] || img.category}
                   </Badge>
                   {img.width && img.height && (
@@ -516,7 +555,12 @@ export function GalleryContent({
               <div className="flex items-center gap-0.5 pr-3 shrink-0">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-stadium-muted hover:text-white hover:bg-stadium-surface2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      asChild
+                      className="h-8 w-8 text-stadium-muted hover:text-white hover:bg-stadium-surface2"
+                    >
                       <a href={img.src} download={`${img.id}.jpg`}>
                         <Download className="w-3.5 h-3.5" />
                       </a>
@@ -534,7 +578,9 @@ export function GalleryContent({
                         onClick={(e) => handleSetHomepage(e, img.id)}
                         className={cn(
                           "h-8 w-8",
-                          homepageSet === img.id ? "text-green-400" : "text-lfc-gold/60 hover:text-lfc-gold hover:bg-stadium-surface2",
+                          homepageSet === img.id
+                            ? "text-green-400"
+                            : "text-lfc-gold/60 hover:text-lfc-gold hover:bg-stadium-surface2",
                         )}
                       >
                         <Home className="w-3.5 h-3.5" />

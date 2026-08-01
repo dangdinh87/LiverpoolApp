@@ -47,18 +47,25 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
   const [filter, setFilter] = useState<PositionFilter>("All");
   const [search, setSearch] = useState("");
   const t = useTranslations("Squad");
-  const { ids: favouriteIds, isLoggedIn, toggle: toggleFavourite } = useFavourites();
+  const {
+    ids: favouriteIds,
+    isLoggedIn,
+    toggle: toggleFavourite,
+  } = useFavourites();
   const { show: showToast } = useToast();
   const pt = useTranslations("Profile");
 
-  const handleNotify = useCallback((playerName: string, added: boolean) => {
-    showToast({
-      type: "favourite",
-      message: added
-        ? pt("favAdded", { name: playerName })
-        : pt("favRemoved", { name: playerName }),
-    });
-  }, [pt, showToast]);
+  const handleNotify = useCallback(
+    (playerName: string, added: boolean) => {
+      showToast({
+        type: "favourite",
+        message: added
+          ? pt("favAdded", { name: playerName })
+          : pt("favRemoved", { name: playerName }),
+      });
+    },
+    [pt, showToast],
+  );
 
   const FILTERS: { label: string; value: PositionFilter }[] = [
     { label: t("positions.all"), value: "All" },
@@ -69,15 +76,15 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
   ];
 
   const sorted = useMemo(() => {
-    let list = filter === "All" ? players : players.filter((p) => p.position === filter);
+    let list =
+      filter === "All" ? players : players.filter((p) => p.position === filter);
 
     // Search by name or number
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       list = list.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          String(p.shirtNumber).includes(q)
+          p.name.toLowerCase().includes(q) || String(p.shirtNumber).includes(q),
       );
     }
 
@@ -104,7 +111,7 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
                 "relative px-4 py-2 rounded-none font-barlow font-semibold text-sm uppercase tracking-wider overflow-hidden transition-colors",
                 isActive
                   ? "text-white border border-transparent"
-                  : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white"
+                  : "bg-stadium-surface text-stadium-muted border border-stadium-border hover:border-white/30 hover:text-white",
               )}
             >
               {isActive && (
@@ -119,7 +126,10 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
                 <span className="ml-2 text-xs opacity-60">
                   {value === "All"
                     ? players.length
-                    : players.filter((p) => p.position === value).length}
+                    : players.reduce(
+                        (count, p) => count + (p.position === value ? 1 : 0),
+                        0,
+                      )}
                 </span>
               </span>
             </motion.button>
@@ -128,7 +138,10 @@ export function SquadGrid({ players, actionSlot }: SquadGridProps) {
 
         {/* Search input */}
         <div className="relative ml-auto">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stadium-muted pointer-events-none" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-stadium-muted pointer-events-none"
+          />
           <input
             type="text"
             value={search}

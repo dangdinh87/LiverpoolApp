@@ -66,7 +66,7 @@ function firstNonEmptyString(...values: unknown[]): string | null {
 export function mergeArticleRowForUpsert(
   row: Record<string, unknown>,
   existing?: Record<string, unknown>,
-  fetchedAt = nowIso()
+  fetchedAt = nowIso(),
 ): Record<string, unknown> {
   if (!existing) {
     return {
@@ -82,13 +82,13 @@ export function mergeArticleRowForUpsert(
     row.thumbnail,
     old.thumbnail,
     row.hero_image,
-    old.hero_image
+    old.hero_image,
   );
   const heroImage = firstNonEmptyString(
     row.hero_image,
     old.hero_image,
     row.thumbnail,
-    old.thumbnail
+    old.thumbnail,
   );
 
   return {
@@ -103,7 +103,7 @@ export function mergeArticleRowForUpsert(
 function getAdaptiveScrapeLimit(
   upserted: number,
   fetchedTotal: number,
-  mode: MatchTrafficMode
+  mode: MatchTrafficMode,
 ): number {
   // Keep default scrape lower, then bump only when volume or match window justifies it.
   let limit = SCRAPE_MIN_LIMIT;
@@ -161,7 +161,10 @@ async function getMatchTrafficMode(): Promise<{
 
     return { mode: "low", hoursToNext, hoursSinceLast };
   } catch (err) {
-    console.warn("[sync] Could not resolve fixture window, fallback to low mode", err);
+    console.warn(
+      "[sync] Could not resolve fixture window, fallback to low mode",
+      err,
+    );
     return { mode: "low", hoursToNext: null, hoursSinceLast: null };
   }
 }
@@ -193,7 +196,10 @@ function articleToRow(a: NewsArticle) {
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsServiceClient) {
+async function bulkUpsertArticles(
+  articles: NewsArticle[],
+  supabase: NewsServiceClient,
+) {
   let inserted = 0;
   let updated = 0;
   let upserted = 0;
@@ -217,7 +223,9 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
 
       if (fetchError) {
         if (attempt < retries) {
-          console.warn(`[sync] Batch ${i} fetch failed (${fetchError.message}), retrying...`);
+          console.warn(
+            `[sync] Batch ${i} fetch failed (${fetchError.message}), retrying...`,
+          );
           await new Promise((r) => setTimeout(r, 2000));
           continue;
         } else {
@@ -229,7 +237,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       }
 
       const existingMap = new Map(
-        (existingData || []).map((row) => [row.url, stripDbManaged(row)])
+        (existingData || []).map((row) => [row.url, stripDbManaged(row)]),
       );
       // Bulk upsert in PostgREST takes the UNION of keys across all rows;
       // any column missing on a given row is serialized as NULL, bypassing
@@ -238,7 +246,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       // columns that have meaningful defaults (chiefly `is_active`).
       const fetchedAt = nowIso();
       const safeRows = rows.map((row) =>
-        mergeArticleRowForUpsert(row, existingMap.get(row.url), fetchedAt)
+        mergeArticleRowForUpsert(row, existingMap.get(row.url), fetchedAt),
       );
 
       const { data, error } = await supabase
@@ -248,7 +256,10 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
 
       if (!error) {
         const affected = data?.length ?? 0;
-        const existingCount = rows.filter((row) => existingMap.has(row.url)).length;
+        const existingCount = rows.reduce(
+          (count, row) => count + (existingMap.has(row.url) ? 1 : 0),
+          0,
+        );
         const insertedCount = rows.length - existingCount;
         inserted += insertedCount;
         updated += existingCount;
@@ -301,7 +312,9 @@ async function getLatestStoredArticle(supabase: NewsServiceClient) {
     .maybeSingle();
 
   if (error) {
-    console.warn(`[sync] Could not fetch latest stored article: ${error.message}`);
+    console.warn(
+      `[sync] Could not fetch latest stored article: ${error.message}`,
+    );
     return null;
   }
 
@@ -310,12 +323,12 @@ async function getLatestStoredArticle(supabase: NewsServiceClient) {
 
 async function scrapeContentForRecentArticles(
   supabase: NewsServiceClient,
-  options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode }
+  options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode },
 ) {
   const scrapeLimit = getAdaptiveScrapeLimit(
     options.upserted,
     options.fetchedTotal,
-    options.mode
+    options.mode,
   );
   const staleCutoff = toIsoDateOrFallback(Date.now() - STALE_CONTENT_MS);
   const { data, error } = await supabase
@@ -329,11 +342,21 @@ async function scrapeContentForRecentArticles(
 
   if (error) {
     console.error(`[sync] scrape query failed: ${error.message}`);
-    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
+    return {
+      attempted: 0,
+      scraped: 0,
+      scrapeFailed: 0,
+      stoppedByBudget: false,
+    };
   }
 
   if (!data?.length) {
-    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
+    return {
+      attempted: 0,
+      scraped: 0,
+      scrapeFailed: 0,
+      stoppedByBudget: false,
+    };
   }
 
   const startMs = Date.now();
@@ -349,7 +372,9 @@ async function scrapeContentForRecentArticles(
     }
     const batch = data.slice(i, i + scrapeBatch);
     attempted += batch.length;
-    const results = await Promise.allSettled(batch.map((row) => scrapeArticle(row.url)));
+    const results = await Promise.allSettled(
+      batch.map((row) => scrapeArticle(row.url)),
+    );
     for (let j = 0; j < results.length; j++) {
       const result = results[j];
       if (result.status === "fulfilled" && result.value) {
@@ -361,7 +386,7 @@ async function scrapeContentForRecentArticles(
   }
 
   console.log(
-    `[sync] Pre-scraped ${scraped}/${attempted} attempted (mode=${options.mode}, limit=${scrapeLimit}, batch=${scrapeBatch}, failed=${scrapeFailed}, budgetStop=${stoppedByBudget})`
+    `[sync] Pre-scraped ${scraped}/${attempted} attempted (mode=${options.mode}, limit=${scrapeLimit}, batch=${scrapeBatch}, failed=${scrapeFailed}, budgetStop=${stoppedByBudget})`,
   );
   return { attempted, scraped, scrapeFailed, stoppedByBudget };
 }
@@ -378,7 +403,10 @@ export async function syncPipeline(): Promise<SyncResult> {
     new BongdaplusAdapter(),
   ];
 
-  const { articles, stats: sourceStats } = await fetchAllNews(adapters, FETCH_LIMIT_BASE);
+  const { articles, stats: sourceStats } = await fetchAllNews(
+    adapters,
+    FETCH_LIMIT_BASE,
+  );
   console.log(`[sync] Fetched ${articles.length} articles from adapters`);
 
   const supabase = getServiceClient();
@@ -413,7 +441,7 @@ export async function syncPipeline(): Promise<SyncResult> {
     for (let i = 0; i < noThumb.length; i += BATCH) {
       const batch = noThumb.slice(i, i + BATCH);
       const results = await Promise.allSettled(
-        batch.map((r) => fetchOgMeta(r.url))
+        batch.map((r) => fetchOgMeta(r.url)),
       );
       for (let j = 0; j < results.length; j++) {
         const r = results[j];
@@ -439,8 +467,8 @@ export async function syncPipeline(): Promise<SyncResult> {
               hero_image: row.heroImage,
               updated_at: nowIso(),
             })
-            .eq("url", row.url)
-        )
+            .eq("url", row.url),
+        ),
       );
 
       for (let j = 0; j < results.length; j++) {
@@ -456,7 +484,9 @@ export async function syncPipeline(): Promise<SyncResult> {
             : result.reason instanceof Error
               ? result.reason.message
               : String(result.reason);
-        console.error(`[sync] Re-enrich update failed for ${batch[j].url}: ${error}`);
+        console.error(
+          `[sync] Re-enrich update failed for ${batch[j].url}: ${error}`,
+        );
       }
     }
 
@@ -464,11 +494,12 @@ export async function syncPipeline(): Promise<SyncResult> {
   }
 
   const traffic = await getMatchTrafficMode();
-  const { attempted, scraped, scrapeFailed, stoppedByBudget } = await scrapeContentForRecentArticles(supabase, {
-    upserted,
-    fetchedTotal: articles.length,
-    mode: traffic.mode,
-  });
+  const { attempted, scraped, scrapeFailed, stoppedByBudget } =
+    await scrapeContentForRecentArticles(supabase, {
+      upserted,
+      fetchedTotal: articles.length,
+      mode: traffic.mode,
+    });
   const durationMs = Date.now() - start;
   const latestFetchedPublishedAt = getLatestFetchedPublishedAt(articles);
   const latestStoredArticle = await getLatestStoredArticle(supabase);
@@ -497,7 +528,7 @@ export async function syncPipeline(): Promise<SyncResult> {
   });
 
   console.log(
-    `[sync] Done in ${durationMs}ms: ${inserted} inserted, ${updated} updated, ${failed} failed`
+    `[sync] Done in ${durationMs}ms: ${inserted} inserted, ${updated} updated, ${failed} failed`,
   );
   return {
     total: articles.length,
