@@ -21,9 +21,14 @@ export interface PipelineResult {
 function addSourceStats(
   stats: Record<string, SourceStats>,
   source: string,
-  next: SourceStats
+  next: SourceStats,
 ) {
-  const current = stats[source] ?? { fetched: 0, parsed: 0, failed: 0, thin: 0 };
+  const current = stats[source] ?? {
+    fetched: 0,
+    parsed: 0,
+    failed: 0,
+    thin: 0,
+  };
   stats[source] = {
     fetched: current.fetched + next.fetched,
     parsed: current.parsed + next.parsed,
@@ -34,12 +39,10 @@ function addSourceStats(
 
 export async function fetchAllNews(
   adapters: FeedAdapter[],
-  limit: number
+  limit: number,
 ): Promise<PipelineResult> {
   // Fetch all sources in parallel — graceful per-source failure
-  const results = await Promise.allSettled(
-    adapters.map((a) => a.fetch())
-  );
+  const results = await Promise.allSettled(adapters.map((a) => a.fetch()));
 
   const all: NewsArticle[] = [];
   const stats: Record<string, SourceStats> = {};
@@ -49,7 +52,10 @@ export async function fetchAllNews(
     const source = adapters[i].name;
     if (r.status === "fulfilled") {
       const articles = r.value;
-      const thin = articles.filter((a) => (a.wordCount ?? 0) < 50).length;
+      const thin = articles.reduce(
+        (count, a) => count + ((a.wordCount ?? 0) < 50 ? 1 : 0),
+        0,
+      );
       addSourceStats(stats, source, {
         fetched: articles.length,
         parsed: articles.length,
@@ -58,7 +64,12 @@ export async function fetchAllNews(
       });
       all.push(...articles);
     } else {
-      addSourceStats(stats, source, { fetched: 0, parsed: 0, failed: 1, thin: 0 });
+      addSourceStats(stats, source, {
+        fetched: 0,
+        parsed: 0,
+        failed: 1,
+        thin: 0,
+      });
       console.error(`[pipeline] ${source} failed:`, r.reason);
     }
   }
