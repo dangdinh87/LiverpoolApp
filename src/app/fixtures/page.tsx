@@ -14,8 +14,10 @@ export async function generateMetadata() {
 export const revalidate = 1800; // 30 minutes
 
 export default async function FixturesPage() {
-  const t = await getTranslations("Fixtures");
-  const fixtures = await getFixtures();
+  const [t, fixtures] = await Promise.all([
+    getTranslations("Fixtures"),
+    getFixtures(),
+  ]);
 
   return (
     <div className="min-h-screen">
