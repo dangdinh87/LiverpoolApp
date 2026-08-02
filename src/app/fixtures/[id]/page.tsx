@@ -37,8 +37,10 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
-  const fixtures = await getFixtures();
+  const [{ id }, fixtures] = await Promise.all([
+    params,
+    getFixtures(),
+  ]);
   const match = fixtures.find((f) => f.fixture.id === Number(id));
   if (!match) return { title: "Match" };
   return {
@@ -48,14 +50,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function FixtureDetailPage({ params }: PageProps) {
-  const { id } = await params;
-  const fixtureId = Number(id);
-
-  const [fixtures, tDetail, tMatch] = await Promise.all([
+  const [{ id }, fixtures, tDetail, tMatch] = await Promise.all([
+    params,
     getFixtures(),
     getTranslations("Fixtures.detail"),
     getTranslations("Match"),
   ]);
+  const fixtureId = Number(id);
   const match = fixtures.find((f) => f.fixture.id === fixtureId);
   if (!match) notFound();
 
@@ -83,8 +84,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const h2h = computeH2H(allFixturesForH2H, opponentId);
 
   const date = new Date(f.date);
-  const now = Date.now();
-  const msToKickoff = date.getTime() - now;
+  const now = new Date();
+  const msToKickoff = date.getTime() - now.getTime();
   const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
   const dateStr = date.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
