@@ -24,5 +24,5 @@ describe("Test with different VnExpress URL", () => {
     expect(res?.title).toBeTruthy();
     expect(res?.paragraphs?.length).toBeGreaterThan(0);
     expect(res?.sourceName).toBe("VnExpress");
-  });
+  }, 30000);
 });
