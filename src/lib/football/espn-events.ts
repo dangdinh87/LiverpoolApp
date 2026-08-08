@@ -3,14 +3,25 @@
 // plus venue, attendance, referee, and 28 per-team match statistics.
 
 import "server-only";
-import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats, FixtureStatItem } from "@/lib/types/football";
+import type {
+  Fixture,
+  FixtureEvent,
+  FixtureLineup,
+  FixtureTeamStats,
+  FixtureStatItem,
+} from "@/lib/types/football";
 
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const ESPN_LFC_ID = "364"; // Liverpool FC in ESPN
 const FETCH_TIMEOUT_MS = 8_000;
 
 // ESPN league slugs — all competitions Liverpool participates in
-const LEAGUE_SLUGS = ["eng.1", "uefa.champions", "eng.fa", "eng.league_cup"] as const;
+const LEAGUE_SLUGS = [
+  "eng.1",
+  "uefa.champions",
+  "eng.fa",
+  "eng.league_cup",
+] as const;
 
 // ─── ESPN response shapes ───────────────────────────────────────────────────
 
@@ -113,8 +124,8 @@ async function buildDateToEspnId(): Promise<Map<string, string>> {
       espnFetch<{ events: EspnScheduleEvent[] }>(
         `${ESPN_BASE}/${slug}/teams/${ESPN_LFC_ID}/schedule`,
         21600, // 6h cache
-      )
-    )
+      ),
+    ),
   );
 
   for (const result of schedules) {
@@ -133,19 +144,27 @@ async function buildDateToEspnId(): Promise<Map<string, string>> {
 /** Check today's scoreboard for a Liverpool match (covers matches not yet in team schedule). */
 async function findLfcOnScoreboard(dateKey: string): Promise<string | null> {
   const yyyymmdd = dateKey.replace(/-/g, "");
-  for (const slug of LEAGUE_SLUGS) {
-    try {
-      const data = await espnFetch<{ events: EspnScheduleEvent[] }>(
+  const results = await Promise.allSettled(
+    LEAGUE_SLUGS.map((slug) =>
+      espnFetch<{ events: EspnScheduleEvent[] }>(
         `${ESPN_BASE}/${slug}/scoreboard?dates=${yyyymmdd}`,
         300, // 5min cache — scoreboard updates frequently
-      );
-      for (const ev of data.events) {
-        const comp = ev.competitions[0];
-        const teamIds = comp?.competitors?.map((c) => c.team?.id) ?? [];
-        if (teamIds.includes(ESPN_LFC_ID)) return ev.id;
+      ),
+    ),
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      try {
+        const data = result.value;
+        for (const ev of data.events) {
+          const comp = ev.competitions[0];
+          const teamIds = comp?.competitors?.map((c) => c.team?.id) ?? [];
+          if (teamIds.includes(ESPN_LFC_ID)) return ev.id;
+        }
+      } catch {
+        continue;
       }
-    } catch {
-      continue;
     }
   }
   return null;
@@ -164,18 +183,30 @@ async function resolveEspnId(fixtureDate: string): Promise<string | null> {
 }
 
 async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
-  for (const slug of LEAGUE_SLUGS) {
-    try {
-      const data = await espnFetch<EspnSummary>(
+  const results = await Promise.allSettled(
+    LEAGUE_SLUGS.map((slug) =>
+      espnFetch<EspnSummary>(
         `${ESPN_BASE}/${slug}/summary?event=${espnId}`,
         3600, // 1h cache
-      );
-      // Verify it has content (keyEvents or boxscore)
-      if (data.keyEvents?.length || data.boxscore?.teams?.length || data.rosters?.length) {
-        return data;
+      ),
+    ),
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      try {
+        const data = result.value;
+        // Verify it has content (keyEvents or boxscore)
+        if (
+          data.keyEvents?.length ||
+          (data.boxscore?.teams && data.boxscore.teams.length) ||
+          (data.rosters && data.rosters.length)
+        ) {
+          return data;
+        }
+      } catch {
+        continue;
       }
-    } catch {
-      continue;
     }
   }
   return null;
@@ -183,23 +214,35 @@ async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
 
 // ─── Event type mapping ─────────────────────────────────────────────────────
 
-function mapEventType(espnType: string): { type: FixtureEvent["type"]; detail: string } | null {
+function mapEventType(
+  espnType: string,
+): { type: FixtureEvent["type"]; detail: string } | null {
   if (espnType.startsWith("goal") || espnType === "penalty---scored") {
-    const detail = espnType.includes("header") ? "Header"
-      : espnType.includes("penalty") ? "Penalty"
-      : espnType.includes("free-kick") ? "Free Kick"
-      : espnType.includes("own-goal") ? "Own Goal"
-      : "Normal Goal";
+    const detail = espnType.includes("header")
+      ? "Header"
+      : espnType.includes("penalty")
+        ? "Penalty"
+        : espnType.includes("free-kick")
+          ? "Free Kick"
+          : espnType.includes("own-goal")
+            ? "Own Goal"
+            : "Normal Goal";
     return { type: "Goal", detail };
   }
-  if (espnType === "yellow-card") return { type: "Card", detail: "Yellow Card" };
-  if (espnType === "red-card" || espnType === "yellow-red-card") return { type: "Card", detail: "Red Card" };
-  if (espnType === "substitution") return { type: "subst", detail: "Substitution" };
+  if (espnType === "yellow-card")
+    return { type: "Card", detail: "Yellow Card" };
+  if (espnType === "red-card" || espnType === "yellow-red-card")
+    return { type: "Card", detail: "Red Card" };
+  if (espnType === "substitution")
+    return { type: "subst", detail: "Substitution" };
   return null;
 }
 
 // Parse "61'" or "90'+2'" into { elapsed, extra }
-function parseMinute(display: string): { elapsed: number; extra: number | null } {
+function parseMinute(display: string): {
+  elapsed: number;
+  extra: number | null;
+} {
   const match = display.match(/^(\d+)'(?:\+(\d+)')?$/);
   if (!match) return { elapsed: 0, extra: null };
   return {
@@ -243,14 +286,28 @@ const STAT_LABEL: Record<string, string> = {
 
 // Stats we want to display (in display order)
 const DISPLAY_STATS = [
-  "possessionPct", "totalShots", "shotsOnTarget", "saves",
-  "wonCorners", "offsides", "foulsCommitted", "yellowCards", "redCards",
-  "totalPasses", "accuratePasses", "passPct",
-  "blockedShots", "effectiveTackles", "interceptions", "effectiveClearance",
+  "possessionPct",
+  "totalShots",
+  "shotsOnTarget",
+  "saves",
+  "wonCorners",
+  "offsides",
+  "foulsCommitted",
+  "yellowCards",
+  "redCards",
+  "totalPasses",
+  "accuratePasses",
+  "passPct",
+  "blockedShots",
+  "effectiveTackles",
+  "interceptions",
+  "effectiveClearance",
 ];
 
 function mapEspnStats(espnTeam: EspnBoxscoreTeam): FixtureTeamStats {
-  const statMap = new Map((espnTeam.statistics ?? []).map((s) => [s.name, s.displayValue]));
+  const statMap = new Map(
+    (espnTeam.statistics ?? []).map((s) => [s.name, s.displayValue]),
+  );
 
   const statistics: FixtureStatItem[] = [];
   for (const key of DISPLAY_STATS) {
@@ -282,7 +339,9 @@ function mapEspnStats(espnTeam: EspnBoxscoreTeam): FixtureTeamStats {
  * Fetch detailed match events (goals, cards, subs) with accurate minutes
  * from ESPN for a Liverpool fixture. Matches by date since IDs differ across APIs.
  */
-export async function getEspnMatchEvents(fixtureDate: string): Promise<FixtureEvent[]> {
+export async function getEspnMatchEvents(
+  fixtureDate: string,
+): Promise<FixtureEvent[]> {
   try {
     const espnId = await resolveEspnId(fixtureDate);
     if (!espnId) return [];
@@ -351,7 +410,11 @@ function espnTeamId(espnId: string): number {
 
 // ─── Shared: map an ESPN schedule event to Fixture ─────────────────────────────
 
-function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo: string): Fixture | null {
+function mapEspnEventToFixture(
+  ev: EspnScheduleEvent,
+  compName: string,
+  compLogo: string,
+): Fixture | null {
   const comp = ev.competitions[0];
   if (!comp?.competitors?.length) return null;
 
@@ -361,18 +424,30 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
 
   const detail = comp.status.type.detail;
   const state = comp.status.type.state;
-  const statusShort = detail === "FT" ? "FT"
-    : detail === "AET" ? "AET"
-    : detail.includes("Pens") ? "PEN"
-    : state === "pre" ? "NS"
-    : state === "in" ? "LIVE"
-    : "FT";
-  const statusLong = statusShort === "FT" ? "Match Finished"
-    : statusShort === "AET" ? "After Extra Time"
-    : statusShort === "PEN" ? "Penalties"
-    : statusShort === "NS" ? "Not Started"
-    : statusShort === "LIVE" ? "In Play"
-    : detail;
+  const statusShort =
+    detail === "FT"
+      ? "FT"
+      : detail === "AET"
+        ? "AET"
+        : detail.includes("Pens")
+          ? "PEN"
+          : state === "pre"
+            ? "NS"
+            : state === "in"
+              ? "LIVE"
+              : "FT";
+  const statusLong =
+    statusShort === "FT"
+      ? "Match Finished"
+      : statusShort === "AET"
+        ? "After Extra Time"
+        : statusShort === "PEN"
+          ? "Penalties"
+          : statusShort === "NS"
+            ? "Not Started"
+            : statusShort === "LIVE"
+              ? "In Play"
+              : detail;
 
   const hScore = home.score?.value ?? null;
   const aScore = away.score?.value ?? null;
@@ -387,7 +462,11 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
         name: comp.venue?.fullName ?? null,
         city: comp.venue?.address?.city ?? null,
       },
-      status: { long: statusLong, short: statusShort, elapsed: isFinished ? 90 : null },
+      status: {
+        long: statusLong,
+        short: statusShort,
+        elapsed: isFinished ? 90 : null,
+      },
     },
     league: {
       id: 0,
@@ -446,8 +525,8 @@ async function getEspnCupScoreboardFixtures(): Promise<Fixture[]> {
       espnFetch<EspnScoreboardResponse>(
         `${ESPN_BASE}/${slug}/scoreboard?dates=${dateRange}`,
         21600, // 6h
-      )
-    )
+      ),
+    ),
   );
 
   for (let i = 0; i < cupSlugs.length; i++) {
@@ -484,8 +563,8 @@ export async function getEspnCupFixtures(): Promise<Fixture[]> {
       espnFetch<{ events: EspnScheduleEvent[] }>(
         `${ESPN_BASE}/${slug}/teams/${ESPN_LFC_ID}/schedule`,
         21600, // 6h
-      )
-    )
+      ),
+    ),
   );
 
   for (let i = 0; i < cupSlugs.length; i++) {
@@ -534,7 +613,9 @@ function mapEspnPosition(abbr: string | undefined): string {
  * Fetch match lineups (formation, starting XI, bench, coach) from ESPN
  * for a Liverpool fixture. Uses the same summary endpoint already cached.
  */
-export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureLineup[]> {
+export async function getEspnMatchLineups(
+  fixtureDate: string,
+): Promise<FixtureLineup[]> {
   try {
     const espnId = await resolveEspnId(fixtureDate);
     if (!espnId) return [];
@@ -542,43 +623,45 @@ export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureL
     const summary = await fetchSummary(espnId);
     if (!summary?.rosters?.length) return [];
 
-    return summary.rosters.filter((r) => r.roster?.length).map((r) => {
-      const starters = r.roster.filter((p) => p.starter);
-      const subs = r.roster.filter((p) => !p.starter);
+    return summary.rosters
+      .filter((r) => r.roster?.length)
+      .map((r) => {
+        const starters = r.roster.filter((p) => p.starter);
+        const subs = r.roster.filter((p) => !p.starter);
 
-      return {
-        team: {
-          id: espnTeamId(r.team.id),
-          name: r.team.displayName,
-          logo: r.team.logo ?? "",
-          colors: null,
-        },
-        formation: r.formation ?? "",
-        startXI: starters.map((p) => ({
-          player: {
-            id: parseInt(p.athlete.id, 10) || 0,
-            name: p.athlete.displayName,
-            number: parseInt(p.jersey, 10) || 0,
-            pos: mapEspnPosition(p.position.abbreviation),
-            grid: null,
+        return {
+          team: {
+            id: espnTeamId(r.team.id),
+            name: r.team.displayName,
+            logo: r.team.logo ?? "",
+            colors: null,
           },
-        })),
-        substitutes: subs.map((p) => ({
-          player: {
-            id: parseInt(p.athlete.id, 10) || 0,
-            name: p.athlete.displayName,
-            number: parseInt(p.jersey, 10) || 0,
-            pos: mapEspnPosition(p.position.abbreviation),
-            grid: null,
+          formation: r.formation ?? "",
+          startXI: starters.map((p) => ({
+            player: {
+              id: parseInt(p.athlete.id, 10) || 0,
+              name: p.athlete.displayName,
+              number: parseInt(p.jersey, 10) || 0,
+              pos: mapEspnPosition(p.position.abbreviation),
+              grid: null,
+            },
+          })),
+          substitutes: subs.map((p) => ({
+            player: {
+              id: parseInt(p.athlete.id, 10) || 0,
+              name: p.athlete.displayName,
+              number: parseInt(p.jersey, 10) || 0,
+              pos: mapEspnPosition(p.position.abbreviation),
+              grid: null,
+            },
+          })),
+          coach: {
+            id: 0,
+            name: r.coach?.[0]?.displayName ?? "",
+            photo: "",
           },
-        })),
-        coach: {
-          id: 0,
-          name: r.coach?.[0]?.displayName ?? "",
-          photo: "",
-        },
-      };
-    });
+        };
+      });
   } catch (err) {
     console.error("[espn] getEspnMatchLineups failed:", err);
     return [];
@@ -587,7 +670,9 @@ export async function getEspnMatchLineups(fixtureDate: string): Promise<FixtureL
 
 // ─── Public: Fetch match detail (venue, attendance, referee, stats) ────────
 
-export async function getEspnMatchDetail(fixtureDate: string): Promise<EspnMatchDetail | null> {
+export async function getEspnMatchDetail(
+  fixtureDate: string,
+): Promise<EspnMatchDetail | null> {
   try {
     const espnId = await resolveEspnId(fixtureDate);
     if (!espnId) return null;
@@ -600,7 +685,9 @@ export async function getEspnMatchDetail(fixtureDate: string): Promise<EspnMatch
     const attendance = gi?.attendance ?? null;
     const referee = gi?.officials?.[0]?.displayName ?? null;
 
-    const stats: FixtureTeamStats[] = (summary.boxscore?.teams ?? []).map(mapEspnStats);
+    const stats: FixtureTeamStats[] = (summary.boxscore?.teams ?? []).map(
+      mapEspnStats,
+    );
 
     return { venue, attendance, referee, stats };
   } catch (err) {
