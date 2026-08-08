@@ -14,8 +14,10 @@ export async function generateMetadata() {
 export const revalidate = 21600; // 6 hours
 
 export default async function StandingsPage() {
-  const t = await getTranslations("Standings");
-  const standings = await getStandings();
+  const [t, standings] = await Promise.all([
+    getTranslations("Standings"),
+    getStandings()
+  ]);
 
   // Find Liverpool's position for the header
   const lfcStanding = standings.find((s) => s.team.id === 40);
