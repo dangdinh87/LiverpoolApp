@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot, .readmore-body-box"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -429,7 +429,31 @@ function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const clone = container.clone();
+  let sapoText: string | undefined;
+
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      clone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  if (sapoText) {
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
+  const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -531,12 +555,22 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
 
-  const sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim();
+  let sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim();
+  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+
   if (sapoText && sapoText.length > 20) {
     pushUnique(paragraphs, seenP, sapoText);
+
+    // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+    const normalizedSapo = sapoText.replace(/\s+/g, " ");
+    contentClone.find("h2, p").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      if (text === normalizedSapo) {
+        $(el).remove();
+      }
+    });
   }
 
-  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
   if (sapoText && sapoText.length > 20) {
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
@@ -618,9 +652,29 @@ function extractBongdaplus(
   const contentClone = container.clone();
   contentClone.find("nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright, .box-ads, .article-relate").remove();
 
-  const sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
+  let sapoText = container.find(".sapo").first().text().trim() || $(".detail-sapo, .sapo").first().text().trim();
   if (sapoText && sapoText.length > 20) {
     contentClone.find(".sapo, .detail-sapo").first().remove();
+  }
+
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (!sapoText && description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      contentClone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  if (sapoText) {
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
@@ -1089,6 +1143,28 @@ function extractVietnameseGeneric(
     }
   }
 
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (!sapoText && description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      contentClone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  // Prepend sapo outside the htmlContent block directly into contentClone
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1105,9 +1181,6 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    if (sapoText) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
-    }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
@@ -1264,6 +1337,30 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
+
+  let sapoText: string | undefined;
+
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      clone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  if (sapoText) {
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
@@ -1300,11 +1397,31 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $(".the-article-summary").first().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
     contentClone.find(".the-article-summary").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (!sapoText && description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      contentClone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1351,13 +1468,35 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $("p.description").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    if (sapo !== description) {
-      pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $("p.description").first().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    if (sapoText !== description) {
+      pushUnique(paragraphs, seenP, sapoText);
+    } else {
+      pushUnique(paragraphs, seenP, sapoText);
     }
     contentClone.find("p.description").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  // Fallback to description if sapoText is still missing or duplicate matching h2 or p tags
+  if (!sapoText && description) {
+    const sapo = description.trim();
+    if (sapo && sapo.length > 20) {
+      pushUnique(paragraphs, seenP, sapo);
+      sapoText = sapo;
+      // Deduplicate: remove duplicate matching h2 or p tags from contentClone
+      const normalizedSapo = sapo.replace(/\s+/g, " ");
+      contentClone.find("h2, p").each((_, el) => {
+        const text = $(el).text().replace(/\s+/g, " ").trim();
+        if (text === normalizedSapo) {
+          $(el).remove();
+        }
+      });
+    }
+  }
+
+  if (sapoText) {
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
