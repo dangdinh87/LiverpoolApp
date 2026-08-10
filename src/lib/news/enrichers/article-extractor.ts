@@ -169,7 +169,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .detail-tab, .box-author-detail, .detail-author-bot, .readmore-body-box"
   ).remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
@@ -1089,6 +1089,28 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description) {
+    const fallbackSapo = description.trim();
+    if (fallbackSapo && fallbackSapo.length > 20) {
+      sapoText = fallbackSapo;
+      pushUnique(paragraphs, seenP, fallbackSapo);
+    }
+  }
+
+  // Deduplicate sapo if we used the fallback to prevent it from showing twice
+  if (sapoText && sapoText.length > 20) {
+    const normalizedFallback = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      const $el = $(el);
+      if ($el.text().replace(/\s+/g, " ").trim() === normalizedFallback) {
+        $el.remove();
+      }
+    });
+
+    // Always prepend sapo after deduplication, outside the htmlContent opt-in block
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1105,9 +1127,6 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    if (sapoText) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
-    }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
