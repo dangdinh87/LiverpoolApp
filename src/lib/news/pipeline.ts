@@ -4,6 +4,7 @@ import { deduplicateArticles } from "./dedup";
 import { enrichArticleMeta } from "./enrichers/og-meta";
 import { categorizeArticle } from "./categories";
 import { scoreArticle } from "./relevance";
+import { compareDatesDesc } from "./date";
 
 export interface SourceStats {
   fetched: number;
@@ -77,7 +78,7 @@ export async function fetchAllNews(
   // Prioritize freshness first, then relevance as tie-breaker.
   // This prevents older but high-score posts from crowding out latest match-day news.
   relevant.sort((a, b) => {
-    const timeDiff = new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
+    const timeDiff = compareDatesDesc(a.pubDate, b.pubDate);
     if (timeDiff !== 0) return timeDiff;
     return (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
   });

@@ -43,7 +43,7 @@ function rowToArticle(row: ArticleRow): NewsArticle {
     link: row.url,
     pubDate: row.published_at ?? row.fetched_at ?? "",
     contentSnippet: row.snippet,
-    thumbnail: row.thumbnail ?? undefined,
+    thumbnail: row.thumbnail ?? row.hero_image ?? undefined,
     source: row.source as NewsArticle["source"],
     language: row.language as NewsArticle["language"],
     category: (row.category as NewsArticle["category"]) ?? "general",

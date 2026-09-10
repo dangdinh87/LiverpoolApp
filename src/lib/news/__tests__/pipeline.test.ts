@@ -94,6 +94,26 @@ describe("fetchAllNews", () => {
     expect(articles[0].title).toContain("Liverpool Salah");
   });
 
+  it("keeps articles with invalid dates without breaking freshness sort", async () => {
+    const adapter = mockAdapter("test", [
+      makeArticle({
+        title: "Liverpool invalid date update",
+        link: "https://t.com/invalid-date",
+        pubDate: "not-a-date",
+      }),
+      makeArticle({
+        title: "Liverpool valid date update",
+        link: "https://t.com/valid-date",
+        pubDate: "2026-05-18T03:04:05.000Z",
+      }),
+    ]);
+
+    const { articles } = await fetchAllNews([adapter], 10);
+
+    expect(articles).toHaveLength(2);
+    expect(articles[0].title).toBe("Liverpool valid date update");
+  });
+
   it("respects limit parameter", async () => {
     const titles = [
       "Liverpool beat Manchester City in thrilling encounter",

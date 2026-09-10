@@ -1,9 +1,5 @@
 import type { NewsArticle } from "../types";
-
-export function sanitizeUrl(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  return /^https?:\/\//i.test(url) ? url : undefined;
-}
+import { extractImageUrlFromHtml } from "../image";
 
 interface OgMeta {
   image?: string;
@@ -39,10 +35,6 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
       reader.cancel().catch(() => {});
     }
 
-    const imgMatch =
-      html.match(/property="og:image"[^>]*content="([^"]+)"/) ||
-      html.match(/content="([^"]+)"[^>]*property="og:image"/);
-
     const dateMatch =
       html.match(/property="article:published_time"[^>]*content="([^"]+)"/) ||
       html.match(/content="([^"]+)"[^>]*property="article:published_time"/) ||
@@ -50,7 +42,7 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
       html.match(/name="date"[^>]*content="([^"]+)"/);
 
     return {
-      image: sanitizeUrl(imgMatch?.[1]),
+      image: extractImageUrlFromHtml(html, url),
       publishedAt: dateMatch?.[1],
     };
   } catch {
