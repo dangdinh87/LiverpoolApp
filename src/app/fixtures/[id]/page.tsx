@@ -23,6 +23,7 @@ import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical, makePageMeta } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 export const revalidate = 300; // 5 minutes
 
@@ -92,8 +93,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const now = Date.now();
   const msToKickoff = date.getTime() - now;
   const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
-  const dateStr = date.toLocaleDateString(loc, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+  const dateStr = formatMatchDayMonth(date, loc === "vi-VN" ? "vi" : "en", true);
+  const timeStr = formatMatchTime(date);
 
   // Build stat label translation map
   const STAT_KEYS = [

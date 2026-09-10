@@ -1,6 +1,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { H2HRecord } from "@/lib/football";
+import { formatDayMonthYear } from "@/lib/format-match-date";
 
 interface H2HSectionProps {
   h2h: H2HRecord;
@@ -89,11 +90,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
             <div className="space-y-1">
               {h2h.lastMeetings.map((m, i) => {
                 const date = new Date(m.date);
-                const dateStr = date.toLocaleDateString(dateLoc, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                });
+                const dateStr = formatDayMonthYear(date, dateLoc === "vi-VN" ? "vi" : "en");
                 return (
                   <div
                     key={i}

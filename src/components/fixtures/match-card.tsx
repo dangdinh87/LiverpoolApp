@@ -5,6 +5,8 @@ import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { MapPin, Calendar, Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useNowAfterMount } from "@/hooks/use-now-after-mount";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 // ─── Competition config: colors, icons, short labels ────────────────────────
 
@@ -59,23 +61,30 @@ export function MatchCard({ fixture }: MatchCardProps) {
   const isFinished = f.status.short === "FT" || f.status.short === "AET" || f.status.short === "PEN";
   const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
   const isUpcoming = !isFinished && !isLive;
-  const isSoon = isUpcoming && (new Date(f.date).getTime() - Date.now()) <= 30 * 60_000 && (new Date(f.date).getTime() - Date.now()) > 0;
+  // Clock-derived flags come from the post-mount clock so the server render and
+  // hydration agree; see useNowAfterMount.
+  const now = useNowAfterMount(30_000);
+  const kickOffMs = new Date(f.date).getTime();
+  const untilKickOff = now === null ? null : kickOffMs - now;
+  const isSoon =
+    isUpcoming && untilKickOff !== null && untilKickOff > 0 && untilKickOff <= 30 * 60_000;
   const isLfc = (id: number) => id === 40;
   const teamLogo = (id: number, logo: string) => isLfc(id) ? "/assets/lfc/crest.webp" : logo;
 
   const date = new Date(f.date);
-  const locale = t("locale_code") || "en-GB";
-  const dateStr = date.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
-  const timeStr = date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+  // Node and Chrome disagree on the vi-VN short weekday ("Th 7" vs "Thứ 7"),
+  // which broke hydration on /fixtures, and the runtime timezone would show a
+  // Vercel-UTC kick-off rather than the Vietnam one. Both come from our table.
+  const locale = t("locale_code") === "vi-VN" ? "vi" : "en";
+  const dateStr = formatMatchDayMonth(date, locale);
+  const timeStr = formatMatchTime(date);
   const htHome = score.halftime.home;
   const htAway = score.halftime.away;
   const hasHt = htHome !== null && htAway !== null;
 
   function getCountdownText(): string | null {
-    const now = new Date();
-    const target = new Date(f.date);
-    const diff = target.getTime() - now.getTime();
-    if (diff <= 0) return null;
+    const diff = untilKickOff;
+    if (diff === null || diff <= 0) return null;
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));

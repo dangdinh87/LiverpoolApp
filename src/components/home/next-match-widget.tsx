@@ -9,28 +9,9 @@ import {
   OverviewCardHeader,
   OverviewDivider,
 } from "./overview-card-shared";
-
-function formatMatchDate(date: Date, locale: string): string {
-  const loc = locale === "vi" ? "vi-VN" : "en-GB";
-  const weekday = date.toLocaleDateString(loc, { weekday: "short" });
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const time = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
-
-  if (locale === "vi") {
-    return `${weekday}, ${day}/${month} · ${time}`;
-  }
-  const monthName = date.toLocaleDateString("en-GB", { month: "short" });
-  return `${weekday}, ${day} ${monthName} · ${time}`;
-}
-
-function isSameCalendarDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
+import { getCurrentSeasonYear } from "@/lib/football/current-season";
+import { formatMatchDate, isSameMatchDay } from "@/lib/format-match-date";
+import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 
 // Mock fixture for dev/fallback when no real upcoming match
 function createMockFixture(): Fixture {
@@ -49,7 +30,7 @@ function createMockFixture(): Fixture {
       name: "Premier League",
       country: "England",
       logo: "https://media.api-sports.io/football/leagues/39.png",
-      season: 2025,
+      season: getCurrentSeasonYear(),
       round: "Regular Season - 30",
     },
     teams: {
@@ -71,9 +52,18 @@ interface NextMatchWidgetProps {
 }
 
 function useCountdown(targetDate: string) {
-  const [timeLeft, setTimeLeft] = useState(() => calcTimeLeft(targetDate));
+  /**
+   * Starts empty so the server render and the first client render agree.
+   *
+   * Seeding this from `Date.now()` meant the server emitted one seconds value
+   * and the browser hydrated with a later one, so the text almost never matched
+   * and React discarded the server HTML for this tree (hydration error #418).
+   * The real countdown lands on the tick immediately after mount.
+   */
+  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof calcTimeLeft>>(null);
 
   useEffect(() => {
+    setTimeLeft(calcTimeLeft(targetDate));
     const id = setInterval(() => setTimeLeft(calcTimeLeft(targetDate)), 1_000);
     return () => clearInterval(id);
   }, [targetDate]);
@@ -104,7 +94,10 @@ export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
   const isLive = ["1H", "HT", "2H", "ET", "P", "BT", "LIVE"].includes(f.status.short);
   const elapsed = f.status.elapsed;
   const isHT = f.status.short === "HT";
-  const isToday = isSameCalendarDay(date, new Date());
+  // Reading the clock during render would let the server and the browser
+  // disagree across a midnight boundary; decide it after mount instead.
+  const now = useNowAfterMount(60_000);
+  const isToday = now !== null && isSameMatchDay(date, new Date(now));
   const hasDetailPage = displayFixture.fixture.id > 0;
   const roundName = league.round.includes(" - ")
     ? league.round.split(" - ").at(-1) ?? league.round
