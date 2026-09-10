@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { SeasonOverview as SeasonOverviewType } from "@/lib/football/season-stats";
+import { Flame, Shield } from "lucide-react";
 
 // ─── StatCard ───────────────────────────────────────────────────────────────────
 
@@ -36,26 +37,37 @@ function getOrdinal(n: number): string {
 }
 
 export function SeasonOverview({ stats, streak, labels }: Props) {
+  // Eleven tiles previously carried five different hues — green, amber, red-400,
+  // lfc-red and lfc-gold — which reads as a generic analytics dashboard, and the
+  // same red meant "defeats" in one tile and "goals we scored" in the next.
+  //
+  // The palette is now the club's: red is reserved for the two headline figures
+  // (which already earn emphasis from the accent treatment), gold marks a good
+  // outcome, and everything else is plain ink. Emphasis comes from position and
+  // treatment, not from painting every number a different colour.
+  const GOOD = "text-lfc-gold";
+  const QUIET = "text-stadium-muted";
+
   // Row 1: Core record (4 cols)
   const row1 = [
     { value: stats.played, label: labels.played },
-    { value: stats.wins, label: labels.wins, color: "text-green-400" },
-    { value: stats.draws, label: labels.draws, color: "text-amber-400" },
-    { value: stats.losses, label: labels.losses, color: "text-red-400" },
+    { value: stats.wins, label: labels.wins, color: GOOD },
+    { value: stats.draws, label: labels.draws, color: QUIET },
+    { value: stats.losses, label: labels.losses, color: QUIET },
   ];
 
   // Row 2: Goals + Performance (4 cols)
   const row2 = [
     { value: stats.goalsFor, label: labels.goalsFor, color: "text-lfc-red", accent: true },
     { value: stats.goalsAgainst, label: labels.goalsAgainst },
-    { value: stats.goalDiff > 0 ? `+${stats.goalDiff}` : String(stats.goalDiff), label: labels.goalDiff, color: stats.goalDiff > 0 ? "text-green-400" : "text-red-400" },
-    { value: stats.cleanSheets, label: labels.cleanSheets, color: "text-lfc-gold" },
+    { value: stats.goalDiff > 0 ? `+${stats.goalDiff}` : String(stats.goalDiff), label: labels.goalDiff, color: stats.goalDiff > 0 ? GOOD : QUIET },
+    { value: stats.cleanSheets, label: labels.cleanSheets },
   ];
 
   // Row 3: PL-specific (3 cols)
   const row3 = [
     { value: stats.points || "—", label: labels.points, color: "text-lfc-red", accent: true },
-    { value: stats.rank ? `${stats.rank}${getOrdinal(stats.rank)}` : "—", label: labels.rank, color: "text-lfc-gold" },
+    { value: stats.rank ? `${stats.rank}${getOrdinal(stats.rank)}` : "—", label: labels.rank },
     { value: `${stats.winRate}%`, label: labels.winRate },
   ];
 
@@ -106,7 +118,8 @@ export function SeasonOverview({ stats, streak, labels }: Props) {
             "inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide",
             streak.type === "W" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
           )}>
-            {streak.type === "W" ? "🔥" : "💪"} {streak.type === "W" ? labels.winStreak : labels.unbeaten}
+            {streak.type === "W" ? <Flame size={13} aria-hidden /> : <Shield size={13} aria-hidden />}
+            {streak.type === "W" ? labels.winStreak : labels.unbeaten}
           </span>
         </div>
       )}

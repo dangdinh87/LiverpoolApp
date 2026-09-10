@@ -1,81 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Mouse, Heart } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslations } from "next-intl";
 
-/* ── Hover effect variants for individual letters ─────────────── */
-const HOVER_EFFECTS = [
-  { y: -10, scale: 1.15, rotate: 0 },
-  { y: -8, scale: 1.2, rotate: -4 },
-  { y: -12, scale: 1.1, rotate: 3 },
-  { y: -6, scale: 1.25, rotate: 0 },
-  { y: -10, scale: 1.15, rotate: -2 },
-] as const;
-
-/* White letters glow red, red letters glow gold */
-const WHITE_GLOW = "0 0 20px rgba(200,16,46,0.8), 0 0 40px rgba(200,16,46,0.4)";
-const RED_GLOW = "0 0 20px rgba(246,235,97,0.8), 0 0 40px rgba(246,235,97,0.4)";
-
-interface LetterProps {
-  char: string;
-  globalIdx: number;
-  isRed: boolean;
-}
-
-function AnimatedLetter({ char, globalIdx, isRed }: LetterProps) {
-  const hover = HOVER_EFFECTS[globalIdx % HOVER_EFFECTS.length];
-  // Stagger the continuous bounce so letters ripple in sequence
-  const bounceDelay = 1.2 + globalIdx * 0.15;
-
-  return (
-    <motion.span
-      initial={{ opacity: 0, y: 50, rotateX: 90, scale: 0.5 }}
-      animate={{
-        opacity: 1,
-        y: [0, -6, 0],
-        rotateX: 0,
-        scale: [1, 1.05, 1],
-      }}
-      transition={{
-        opacity: { duration: 0.4, delay: 0.3 + globalIdx * 0.04 },
-        rotateX: { duration: 0.4, delay: 0.3 + globalIdx * 0.04 },
-        y: {
-          duration: 0.6,
-          delay: bounceDelay,
-          repeat: Infinity,
-          repeatDelay: 3,
-          ease: "easeInOut",
-        },
-        scale: {
-          duration: 0.6,
-          delay: bounceDelay,
-          repeat: Infinity,
-          repeatDelay: 3,
-          ease: "easeInOut",
-        },
-      }}
-      whileHover={{
-        y: hover.y,
-        scale: hover.scale,
-        rotate: hover.rotate,
-        textShadow: isRed ? RED_GLOW : WHITE_GLOW,
-        color: isRed ? "#F6EB61" : "#ffffff",
-        transition: { type: "spring", stiffness: 400, damping: 15 },
-      }}
-      className="inline-block origin-bottom cursor-default select-none"
-    >
-      {char}
-    </motion.span>
-  );
-}
-
-/* ── Line config ──────────────────────────────────────────────── */
-const LINES = [
-  { words: ["YOU'LL", "NEVER"], isRed: false, startIdx: 0 },
-  { words: ["WALK", "ALONE"], isRed: true, startIdx: "YOU'LLNEVER".length },
-] as const;
+/**
+ * Hero — the anthem rendered as Anfield signage.
+ *
+ * The previous version split the headline into individual <span> letters, each
+ * with a 3D entrance, an infinite bounce and a per-letter hover that scaled,
+ * rotated and applied a neon text-shadow. That reads as a template flourish
+ * rather than a club, and it broke the text itself: screen readers announced
+ * the anthem letter by letter, and `select-none` meant nobody could copy it.
+ *
+ * The wrought-iron lettering above the Shankly Gates does not bounce. It is
+ * still, heavy, and slightly weathered. So the headline is now real selectable
+ * text that arrives once, per line, and then holds — the composition carries
+ * the weight instead of the animation.
+ */
 
 const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg_5.jpg";
 
@@ -85,11 +27,22 @@ interface HeroProps {
 
 export function Hero({ backgroundUrl }: HeroProps) {
   const t = useTranslations("Hero");
+  const reduceMotion = useReducedMotion();
   const heroImage = backgroundUrl || DEFAULT_HERO_BG;
   const isCloudinaryHero = heroImage.includes("res.cloudinary.com");
+
+  // One reveal on load, staggered by line. Nothing loops.
+  const rise = (delay: number) =>
+    reduceMotion
+      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.3 } }
+      : {
+          initial: { opacity: 0, y: 24 },
+          animate: { opacity: 1, y: 0 },
+          transition: { duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] as const },
+        };
+
   return (
-    <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden snap-start">
-      {/* Background image with slow zoom */}
+    <section className="relative h-screen min-h-[600px] overflow-hidden snap-start">
       <Image
         src={heroImage}
         alt="Anfield Stadium"
@@ -98,124 +51,56 @@ export function Hero({ backgroundUrl }: HeroProps) {
         fetchPriority="high"
         className="object-cover object-center"
         sizes="100vw"
-        quality={80}
+        quality={85}
         unoptimized={isCloudinaryHero}
       />
 
-      {/* Lighter overlays — let more image show through */}
-      <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/40 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-b from-stadium-bg/60 via-transparent to-transparent h-28" />
-      <div className="absolute inset-0 bg-black/10" />
+      {/* Weight the lower-left so the type sits on solid ground, and keep the
+          stands legible on the right rather than flattening the whole frame. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/55 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/85 via-stadium-bg/25 to-transparent" />
 
+      {/* Content sits on a baseline rule, left-anchored like gate signage
+          rather than floating in the centre of the viewport. */}
+      <div className="relative z-10 h-full mx-auto w-full max-w-6xl px-6 sm:px-10">
+        <div className="flex h-full flex-col justify-end pb-20 sm:pb-24">
+          <motion.div {...rise(0)} className="flex items-center gap-3">
+            <Image
+              src="/assets/lfc/crest.webp"
+              alt="Liverpool FC Crest"
+              width={34}
+              height={42}
+              sizes="34px"
+              className="h-[42px] w-auto"
+            />
+            <p className="font-barlow text-[0.68rem] sm:text-xs uppercase tracking-[0.42em] text-lfc-gold">
+              {t("tagline")}
+            </p>
+          </motion.div>
 
-      {/* Red accent line at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-lfc-red to-transparent" />
-
-      {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        {/* Club crest */}
-        <motion.div
-          className="mb-5"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <Image
-            src="/assets/lfc/crest.webp"
-            alt="Liverpool FC Crest"
-            width={64}
-            height={80}
-            className="mx-auto drop-shadow-[0_0_40px_rgba(200,16,46,0.6)]"
-            sizes="64px"
-          />
-        </motion.div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-sm font-semibold mb-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]"
-        >
-          {t("tagline")}
-        </motion.p>
-
-        {/* YNWA Headline — per-letter animation + hover + scroll indicator */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 mb-6">
-          <h1
-            className="font-bebas text-6xl sm:text-7xl md:text-8xl lg:text-[9rem] leading-none tracking-[0.02em]"
-            style={{
-              perspective: "1000px",
-              textShadow: "0 4px 30px rgba(0,0,0,0.6), 0 2px 10px rgba(0,0,0,0.4)",
-            }}
-          >
-            {LINES.map(({ words, isRed, startIdx }) => (
-              <span
-                key={words.join("")}
-                className={`flex justify-center gap-[0.15em] flex-wrap ${isRed ? "text-lfc-red" : "text-white"}`}
-                style={isRed ? { textShadow: "0 4px 30px rgba(200,16,46,0.5), 0 2px 10px rgba(0,0,0,0.4)" } : undefined}
-              >
-                {words.map((word, wi) => (
-                  <span key={word} className="inline-flex">
-                    {word.split("").map((char, ci) => {
-                      const prevChars = words.slice(0, wi).join("").length;
-                      const globalIdx = startIdx + prevChars + ci;
-                      return (
-                        <AnimatedLetter
-                          key={`${word}-${ci}`}
-                          char={char}
-                          globalIdx={globalIdx}
-                          isRed={isRed}
-                        />
-                      );
-                    })}
-                    {/* Space between words */}
-                    {wi < words.length - 1 && <span className="w-[0.15em]" />}
-                  </span>
-                ))}
-              </span>
-            ))}
+          {/* Real text: selectable, announced as one phrase, no per-letter spans. */}
+          <h1 className="mt-5 font-bebas leading-[0.82] tracking-[0.01em] text-[3.4rem] sm:text-7xl md:text-8xl lg:text-[8.5rem]">
+            <motion.span {...rise(0.1)} className="block text-white">
+              You&rsquo;ll Never
+            </motion.span>
+            <motion.span {...rise(0.22)} className="block text-lfc-red">
+              Walk Alone
+            </motion.span>
           </h1>
 
-          {/* Scroll indicator — right of YNWA */}
           <motion.div
-            className="text-white/50 flex flex-col items-center gap-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.3, duration: 0.5 }}
+            {...rise(0.36)}
+            className="mt-7 flex flex-col gap-5 border-t border-white/15 pt-5 sm:flex-row sm:items-baseline sm:justify-between"
           >
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Mouse className="w-5 h-5" />
-            </motion.div>
-            <span className="font-barlow text-[10px] uppercase tracking-widest">{t("scroll")}</span>
+            <p className="max-w-md font-inter text-[0.95rem] leading-relaxed text-white/70">
+              {t("description")}
+            </p>
+            <p className="font-barlow text-[0.68rem] uppercase tracking-[0.3em] text-white/45 whitespace-nowrap">
+              {t("badge")}
+            </p>
           </motion.div>
         </div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 1.0 }}
-          className="text-white/80 font-inter text-lg max-w-md mx-auto mb-6 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
-        >
-          {t("description")}
-        </motion.p>
-
-        {/* Fansite badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 1.2 }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border border-white/10 rounded-full backdrop-blur-md"
-        >
-          <Heart size={12} className="text-lfc-red fill-lfc-red" />
-          <span className="font-barlow text-xs text-white/70 uppercase tracking-wider">
-            {t("badge")}
-          </span>
-        </motion.div>
       </div>
-
     </section>
   );
 }

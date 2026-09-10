@@ -16,7 +16,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       <p className="font-inter text-xs text-white font-semibold mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.name} className="font-inter text-xs" style={{ color: p.dataKey === "scored" ? "#C8102E" : "#6B7280" }}>
-          {p.dataKey === "scored" ? "⚽" : "🛡️"} {p.value} {p.name}
+          {p.value} {p.name}
         </p>
       ))}
     </div>

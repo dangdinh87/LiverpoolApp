@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowLeft, MapPin, Calendar, Users,
-  CircleDot, ArrowUpFromLine, ArrowDownToLine,
+  CircleDot, ArrowUpFromLine, ArrowDownToLine, Goal,
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import {
@@ -73,9 +73,10 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
     isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
-    // Fetch previous season for richer H2H data (skip if current IS 2024)
-    league.season !== 2024
-      ? getFixtures(2024).catch(() => [] as Fixture[])
+    // Fetch the season before this fixture's for richer H2H data. Derived from
+    // the fixture rather than pinned to a year, which went stale every August.
+    league.season > 0
+      ? getFixtures(league.season - 1).catch(() => [] as Fixture[])
       : Promise.resolve([] as Fixture[]),
   ]);
 
@@ -447,7 +448,19 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
   if (type === "Goal") {
     const isOwn = detail.includes("Own");
     const isPen = detail.includes("Penalty");
-    return <span className={cn("text-sm", isOwn ? "text-red-400" : "text-white")}>{isPen ? "⚽P" : isOwn ? "⚽OG" : "⚽"}</span>;
+    // A football glyph plus a bare "P"/"OG" reads as a chat message, not a
+    // match report. Use the icon set the rest of the UI uses, and set the
+    // qualifier as a small caps label beside it.
+    return (
+      <span className={cn("inline-flex items-center gap-1", isOwn ? "text-red-400" : "text-white")}>
+        <Goal size={14} strokeWidth={2.25} aria-hidden />
+        {(isPen || isOwn) && (
+          <span className="font-barlow text-[10px] font-bold uppercase tracking-wider">
+            {isPen ? "PEN" : "OG"}
+          </span>
+        )}
+      </span>
+    );
   }
   if (type === "Card") {
     return <span className={cn("inline-block w-3 h-4 rounded-[1px]", detail.includes("Red") ? "bg-red-500" : "bg-yellow-400")} />;

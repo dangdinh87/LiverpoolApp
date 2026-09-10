@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, Legend,
 } from "recharts";
 import type { SeasonOverview } from "@/lib/football";
+import { OUTCOME_SERIES } from "@/lib/chart-colors";
 
 interface SeasonComparisonProps {
   seasons: { label: string; overview: SeasonOverview }[];
@@ -82,9 +83,9 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
               labelStyle={{ color: "#fff", fontFamily: "Barlow Condensed" }}
             />
             <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Barlow Condensed" }} />
-            <Bar dataKey={labels.wins} fill="#22c55e" radius={[2, 2, 0, 0]} />
-            <Bar dataKey={labels.draws} fill="#f59e0b" radius={[2, 2, 0, 0]} />
-            <Bar dataKey={labels.losses} fill="#ef4444" radius={[2, 2, 0, 0]} />
+            <Bar dataKey={labels.wins} fill={OUTCOME_SERIES.win} radius={[2, 2, 0, 0]} />
+            <Bar dataKey={labels.draws} fill={OUTCOME_SERIES.draw} radius={[2, 2, 0, 0]} />
+            <Bar dataKey={labels.losses} fill={OUTCOME_SERIES.loss} radius={[2, 2, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

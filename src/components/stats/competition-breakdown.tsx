@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import type { CompetitionStats } from "@/lib/football/season-stats";
+import { Trophy } from "lucide-react";
 
 // Competition logos already exist locally
 const COMP_LOGOS: Record<string, string> = {
@@ -47,7 +48,7 @@ export function CompetitionBreakdown({ competitions, labels }: Props) {
               {logo ? (
                 <Image src={logo} alt={comp.name} width={20} height={20} className="object-contain" />
               ) : (
-                <span className="text-sm">⚽</span>
+                <Trophy size={16} className="text-stadium-muted" aria-hidden />
               )}
               <span className="font-inter text-xs sm:text-sm font-semibold text-white truncate">{comp.name}</span>
             </div>

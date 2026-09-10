@@ -2,6 +2,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Standing } from "@/lib/types/football";
+import { Flame } from "lucide-react";
 import {
   OverviewCardHeader,
   OverviewDivider,
@@ -100,7 +101,7 @@ export function FormWidget({ standing }: FormWidgetProps) {
         <div className="flex gap-2 justify-center flex-wrap">
           {streaks.winStreak >= 3 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500/15 border border-green-500/30 font-barlow text-[10px] font-bold text-green-400 uppercase tracking-wider">
-              <span className="animate-pulse">🔥</span>
+              <Flame size={11} strokeWidth={2.5} aria-hidden />
               {bt("winStreak", { count: streaks.winStreak })}
             </span>
           )}
