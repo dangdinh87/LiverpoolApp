@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
-import { getNewsFromDB, getArticleEngagement } from "@/lib/news";
+import { getNewsFromDB } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
 }
 
-const NEWS_PAGE_LIMIT = 60;
+const NEWS_PAGE_LIMIT = 36;
 
 // Cache the heavy DB reads across requests (Next Data Cache). The page itself
 // stays dynamic because it reads the locale cookie, but the article/digest/
@@ -24,8 +24,8 @@ const NEWS_PAGE_LIMIT = 60;
 // `lang` is part of the cache key so EN/VI keep separate entries. The "news"
 // tag is busted by the sync route, so a fresh sync shows up immediately.
 const getCachedNewsList = unstable_cache(
-  async (lang: "en" | "vi") => getNewsFromDB(NEWS_PAGE_LIMIT, lang, { skipSync: true }),
-  ["news-page-list-v1"],
+  async () => getNewsFromDB(NEWS_PAGE_LIMIT, undefined, { skipSync: true }),
+  ["news-page-list-v2"],
   { revalidate: 300, tags: ["news"] },
 );
 
@@ -35,42 +35,27 @@ const getCachedNewsDigest = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
-const getCachedNewsEngagement = unstable_cache(
-  async () => Array.from((await getArticleEngagement()).entries()),
-  ["news-page-engagement-v1"],
-  { revalidate: 300, tags: ["news"] },
-);
-
 export default async function NewsPage() {
   const [t, locale] = await Promise.all([
     getTranslations("News"),
     getLocale(),
   ]);
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
-  // Fetch both VI + EN articles, biased toward the current locale for the default tab.
-  const [allArticles, digest, engagementEntries] = await Promise.all([
-    getCachedNewsList(userLang),
+  // Fetch a balanced EN/VI set. The client tabs map fixed languages:
+  // Vietnamese = vi, International = en.
+  const [allArticles, digest] = await Promise.all([
+    getCachedNewsList(),
     getCachedNewsDigest(),
-    getCachedNewsEngagement(),
   ]);
-  const engagementMap = new Map(engagementEntries);
-  // Serialize engagement map for client component
-  const engagement: Record<string, { likes: number; comments: number; total: number }> = {};
-  for (const [url, data] of engagementMap) {
-    engagement[url] = { likes: data.likes, comments: data.comments, total: data.total };
-  }
   const nowMs = new Date().getTime();
 
-  // Strict language separation for the two tabs. The "local" tab must show the
-  // user's language (VI for vi-locale), the "global" tab the other language.
-  // (A previous "mix fresh <12h into both tabs" rule flooded the VI tab with
-  // English articles, since EN sources publish far more often and their newer
-  // timestamps dominated the chronological sort.)
+  // Strict language separation for the two tabs.
+  // Vietnamese tab always shows VI articles; International always shows EN.
   const localArticles = allArticles
-    .filter((a) => a.language === userLang)
+    .filter((a) => a.language === "vi")
     .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
   const globalArticles = allArticles
-    .filter((a) => a.language !== userLang)
+    .filter((a) => a.language === "en")
     .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
 
   const sources = [
@@ -128,7 +113,6 @@ export default async function NewsPage() {
           globalArticles={globalArticles}
           locale={userLang}
           nowMs={nowMs}
-          engagement={engagement}
         />
 
         {/* Attribution */}

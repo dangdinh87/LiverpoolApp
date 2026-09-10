@@ -25,7 +25,7 @@ export class LfcAdapter implements FeedAdapter {
   async fetch(): Promise<NewsArticle[]> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
       const res = await fetch("https://www.liverpoolfc.com/news", {
         signal: controller.signal,
         headers: {

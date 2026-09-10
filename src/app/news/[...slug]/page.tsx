@@ -94,7 +94,7 @@ export async function generateMetadata({
   const url = decodeArticleSlug(slug);
   if (!url) return { title: "Article Not Found" };
 
-  const content = await scrapeArticle(url);
+  const content = await getArticleContentFromDB(url) ?? await scrapeArticle(url);
   if (!content) return { title: "Article Not Found" };
 
   const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
@@ -135,7 +135,7 @@ export default async function ArticlePage({
   const dbContent = await getArticleContentFromDB(url);
   const [content, allArticles, fixtures, t] = await Promise.all([
     dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
-    getNewsFromDB(100),
+    getNewsFromDB(100, undefined, { skipSync: true }),
     getFixtures(),
     getTranslations("News.article"),
   ]);

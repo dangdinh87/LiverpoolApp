@@ -23,7 +23,7 @@ export class BongdaplusAdapter implements FeedAdapter {
       const results = await Promise.allSettled(
         BONGDAPLUS_URLS.map(async (url) => {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 8000);
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
           const res = await fetch(url, {
             signal: controller.signal,
             headers: {

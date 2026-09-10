@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, BadgeCheck, Newspaper } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
@@ -8,6 +8,7 @@ import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { SiteArticleBadge } from "@/components/news/site-article-badge";
 
 type Params = Promise<{ date: string }>;
 
@@ -116,37 +117,12 @@ export default async function DigestPage({
         {seoArticle ? (
           <article className="mb-12">
             <div className="flex flex-wrap items-center gap-2 mb-5">
-              <span className="inline-flex items-center gap-1.5 border border-lfc-gold/50 bg-lfc-gold/10 px-2.5 py-1 font-barlow text-[11px] font-bold uppercase tracking-[0.18em] text-lfc-gold shadow-[0_0_24px_rgba(250,204,21,0.12)]">
-                <BadgeCheck className="w-3.5 h-3.5" />
-                {seoArticle.badgeLabel || t("proBadge")}
-              </span>
-              <span className="inline-flex items-center gap-1.5 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-[11px] font-bold uppercase tracking-[0.16em] text-white/70">
-                <Newspaper className="w-3.5 h-3.5 text-lfc-red" />
-                {t("sourceFromSite", { source: seoArticle.sourceName })}
-              </span>
+              <SiteArticleBadge label={t("proBadge")} />
             </div>
 
             <p className="font-inter text-lg text-white/70 leading-relaxed pl-5 border-l-4 border-lfc-red mb-7">
               {seoArticle.excerpt}
             </p>
-
-            {(seoArticle.focusKeyword || seoArticle.secondaryKeywords?.length > 0) && (
-              <div className="flex flex-wrap gap-2 mb-9">
-                {seoArticle.focusKeyword && (
-                  <span className="border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1 font-inter text-xs text-white/80">
-                    {seoArticle.focusKeyword}
-                  </span>
-                )}
-                {seoArticle.secondaryKeywords?.slice(0, 5).map((keyword) => (
-                  <span
-                    key={keyword}
-                    className="border border-stadium-border/70 bg-stadium-surface/70 px-2.5 py-1 font-inter text-xs text-stadium-muted"
-                  >
-                    {keyword}
-                  </span>
-                ))}
-              </div>
-            )}
 
             <div className="space-y-9">
               {seoArticle.body.map((section, i) => (

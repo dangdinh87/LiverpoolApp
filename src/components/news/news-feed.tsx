@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -43,14 +43,15 @@ type CategoryFilter = "all" | ArticleCategory;
 
 type ViewMode = "default" | "compact" | "expanded";
 
-const STORAGE_KEY = "lfc-news-filter";
+const STORAGE_KEY = "lfc-news-filter-v2";
 const VIEW_MODE_KEY = "lfc-news-view";
 
-function getSavedFilter(): FeedFilter {
-  if (typeof window === "undefined") return "local";
+function getSavedFilter(locale: "en" | "vi"): FeedFilter {
+  const defaultFilter: FeedFilter = locale === "en" ? "global" : "local";
+  if (typeof window === "undefined") return defaultFilter;
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved === "all" || saved === "local" || saved === "global") return saved;
-  return "local";
+  return defaultFilter;
 }
 
 function getSavedViewMode(): ViewMode {
@@ -561,13 +562,13 @@ interface NewsFeedProps {
 
 export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagement = {} }: NewsFeedProps) {
   const t = useTranslations("News.feed");
-  const [langFilter, setLangFilter] = useState<FeedFilter>(getSavedFilter);
+  const [langFilter, setLangFilter] = useState<FeedFilter>(() => getSavedFilter(locale));
   const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | NewsSource>("all");
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [readSet, setReadSet] = useState<Set<string>>(getReadArticles);
+  const [readSet] = useState<Set<string>>(getReadArticles);
   const [viewMode, setViewMode] = useState<ViewMode>(getSavedViewMode);
   // Server-side load-more state
   const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
@@ -610,14 +611,14 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagem
 
   // Merge initial + server-loaded extra articles
   const allLocal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language === locale);
+    const extra = extraArticles.filter((a) => a.language === "vi");
     return [...localArticles, ...extra];
-  }, [localArticles, extraArticles, locale]);
+  }, [localArticles, extraArticles]);
 
   const allGlobal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language !== locale);
+    const extra = extraArticles.filter((a) => a.language === "en");
     return [...globalArticles, ...extra];
-  }, [globalArticles, extraArticles, locale]);
+  }, [globalArticles, extraArticles]);
 
   // Pipeline: lang → source → category → sort → search
   const langFiltered = useMemo(
@@ -840,9 +841,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagem
                     } else if (serverHasMore) {
                       const requestLanguage: "en" | "vi" | undefined =
                         langFilter === "local"
-                          ? locale
+                          ? "vi"
                           : langFilter === "global"
-                            ? (locale === "vi" ? "en" : "vi")
+                            ? "en"
                             : undefined;
                       const currentTotal = requestLanguage
                         ? [...localArticles, ...globalArticles, ...extraArticles].filter(

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { withCronAuth } from "@/lib/cron";
 
@@ -6,42 +7,38 @@ export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async () => {
   const supabase = getServiceClient();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 86_400_000).toISOString();
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const fourteenDaysAgo = new Date(Date.now() - 14 * 86_400_000).toISOString();
 
-  // Soft-delete: deactivate articles >30 days old
-  const { count: deactivated } = await supabase
-    .from("articles")
-    .update({ is_active: false }, { count: "exact" })
-    .eq("is_active", true)
-    .lt("published_at", thirtyDaysAgo);
-
-  // Free heavy cached content for old articles while keeping metadata rows.
+  // Free heavy cached content first; the list page only needs metadata.
   const { count: contentCleared } = await supabase
     .from("articles")
     .update({ content_en: null, content_scraped_at: null }, { count: "exact" })
-    .lt("published_at", sixtyDaysAgo)
+    .lt("published_at", sevenDaysAgo)
     .not("content_en", "is", null);
 
-  // Hard-delete: remove already-deactivated articles >60 days with no cached content
+  // News is intentionally short-lived: keep only the last 14 days in DB.
   const { count: deleted } = await supabase
     .from("articles")
     .delete({ count: "exact" })
-    .eq("is_active", false)
-    .is("content_en", null)
-    .lt("published_at", sixtyDaysAgo);
+    .lt("published_at", fourteenDaysAgo);
 
-  // Cleanup old sync_logs >30 days
+  // Cleanup old sync logs. Column is `ran_at` in the migration.
   const { count: logsDeleted } = await supabase
     .from("sync_logs")
     .delete({ count: "exact" })
-    .lt("created_at", thirtyDaysAgo);
+    .lt("ran_at", fourteenDaysAgo);
+
+  revalidateTag("news", "max");
+  revalidatePath("/");
+  revalidatePath("/news");
 
   return NextResponse.json({
     ok: true,
-    deactivated: deactivated ?? 0,
     contentCleared: contentCleared ?? 0,
     deleted: deleted ?? 0,
     logsDeleted: logsDeleted ?? 0,
+    retentionDays: 14,
+    contentRetentionDays: 7,
   });
 });

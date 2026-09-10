@@ -59,7 +59,6 @@ const LFC_DEDICATED: Set<NewsSource> = new Set([
   "eotk",
   "echo",
   "tia",
-  "sky",
   "mirror",
   "independent",
   "men",

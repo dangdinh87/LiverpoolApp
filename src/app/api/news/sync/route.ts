@@ -3,12 +3,18 @@ import { revalidatePath } from "next/cache";
 import { syncPipeline } from "@/lib/news/sync";
 import { withCronAuth } from "@/lib/cron";
 
-export const maxDuration = 300;
+export const maxDuration = 120;
 export const dynamic = "force-dynamic";
 
-export const GET = withCronAuth(async () => {
+export const GET = withCronAuth(async (req) => {
   try {
-    const result = await syncPipeline();
+    const deep = req.nextUrl.searchParams.get("deep") === "1";
+    const result = await syncPipeline({
+      fetchLimit: deep ? 300 : undefined,
+      enrichThumbnails: deep,
+      metaFetches: deep ? 30 : 0,
+      preScrapeContent: deep,
+    });
 
     // Invalidate ISR cache so next visitor gets fresh data. The unstable_cache
     // data layer (tag "news") refreshes on its own 5-min revalidate window.

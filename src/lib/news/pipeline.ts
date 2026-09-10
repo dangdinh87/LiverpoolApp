@@ -18,6 +18,10 @@ export interface PipelineResult {
   stats: Record<string, SourceStats>;
 }
 
+export interface PipelineOptions {
+  metaFetches?: number;
+}
+
 function addSourceStats(
   stats: Record<string, SourceStats>,
   source: string,
@@ -34,7 +38,8 @@ function addSourceStats(
 
 export async function fetchAllNews(
   adapters: FeedAdapter[],
-  limit: number
+  limit: number,
+  options: PipelineOptions = {}
 ): Promise<PipelineResult> {
   // Fetch all sources in parallel — graceful per-source failure
   const results = await Promise.allSettled(
@@ -85,8 +90,12 @@ export async function fetchAllNews(
 
   const sliced = relevant.slice(0, limit);
 
-  // Enrich articles missing thumbnails/dates with OG meta (batched in chunks of 10)
-  await enrichArticleMeta(sliced, 50);
+  // Enrich articles missing thumbnails/dates with OG meta only when requested.
+  // Sync uses RSS metadata only for speed; deep/manual paths can opt in.
+  const metaFetches = options.metaFetches ?? 20;
+  if (metaFetches > 0) {
+    await enrichArticleMeta(sliced, metaFetches);
+  }
 
   return { articles: sliced, stats };
 }

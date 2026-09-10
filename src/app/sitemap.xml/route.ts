@@ -1,3 +1,13 @@
+/**
+ * Rendered per-request rather than prerendered at build time.
+ *
+ * The sitemap pulls live rows from Supabase and the football API. Prerendering
+ * it made a successful production build depend on those services being up — a
+ * paused database failed the entire build. Serving it dynamically keeps the
+ * build hermetic; the s-maxage header below still lets the CDN cache the result.
+ */
+export const dynamic = "force-dynamic";
+
 import { getAllPlayers } from "@/lib/squad-data";
 import { getArticleSitemapData } from "@/lib/news/db";
 import { getAllDigestDates } from "@/lib/news/digest";

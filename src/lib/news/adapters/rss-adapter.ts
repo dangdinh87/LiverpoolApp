@@ -4,7 +4,8 @@ import type { FeedConfig, NewsArticle } from "../types";
 import { LFC_KEYWORDS } from "../config";
 import { extractImageUrlFromHtml, sanitizeImageUrl } from "../image";
 
-const FETCH_TIMEOUT_MS = 15_000;
+const FETCH_TIMEOUT_MS = 3_500;
+const MAX_ITEMS_PER_FEED = 30;
 const USER_AGENT = "Mozilla/5.0 (compatible; LiverpoolApp/1.0; +https://github.com)";
 
 // Parser for XML string only (fetch handles HTTP — more reliable in Next.js)
@@ -49,6 +50,10 @@ function extractImageFromItem(item: Record<string, unknown>, baseUrl?: string): 
     if (image) return image;
   }
 
+  // Some Vietnamese feeds (notably bongda24h.vn) put the thumbnail as an inline
+  // <img> inside the RSS description/content instead of media tags.
+  // extractImageUrlFromHtml covers data-original/data-src/srcset/src plus entity
+  // decoding and base-URL resolution, so it supersedes hand-rolled <img> regexes.
   for (const key of ["content", "content:encoded", "description", "summary"]) {
     const image = extractImageUrlFromHtml(item[key], baseUrl);
     if (image) return image;
@@ -93,7 +98,9 @@ export class RssAdapter implements FeedAdapter {
         });
       }
 
-      return items.map((item) => {
+      // Cap per feed (WIP) while keeping the article link as the base URL for
+      // resolving relative image srcs (master).
+      return items.slice(0, MAX_ITEMS_PER_FEED).map((item) => {
         const link = sanitizeUrl(item.link) ?? "#";
         const itemRecord = item as unknown as Record<string, unknown>;
 

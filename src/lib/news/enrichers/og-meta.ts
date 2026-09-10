@@ -6,8 +6,24 @@ interface OgMeta {
   publishedAt?: string;
 }
 
+function extractMetaContent(html: string, name: string): string | undefined {
+  const attr = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const patterns = [
+    new RegExp(`<meta[^>]+(?:property|name)=["']${attr}["'][^>]+content=["']([^"']+)["']`, "i"),
+    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${attr}["']`, "i"),
+  ];
+
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return undefined;
+}
+
 export async function fetchOgMeta(url: string): Promise<OgMeta> {
   try {
+    const readBodyFallback = /bongda24h\.vn/i.test(url);
     const res = await fetch(url, {
       signal: AbortSignal.timeout(6000),
       headers: {
@@ -18,32 +34,35 @@ export async function fetchOgMeta(url: string): Promise<OgMeta> {
     });
     if (!res.ok) return {};
 
-    // Stream only the <head> section (max 50KB) instead of downloading full body
+    // Stream only what is needed: the head for normal sites, plus the start of
+    // the body for sources that lazy-load their primary image outside OG tags.
     const reader = res.body?.getReader();
     if (!reader) return {};
 
     let html = "";
     const decoder = new TextDecoder();
+    const maxBytes = readBodyFallback ? 200_000 : 50_000;
     try {
-      while (html.length < 50_000) {
+      while (html.length < maxBytes) {
         const { done, value } = await reader.read();
         if (done) break;
         html += decoder.decode(value, { stream: true });
-        if (html.includes("</head>")) break;
+        if (!readBodyFallback && html.includes("</head>")) break;
       }
     } finally {
       reader.cancel().catch(() => {});
     }
 
-    const dateMatch =
-      html.match(/property="article:published_time"[^>]*content="([^"]+)"/) ||
-      html.match(/content="([^"]+)"[^>]*property="article:published_time"/) ||
-      html.match(/name="pubdate"[^>]*content="([^"]+)"/) ||
-      html.match(/name="date"[^>]*content="([^"]+)"/);
-
+    // Image: the shared helper resolves relative srcs against `url` and already
+    // covers data-src/data-original/srcset plus bad-image filtering.
+    // Date: extractMetaContent matches both property= and name=, single or double
+    // quotes, in either attribute order — stricter inline regexes miss those.
     return {
       image: extractImageUrlFromHtml(html, url),
-      publishedAt: dateMatch?.[1],
+      publishedAt:
+        extractMetaContent(html, "article:published_time") ||
+        extractMetaContent(html, "pubdate") ||
+        extractMetaContent(html, "date"),
     };
   } catch {
     return {};

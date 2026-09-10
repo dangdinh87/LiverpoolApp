@@ -44,7 +44,8 @@ const STALE_CONTENT_MS = 24 * 3600 * 1000;
 const MATCH_PEAK_BEFORE_HOURS = 36;
 const MATCH_PEAK_AFTER_HOURS = 18;
 const MATCH_NORMAL_BEFORE_HOURS = 120;
-const FETCH_LIMIT_BASE = 380;
+const FETCH_LIMIT_BASE = 120;
+const FAST_ENRICH_LIMIT = 10;
 
 type MatchTrafficMode = "low" | "normal" | "peak";
 
@@ -98,6 +99,13 @@ export function mergeArticleRowForUpsert(
     thumbnail,
     hero_image: heroImage,
   };
+}
+
+export interface SyncOptions {
+  fetchLimit?: number;
+  enrichThumbnails?: boolean;
+  metaFetches?: number;
+  preScrapeContent?: boolean;
 }
 
 function getAdaptiveScrapeLimit(
@@ -209,10 +217,13 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
 
     const retries = 1;
     for (let attempt = 0; attempt <= retries; attempt++) {
-      // Fetch existing rows first to prevent omitted columns from being overwritten with NULL
+      // Select exactly the columns mergeArticleRowForUpsert reads. Selecting "*"
+      // pulled the cached full-article JSON for every update and made sync much
+      // slower as the table grew; selecting only "url" would silently break
+      // thumbnail/hero_image retention, since the merge needs the old values.
       const { data: existingData, error: fetchError } = await supabase
         .from("articles")
-        .select("*")
+        .select("url,thumbnail,hero_image,fetched_at")
         .in("url", urls);
 
       if (fetchError) {
@@ -272,6 +283,49 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
   }
 
   return { inserted, updated, upserted, failed, errors };
+}
+
+async function enrichMissingThumbnails(
+  supabase: NewsServiceClient,
+  limit = FAST_ENRICH_LIMIT
+) {
+  let enriched = 0;
+  // Cover rows missing *either* image, and read the current values so a fetched
+  // og:image only fills the gap instead of overwriting a thumbnail we already have.
+  const { data: noThumbData } = await supabase
+    .from("articles")
+    .select("url,thumbnail,hero_image")
+    .eq("is_active", true)
+    .or("thumbnail.is.null,hero_image.is.null")
+    .order("fetched_at", { ascending: false })
+    .limit(limit);
+
+  const noThumb = noThumbData || [];
+  if (!noThumb.length) return enriched;
+
+  const BATCH = 5;
+  for (let i = 0; i < noThumb.length; i += BATCH) {
+    const batch = noThumb.slice(i, i + BATCH);
+    const results = await Promise.allSettled(batch.map((r) => fetchOgMeta(r.url)));
+    await Promise.allSettled(
+      results.map((result, j) => {
+        if (result.status !== "fulfilled" || !result.value.image) return Promise.resolve();
+        const row = batch[j];
+        enriched++;
+        return supabase
+          .from("articles")
+          .update({
+            thumbnail: row.thumbnail || result.value.image,
+            hero_image: row.hero_image || result.value.image,
+            updated_at: nowIso(),
+          })
+          .eq("url", row.url);
+      })
+    );
+  }
+
+  console.log(`[sync] Re-enriched ${enriched}/${noThumb.length} thumbnails`);
+  return enriched;
 }
 
 function getLatestFetchedPublishedAt(articles: NewsArticle[]): string | null {
@@ -370,15 +424,21 @@ async function scrapeContentForRecentArticles(
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-export async function syncPipeline(): Promise<SyncResult> {
+export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResult> {
   const start = Date.now();
+  const fetchLimit = options.fetchLimit ?? FETCH_LIMIT_BASE;
+  const enrichThumbnails = options.enrichThumbnails ?? false;
+  const metaFetches = options.metaFetches ?? 0;
+  const preScrapeContent = options.preScrapeContent ?? false;
   const adapters = [
     new LfcAdapter(),
     ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
     new BongdaplusAdapter(),
   ];
 
-  const { articles, stats: sourceStats } = await fetchAllNews(adapters, FETCH_LIMIT_BASE);
+  const { articles, stats: sourceStats } = await fetchAllNews(adapters, fetchLimit, {
+    metaFetches,
+  });
   console.log(`[sync] Fetched ${articles.length} articles from adapters`);
 
   const supabase = getServiceClient();
@@ -390,85 +450,18 @@ export async function syncPipeline(): Promise<SyncResult> {
   const failed = upsertResult.failed;
   const errors = upsertResult.errors;
 
-  // Re-enrich: fetch og:image for articles missing thumbnails/hero images
-  let enriched = 0;
-  const { data: noThumbData } = await supabase
-    .from("articles")
-    .select("url,thumbnail,hero_image")
-    .eq("is_active", true)
-    .or("thumbnail.is.null,hero_image.is.null")
-    .order("fetched_at", { ascending: false })
-    .limit(80);
+  const enriched = enrichThumbnails ? await enrichMissingThumbnails(supabase) : 0;
 
-  const noThumb = noThumbData || [];
-
-  if (noThumb.length) {
-    const BATCH = 10;
-    const updates: {
-      url: string;
-      thumbnail: string;
-      heroImage: string;
-    }[] = [];
-
-    for (let i = 0; i < noThumb.length; i += BATCH) {
-      const batch = noThumb.slice(i, i + BATCH);
-      const results = await Promise.allSettled(
-        batch.map((r) => fetchOgMeta(r.url))
-      );
-      for (let j = 0; j < results.length; j++) {
-        const r = results[j];
-        if (r.status === "fulfilled" && r.value.image) {
-          const row = batch[j];
-          updates.push({
-            url: row.url,
-            thumbnail: row.thumbnail || r.value.image,
-            heroImage: row.hero_image || r.value.image,
-          });
-        }
-      }
-    }
-
-    for (let i = 0; i < updates.length; i += BATCH) {
-      const batch = updates.slice(i, i + BATCH);
-      const results = await Promise.allSettled(
-        batch.map((row) =>
-          supabase
-            .from("articles")
-            .update({
-              thumbnail: row.thumbnail,
-              hero_image: row.heroImage,
-              updated_at: nowIso(),
-            })
-            .eq("url", row.url)
-        )
-      );
-
-      for (let j = 0; j < results.length; j++) {
-        const result = results[j];
-        if (result.status === "fulfilled" && !result.value.error) {
-          enriched++;
-          continue;
-        }
-
-        const error =
-          result.status === "fulfilled"
-            ? result.value.error?.message
-            : result.reason instanceof Error
-              ? result.reason.message
-              : String(result.reason);
-        console.error(`[sync] Re-enrich update failed for ${batch[j].url}: ${error}`);
-      }
-    }
-
-    console.log(`[sync] Re-enriched ${enriched}/${noThumb.length} thumbnails`);
-  }
-
-  const traffic = await getMatchTrafficMode();
-  const { attempted, scraped, scrapeFailed, stoppedByBudget } = await scrapeContentForRecentArticles(supabase, {
-    upserted,
-    fetchedTotal: articles.length,
-    mode: traffic.mode,
-  });
+  const traffic = preScrapeContent
+    ? await getMatchTrafficMode()
+    : { mode: "low" as MatchTrafficMode, hoursToNext: null, hoursSinceLast: null };
+  const { attempted, scraped, scrapeFailed, stoppedByBudget } = preScrapeContent
+    ? await scrapeContentForRecentArticles(supabase, {
+      upserted,
+      fetchedTotal: articles.length,
+      mode: traffic.mode,
+    })
+    : { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
   const durationMs = Date.now() - start;
   const latestFetchedPublishedAt = getLatestFetchedPublishedAt(articles);
   const latestStoredArticle = await getLatestStoredArticle(supabase);

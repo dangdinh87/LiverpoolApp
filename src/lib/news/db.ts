@@ -1,21 +1,15 @@
 import "server-only";
 import { cache } from "react";
-import { syncPipeline } from "./sync";
 import { getServiceClient } from "./supabase-service";
+import { analyzeArticleRelevance } from "./relevance";
 import type { ArticleContent, NewsArticle } from "./types";
 
 const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
-// Sync thresholds
-const STALE_MS = 15 * 60 * 1000;        // 15 min — background sync
-const BLOCKING_SYNC_TIMEOUT = 8000;      // 8s max wait
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
 const PREFERRED_LANGUAGE_SHARE = 0.8; // Vietnamese locale should read VI-first, not 50/50.
-
-// Per-instance sync lock (prevents duplicate syncs within same serverless instance)
-let syncInProgress = false;
 
 // DB row → NewsArticle mapping
 interface ArticleRow {
@@ -55,88 +49,26 @@ function rowToArticle(row: ArticleRow): NewsArticle {
   };
 }
 
-/**
- * DB-level age check. Survives serverless cold starts (unlike in-memory lastSyncTime).
- * Returns actual age in ms so callers can decide blocking vs background sync.
- */
-async function getDbAge(): Promise<{ ageMs: number | null; empty: boolean }> {
-  const supabase = getServiceClient();
-  const [syncRes, artRes] = await Promise.all([
-    supabase.from("sync_logs").select("ran_at").order("ran_at", { ascending: false }).limit(1).maybeSingle(),
-    supabase.from("articles").select("url").limit(1).maybeSingle()
-  ]);
-
-  const empty = !artRes.data;
-
-  if (!syncRes.data || !syncRes.data.ran_at) {
-    return { ageMs: null, empty };
-  }
-
-  const ageMs = Date.now() - new Date(syncRes.data.ran_at).getTime();
-  return { ageMs, empty };
+function onlyRelevantArticles(rows: ArticleRow[]): NewsArticle[] {
+  return rows
+    .map(rowToArticle)
+    .filter((article) => analyzeArticleRelevance(article).isRelevant);
 }
 
 /**
- * Three-tier sync: fresh → skip, mildly stale → background, very stale/empty → blocking.
- * Blocking sync uses Promise.race with timeout to prevent hanging.
- */
-async function triggerSyncIfNeeded(): Promise<void> {
-  if (syncInProgress) return;
-
-  const { ageMs, empty } = await getDbAge();
-
-  // Fresh data — no sync needed
-  if (ageMs !== null && ageMs < STALE_MS) return;
-
-  // ONLY an empty DB blocks the request (cold bootstrap — there is nothing to
-  // show otherwise). Any stale-but-populated DB must NEVER block a page render:
-  // the hourly cron (GitHub Actions + Vercel) owns refreshing. Previously a
-  // visit landing >30min after the last sync ate an up-to-8s blocking sync —
-  // and with cron drift (frequent >30min gaps) that made /news feel very slow.
-  if (empty) {
-    syncInProgress = true;
-    try {
-      console.log(`[news/db] Empty DB — bootstrap sync (blocking, ${BLOCKING_SYNC_TIMEOUT}ms timeout)...`);
-      await Promise.race([
-        syncPipeline(),
-        new Promise<void>((_, reject) =>
-          setTimeout(() => reject(new Error("Sync timeout")), BLOCKING_SYNC_TIMEOUT)
-        ),
-      ]);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Unknown error";
-      console.warn(`[news/db] Bootstrap sync did not complete: ${msg}`);
-    } finally {
-      syncInProgress = false;
-    }
-    return;
-  }
-
-  // Stale but populated (>15min): fire-and-forget sync, serve current data
-  // immediately so the visitor never waits on the RSS pipeline.
-  syncInProgress = true;
-  console.log(`[news/db] Stale (${Math.round((ageMs ?? 0) / 60000)}min) — background sync, serving cached...`);
-  syncPipeline()
-    .catch((err) => console.error("[news/db] Background sync failed:", err))
-    .finally(() => { syncInProgress = false; });
-}
-
-/**
- * Fetch news from DB. Syncs first if data > 15 min old.
- * Always returns fresh data.
+ * Fetch news from DB only.
+ *
+ * Important: this function must never crawl or sync. News ingestion is owned by
+ * the external crawler / explicit cron, so user-facing pages stay side-effect free.
  */
 export const getNewsFromDB = cache(
   async (
     limit = 30,
     preferLang?: string,
-    options?: { skipSync?: boolean }
+    _options?: { skipSync?: boolean }
   ): Promise<NewsArticle[]> => {
+    void _options;
     try {
-      // Trigger sync in background if stale (only blocks on empty DB)
-      if (!options?.skipSync) {
-        await triggerSyncIfNeeded();
-      }
-
       // Use service client for public article reads (no auth needed, avoids cookie issues in ISR)
       const supabase = getServiceClient();
 
@@ -167,8 +99,8 @@ export const getNewsFromDB = cache(
         if (localRes.error) console.error("[news/db] Local error:", localRes.error.message);
         if (globalRes.error) console.error("[news/db] Global error:", globalRes.error.message);
 
-        let local = ((localRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-        let global = ((globalRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+        let local = onlyRelevantArticles((localRes.data ?? []) as ArticleRow[]);
+        let global = onlyRelevantArticles((globalRes.data ?? []) as ArticleRow[]);
         let combined = [...local, ...global].slice(0, limit);
 
         // Backfill older posts when fresh pool is sparse.
@@ -194,8 +126,8 @@ export const getNewsFromDB = cache(
               .limit(globalLimit),
           ]);
 
-          local = ((localFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
-          global = ((globalFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+          local = onlyRelevantArticles((localFallback.data ?? []) as ArticleRow[]);
+          global = onlyRelevantArticles((globalFallback.data ?? []) as ArticleRow[]);
           const byUrl = new Map<string, NewsArticle>();
           for (const article of [...combined, ...local, ...global]) {
             if (!byUrl.has(article.link)) byUrl.set(article.link, article);
@@ -233,8 +165,8 @@ export const getNewsFromDB = cache(
       if (enRes.error) console.error("[news/db] EN error:", enRes.error.message);
       if (viRes.error) console.error("[news/db] VI error:", viRes.error.message);
 
-      let enArticles = ((enRes.data ?? []) as ArticleRow[]).map(rowToArticle);
-      let viArticles = ((viRes.data ?? []) as ArticleRow[]).map(rowToArticle);
+      let enArticles = onlyRelevantArticles((enRes.data ?? []) as ArticleRow[]);
+      let viArticles = onlyRelevantArticles((viRes.data ?? []) as ArticleRow[]);
       let combined = [...enArticles, ...viArticles].slice(0, limit);
 
       // Backfill from older posts when fresh pool is sparse.
@@ -258,8 +190,8 @@ export const getNewsFromDB = cache(
             .limit(perLang),
         ]);
 
-        enArticles = ((enFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
-        viArticles = ((viFallback.data ?? []) as ArticleRow[]).map(rowToArticle);
+        enArticles = onlyRelevantArticles((enFallback.data ?? []) as ArticleRow[]);
+        viArticles = onlyRelevantArticles((viFallback.data ?? []) as ArticleRow[]);
         const byUrl = new Map<string, NewsArticle>();
         for (const article of [...combined, ...enArticles, ...viArticles]) {
           if (!byUrl.has(article.link)) byUrl.set(article.link, article);
@@ -323,7 +255,7 @@ export const searchArticles = cache(
         return [];
       }
 
-      return ((data ?? []) as ArticleRow[]).map(rowToArticle);
+      return onlyRelevantArticles((data ?? []) as ArticleRow[]);
     } catch (err) {
       console.error("[news/db] Search fatal:", err);
       return [];
@@ -359,7 +291,7 @@ export async function getNewsPaginated(
 
     const rows = (data ?? []) as ArticleRow[];
     const hasMore = rows.length > limit;
-    const articles = (hasMore ? rows.slice(0, limit) : rows).map(rowToArticle);
+    const articles = onlyRelevantArticles(hasMore ? rows.slice(0, limit) : rows);
     return { articles, hasMore };
   } catch (err) {
     console.error("[news/db] Paginate fatal:", err);
