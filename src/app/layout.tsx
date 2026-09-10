@@ -11,6 +11,7 @@ import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
+import { GoogleAdsense } from "@/components/analytics/google-adsense";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { Analytics } from '@vercel/analytics/next';
 import "./globals.css";
@@ -125,6 +126,7 @@ export default async function RootLayout({
     >
       <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
         <GoogleTagManager />
+        <GoogleAdsense />
         <StructuredData />
         <ThemeProvider
           attribute="class"
