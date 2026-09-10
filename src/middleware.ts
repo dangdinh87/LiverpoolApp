@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/profile"];
@@ -28,6 +29,9 @@ export async function middleware(request: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
+        // Bounded fetch: this runs on every request to a protected route, so an
+        // unreachable auth service must fail fast instead of hanging the edge.
+        global: { fetch: createSupabaseFetch() },
         cookies: {
           getAll() {
             return request.cookies.getAll();
@@ -42,9 +46,12 @@ export async function middleware(request: NextRequest) {
       }
     );
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Treat an unreachable auth service as "not signed in": redirecting to the
+    // login page is a worse outcome than a 500, but far better than a hang.
+    const user = await supabase.auth
+      .getUser()
+      .then(({ data }) => data.user)
+      .catch(() => null);
 
     if (!user) {
       const loginUrl = new URL("/auth/login", request.url);

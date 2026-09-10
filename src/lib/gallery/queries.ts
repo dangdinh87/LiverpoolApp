@@ -1,5 +1,6 @@
 import "server-only";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 import type { GalleryCategory } from "@/lib/constants";
 
 export interface GalleryImage {
@@ -115,6 +116,10 @@ export async function getSiteSetting<T>(key: string): Promise<T | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // Without a bounded fetch this call inherits the upstream proxy's ~90s
+    // timeout, which stalled the whole homepage render whenever the database
+    // was unreachable.
+    { global: { fetch: createSupabaseFetch() } },
   );
   const { data, error } = await supabase
     .from("site_settings")

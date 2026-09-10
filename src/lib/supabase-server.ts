@@ -2,6 +2,7 @@
 import 'server-only';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { createSupabaseFetch } from '@/lib/supabase-fetch-with-timeout';
 
 /**
  * Server-side Supabase client with cookie-based session.
@@ -13,6 +14,8 @@ export async function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // Bounded fetch: a paused/unreachable database must fail fast, not hang.
+      global: { fetch: createSupabaseFetch() },
       cookies: {
         getAll() {
           return cookieStore.getAll();

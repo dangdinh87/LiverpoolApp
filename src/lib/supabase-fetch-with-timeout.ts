@@ -18,8 +18,16 @@
  *     deliberately not cached.
  */
 
-/** Ceiling for a single Supabase HTTP round-trip. */
-export const SUPABASE_FETCH_TIMEOUT_MS = 8_000;
+/**
+ * Ceiling for a single Supabase HTTP round-trip.
+ *
+ * Healthy queries answer in well under a second, so this is already generous.
+ * It is deliberately not larger: on a cold serverless instance the breaker
+ * starts closed, so each *sequential* stage of a render pays this in full. At
+ * 8s a page with two stages spent 15s before rendering, which overran the
+ * platform's function limit and returned nothing at all.
+ */
+export const SUPABASE_FETCH_TIMEOUT_MS = 3_000;
 
 /** How long to skip Supabase entirely after a connection-level failure. */
 export const SUPABASE_BREAKER_COOLDOWN_MS = 30_000;

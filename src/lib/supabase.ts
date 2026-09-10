@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 
 // Database types for user-related tables
 export interface UserProfile {
@@ -38,8 +39,11 @@ export interface SavedArticle {
  * Use in Client Components ("use client").
  */
 export function createClient() {
+  // Bounded fetch: a paused/unreachable database must fail fast, so the UI can
+  // surface an error state instead of spinning forever.
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { fetch: createSupabaseFetch() } }
   );
 }
