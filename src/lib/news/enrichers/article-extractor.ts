@@ -116,6 +116,51 @@ function pushUnique(arr: string[], seen: Set<string>, value: string) {
   if (!seen.has(value)) { seen.add(value); arr.push(value); }
 }
 
+/**
+ * Pick a container by trying each selector in the order it was written.
+ *
+ * `$("a, b").first()` returns the first match in *document* order, so a broad
+ * fallback like `article` that wraps the whole page wins over the precise
+ * `.maincontent` it was meant to back up — dragging the headline, share bar,
+ * publish date and ad slots into the extracted body. Selector lists here are
+ * authored most-specific-first, so honour that order instead.
+ */
+function selectContainer(
+  $: cheerio.CheerioAPI,
+  selectors: string
+): cheerio.Cheerio<AnyNode> {
+  for (const selector of selectors.split(",")) {
+    const match = $(selector.trim()).first();
+    if (match.length > 0) return match;
+  }
+  return $();
+}
+
+/** Compare two blocks of prose ignoring case, punctuation and whitespace noise. */
+function isSameText(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  const norm = (s: string) =>
+    s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return norm(a) === norm(b);
+}
+
+/** Hosts whose iframes are real video players worth keeping in the article body. */
+const VIDEO_EMBED_HOSTS = [
+  "youtube.com", "youtube-nocookie.com", "youtu.be",
+  "vimeo.com", "dailymotion.com", "facebook.com", "tiktok.com",
+];
+
+/** Whether an iframe src points at a video player rather than a site widget. */
+function isVideoEmbedUrl(src: string | undefined): boolean {
+  if (!src) return false;
+  try {
+    const host = new URL(src, "https://example.invalid").hostname.replace(/^www\./, "");
+    return VIDEO_EMBED_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+  } catch {
+    return false;
+  }
+}
+
 /** Resolve actual image URL, preferring data-original/data-src over placeholder src */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resolveImageSrc($el: cheerio.Cheerio<any>, baseUrl?: string): string | undefined {
@@ -169,13 +214,47 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .the-article-link, .article-socal, .the-article-author, .the-article-tags, .pswp"
   ).remove();
+
+  // Source page chrome that duplicates what our own article layout already renders:
+  // the headline/date/"follow us" strip and the byline + "original link / copy link" card.
+  // These are DIVs (not <header>/<footer>), so no tag-level rule catches them.
+  container.find(
+    ".the-article-header, .the-article-credit, .article-detail-author, .article-detail-author-wrapper, .article-detail-tag, .newsdetail-author, .author-info, .vnn-share-social, .share-social, .publish-date, .banner-advertisement"
+  ).remove();
+
+  // The article layout prints its own headline above the body, so a leftover
+  // <h1> from the source page shows the title twice.
+  container.find("h1").remove();
 
   // Remove generic ad classes, etc., while selectively preserving .VCSortableInPreviewMode elements to maintain valid content formatting
   container.find(
-    ".ads-wrapper, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, .box-game, .social-share, .tags"
+    ".ads-wrapper, .ads-center, .adscontent, .google-ads, .box_quangcao, .ads-adv_teads_video, .ads-adv_pc_in_article, .box-game, .social-share, .tags"
   ).not(".VCSortableInPreviewMode").remove();
+
+  // Drop embedded widgets that are not video players (match-score boxes, polls,
+  // newsletter forms). They ship their own light-theme styling and render as a
+  // white slab inside the Dark Stadium layout. Video embeds are kept.
+  container.find("iframe").each((_, el) => {
+    const $el = $(el);
+    if (!isVideoEmbedUrl($el.attr("src"))) $el.remove();
+  });
+
+  // Drop link-only lists — the inline "related articles" widgets that VN sources
+  // splice into the body as a bare <ul><li><a>…</a></li></ul> with no class to
+  // target. A list whose every item is nothing but a link is never prose.
+  container.find("ul, ol").each((_, el) => {
+    const $list = $(el);
+    const $items = $list.children("li");
+    if ($items.length === 0) return;
+    const allLinkOnly = $items.toArray().every((li) => {
+      const $li = $(li);
+      const linkText = $li.find("a").text().trim();
+      return linkText.length > 0 && $li.text().trim() === linkText;
+    });
+    if (allLinkOnly) $list.remove();
+  });
 
   // 1. Resolve lazy-loaded images to their true source before unwrapping picture tags
   // This allows us to inspect <source> siblings within a <picture> for higher-quality srcset.
@@ -1052,14 +1131,14 @@ function extractVietnameseGeneric(
   url: string,
   containerSelectors: string,
   sourceName: string,
-  opts?: { sapoSelector?: string; htmlContent?: boolean }
+  opts?: { sapoSelector?: string; htmlContent?: boolean; removeSelectors?: string }
 ): ArticleContent {
   const title = $("h1").first().text().trim() ||
     $('meta[property="og:title"]').attr("content") || "Article";
   const heroImage = $('meta[property="og:image"]').attr("content");
   const description = $('meta[property="og:description"]').attr("content");
 
-  const container = $(containerSelectors).first();
+  const container = selectContainer($, containerSelectors);
   const contentClone = container.clone();
   const paragraphs: string[] = [];
   const images: string[] = [];
@@ -1094,7 +1173,11 @@ function extractVietnameseGeneric(
   // Build htmlContent when opted in
   let htmlContent: string | undefined;
   if (opts?.htmlContent !== false) {
-    if (sapoText) {
+    // Per-source junk that has no reusable class name (topic teasers, etc.)
+    if (opts?.removeSelectors) contentClone.find(opts.removeSelectors).remove();
+    // The article layout already renders `description` as the lead paragraph, so
+    // re-inserting an identical sapo prints the same sentence twice on the page.
+    if (sapoText && !isSameText(sapoText, description)) {
       contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
     }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
@@ -1147,9 +1230,15 @@ function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
 
 function extractBongda24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   return extractVietnameseGeneric($, url,
-    ".article-content, .news-detail-content, .detail-content, .content-detail, .article-body, article, [role=main]",
+    ".the-article-content, .article-content, .news-detail-content, .detail-content, .content-detail, .article-body, article, [role=main]",
     "Bóng Đá 24h",
-    { sapoSelector: ".article-sapo, .sapo, h2" }
+    {
+      sapoSelector: ".the-article-content .summary, .article-sapo, .sapo, h2",
+      // "Khám phá thêm nội dung hấp dẫn trong các chủ đề liên quan:" — the teaser
+      // line above the club-crest tag strip. `.block` is too generic to strip
+      // globally, so it is scoped to this source.
+      removeSelectors: ".block, .clear1px",
+    }
   );
 }
 
