@@ -6,6 +6,7 @@ import { NextMatchWidget } from "./next-match-widget";
 import { StandingsPreview } from "./standings-preview";
 import { FormWidget } from "./form-widget";
 import type { Fixture, Standing } from "@/lib/types/football";
+import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 interface BentoGridProps {
   nextMatch: Fixture | null;
@@ -51,7 +52,7 @@ export function BentoGrid({ nextMatch, standings }: BentoGridProps) {
         className="mb-10"
       >
         <p className="font-barlow text-stadium-muted uppercase tracking-widest text-xs font-semibold mb-1">
-          {t("season")}
+          {t("season", { season: getCurrentSeasonLabel() })}
         </p>
         <h2 className="font-bebas text-4xl sm:text-5xl md:text-6xl text-white tracking-wider">
           {t("title")}

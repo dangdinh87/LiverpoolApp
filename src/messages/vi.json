@@ -82,7 +82,7 @@
     }
   },
   "Bento": {
-    "season": "Mùa giải 2025/26",
+    "season": "Mùa giải {season}",
     "title": "Tổng quan câu lạc bộ",
     "gameweekComplete": "Hoàn tất",
     "deadline": "Hạn chót",
@@ -237,7 +237,7 @@
     },
     "digest": {
       "badge": "Bản tin",
-      "proBadge": "LFCVN Pro",
+      "proBadge": "Bài viết LFCVN",
       "author": "LiverpoolFCVN",
       "by": "Bởi {author}",
       "sourceFromSite": "Nguồn tham khảo: {source}",
@@ -274,7 +274,7 @@
   "Squad": {
     "metadata": {
       "title": "Đội hình & Thống kê cầu thủ",
-      "description": "Đội hình một Liverpool FC và thống kê cầu thủ cho mùa giải 2025/26."
+      "description": "Đội hình một Liverpool FC và thống kê cầu thủ cho mùa giải {season}."
     },
     "title": "Đội hình",
     "season": "Mùa giải {season}",
@@ -328,7 +328,7 @@
     "glossary": {
       "title": "Giải thích chỉ số",
       "subtitle": "Ý nghĩa của từng chỉ số?",
-      "description": "Tất cả số liệu được cung cấp bởi Fantasy Premier League (FPL) — Mùa giải 2025/26.",
+      "description": "Tất cả số liệu được cung cấp bởi Fantasy Premier League (FPL) — Mùa giải {season}.",
       "items": {
         "Pts": {
           "name": "Tổng điểm",
@@ -412,7 +412,7 @@
       "price": "Giá"
     },
     "sections": {
-      "seasonStats": "Thống kê mùa 2025/26",
+      "seasonStats": "Thống kê mùa {season}",
       "matchHistory": "Lịch sử thi đấu",
       "pastSeasons": "Các mùa trước",
       "playerInfo": "Thông tin cầu thủ",
@@ -434,7 +434,7 @@
       "weight": "Cân nặng"
     },
     "stats": {
-      "seasonStats": "Thống kê mùa giải 2025/26",
+      "seasonStats": "Thống kê mùa giải {season}",
       "allCompetitions": "Tất cả giải đấu",
       "perCompetition": "Theo giải đấu",
       "noStats": "Chưa có dữ liệu thống kê. API key có thể chưa được cấu hình.",
@@ -527,16 +527,16 @@
   "Stats": {
     "metadata": {
       "title": "Thống kê",
-      "description": "Thống kê mùa giải Liverpool FC 2025/26 — tổng quan, biểu đồ, kỷ lục và nhiều hơn nữa."
+      "description": "Thống kê mùa giải Liverpool FC {season} — tổng quan, biểu đồ, kỷ lục và nhiều hơn nữa."
     },
     "hero": {
-      "season": "Mùa giải 2025/26 · Tất cả giải đấu",
+      "season": "Mùa giải {season} · Tất cả giải đấu",
       "seasonLabel": "Mùa giải",
       "title": "Thống kê"
     },
     "overview": {
       "title": "Tổng quan mùa giải",
-      "allComps": "Tất cả giải đấu · 2025/26",
+      "allComps": "Tất cả giải đấu · {season}",
       "allCompsLabel": "Tất cả giải đấu",
       "played": "Trận",
       "wins": "Thắng",
@@ -560,7 +560,7 @@
     "charts": {
       "scorers": "Vua phá lưới",
       "assists": "Vua kiến tạo",
-      "legend": "Ngoại hạng Anh 2025/26 · Đỏ = Cầu thủ Liverpool",
+      "legend": "Ngoại hạng Anh {season} · Đỏ = Cầu thủ Liverpool",
       "goalsByMonth": "Bàn thắng theo tháng",
       "goalsByMonthSub": "Ghi bàn vs Thủng lưới — tất cả giải đấu",
       "scored": "Ghi bàn",
@@ -582,7 +582,7 @@
     },
     "competitions": {
       "title": "Theo giải đấu",
-      "subtitle": "Mùa giải 2025/26",
+      "subtitle": "Mùa giải {season}",
       "winRate": "Tỷ lệ thắng",
       "gf": "BT",
       "ga": "BTh"
@@ -741,10 +741,10 @@
   "Standings": {
     "metadata": {
       "title": "Bảng xếp hạng",
-      "description": "Bảng xếp hạng Ngoại hạng Anh mùa giải 2025/26."
+      "description": "Bảng xếp hạng Ngoại hạng Anh mùa giải {season}."
     },
     "hero": {
-      "season": "Ngoại hạng Anh · 2025/26",
+      "season": "Ngoại hạng Anh · {season}",
       "title": "Bảng xếp hạng",
       "lfcPosition": "Liverpool FC · Hạng {rank}",
       "points": "{count} điểm",
@@ -789,10 +789,10 @@
   "Fixtures": {
     "metadata": {
       "title": "Lịch thi đấu & Kết quả",
-      "description": "Lịch thi đấu và kết quả Liverpool FC mùa giải 2025/26."
+      "description": "Lịch thi đấu và kết quả Liverpool FC mùa giải {season}."
     },
     "hero": {
-      "season": "Mùa giải 2025/26",
+      "season": "Mùa giải {season}",
       "title": "Lịch thi đấu & Kết quả",
       "subtitle": "{count} trận đấu · Liverpool FC"
     },

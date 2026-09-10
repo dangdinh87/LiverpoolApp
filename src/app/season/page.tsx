@@ -9,21 +9,16 @@ import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { SeasonTabs } from "@/components/season/season-tabs";
 import { makePageMeta } from "@/lib/seo";
+import {
+  formatSeasonLabel,
+  getCurrentSeasonYear,
+  getSelectableSeasons,
+} from "@/lib/football/current-season";
 
-// Available seasons on FDO free tier (start year → display label)
-const AVAILABLE_SEASONS = [2025, 2024, 2023] as const;
-
-/** Convert start year (2025) → display label (2025/26) */
-function seasonLabel(startYear: number): string {
-  return `${startYear}/${(startYear + 1).toString().slice(-2)}`;
-}
-
-/** Derive current season start year from date. Aug-Dec → YYYY, Jan-Jul → YYYY-1 */
-function getCurrentSeasonYear(): number {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  return month >= 8 ? now.getFullYear() : now.getFullYear() - 1;
-}
+// Season list and labels come from the shared date-derived helper, so a new
+// campaign appears without editing this page.
+const AVAILABLE_SEASONS = getSelectableSeasons();
+const seasonLabel = formatSeasonLabel;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Season.metadata");
@@ -45,7 +40,7 @@ export default async function SeasonPage({
   // Validate season param — fallback to current if invalid
   const currentYear = getCurrentSeasonYear();
   const selectedSeason = seasonParam
-    ? AVAILABLE_SEASONS.includes(Number(seasonParam) as typeof AVAILABLE_SEASONS[number])
+    ? AVAILABLE_SEASONS.includes(Number(seasonParam))
       ? Number(seasonParam)
       : currentYear
     : currentYear;

@@ -3,11 +3,12 @@ import { getFixtures } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 export async function generateMetadata() {
   const t = await getTranslations("Fixtures.metadata");
   const title = t("title");
-  const description = t("description");
+  const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/fixtures" }) };
 }
 
@@ -33,7 +34,7 @@ export default async function FixturesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
           <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
-            {t("hero.season")}
+            {t("hero.season", { season: getCurrentSeasonLabel() })}
           </p>
           <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none mb-3">
             {t("hero.title")}

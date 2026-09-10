@@ -11,17 +11,23 @@ import { SeasonSelector } from "@/components/stats/season-selector";
 import { SeasonComparison } from "@/components/stats/season-comparison";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import {
+  formatSeasonLabel,
+  getCurrentSeasonYear,
+} from "@/lib/football/current-season";
+import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 export async function generateMetadata() {
   const t = await getTranslations("Stats.metadata");
   const title = t("title");
-  const description = t("description");
+  const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/stats" }) };
 }
 
 export const revalidate = 3600; // 1 hour
 
-const CURRENT_SEASON = 2025;
+// Derived from the date; see src/lib/football/current-season.ts.
+const CURRENT_SEASON = getCurrentSeasonYear();
 
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
   const t = await getTranslations("Stats");
@@ -61,7 +67,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     ...compSeasonData
       .filter((d): d is NonNullable<typeof d> => d !== null && d.stats.overview.played > 0)
       .map((d) => ({
-        label: `${d.season}/${(d.season + 1).toString().slice(-2)}`,
+        label: formatSeasonLabel(d.season),
         overview: d.stats.overview,
       })),
   ];
@@ -83,8 +89,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full flex items-end justify-between gap-4">
-          <div>
+        {/* Stacks on narrow screens: the season picker refuses to shrink, so
+            side-by-side with the oversized title overflowed the viewport. */}
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
               {`${t("hero.seasonLabel")} ${seasonLabel}`}
             </p>
@@ -136,11 +144,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         {scorers.length > 0 && (
           <section className="mb-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ChartCard title={t("charts.scorers")} subtitle={t("charts.legend")}>
+              <ChartCard title={t("charts.scorers")} subtitle={t("charts.legend", { season: getCurrentSeasonLabel() })}>
                 <StatChart scorers={scorers} type="goals" limit={10} />
               </ChartCard>
               {assists.length > 0 && (
-                <ChartCard title={t("charts.assists")} subtitle={t("charts.legend")}>
+                <ChartCard title={t("charts.assists")} subtitle={t("charts.legend", { season: getCurrentSeasonLabel() })}>
                   <StatChart scorers={assists} type="assists" limit={10} />
                 </ChartCard>
               )}

@@ -4,6 +4,7 @@
 
 import "server-only";
 import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats, FixtureStatItem } from "@/lib/types/football";
+import { getCurrentSeasonYear } from "@/lib/football/current-season";
 
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 const ESPN_LFC_ID = "364"; // Liverpool FC in ESPN
@@ -406,7 +407,7 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
       name: compName,
       country: "England",
       logo: compLogo,
-      season: 2025,
+      season: getCurrentSeasonYear(),
       round: ev.seasonType?.name ?? "",
     },
     teams: {

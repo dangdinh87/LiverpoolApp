@@ -81,7 +81,7 @@
     }
   },
   "Bento": {
-    "season": "Season 2025/26",
+    "season": "Season {season}",
     "title": "Club Overview",
     "gameweekComplete": "Complete",
     "deadline": "Deadline",
@@ -236,7 +236,7 @@
     },
     "digest": {
       "badge": "Briefing",
-      "proBadge": "LFCVN Pro",
+      "proBadge": "LFCVN Article",
       "author": "LiverpoolFCVN",
       "by": "By {author}",
       "sourceFromSite": "References: {source}",
@@ -273,7 +273,7 @@
   "Squad": {
     "metadata": {
       "title": "Squad & Player Stats",
-      "description": "Liverpool FC first-team squad and player statistics for the 2025/26 season."
+      "description": "Liverpool FC first-team squad and player statistics for the {season} season."
     },
     "title": "The Squad",
     "season": "{season} Season",
@@ -327,7 +327,7 @@
     "glossary": {
       "title": "Stats Glossary",
       "subtitle": "What does each stat mean?",
-      "description": "All statistics sourced from Fantasy Premier League (FPL) — 2025/26 season.",
+      "description": "All statistics sourced from Fantasy Premier League (FPL) — {season} season.",
       "items": {
         "Pts": {
           "name": "Total Points",
@@ -411,7 +411,7 @@
       "price": "Price"
     },
     "sections": {
-      "seasonStats": "2025/26 Season Stats",
+      "seasonStats": "{season} Season Stats",
       "matchHistory": "Match History",
       "pastSeasons": "Past Seasons",
       "playerInfo": "Player Information",
@@ -433,7 +433,7 @@
       "weight": "Weight"
     },
     "stats": {
-      "seasonStats": "2025/26 Season Statistics",
+      "seasonStats": "{season} Season Statistics",
       "allCompetitions": "All Competitions",
       "perCompetition": "Per Competition",
       "noStats": "Statistics not available. API key may not be configured.",
@@ -526,16 +526,16 @@
   "Stats": {
     "metadata": {
       "title": "Statistics",
-      "description": "Liverpool FC season statistics 2025/26 — overview, charts, records and more."
+      "description": "Liverpool FC season statistics {season} — overview, charts, records and more."
     },
     "hero": {
-      "season": "Season 2025/26 · All Competitions",
+      "season": "Season {season} · All Competitions",
       "seasonLabel": "Season",
       "title": "Statistics"
     },
     "overview": {
       "title": "Season Overview",
-      "allComps": "All Competitions · 2025/26",
+      "allComps": "All Competitions · {season}",
       "allCompsLabel": "All Competitions",
       "played": "Played",
       "wins": "Wins",
@@ -559,7 +559,7 @@
     "charts": {
       "scorers": "Top Scorers",
       "assists": "Top Assists",
-      "legend": "Premier League 2025/26 · Red = Liverpool player",
+      "legend": "Premier League {season} · Red = Liverpool player",
       "goalsByMonth": "Goals by Month",
       "goalsByMonthSub": "Scored vs Conceded — all competitions",
       "scored": "Scored",
@@ -581,7 +581,7 @@
     },
     "competitions": {
       "title": "By Competition",
-      "subtitle": "Season 2025/26",
+      "subtitle": "Season {season}",
       "winRate": "Win Rate",
       "gf": "GF",
       "ga": "GA"
@@ -740,10 +740,10 @@
   "Standings": {
     "metadata": {
       "title": "Standings",
-      "description": "Premier League standings 2025/26 season."
+      "description": "Premier League standings {season} season."
     },
     "hero": {
-      "season": "Premier League · 2025/26",
+      "season": "Premier League · {season}",
       "title": "Standings",
       "lfcPosition": "Liverpool FC · {rank}{suffix} place",
       "points": "{count} points",
@@ -788,10 +788,10 @@
   "Fixtures": {
     "metadata": {
       "title": "Fixtures & Results",
-      "description": "Liverpool FC fixtures and results for the 2025/26 season."
+      "description": "Liverpool FC fixtures and results for the {season} season."
     },
     "hero": {
-      "season": "2025/26 Season",
+      "season": "{season} Season",
       "title": "Fixtures & Results",
       "subtitle": "{count} matches · Liverpool FC"
     },

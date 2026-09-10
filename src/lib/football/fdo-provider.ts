@@ -14,6 +14,7 @@ import {
   type LfcPlayer, type PlayerPosition,
 } from "@/lib/squad-data";
 import { getFplPlayerStats, type FplPlayerStats } from "./fpl-stats";
+import { getCurrentSeasonYear } from "@/lib/football/current-season";
 
 // ─── Configuration ─────────────────────────────────────────────────────────────
 
@@ -168,7 +169,7 @@ function mapScorerToTopScorer(s: FdoScorer): TopScorer {
     },
     statistics: [{
       team: { id: mapTeamId(s.team.id), name: s.team.name, logo: s.team.crest },
-      league: { id: 39, name: "Premier League", season: 2025 },
+      league: { id: 39, name: "Premier League", season: getCurrentSeasonYear() },
       games: {
         appearences: s.playedMatches,
         lineups: null,
@@ -206,7 +207,7 @@ function mapFplToStatistic(fpl: FplPlayerStats, local: LfcPlayer): PlayerStatist
 
   return {
     team: { id: CANONICAL_LFC_ID, name: "Liverpool FC", logo: "/assets/lfc/crest.webp" },
-    league: { id: 39, name: "Premier League", season: 2025 },
+    league: { id: 39, name: "Premier League", season: getCurrentSeasonYear() },
     games: {
       appearences: appearances > 0 ? appearances : fpl.starts > 0 ? fpl.starts : null,
       lineups: fpl.starts,

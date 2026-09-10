@@ -11,6 +11,7 @@ import {
   Trophy, Clock, Target, Shield, Shirt,
   Crosshair, ArrowRightLeft, Star,
 } from "lucide-react";
+import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
     return (
       <section className="bg-stadium-surface border border-stadium-border p-6 md:p-8">
         <h2 className="font-bebas text-3xl text-white tracking-wider mb-4">
-          {t("seasonStats")}
+          {t("seasonStats", { season: getCurrentSeasonLabel() })}
         </h2>
         <p className="text-stadium-muted font-inter text-sm">{t("noStats")}</p>
       </section>
@@ -65,10 +66,10 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
         <div className="w-1 h-8 bg-lfc-red rounded-full" />
         <div>
           <h2 className="font-bebas text-3xl text-white tracking-wider leading-none">
-            {t("seasonStats")}
+            {t("seasonStats", { season: getCurrentSeasonLabel() })}
           </h2>
           <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-[0.15em] mt-0.5">
-            Premier League 2025/26
+            Premier League {getCurrentSeasonLabel()}
           </p>
         </div>
       </div>

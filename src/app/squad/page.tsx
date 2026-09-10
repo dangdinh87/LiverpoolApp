@@ -4,11 +4,12 @@ import { getSquadPlayers } from "@/lib/squad-data";
 import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Squad.metadata");
   const title = t("title");
-  const description = t("description");
+  const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/squad" }) };
 }
 
@@ -34,7 +35,7 @@ export default async function SquadPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full">
           <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-[10px] font-bold mb-1">
-            {t("season", { season: "2025/26" })}
+            {t("season", { season: getCurrentSeasonLabel() })}
           </p>
           <div className="flex items-baseline gap-4">
             <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-widest leading-none">

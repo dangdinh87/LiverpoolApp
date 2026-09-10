@@ -4,6 +4,7 @@
 
 import "server-only";
 import type { Fixture, Coach } from "@/lib/types/football";
+import { getCurrentSeasonYear } from "@/lib/football/current-season";
 
 const FDO_BASE = "https://api.football-data.org/v4";
 const FETCH_TIMEOUT_MS = 10_000;
@@ -137,7 +138,7 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
       name: m.competition.name,
       country: "England",
       logo: COMP_LOGO[m.competition.name] ?? m.competition.emblem,
-      season: 2025,
+      season: getCurrentSeasonYear(),
       round: m.matchday ? `Matchday ${m.matchday}` : m.stage,
     },
     teams: {

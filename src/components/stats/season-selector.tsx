@@ -3,9 +3,15 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { cn } from "@/lib/utils";
+import {
+  formatSeasonLabel,
+  getCurrentSeasonYear,
+  getSelectableSeasons,
+} from "@/lib/football/current-season";
 
-const SEASONS = [2025, 2024, 2023];
-const CURRENT_SEASON = 2025;
+// Derived from the date so a new campaign appears without a code change.
+const SEASONS = getSelectableSeasons();
+const CURRENT_SEASON = getCurrentSeasonYear();
 
 export function SeasonSelector() {
   const router = useRouter();
@@ -23,11 +29,12 @@ export function SeasonSelector() {
 
   return (
     <>
-      <div className="flex items-center gap-1 shrink-0">
+      {/* max-w-full + scroll: never widen the page to fit the options. */}
+      <div className="flex items-center gap-1 shrink-0 max-w-full overflow-x-auto">
         {SEASONS.map((s) => {
           const isActive = s === selected;
           const isCurrent = s === CURRENT_SEASON;
-          const label = `${s}/${(s + 1).toString().slice(-2)}`;
+          const label = formatSeasonLabel(s);
 
           return (
             <button
