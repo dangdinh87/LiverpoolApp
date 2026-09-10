@@ -6,7 +6,14 @@ export interface WebSearchResult {
   sources: { title: string; url: string; snippet: string }[];
 }
 
-// Perform web search via Groq's built-in browser_search tool
+/**
+ * Live web search, via Groq's `compound-mini` built-in browser tool.
+ *
+ * This is the one place that still calls Groq. Everything else moved to VietAPI
+ * (see src/lib/ai/vietapi.ts), but no VietAPI model exposes a server-side web
+ * search tool, and `groq/compound-mini` remains available. Keep GROQ_API_KEY set
+ * for this; chat still answers without it, just without live results.
+ */
 export async function webSearch(query: string): Promise<WebSearchResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {

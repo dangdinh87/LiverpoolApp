@@ -1,7 +1,7 @@
 import { createUIMessageStream, createUIMessageStreamResponse } from 'ai';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { type NextRequest } from 'next/server';
-import { createGroq } from '@ai-sdk/groq';
+import { vietapi } from '@/lib/ai/vietapi';
 import { streamText } from 'ai';
 import { DEFAULT_CHAT_AI_MODEL } from '@/config/constants';
 import { webSearch, type WebSearchResult } from '@/lib/tools/web-search';
@@ -62,17 +62,15 @@ CITATION RULES (MUST follow):
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.VIETAPI_KEY;
 
   if (!apiKey) {
-    console.error('[Chat API - Groq] GROQ_API_KEY is not set');
+    console.error('[Chat API] VIETAPI_KEY is not set');
     return new Response(
-      JSON.stringify({ error: 'Groq API key not configured' }),
+      JSON.stringify({ error: 'AI provider key not configured' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } },
     );
   }
-
-  const groq = createGroq({ apiKey });
 
   try {
     const {
@@ -81,6 +79,25 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      // A transport failure means the auth backend is unreachable, not that the
+      // visitor is signed out. Reporting both as 401 made every outage look like
+      // "please log in", which sent users to a login form that could not work.
+      const backendDown =
+        authError?.status === undefined ||
+        authError.status === 0 ||
+        authError.status >= 500;
+
+      if (authError && backendDown) {
+        console.error('[Chat API] Auth backend unavailable:', authError.message);
+        return new Response(
+          JSON.stringify({
+            error: 'Auth service unavailable',
+            code: 'auth_backend_unavailable',
+          }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { 'Content-Type': 'application/json' },
@@ -94,7 +111,7 @@ export async function POST(req: NextRequest) {
     const selectedModel = model || DEFAULT_CHAT_AI_MODEL;
 
     console.log(
-      `[Chat API - Groq] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || 'new'}`,
+      `[Chat API] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || 'new'}`,
     );
 
     const isNewConversation = !conversationId;
@@ -117,7 +134,7 @@ export async function POST(req: NextRequest) {
       if (!convError && convData) {
         actualConversationId = convData.id;
       } else {
-        console.error('[Chat API - Groq] Error creating conversation:', convError);
+        console.error('[Chat API] Error creating conversation:', convError);
       }
     }
 
@@ -186,10 +203,10 @@ export async function POST(req: NextRequest) {
               try {
                 searchResult = await webSearch(searchQuery);
                 console.log(
-                  `[Chat API - Groq] Web search done: ${searchResult.sources.length} sources`,
+                  `[Chat API] Web search done: ${searchResult.sources.length} sources`,
                 );
               } catch (err) {
-                console.error('[Chat API - Groq] Web search failed:', err);
+                console.error('[Chat API] Web search failed:', err);
               }
 
               writer.write({
@@ -210,7 +227,7 @@ export async function POST(req: NextRequest) {
             for (const tryModel of fallbackChain) {
               try {
                 const result = streamText({
-                  model: groq(tryModel),
+                  model: vietapi(tryModel),
                   system: buildSystemPrompt(searchResult),
                   messages,
                 });
@@ -228,7 +245,7 @@ export async function POST(req: NextRequest) {
                 break; // Success — exit fallback loop
               } catch (error) {
                 if (isRateLimitError(error)) {
-                  console.warn(`[Chat API - Groq] Rate limited on ${tryModel}, trying next...`);
+                  console.warn(`[Chat API] Rate limited on ${tryModel}, trying next...`);
                   continue;
                 }
                 throw error; // Non-rate-limit error — bubble up
@@ -236,7 +253,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (usedModel !== selectedModel) {
-              console.log(`[Chat API - Groq] Fell back from ${selectedModel} → ${usedModel}`);
+              console.log(`[Chat API] Fell back from ${selectedModel} → ${usedModel}`);
             }
 
             writer.write({ type: 'text-end', id: messageId });
@@ -257,7 +274,7 @@ export async function POST(req: NextRequest) {
                 .eq('id', actualConversationId);
             }
           } catch (error) {
-            console.error('[Chat API - Groq] Stream error:', error);
+            console.error('[Chat API] Stream error:', error);
             writer.write({
               type: 'error',
               errorText:
@@ -268,7 +285,7 @@ export async function POST(req: NextRequest) {
       }),
     });
   } catch (error) {
-    console.error('[Chat API - Groq] Error:', error);
+    console.error('[Chat API] Error:', error);
     return new Response(
       JSON.stringify({
         error: error instanceof Error ? error.message : 'Internal Error',

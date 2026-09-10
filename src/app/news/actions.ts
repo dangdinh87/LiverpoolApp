@@ -24,8 +24,8 @@ export async function refreshDigest(): Promise<{
   summary?: string;
   generatedAt?: string;
 }> {
-  if (!getEnv("GROQ_API_KEY")) {
-    return { ok: false, error: "GROQ_API_KEY not set" };
+  if (!getEnv("VIETAPI_KEY")) {
+    return { ok: false, error: "VIETAPI_KEY not set" };
   }
   try {
     console.log("[refreshDigest] Starting digest generation...");

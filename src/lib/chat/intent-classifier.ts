@@ -1,6 +1,27 @@
 import 'server-only';
 
-const CLASSIFIER_MODEL = 'llama-3.1-8b-instant';
+// Cheapest VietAPI tier — classification is a one-token-ish decision.
+const CLASSIFIER_MODEL = 'deepseek-v4-flash';
+const VIETAPI_CHAT_URL = 'https://api.vietapi.tech/v1/chat/completions';
+
+/**
+ * Pull a JSON object out of a model reply.
+ *
+ * Reasoning models prepend their working and often fence the payload, so the
+ * raw string is rarely parseable as-is.
+ */
+function extractJson(raw: string): Record<string, unknown> {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenced ? fenced[1] : raw;
+  const start = candidate.indexOf('{');
+  const end = candidate.lastIndexOf('}');
+  if (start === -1 || end <= start) return {};
+  try {
+    return JSON.parse(candidate.slice(start, end + 1));
+  } catch {
+    return {};
+  }
+}
 
 export interface ClassifyResult {
   needsSearch: boolean;
@@ -8,7 +29,7 @@ export interface ClassifyResult {
 }
 
 /**
- * Use fast, lightweight model (8b-instant) to classify if web search is needed.
+ * Use the cheapest model to classify whether web search is needed.
  * Replaces keyword-based needsWebSearch() with AI-powered intent detection.
  * Falls back to no-search on any error (graceful degradation).
  */
@@ -17,7 +38,7 @@ export async function classifyIntent(
   apiKey: string,
 ): Promise<ClassifyResult> {
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch(VIETAPI_CHAT_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -49,9 +70,9 @@ NO SEARCH (false):
           },
           { role: 'user', content: message },
         ],
-        max_tokens: 100,
+        // Room for a reasoning model to think before emitting the JSON.
+        max_tokens: 800,
         temperature: 0,
-        response_format: { type: 'json_object' },
       }),
     });
 
@@ -61,12 +82,12 @@ NO SEARCH (false):
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content || '{}';
-    const parsed = JSON.parse(content);
+    const content = data.choices?.[0]?.message?.content || '';
+    const parsed = extractJson(content);
 
     const result: ClassifyResult = {
       needsSearch: parsed.search === true,
-      searchQuery: parsed.query || message,
+      searchQuery: (parsed.query as string) || message,
     };
 
     console.log('[Intent Classifier]', {

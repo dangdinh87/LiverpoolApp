@@ -13,9 +13,9 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async (req) => {
-  if (!getEnv("GROQ_API_KEY")) {
+  if (!getEnv("VIETAPI_KEY")) {
     return NextResponse.json(
-      { error: "GROQ_API_KEY not configured" },
+      { error: "VIETAPI_KEY not configured" },
       { status: 503 }
     );
   }
