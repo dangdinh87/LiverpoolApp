@@ -9,7 +9,8 @@ export const RSS_FEEDS: FeedConfig[] = [
   { url: "https://www.thisisanfield.com/feed", source: "tia", language: "en" },
   { url: "https://www.anfieldwatch.co.uk/feed", source: "anfield-watch", language: "en" },
   { url: "https://www.empireofthekop.com/feed/", source: "eotk", language: "en" },
-  { url: "https://www.skysports.com/rss/12040", source: "sky", language: "en" },
+  // Sky's /rss/12040 feed is broad sports news, not Liverpool-specific.
+  { url: "https://www.skysports.com/rss/12040", source: "sky", language: "en", filter: "lfc" },
   { url: "https://www.mirror.co.uk/all-about/liverpool-fc/rss.xml", source: "mirror", language: "en" },
   { url: "https://www.independent.co.uk/topic/liverpool-fc/rss", source: "independent", language: "en" },
   { url: "https://www.manchestereveningnews.co.uk/all-about/liverpool-fc/?service=rss", source: "men", language: "en" },
@@ -92,12 +93,13 @@ export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
   { term: "the kop", weight: 2.5 },
   { term: "lữ đoàn đỏ", weight: 2.5 },
   // Manager — full name only
-  { term: "arne slot", weight: 2.5 },
+  { term: "andoni iraola", weight: 2.5 },
   // Star players
-  { term: "salah", weight: 2.5 },
   { term: "van dijk", weight: 2.5 },
   { term: "virgil", weight: 2 },
   // New signings — high interest
+  { term: "bradley barcola", weight: 3 },
+  { term: "ronald araujo", weight: 3 },
   { term: "florian wirtz", weight: 3 },
   { term: "alexander isak", weight: 3 },
   { term: "kerkez", weight: 2 },
@@ -105,17 +107,19 @@ export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
   { term: "ekitike", weight: 2 },
   { term: "mamardashvili", weight: 2 },
   { term: "chiesa", weight: 2 },
+  { term: "jacquet", weight: 2 },
+  { term: "leoni", weight: 2 },
   // Core squad — unique names only
   { term: "alisson", weight: 1.5 },
-  { term: "kelleher", weight: 1.5 },
-  { term: "robertson", weight: 1.5 },
-  { term: "konate", weight: 1.5 },
-  { term: "quansah", weight: 1 },
   { term: "gakpo", weight: 1.5 },
   { term: "mac allister", weight: 1.5 },
   { term: "gravenberch", weight: 1.5 },
   { term: "szoboszlai", weight: 1.5 },
-  { term: "jota", weight: 1.5 },
+  { term: "elliott", weight: 1.5 },
+  { term: "endo", weight: 1.5 },
+  { term: "ngumoha", weight: 1.5 },
+  { term: "nyoni", weight: 1 },
+  { term: "jaros", weight: 1 },
 ];
 
 /** Flat keyword list derived from weighted — used for RSS/adapter filtering */

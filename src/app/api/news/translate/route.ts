@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createGroq } from "@ai-sdk/groq";
+import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
 import { scrapeArticle } from "@/lib/news";
@@ -12,7 +12,7 @@ export const maxDuration = 60;
 const TRANSLATE_PROMPT = `You are a senior Vietnamese sports journalist who writes for a top football news site. Translate the following English football article into natural, fluent Vietnamese that reads like it was originally written in Vietnamese.
 
 Context — this is about Liverpool FC. Key people and roles:
-- Arne Slot = HLV trưởng (head coach)
+- Andoni Iraola = HLV trưởng (head coach)
 - Richard Hughes = giám đốc thể thao (sporting director), NOT a player
 - Michael Edwards = CEO bóng đá (CEO of football)
 - FSG = chủ sở hữu (owners)
@@ -24,7 +24,7 @@ Translation rules:
 - "sporting director" = "giám đốc thể thao", "head coach" = "HLV trưởng"
 - "clean sheet" = "giữ sạch lưới", "assist" = "kiến tạo", "goal" = "bàn thắng"
 - "Premier League" = "Ngoại hạng Anh", "Champions League" giữ nguyên
-- Keep player names, club names in English (e.g., Salah, Van Dijk, Arsenal)
+- Keep player names, club names in English (e.g., Van Dijk, Wirtz, Arsenal)
 - Understand context: distinguish "move" (transfer) vs "move" (on-pitch movement)
 - Translate idioms meaningfully, not literally (e.g., "pull the trigger" = "ra quyết định")
 - Output must be Vietnamese only, with English names preserved. Translate weekdays/months fully (e.g., Wednesday = thứ Tư). Do not output Cyrillic, Russian, Chinese, or other non-Vietnamese scripts.
@@ -36,10 +36,12 @@ Format rules:
 - Skip promotional text (FOLLOW OUR PAGE, Sign up, Newsletter)
 - Return ONLY the Vietnamese translation, no commentary`;
 
+// VietAPI models, verified live 2026-09-09. Ordered cheapest-first: translation
+// is high volume and the flash tier already returns clean Vietnamese.
 const TRANSLATE_MODELS = [
-  "llama-3.3-70b-versatile",
-  "meta-llama/llama-4-scout-17b-16e-instruct",
-  "llama-3.1-8b-instant",
+  "deepseek-v4-flash",
+  "deepseek-v4-pro",
+  "claude-sonnet-5",
 ] as const;
 
 interface CachedTranslationContent {
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const apiKey = getEnv("GROQ_API_KEY");
+    const apiKey = getEnv("VIETAPI_KEY");
     if (!apiKey) {
       return NextResponse.json(
         { error: "Translation service unavailable" },
@@ -131,14 +133,13 @@ export async function POST(req: NextRequest) {
     sections.push(...cleanParagraphs);
     const input = sections.join("\n|||\n");
 
-    // Call Groq with model fallback on rate limit
-    const groq = createGroq({ apiKey });
+    // Model fallback on rate limit / provider error
     let result;
     let usedModel: string = TRANSLATE_MODELS[0];
     for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
       try {
         result = await generateText({
-          model: groq(modelId),
+          model: vietapi(modelId),
           system: TRANSLATE_PROMPT,
           prompt: input,
           maxOutputTokens: 4000,

@@ -13,11 +13,11 @@ export function getMockNews(): NewsArticle[] {
       language: "en",
     },
     {
-      title: "Salah reaches 200 Premier League goal milestone",
+      title: "Wirtz reaches 50 Premier League appearances for Liverpool",
       link: "https://www.bbc.co.uk/sport/football/liverpool-2",
       pubDate: new Date(Date.now() - 86400000).toISOString(),
       contentSnippet:
-        "Mohamed Salah became the first African player to score 200 Premier League goals.",
+        "Florian Wirtz reached 50 Premier League appearances since joining Liverpool.",
       thumbnail: undefined,
       source: "guardian",
       language: "en",
@@ -43,11 +43,11 @@ export function getMockNews(): NewsArticle[] {
       language: "en",
     },
     {
-      title: "Arne Slot va ke hoach chuyen nhuong he 2026 cua Liverpool",
+      title: "Andoni Iraola va ke hoach chuyen nhuong he 2026 cua Liverpool",
       link: "https://cdn.24h.com.vn/tin-tuc/liverpool-mock-1",
       pubDate: new Date(Date.now() - 345600000).toISOString(),
       contentSnippet:
-        "HLV Arne Slot chia se ve ke hoach bo sung luc luong mua he.",
+        "HLV Andoni Iraola chia se ve ke hoach bo sung luc luong mua he.",
       thumbnail: undefined,
       source: "24h",
       language: "vi",

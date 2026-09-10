@@ -8,8 +8,8 @@ Trang fan Liverpool FC dành cho cộng đồng fan Việt Nam. Cung cấp thôn
 - **Styling:** Tailwind CSS v4 + shadcn/ui (Radix primitives)
 - **Backend:** Supabase (Auth + PostgreSQL + Storage)
 - **Football Data:** Football-Data.org (primary, free: 10 req/min) + ESPN (cup fixtures, free)
-- **News:** 17+ RSS sources synced to Supabase, Groq API for translation + daily digest
-- **AI Chat:** Groq API via Vercel AI SDK (`ai` package) + `assistant-ui` components
+- **News:** 17+ RSS sources synced to Supabase, VietAPI for translation + daily digest
+- **AI Chat:** VietAPI (OpenAI-compatible) via Vercel AI SDK (`ai` package) + `assistant-ui` components
 - **Gallery:** Cloudinary image hosting + lightbox viewer
 - **i18n:** next-intl (EN/VI), detected via cookie `NEXT_LOCALE` or `Accept-Language` header
 - **State:** Zustand (client stores), React Query / TanStack Query (server state)
@@ -23,7 +23,8 @@ Trang fan Liverpool FC dành cho cộng đồng fan Việt Nam. Cung cấp thôn
 npm run dev          # Start dev server (next dev)
 npm run build        # Production build
 npm run lint         # ESLint
-npm run test         # Vitest
+npm run test         # Vitest (unit)
+npm run test:e2e     # Playwright (end-to-end, builds + starts the app)
 npm run seed:gallery # Seed gallery data (tsx scripts/seed-gallery.ts)
 ```
 
@@ -63,7 +64,7 @@ src/
 │   │   ├── news/translate/ # On-demand article translation (Groq)
 │   │   ├── news/comments/  # Article comments CRUD
 │   │   ├── news/like/      # Article likes
-│   │   ├── chat/           # AI chat streaming (Groq + assistant-ui)
+│   │   ├── chat-groq/      # AI chat streaming (VietAPI + assistant-ui; legacy path name)
 │   │   ├── gallery/        # Gallery API + homepage featured
 │   │   ├── saved-articles/ # User bookmarks
 │   │   ├── conversations/  # Chat history persistence
@@ -110,7 +111,7 @@ src/
 │   │   ├── fdo-matches.ts  # Fixtures + coach info
 │   │   ├── espn-events.ts  # ESPN match events, cup fixtures (free)
 │   │   ├── provider.ts     # Provider interface
-│   │   └── mock-*.ts       # Mock fallback when no API key
+│   │   ├── current-season.ts # Date-derived season year/label (single source of truth)
 │   ├── news/               # News system
 │   │   ├── sync.ts         # RSS sync pipeline
 │   │   ├── config.ts       # Source feeds config
@@ -126,7 +127,10 @@ src/
 │   ├── prompts/            # AI system prompts (BRO AI)
 │   ├── tools/              # AI function-calling tools
 │   ├── types/              # TypeScript types (football.ts)
+│   ├── ai/
+│   │   └── vietapi.ts      # LLM provider (OpenAI-compatible) — chat, translation, digest
 │   ├── supabase.ts         # Browser client + DB types (UserProfile, FavouritePlayer, SavedArticle)
+│   ├── supabase-fetch-with-timeout.ts # Bounded fetch + circuit breaker for all Supabase clients
 │   ├── supabase-server.ts  # Server client (import "server-only")
 │   ├── cloudinary.ts       # Cloudinary upload/transform config
 │   ├── news-config.ts      # Source labels/colors + URL slug encode/decode
@@ -157,7 +161,8 @@ src/
 │   ├── user-store.ts       # User preferences
 │   └── navigation-store.ts # Navigation state
 ├── hooks/                  # Custom React hooks
-│   └── use-favourites.ts   # Favourite players hook
+│   ├── use-favourites.ts   # Favourite players hook
+│   └── use-now-after-mount.ts # Client-only clock; keeps time-based UI hydration-safe
 ├── contexts/               # React contexts
 ├── config/                 # App config (constants)
 ├── i18n/
@@ -179,7 +184,7 @@ src/
 - All functions in `src/lib/football/` are server-only with `React.cache()` for per-request dedup
 - Primary: Football-Data.org (`FOOTBALL_DATA_ORG_KEY`) — standings (PL + UCL), fixtures, squad, coach
 - Supplement: ESPN — cup fixtures (FA Cup, EFL Cup), match events with minute data — free, no key
-- Mock fallback when `FOOTBALL_DATA_ORG_KEY` not set (dev mode)
+- Without `FOOTBALL_DATA_ORG_KEY` the data layer logs a warning and returns empty — there is no mock fallback
 - Free tier limits: 10 req/min, seasons data only
 
 ### Navbar Pattern
@@ -201,8 +206,8 @@ src/
   - Filters junk text from match widget articles (removes generic "next match" HTML)
   - Inline video detection: embeds HLS/MP4 videos as `<div class="article-video-player" data-video-src="...">` placeholders
   - Returns ArticleContent: `{ title, heroImage, paragraphs, htmlContent?, videoUrl?, images, readingTime, isThinContent }`
-- Translation: Groq API on-demand, cached in `content_en` / `content_vi` columns
-- Daily digest: AI-generated summary of top stories, stored in `news_digests` table
+- Translation: VietAPI on-demand, cached in `content_en` / `content_vi` columns
+- Daily digest: AI-generated summary of top stories, stored in `news_digests` table (VietAPI)
 - **Article Rendering Components:**
   - `ArticleHtmlBody` — renders `htmlContent` with imperatively-mounted video player React portals (avoids dangerouslySetInnerHTML conflicts)
   - `ArticleVideoPlayer` — HLS.js + fallback to native HTML5 video; supports HLS and MP4 formats
@@ -240,7 +245,8 @@ See `.env.example`. All required for full functionality:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin key (server-only) |
 | `FOOTBALL_DATA_ORG_KEY` | Football-Data.org API (free: 10 req/min) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL — SEO, metadataBase, OAuth redirects |
-| `GROQ_API_KEY` | Groq API — AI chat + article translation + digest |
+| `VIETAPI_KEY` | VietAPI — AI chat + article translation + digest |
+| `GROQ_API_KEY` | Groq — live web search only (`groq/compound-mini`); chat works without it |
 | `CRON_SECRET` | Protects cron endpoints (random string) |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
@@ -267,7 +273,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 |---|---|---|---|---|
 | `/api/news/sync` | GitHub Actions | `0 * * * *` | 300s | Sync RSS feeds, pre-scrape article content, revalidate homepage |
 | `/api/news/cleanup` | Vercel cron | `0 3 * * *` (3 AM UTC) | default | Soft-delete >30d, clear cached content >60d, hard-delete >60d |
-| `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via Groq, skip if already generated |
+| `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via VietAPI, skip if already generated |
 
 ## Protected Routes
 
@@ -280,6 +286,36 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 - OpenGraph + Twitter Card metadata on all pages
 - Vietnamese locale priority (`vi_VN`), English alternate (`en_GB`)
 
+## Testing
+
+- **Unit:** Vitest — `npm run test`. Specs live beside their subject in `__tests__/`.
+- **E2E:** Playwright — `npm run test:e2e`. Specs in `e2e/`, config in `playwright.config.ts`.
+  - Runs against a production build (`next build` + `next start`) on port 3100, desktop + mobile.
+  - `e2e/support/routes.ts` is the route manifest driving the smoke sweep — add new pages there.
+  - `e2e/support/page-diagnostics.ts` fails a test on console errors, uncaught exceptions,
+    failed requests and 5xx responses, so hydration and runtime errors surface as test failures.
+  - Worker count is deliberately low: pages fan out to several external APIs and a single local
+    server cannot serve many cold renders at once.
+
+## Resilience
+
+- Every Supabase client uses `createSupabaseFetch()` (`src/lib/supabase-fetch-with-timeout.ts`):
+  an 8s per-request timeout plus a 30s circuit breaker. Without it a paused database made pages
+  hang for ~90s and failed the production build.
+- Time-dependent UI must use `useNowAfterMount()` rather than reading the clock during render —
+  a render-time `Date.now()` disagrees between the server render and hydration.
+- The season year comes from `src/lib/football/current-season.ts`, never a literal.
+
 ## Path Alias
 
 `@/*` maps to `./src/*` (tsconfig paths)
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

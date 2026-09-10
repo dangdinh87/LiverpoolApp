@@ -18,7 +18,7 @@ describe("scoreArticle", () => {
   it("scores a fresh LFC-official article highest", () => {
     const score = scoreArticle(
       makeArticle({
-        title: "Liverpool confirm Salah contract extension at Anfield",
+        title: "Liverpool confirm Florian Wirtz contract extension at Anfield",
         source: "lfc",
         pubDate: new Date().toISOString(), // just now
       })
@@ -53,11 +53,36 @@ describe("scoreArticle", () => {
     expect(analysis.score).toBe(-1);
   });
 
+  it("rejects broad Sky Sports articles without Liverpool identity", () => {
+    const analysis = analyzeArticleRelevance(
+      makeArticle({
+        title: "England rout New Zealand for 80 in T20 series win",
+        contentSnippet:
+          "England eased to a T20 series win after a ruthless bowling display.",
+        source: "sky",
+      })
+    );
+    expect(analysis.isRelevant).toBe(false);
+    expect(analysis.score).toBe(-1);
+  });
+
+  it("accepts Sky Sports articles with Liverpool identity", () => {
+    const analysis = analyzeArticleRelevance(
+      makeArticle({
+        title: "Liverpool transfer news: Reds target new midfielder",
+        contentSnippet: "Andoni Iraola is preparing Liverpool for the summer window.",
+        source: "sky",
+      })
+    );
+    expect(analysis.isRelevant).toBe(true);
+    expect(analysis.score).toBeGreaterThan(3);
+  });
+
   it("accepts Vietnamese Liverpool identity terms", () => {
     const analysis = analyzeArticleRelevance(
       makeArticle({
         title: "Lữ đoàn đỏ nhận tin vui trước trận đại chiến",
-        contentSnippet: "Arne Slot chuẩn bị đội hình mạnh nhất.",
+        contentSnippet: "Andoni Iraola chuẩn bị đội hình mạnh nhất.",
         source: "bongda24h",
         language: "vi",
       })
@@ -70,7 +95,7 @@ describe("scoreArticle", () => {
   it("accepts strong Liverpool player-only headlines", () => {
     const analysis = analyzeArticleRelevance(
       makeArticle({
-        title: "Salah agrees new contract after talks",
+        title: "Florian Wirtz agrees new contract after talks",
         source: "bbc",
       })
     );
@@ -81,13 +106,13 @@ describe("scoreArticle", () => {
   it("penalizes competitor-heavy player stories without direct Liverpool identity", () => {
     const clean = analyzeArticleRelevance(
       makeArticle({
-        title: "Salah agrees new contract after talks",
+        title: "Florian Wirtz agrees new contract after talks",
         source: "bbc",
       })
     );
     const competitorHeavy = analyzeArticleRelevance(
       makeArticle({
-        title: "Real Madrid make Salah transfer plan",
+        title: "Real Madrid make Florian Wirtz transfer plan",
         source: "bbc",
       })
     );
@@ -98,7 +123,7 @@ describe("scoreArticle", () => {
   it("keyword score capped at 10", () => {
     // Stuff all keywords in
     const mega = makeArticle({
-      title: "Liverpool Anfield LFC Salah Van Dijk Arne Slot Trent Nunez Gakpo Mac Allister Szoboszlai Jota Alisson Premier League Champions League",
+      title: "Liverpool Anfield LFC Florian Wirtz Van Dijk Andoni Iraola Bradley Barcola Ronald Araujo Gakpo Mac Allister Szoboszlai Elliott Alisson Premier League Champions League",
       source: "lfc",
     });
     const score = scoreArticle(mega);

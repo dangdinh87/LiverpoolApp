@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { createGroq } from "@ai-sdk/groq";
+import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv, hasEnv } from "@/lib/env";
 import { getServiceClient } from "./supabase-service";
@@ -97,18 +97,14 @@ const CATEGORY_VI_MAP: Record<string, string> = {
 
 // Model fallback chain — try each model in order until one succeeds.
 // Groq free tier has per-model daily token limits (TPD).
-// The digest is a LARGE request (~7K tokens: long prompt + up to 25 articles),
-// so per-minute token caps (TPM) matter more than daily ones here. Only models
-// with a high TPM can take it in one shot:
-//   llama-3.3-70b → 12K TPM (best prose) · llama-4-scout → 30K TPM (workhorse)
-//   qwen3-32b / gpt-oss-120b → 6–8K TPM → reject this payload outright.
-// So 70b leads (quality), Scout follows (highest TPM). To keep 70b's 100K TPD
-// free for this midnight job, CHAT runs on qwen (see DEFAULT_CHAT_AI_MODEL) so
-// interactive traffic can't drain the budget the digest needs.
-const GROQ_MODELS = [
-  "llama-3.3-70b-versatile",                   // best prose, 12K TPM, 100K TPD
-  "meta-llama/llama-4-scout-17b-16e-instruct", // 30K TPM workhorse fallback
-  "llama-3.1-8b-instant",                      // fast last resort, 500K TPD
+// The digest is a LARGE request (~7K tokens: long prompt + up to 25 articles).
+// VietAPI prices flat per token with no per-minute cap to design around, so this
+// is ordered by prose quality rather than by throughput limits.
+// Verified live 2026-09-09.
+const DIGEST_MODELS = [
+  "claude-sonnet-5",   // best long-form Vietnamese prose
+  "deepseek-v4-pro",   // fast, clean diacritics
+  "deepseek-v4-flash", // cheap last resort
 ] as const;
 
 const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
@@ -160,14 +156,14 @@ QUAN TRỌNG — Viết như người thật, TUYỆT ĐỐI tránh lộ chất 
 - KHÔNG mở đầu nhiều đoạn bằng cùng một kiểu (tránh lặp "Liverpool...", "The Reds...", "Đội bóng...")
 - KHÔNG dùng dấu gạch ngang (—) tràn lan; ưu tiên dấu câu tự nhiên
 - KHÔNG kết bài kiểu chung chung vô thưởng vô phạt; nêu quan điểm cụ thể, có lập trường của một fan thực thụ
-- Dùng khẩu ngữ fan bóng đá Việt khi hợp lý: "The Kop", "lữ đoàn đỏ", "thầy trò Arne Slot", "đại chiến", "phong độ hủy diệt" — nhưng đừng nhồi nhét
+- Dùng khẩu ngữ fan bóng đá Việt khi hợp lý: "The Kop", "lữ đoàn đỏ", "thầy trò Iraola", "đại chiến", "phong độ hủy diệt" — nhưng đừng nhồi nhét
 - Viết như đang gõ nhanh cho anh em fan đọc, có chính kiến, hơi đời thường — KHÔNG trau chuốt máy móc, KHÔNG cân bằng giả tạo kiểu "một mặt... mặt khác"
 
 Quy tắc nội dung:
 - Nhắc TẤT CẢ tên cầu thủ, HLV quan trọng — KHÔNG được bỏ sót
 - Gộp bài theo danh mục, bỏ danh mục không có bài
 - Mỗi section tổng hợp 1-5 bài liên quan
-- Giữ nguyên tên riêng tiếng Anh (Salah, Van Dijk, Arsenal, Slot)
+- Giữ nguyên tên riêng tiếng Anh (Van Dijk, Wirtz, Arsenal, Iraola)
 - Thuật ngữ: "clean sheet" = "giữ sạch lưới", "assist" = "kiến tạo", "hat-trick" giữ nguyên
 - Nêu chi tiết cụ thể: tỉ số, thống kê, ngày tháng, trích dẫn khi có
 - Nếu ít hơn 5 bài, viết dạng "Tin Nhanh" với 1-2 section nhưng vẫn chi tiết
@@ -380,16 +376,15 @@ export async function generateDailyDigest(): Promise<DigestResult> {
   const prompt = `Today is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: Liverpool FC Việt Nam (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last 24 hours:\n\n${articleList}`;
 
   // Call Groq with model fallback chain
-  const apiKey = getEnv("GROQ_API_KEY");
-  if (!apiKey) throw new Error("GROQ_API_KEY not configured");
-  const groq = createGroq({ apiKey });
+  const apiKey = getEnv("VIETAPI_KEY");
+  if (!apiKey) throw new Error("VIETAPI_KEY not configured");
   let result: Awaited<ReturnType<typeof generateText>>;
-  let usedModel: string = GROQ_MODELS[0];
+  let usedModel: string = DIGEST_MODELS[0];
 
-  for (const [index, modelId] of GROQ_MODELS.entries()) {
+  for (const [index, modelId] of DIGEST_MODELS.entries()) {
     try {
       result = await generateText({
-        model: groq(modelId),
+        model: vietapi(modelId),
         system: DIGEST_SYSTEM_PROMPT,
         prompt,
         maxOutputTokens: 6000,
@@ -397,7 +392,7 @@ export async function generateDailyDigest(): Promise<DigestResult> {
       usedModel = modelId;
       break;
     } catch (err) {
-      if (index < GROQ_MODELS.length - 1 && shouldTryNextGroqModel(err)) {
+      if (index < DIGEST_MODELS.length - 1 && shouldTryNextGroqModel(err)) {
         const msg = err instanceof Error ? err.message : String(err);
         console.warn(`[digest] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
         continue;
@@ -470,7 +465,7 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
   const needsGenerate = !data || data.digest_date !== today || !seoArticle;
   const isLocked = now < digestLockUntil;
 
-  if (needsGenerate && hasEnv("GROQ_API_KEY") && !isLocked) {
+  if (needsGenerate && hasEnv("VIETAPI_KEY") && !isLocked) {
     digestLockUntil = now + 30_000; // Lock for 30s max
     try {
       console.log("[digest] Auto-generating (date=%s, today=%s, hasSeo=%s)...", data?.digest_date, today, !!seoArticle);

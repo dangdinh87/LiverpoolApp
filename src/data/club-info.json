@@ -2,7 +2,13 @@
   "fullName": "Liverpool Football Club",
   "founded": "15 March 1892",
   "founder": "John Houlding",
-  "nickname": ["The Reds", "The Redmen", "Pool", "The Kop", "LFC"],
+  "nickname": [
+    "The Reds",
+    "The Redmen",
+    "Pool",
+    "The Kop",
+    "LFC"
+  ],
   "motto": "You'll Never Walk Alone",
   "captain": "Virgil van Dijk",
   "kitManufacturer": "Adidas",
@@ -15,7 +21,7 @@
   },
   "owner": "Fenway Sports Group (FSG)",
   "chairman": "Tom Werner",
-  "manager": "Arne Slot",
+  "manager": "Andoni Iraola",
   "league": "Premier League",
   "stadium": {
     "name": "Anfield",
@@ -66,8 +72,14 @@
     ]
   },
   "records": {
-    "topScorer": { "name": "Ian Rush", "goals": 346 },
-    "mostAppearances": { "name": "Ian Callaghan", "appearances": 857 },
+    "topScorer": {
+      "name": "Ian Rush",
+      "goals": 346
+    },
+    "mostAppearances": {
+      "name": "Ian Callaghan",
+      "appearances": 857
+    },
     "biggestWin": "11–0 vs Strømsgodset (1974, Cup Winners' Cup)",
     "biggestLeagueWin": "10–1 vs Rotherham United (1896)",
     "recordTransferIn": {
@@ -169,9 +181,15 @@
     },
     {
       "name": "Arne Slot",
-      "years": "2024–present",
+      "years": "2024–2026",
       "trophies": "1 League",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Arne_Slot_in_2024.jpg/330px-Arne_Slot_in_2024.jpg"
+    },
+    {
+      "name": "Andoni Iraola",
+      "years": "2026–present",
+      "trophies": "—",
+      "image": "/assets/lfc/history/andoni-iraola.webp"
     }
   ]
 }
