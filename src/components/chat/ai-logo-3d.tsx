@@ -340,7 +340,10 @@ export function AiLogo3D({ size = 280, className = "" }: AiLogo3DProps) {
     };
   }, [size]);
 
-  const animate = useCallback(() => {
+  // Named function expression: `frame` can schedule itself from inside its own
+  // body. Referring to the outer `animate` const here reads it before its
+  // declaration completes, so the loop would keep calling a stale binding.
+  const animate = useCallback(function frame() {
     const s = sceneRef.current;
     if (!s) return;
 
@@ -402,7 +405,7 @@ export function AiLogo3D({ size = 280, className = "" }: AiLogo3DProps) {
     s.camera.lookAt(0, 0, 0);
 
     s.renderer.render(s.scene, s.camera);
-    s.animId = requestAnimationFrame(animate);
+    s.animId = requestAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

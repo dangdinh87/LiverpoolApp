@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { AlertCircle, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { getArticleUrl, formatRelativeDate } from "@/lib/news-config";
+import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 
 interface BreakingNewsBannerProps {
   articles: NewsArticle[];
@@ -18,14 +19,14 @@ interface BreakingNewsBannerProps {
 export function BreakingNewsBanner({ articles }: BreakingNewsBannerProps) {
   const t = useTranslations("Home.breaking");
   const [dismissed, setDismissed] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  // "Published within the last hour" is a clock question, so it can only be
+  // answered on the client — the hook returns null until mount, which doubles
+  // as the guard that used to be a separate `mounted` flag.
+  const now = useNowAfterMount(60_000);
 
-  useEffect(() => setMounted(true), []);
+  if (now === null || dismissed) return null;
 
-  if (!mounted || dismissed) return null;
-
-  // Find most recent article published within last hour
-  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  const oneHourAgo = now - 60 * 60 * 1000;
   const breaking = articles.find((a) => {
     const pubTime = new Date(a.pubDate).getTime();
     return pubTime > oneHourAgo;

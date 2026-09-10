@@ -22,6 +22,8 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    // Read history lives in localStorage, so it can only be read after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReadSet(getReadArticles());
   }, []);
 

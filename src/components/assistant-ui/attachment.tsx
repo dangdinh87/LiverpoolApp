@@ -31,6 +31,8 @@ const useFileSrc = (file: File | undefined) => {
 
   useEffect(() => {
     if (!file) {
+      // Object URLs are a browser API, so the preview can only be built here.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSrc(undefined);
       return;
     }

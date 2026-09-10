@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,6 +52,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   const [loginOpen, setLoginOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const [mounted, setMounted] = useState(false);
+  const [matchStartsSoon, setMatchStartsSoon] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [user, setUser] = useState(initialUser);
   const [profile, setProfile] = useState(initialProfile);
@@ -60,15 +62,14 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   // Client-side auth fetch — replaces server-side cookies() dependency
   const setAuthUser = useAuthStore((s) => s.setUser);
   useEffect(() => {
-    const { createClient } = require("@/lib/supabase");
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: any } }) => {
+    supabase.auth.getUser().then(({ data: { user: u } }) => {
       if (u) {
         setUser({ id: u.id, email: u.email ?? null });
         setAuthUser({ id: u.id, email: u.email ?? undefined });
         // Fetch profile
         supabase.from("user_profiles").select("*").eq("user_id", u.id).single()
-          .then(({ data }: { data: any }) => {
+          .then(({ data }: { data: UserProfile | null }) => {
             if (data) {
               setProfile(data);
               setAuthUser({ id: u.id, email: u.email ?? undefined, name: data.username ?? undefined, avatarUrl: data.avatar_url ?? undefined });
@@ -88,7 +89,36 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     fetch("/api/streak").then((r) => r.json()).then((d) => setStreak(d.streak ?? 0)).catch(() => {});
   }, [user]);
 
+  // Client-only chrome: the flag must flip after hydration, never during it.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
+
+  /**
+   * Whether kick-off is inside the next 30 minutes.
+   *
+   * Derived after mount and refreshed on a timer, not during render. This
+   * component is server-rendered too, and a render-time `Date.now()` disagrees
+   * with the value the browser computes a moment later — that mismatch failed
+   * hydration (React #418) on every page showing the navbar, intermittently,
+   * whenever the 30-minute boundary fell between the two. The timer also lets
+   * the badge appear on its own instead of waiting for a reload.
+   */
+  useEffect(() => {
+    if (isMatchLive || !nextMatchDate) {
+      // Clearing the badge is the early-return branch of the timer below.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMatchStartsSoon(false);
+      return;
+    }
+    const kickOff = new Date(nextMatchDate).getTime();
+    const sync = () => {
+      const untilKickOff = kickOff - Date.now();
+      setMatchStartsSoon(untilKickOff > 0 && untilKickOff <= 30 * 60_000);
+    };
+    sync();
+    const timer = setInterval(sync, 30_000);
+    return () => clearInterval(timer);
+  }, [isMatchLive, nextMatchDate]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -148,7 +178,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
               { href: "/", label: t("home") || "Home" },
               { href: "/news", label: t("news"), highlight: true },
               { href: "/squad", label: t("squad") },
-              { href: "/season", label: t("season") || "Season", matchSoon: !isMatchLive && !!nextMatchDate && (new Date(nextMatchDate).getTime() - Date.now()) <= 30 * 60_000 && (new Date(nextMatchDate).getTime() - Date.now()) > 0 },
+              { href: "/season", label: t("season") || "Season", matchSoon: matchStartsSoon },
               { href: "/stats", label: t("stats") || "Stats" },
             ].map(({ href, label, highlight, matchSoon }) => {
               const basePath = href.split("?")[0];

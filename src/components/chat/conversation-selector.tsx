@@ -9,18 +9,13 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTranslations } from "next-intl";
+import type { Conversation } from "@/lib/chat/conversation-types";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Conversation {
-	id: string;
-	title: string | null;
-	updated_at: string;
-}
 
 interface ConversationSelectorProps {
 	conversations: Conversation[];

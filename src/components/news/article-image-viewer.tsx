@@ -32,6 +32,8 @@ export function ArticleImageViewer({ extraImages = [] }: Props) {
     if (imgs.length === 0) return;
 
     const srcs = imgs.map((img) => img.src).filter(Boolean);
+    // Slides are collected from the rendered article DOM, which exists only on the client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSlides(srcs.map((src) => ({ src })));
 
     const cleanups: (() => void)[] = [];

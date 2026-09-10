@@ -5,13 +5,13 @@
  */
 
 import { visit } from 'unist-util-visit';
-import type { Root, Text, Link, PhrasingContent } from 'mdast';
+import type { Root, Text, Link, PhrasingContent, Parent } from 'mdast';
 
 const CITATION_REGEX = /\[(\d+)\]/g;
 
 export function remarkCitations() {
   return (tree: Root) => {
-    visit(tree, 'text', (node: Text, index: number | undefined, parent: any) => {
+    visit(tree, 'text', (node: Text, index: number | undefined, parent: Parent | undefined) => {
       if (index === undefined || !parent) return;
       if (!CITATION_REGEX.test(node.value)) return;
 

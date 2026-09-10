@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { NextResponse } from 'next/server';
+import type { ChatMessage, StoredMessageRow } from "@/lib/chat/conversation-types";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -42,10 +43,10 @@ export async function GET(req: Request, { params }: Params) {
 
     // Map to UI-compatible format with 'parts' array structure
     // UIMessage expects: { id, role, parts: [{ type: 'text', text: '...' }], createdAt }
-    const formattedMessages = messages.map((msg: any) => ({
+    const formattedMessages: ChatMessage[] = (messages as StoredMessageRow[]).map((msg) => ({
       id: msg.id,
-      role: msg.role,
-      parts: [{ type: 'text', text: msg.content || '' }],
+      role: msg.role as ChatMessage['role'],
+      parts: [{ type: 'text' as const, text: msg.content || '' }],
       createdAt: msg.created_at ? new Date(msg.created_at) : undefined,
     }));
 

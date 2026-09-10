@@ -12,6 +12,8 @@ export function SplashScreen({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // The splash is client-only; the flag must flip after hydration, never during it.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     /* Show splash only once per browser session */
     if (!sessionStorage.getItem(SPLASH_KEY)) {

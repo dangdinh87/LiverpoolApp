@@ -17,6 +17,8 @@ export function HomeScrollWrapper({ children }: { children: React.ReactNode }) {
     html.style.scrollSnapType = "y proximity";
 
     const sections = document.querySelectorAll<HTMLElement>("[data-snap-section]");
+    // Section count comes from the mounted DOM; there is nothing to measure on the server.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSectionCount(sections.length);
 
     const observer = new IntersectionObserver(

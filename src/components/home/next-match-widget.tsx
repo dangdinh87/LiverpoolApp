@@ -63,6 +63,10 @@ function useCountdown(targetDate: string) {
   const [timeLeft, setTimeLeft] = useState<ReturnType<typeof calcTimeLeft>>(null);
 
   useEffect(() => {
+    // Setting state straight away is the point, as in useNowAfterMount: the
+    // first paint must match the server's, and the real countdown can only be
+    // read once we are on the client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTimeLeft(calcTimeLeft(targetDate));
     const id = setInterval(() => setTimeLeft(calcTimeLeft(targetDate)), 1_000);
     return () => clearInterval(id);

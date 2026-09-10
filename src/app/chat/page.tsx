@@ -16,6 +16,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { UIMessage } from "ai";
 import { DEFAULT_CHAT_AI_MODEL } from "@/config/constants";
+import type { ChatMessage, Conversation } from "@/lib/chat/conversation-types";
 
 const ChatInterface = ({
 	initialMessages,
@@ -80,11 +81,18 @@ export default function ChatPage() {
 
 	const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
 	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	const [chatKey, setChatKey] = useState(() => `new-${Date.now()}`);
+	// Identifies the mounted chat thread; changing it starts a fresh one.
+	// Seeded from a counter rather than the clock: this component is server
+	// rendered, and a timestamp key differs between the server and hydration,
+	// which silently remounts the thread on load.
+	const [chatKey, setChatKey] = useState("new-0");
+	// Monotonic so a reset always yields a key React has not seen, even when
+	// the current key names a saved conversation.
+	const newChatCount = useRef(0);
 	const [isNewThread, setIsNewThread] = useState(true);
 
 	// Fetch conversations
-	const { data: conversations = [] } = useQuery<any[]>({
+	const { data: conversations = [] } = useQuery<Conversation[]>({
 		queryKey: ["conversations", user?.id],
 		queryFn: async () => {
 			if (!user) return [];
@@ -107,7 +115,7 @@ export default function ChatPage() {
 			const res = await fetch(`/api/conversations/${currentConversationId}/messages`);
 			if (!res.ok) return [];
 			const data = await res.json();
-			return (data.messages || []).map((msg: any) => ({
+			return ((data.messages || []) as ChatMessage[]).map((msg) => ({
 				...msg,
 				createdAt: msg.createdAt ? new Date(msg.createdAt) : undefined,
 			}));
@@ -122,14 +130,14 @@ export default function ChatPage() {
 
 	const handleNewChat = useCallback(() => {
 		setCurrentConversationId(null);
-		setChatKey(`new-${Date.now()}`);
+		setChatKey(`new-${(newChatCount.current += 1)}`);
 		setIsNewThread(true);
 	}, []);
 
 	const handleConversationCreated = useCallback(
 		(id: string, title: string) => {
 			setCurrentConversationId(id);
-			queryClient.setQueryData(["conversations", user?.id], (old: any[] = []) => {
+			queryClient.setQueryData(["conversations", user?.id], (old: Conversation[] = []) => {
 				if (old.some((c) => c.id === id)) return old;
 				return [{ id, title, updated_at: new Date().toISOString() }, ...old];
 			});

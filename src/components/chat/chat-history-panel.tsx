@@ -18,18 +18,13 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTranslations } from "next-intl";
+import type { Conversation } from "@/lib/chat/conversation-types";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Conversation {
-    id: string;
-    title: string | null;
-    updated_at: string;
-}
 
 export interface ChatSidebarProps {
     conversations: Conversation[];

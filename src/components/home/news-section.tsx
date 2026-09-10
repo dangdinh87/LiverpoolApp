@@ -39,6 +39,8 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    // Read history lives in localStorage, so it can only be read after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReadSet(getReadArticles());
   }, []);
 
@@ -48,12 +50,20 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
     const MIN_VISIBLE = 4;
     const FRESH_HOURS = 48;
     const STALE_HOURS = 18;
-    const nowMs = Date.now();
     const lang = locale === "vi" ? "vi" : "en";
 
     const sortedAll = [...articles].sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
+
+    // Freshness is measured against the newest article we have, not the wall
+    // clock. Date.now() here ran during render — on the server too — so the two
+    // sides could land either side of the 48h/18h cutoffs and compose different
+    // article lists, which is a hydration mismatch waiting for a boundary to
+    // cross. Anchoring to the feed makes this memo a pure function of its props,
+    // and reads better anyway: "the Vietnamese feed is 18h behind the freshest
+    // news we hold" is the question the fallback is actually asking.
+    const nowMs = sortedAll.length ? new Date(sortedAll[0].pubDate).getTime() : 0;
     const freshCutoffMs = nowMs - FRESH_HOURS * 3600 * 1000;
     const freshAll = sortedAll.filter(
       (a) => new Date(a.pubDate).getTime() >= freshCutoffMs
