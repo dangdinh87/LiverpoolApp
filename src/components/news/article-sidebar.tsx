@@ -8,6 +8,7 @@ import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
 
 import { ArticleActions } from "./article-actions";
 import type { Fixture } from "@/lib/types/football";
+import { formatDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 interface ArticleSidebarProps {
   source: NewsSource;
@@ -146,10 +147,10 @@ function NextMatchCard({ fixture }: { fixture: Fixture }) {
           <span className="font-barlow text-xs text-lfc-red font-semibold">
             {locale === "vi"
               ? `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`
-              : date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+              : formatDayMonth(date, "en")}
           </span>
           <span className="font-inter text-xs text-stadium-muted">
-            {date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}
+            {formatMatchTime(date)}
           </span>
         </div>
 

@@ -20,6 +20,7 @@ import { CoverSelector } from "./cover-selector";
 import { FavouriteList } from "./favourite-list";
 import { SavedArticlesList } from "./saved-articles-list";
 import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
+import { formatMonthYear } from "@/lib/format-match-date";
 
 type TabId = "profile" | "articles" | "players";
 
@@ -45,10 +46,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
   }, []);
 
   const memberSince = user.createdAt
-    ? new Date(user.createdAt).toLocaleDateString("vi-VN", {
-        month: "long",
-        year: "numeric",
-      })
+    ? formatMonthYear(new Date(user.createdAt), "vi")
     : null;
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode; count?: number }[] = [

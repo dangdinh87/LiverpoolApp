@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatDayMonth,
   formatDayMonthYear,
+  formatMonthYear,
   formatMatchDate,
   formatMatchDayMonth,
   formatMatchTime,
@@ -78,5 +80,24 @@ describe("formatDayMonthYear", () => {
   it("drops the weekday", () => {
     expect(formatDayMonthYear(KICK_OFF, "vi")).toBe("12 thg 9 2026");
     expect(formatDayMonthYear(KICK_OFF, "en")).toBe("12 Sep 2026");
+  });
+});
+
+describe("formatDayMonth / formatMonthYear", () => {
+  it("renders the compact news-card timestamp", () => {
+    expect(formatDayMonth(KICK_OFF, "vi")).toBe("12 thg 9");
+    expect(formatDayMonth(KICK_OFF, "en")).toBe("12 Sep");
+  });
+
+  it("renders the member-since shape", () => {
+    expect(formatMonthYear(KICK_OFF, "vi")).toBe("tháng 9 2026");
+    expect(formatMonthYear(KICK_OFF, "en")).toBe("September 2026");
+  });
+
+  it("uses the Vietnamese calendar day, not the runtime's", () => {
+    // 20:00 UTC on the 12th is already the 13th in Vietnam. On Vercel (UTC)
+    // the server would say "12 thg 9" and the browser "13 thg 9" — React #418.
+    const lateNight = new Date("2026-09-12T20:00:00Z");
+    expect(formatDayMonth(lateNight, "vi")).toBe("13 thg 9");
   });
 });

@@ -21,6 +21,7 @@ import {
 import { getArticleUrl, SOURCE_CONFIG } from "@/lib/news-config";
 import type { SavedArticle } from "@/lib/supabase";
 import type { NewsSource } from "@/lib/news/types";
+import { formatDayMonth } from "@/lib/format-match-date";
 
 interface SavedArticlesListProps {
   articles: SavedArticle[];
@@ -138,10 +139,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                 <div className="flex items-center gap-3 mt-0.5">
                   {article.article_published_at && (
                     <span className="font-inter text-[11px] text-stadium-muted">
-                      {new Date(article.article_published_at).toLocaleDateString(
-                        dateLoc,
-                        { day: "numeric", month: "short" }
-                      )}
+                      {formatDayMonth(new Date(article.article_published_at), dateLoc === "vi-VN" ? "vi" : "en")}
                     </span>
                   )}
                   <button

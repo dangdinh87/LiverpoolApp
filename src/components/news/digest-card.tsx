@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { X, ArrowRight, BadgeCheck } from "lucide-react";
+import { X, ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { SiteArticleBadge } from "@/components/news/site-article-badge";
+import { formatMatchTime } from "@/lib/format-match-date";
 
 interface DigestProps {
   date: string;
@@ -16,22 +18,32 @@ interface DigestProps {
 const DISMISSED_KEY = "lfc-digest-dismissed";
 
 function formatDigestTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  // `toLocaleTimeString(undefined, …)` reads the runtime's locale and timezone.
+  // Vercel renders in UTC while the visitor's browser does not, so the server
+  // HTML and the hydrated markup disagreed — React #418 on the live homepage,
+  // invisible locally because both sides sat in Asia/Saigon. Vietnam time is
+  // what this audience wants anyway, and it is the same on both sides.
+  return formatMatchTime(new Date(iso));
 }
 
 export function DigestCard(props: DigestProps) {
   const t = useTranslations("News.digest");
+  // Branching on `typeof window` in the initial state is the other mismatch
+  // React names: the server renders "not dismissed" while the browser may read
+  // a stored dismissal and render nothing. Start the same on both sides and
+  // apply the stored value after mount.
   const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem(DISMISSED_KEY) === props.date) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDismissed(true);
+    }
+  }, [props.date]);
 
   const displayTitle = props.title;
   const displaySummary = props.summary;
   const displayTime = props.generatedAt;
-
-  useEffect(() => {
-    const last = localStorage.getItem(DISMISSED_KEY);
-    if (last === props.date) setDismissed(true);
-  }, [props.date]);
 
   if (dismissed) return null;
 
@@ -50,15 +62,12 @@ export function DigestCard(props: DigestProps) {
       </button>
 
       <div className="px-4 py-3 pr-10">
-        {/* Title + badge */}
+        {/* Title + site-owned article marker */}
         <div className="flex items-baseline gap-2 flex-wrap mb-1.5">
           <h3 className="font-bebas text-xl sm:text-2xl text-white tracking-wider leading-none">
             {displayTitle}
           </h3>
-          <span className="inline-flex items-center gap-1 border border-lfc-gold/40 bg-lfc-gold/10 px-1.5 py-0.5 font-barlow font-bold text-[10px] uppercase tracking-[0.16em] text-lfc-gold shrink-0 translate-y-px">
-            <BadgeCheck className="w-3 h-3" />
-            {t("proBadge")}
-          </span>
+          <SiteArticleBadge label={t("proBadge")} compact />
         </div>
 
         {/* Byline */}

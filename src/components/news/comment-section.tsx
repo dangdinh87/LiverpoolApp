@@ -14,6 +14,7 @@ import {
 import { useTranslations, useLocale } from "next-intl";
 import { createClient } from "@/lib/supabase";
 import { useToast } from "@/stores/toast-store";
+import { formatDayMonth } from "@/lib/format-match-date";
 
 interface Comment {
   id: string;
@@ -208,10 +209,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     if (diffH < 24) return t("hoursAgo", { n: diffH });
     const diffD = Math.floor(diffH / 24);
     if (diffD < 7) return t("daysAgo", { n: diffD });
-    return date.toLocaleDateString(locale === "vi" ? "vi-VN" : "en-GB", {
-      day: "numeric",
-      month: "short",
-    });
+    return formatDayMonth(date, locale === "vi" ? "vi" : "en");
   }
 
   // Thread structure — replies grouped by parent (chronological within thread)

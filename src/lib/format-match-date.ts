@@ -34,6 +34,11 @@ const MONTHS_EN = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+const MONTHS_LONG_EN = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
 const MONTHS_VI = [
   "thg 1", "thg 2", "thg 3", "thg 4", "thg 5", "thg 6",
   "thg 7", "thg 8", "thg 9", "thg 10", "thg 11", "thg 12",
@@ -119,6 +124,21 @@ export function formatMatchDayMonth(
   const tail = withYear ? ` ${year}` : "";
 
   return `${names[weekday]}, ${day} ${monthName}${tail}`;
+}
+
+/** `12 thg 9` (vi) or `12 Sep` (en) — the compact timestamp used on news cards. */
+export function formatDayMonth(date: Date, locale: string): string {
+  const { day, month } = getMatchDateParts(date);
+  const monthName = (locale === "vi" ? MONTHS_VI : MONTHS_EN)[month - 1];
+  return `${day} ${monthName}`;
+}
+
+/** `tháng 9 2026` (vi) or `September 2026` (en) — the "member since" shape. */
+export function formatMonthYear(date: Date, locale: string): string {
+  const { month, year } = getMatchDateParts(date);
+  const name =
+    locale === "vi" ? `tháng ${month}` : MONTHS_LONG_EN[month - 1];
+  return `${name} ${year}`;
 }
 
 /** `12 thg 9 2026` (vi) or `12 Sep 2026` (en) — no weekday. */

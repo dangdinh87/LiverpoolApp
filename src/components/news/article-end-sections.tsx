@@ -20,6 +20,7 @@ import {
   type NewsSource,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { formatDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 // --- Lazy wrapper: only renders children when scrolled into view ---
 function LazySection({ children }: { children: React.ReactNode }) {
@@ -154,10 +155,10 @@ function NextMatchBanner({ fixture }: { fixture: Fixture }) {
             <div className="flex flex-col items-center shrink-0 px-3">
               <span className="font-bebas text-xl text-stadium-muted">VS</span>
               <span className="font-barlow text-[11px] text-lfc-red font-semibold">
-                {date.toLocaleDateString(loc, { day: "numeric", month: "short" })}
+                {formatDayMonth(date, loc === "vi-VN" ? "vi" : "en")}
               </span>
               <span className="font-inter text-[11px] text-stadium-muted">
-                {date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" })}
+                {formatMatchTime(date)}
               </span>
             </div>
 
