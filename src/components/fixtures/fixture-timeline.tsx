@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
@@ -67,6 +68,9 @@ export function FixtureTimeline({ fixtures }: FixtureTimelineProps) {
     return order.filter((c) => comps.has(c));
   }, [fixtures]);
 
+  // Post-mount clock: the recent-results window is time-derived, so reading the
+  // clock during render would disagree between server and hydration.
+  const now = useNowAfterMount(60_000);
   const { results, upcoming, recentResults } = useMemo(() => {
     const filtered =
       compFilter === "All"
@@ -81,14 +85,16 @@ export function FixtureTimeline({ fixtures }: FixtureTimelineProps) {
 
     const results = sorted.filter((f) => finishedStatuses.has(f.fixture.status.short));
     const recentResults = results
-      .filter((f) => Date.now() - new Date(f.fixture.date).getTime() <= RECENT_RESULTS_WINDOW_MS)
+      // Empty until the clock is available, so the server render and hydration
+      // agree; the real window applies on the tick after mount.
+      .filter((f) => now !== null && now - new Date(f.fixture.date).getTime() <= RECENT_RESULTS_WINDOW_MS)
       .slice(0, RECENT_RESULTS_LIMIT);
     const upcoming = sorted
       .filter((f) => !finishedStatuses.has(f.fixture.status.short))
       .reverse();
 
     return { results, upcoming, recentResults };
-  }, [fixtures, compFilter]);
+  }, [fixtures, compFilter, now]);
 
   const tabConfig = [
     { key: "upcoming" as const, label: t("tabs.upcoming"), count: upcoming.length },
