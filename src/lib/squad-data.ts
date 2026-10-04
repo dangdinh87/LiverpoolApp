@@ -63,7 +63,13 @@ export const POSITION_ORDER: Record<PlayerPosition, number> = {
 
 // ─── Data access ────────────────────────────────────────────────────────────
 
-const data = squadJson as SquadData;
+const raw = squadJson as SquadData;
+// squad.json entries added for newer signings omit `honors`; normalize once so
+// every consumer can rely on the typed `string[]` (the player page crashed on it).
+const data: SquadData = {
+  ...raw,
+  players: raw.players.map((p) => ({ ...p, honors: p.honors ?? [] })),
+};
 
 /** Get all players (active squad, excludes on-loan and forever unless specified) */
 export function getSquadPlayers(opts?: { includeLoans?: boolean; includeForever?: boolean }): LfcPlayer[] {
