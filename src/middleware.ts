@@ -5,10 +5,6 @@ import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/profile"];
 
-// Routes that are always dynamic (auth-dependent or API)
-const DYNAMIC_PREFIXES = ["/api/", "/auth/", "/profile"];
-const NOINDEX_PREFIXES = ["/auth/", "/profile"];
-
 function addNoIndex(response: NextResponse): NextResponse {
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
@@ -17,7 +13,6 @@ function addNoIndex(response: NextResponse): NextResponse {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
-  const isDynamic = DYNAMIC_PREFIXES.some((r) => pathname.startsWith(r));
 
   // For protected routes: full auth check with Supabase
   if (isProtected) {
@@ -62,25 +57,14 @@ export async function middleware(request: NextRequest) {
     return addNoIndex(response);
   }
 
-  // Locale-sensitive public pages vary by cookie/header, so avoid shared CDN cache
-  // but allow a short private browser cache to improve repeat page loads.
-  if (!isDynamic) {
-    const response = NextResponse.next();
-    response.headers.set("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
-    response.headers.set("Vary", "Cookie, Accept-Language");
-    return response;
-  }
-
-  const response = NextResponse.next();
-  if (NOINDEX_PREFIXES.some((r) => pathname.startsWith(r))) {
-    return addNoIndex(response);
-  }
-  return response;
+  // Only /auth/* reaches here (see matcher).
+  return addNoIndex(NextResponse.next());
 }
 
+// Scoped to the two route groups that need it. Matching every page made each
+// view (and each crawler hit) a billed edge invocation in the visitor's region,
+// and the private Cache-Control it set on public pages was overwritten by the
+// dynamic render's own header anyway.
 export const config = {
-  matcher: [
-    // Run on all routes except static files and Next.js internals
-    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
-  ],
+  matcher: ["/profile/:path*", "/auth/:path*"],
 };
