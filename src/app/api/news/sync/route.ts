@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { syncPipeline } from "@/lib/news/sync";
 import { withCronAuth } from "@/lib/cron";
 
@@ -19,8 +19,8 @@ export const GET = withCronAuth(async (req) => {
     // Invalidate ISR cache so next visitor gets fresh data. The unstable_cache
     // data layer (tag "news") refreshes on its own 5-min revalidate window.
     if (result.upserted > 0) {
-      revalidatePath("/");
-      revalidatePath("/news");
+      revalidateLocalizedPath("/");
+      revalidateLocalizedPath("/news");
     }
 
     return NextResponse.json({

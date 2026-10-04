@@ -9,11 +9,12 @@ import { useTranslations, useLocale } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
-  formatRelativeDate,
+  hasValidDate,
   getArticleUrl,
   type NewsSource,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { RelativeTime } from "@/components/news/relative-time";
 import { DigestCard } from "@/components/news/digest-card";
 import type { DigestRecord } from "@/lib/news/digest";
 
@@ -208,10 +209,10 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
               <div className="flex items-center gap-2 mb-3">
                 <Badge source={featured.source} />
-                {formatRelativeDate(featured.pubDate, featured.language) && (
+                {hasValidDate(featured.pubDate) && (
                   <span className="font-inter text-xs text-white/50 flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {formatRelativeDate(featured.pubDate, featured.language)}
+                    <RelativeTime date={featured.pubDate} lang={featured.language} />
                   </span>
                 )}
               </div>
@@ -267,9 +268,9 @@ export function NewsSection({ articles, digest }: NewsSectionProps) {
                   <p className="font-inter text-sm text-white font-medium leading-snug group-hover:text-lfc-gold transition-colors duration-200 line-clamp-2">
                     {article.title}
                   </p>
-                  {formatRelativeDate(article.pubDate, article.language) && (
+                  {hasValidDate(article.pubDate) && (
                     <span className="font-inter text-[11px] text-stadium-muted">
-                      {formatRelativeDate(article.pubDate, article.language)}
+                      <RelativeTime date={article.pubDate} lang={article.language} />
                     </span>
                   )}
                 </div>

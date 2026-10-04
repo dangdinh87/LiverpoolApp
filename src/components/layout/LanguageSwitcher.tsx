@@ -31,7 +31,12 @@ export function LanguageSwitcher() {
     if (code === locale) { setOpen(false); return; }
     Cookies.set("NEXT_LOCALE", code, { expires: 365, path: "/", sameSite: "lax" });
     setOpen(false);
-    window.location.reload();
+    // The locale is part of the URL (/x Vietnamese, /en/x English), so reloading
+    // the same URL would keep the old language.
+    const { pathname, search, hash } = window.location;
+    const bare = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+    const target = code === "en" ? `/en${bare === "/" ? "" : bare}` : bare;
+    window.location.assign(target + search + hash);
   };
 
   const current = LOCALES.find((l) => l.code === locale) ?? LOCALES[0];

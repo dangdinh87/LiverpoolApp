@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Squad.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Squad.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/squad" }) };
 }
 
-export default async function SquadPage() {
+export const revalidate = 86400; // season label is derived from the date
+
+export default async function SquadPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("Squad");
 
   const squadPlayers = getSquadPlayers({ includeLoans: true, includeForever: true });

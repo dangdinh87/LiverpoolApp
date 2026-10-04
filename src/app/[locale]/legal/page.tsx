@@ -1,8 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { makePageMeta } from "@/lib/seo";
 
-export async function generateMetadata() {
-  const t = await getTranslations("Legal.metadata");
+export async function generateMetadata({ params }: LocaleParams) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Legal.metadata" });
   const title = t("title");
   const description = t("description");
   return {
@@ -12,7 +14,9 @@ export async function generateMetadata() {
   };
 }
 
-export default async function LegalPage() {
+export default async function LegalPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("Legal");
 
   const sectionKeys = ["privacy", "terms", "sources"] as const;

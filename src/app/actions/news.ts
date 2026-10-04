@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getEnv } from "@/lib/env";
 import { getNewsPaginated } from "@/lib/news/db";
 import { syncPipeline } from "@/lib/news/sync";
@@ -40,8 +40,8 @@ export async function refreshDigest(): Promise<{
       .eq("digest_date", today)
       .maybeSingle();
     await upsertDigestRecord(existing, today, digest, generatedAt);
-    revalidatePath("/");
-    revalidatePath("/news");
+    revalidateLocalizedPath("/");
+    revalidateLocalizedPath("/news");
     console.log("[refreshDigest] Done — model:", digest.model);
     return {
       ok: true,
@@ -62,8 +62,8 @@ export async function refreshDigest(): Promise<{
 export async function syncNews(): Promise<{ ok: boolean; error?: string }> {
   try {
     await syncPipeline();
-    revalidatePath("/");
-    revalidatePath("/news");
+    revalidateLocalizedPath("/");
+    revalidateLocalizedPath("/news");
     return { ok: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Sync failed";

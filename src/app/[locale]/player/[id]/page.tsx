@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { getPlayerStats } from "@/lib/football";
@@ -53,7 +53,7 @@ function getFlag(nationality: string): string {
 // ─── Types & constants ───────────────────────────────────────────────────────
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }
 
 const HONOR_TROPHY_IMAGE: Record<string, string> = {
@@ -77,6 +77,11 @@ const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string; border: str
 };
 
 // ─── Static generation ───────────────────────────────────────────────────────
+
+export const revalidate = 3600; // live stats come from cached API fetches
+// Every player is prerendered below; an unknown slug must 404 here. Rendering it
+// on demand returned 200 (soft 404) because loading.tsx starts streaming first.
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const players = getAllPlayers();
@@ -112,7 +117,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default async function PlayerPage({ params }: PageProps) {
-  const { id } = await params;
+  const { id, locale } = await params;
+  setRequestLocale(locale);
   const player = getPlayerBySlug(id);
   if (!player) notFound();
 

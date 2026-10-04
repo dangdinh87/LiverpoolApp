@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import {
   getFixtures,
   getStandings,
@@ -20,8 +21,9 @@ import {
 const AVAILABLE_SEASONS = getSelectableSeasons();
 const seasonLabel = formatSeasonLabel;
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Season.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Season.metadata" });
   const label = seasonLabel(getCurrentSeasonYear());
   const title = t("title", { season: label });
   const description = t("description", { season: label });
@@ -31,10 +33,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export const revalidate = 1800; // 30 minutes
 
 export default async function SeasonPage({
+  params,
   searchParams,
-}: {
+}: LocaleParams & {
   searchParams: Promise<{ tab?: string; season?: string }>;
 }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const { tab, season: seasonParam } = await searchParams;
 
   // Validate season param — fallback to current if invalid

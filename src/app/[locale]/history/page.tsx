@@ -15,12 +15,14 @@ import { ClubTabs } from "@/components/history/club-tabs";
 import { ManagerAvatar } from "@/components/history/manager-avatar";
 import { StadiumShowcase } from "@/components/history/stadium-showcase";
 import { Shield, Target, Trophy, Star, History as HistoryIcon, Users, MapPin, Music, ExternalLink, Camera } from "lucide-react";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("History.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "History.metadata" });
   const title = t("title");
   const description = t("description");
   return { title, description, ...makePageMeta(title, description, { path: "/history" }) };
@@ -45,13 +47,15 @@ function SectionHeader({ label, title, icon: Icon }: { label: string; title: str
 }
 
 export default async function HistoryPage({
+  params,
   searchParams,
-}: {
+}: LocaleParams & {
   searchParams: Promise<{ tab?: string }>;
 }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const { tab } = await searchParams;
   const t = await getTranslations("History");
-  const locale = await getLocale();
   const isVi = locale === 'vi';
 
   const trophies = isVi ? trophiesVi : trophiesEn;

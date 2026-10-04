@@ -1,12 +1,14 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { getFixtures } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
-export async function generateMetadata() {
-  const t = await getTranslations("Fixtures.metadata");
+export async function generateMetadata({ params }: LocaleParams) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Fixtures.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/fixtures" }) };
@@ -14,7 +16,9 @@ export async function generateMetadata() {
 
 export const revalidate = 1800; // 30 minutes
 
-export default async function FixturesPage() {
+export default async function FixturesPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("Fixtures");
   const fixtures = await getFixtures();
 

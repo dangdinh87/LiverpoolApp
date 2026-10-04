@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
-import { getTranslations } from "next-intl/server";
-import { getLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { getNewsFromDB } from "@/lib/news";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
@@ -9,8 +9,9 @@ import { DigestCard } from "@/components/news/digest-card";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("News.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "News.metadata" });
   const title = t("title");
   const description = t("description");
   return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
@@ -35,11 +36,14 @@ const getCachedNewsDigest = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
-export default async function NewsPage() {
-  const [t, locale] = await Promise.all([
-    getTranslations("News"),
-    getLocale(),
-  ]);
+// Was fresh only because the root layout forced dynamic rendering; the cached
+// queries below revalidate on their own, this bounds the page itself.
+export const revalidate = 600;
+
+export default async function NewsPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("News");
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
   // Fetch a balanced EN/VI set. The client tabs map fixed languages:
   // Vietnamese = vi, International = en.

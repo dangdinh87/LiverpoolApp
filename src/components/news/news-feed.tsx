@@ -17,16 +17,17 @@ import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
   CATEGORY_CONFIG,
-  formatRelativeDate,
+  hasValidDate,
   getArticleUrl,
   type NewsSource,
   type ArticleCategory,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { RelativeTime } from "@/components/news/relative-time";
 import {
   Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
-import { loadMoreNews } from "@/app/news/actions";
+import { loadMoreNews } from "@/app/actions/news";
 
 // hero(1) + grid(6) + compact(n) — keep compact divisible by 3 for clean grid rows
 // 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
@@ -181,10 +182,10 @@ function HeroCard({ article, isRead, engData, maxEngagement }: { article: NewsAr
           <Badge source={article.source} />
           <CategoryBadge category={article.category} />
           <HotBadge engagement={engData} />
-          {formatRelativeDate(article.pubDate, article.language) && (
+          {hasValidDate(article.pubDate) && (
             <span className="font-inter text-xs text-white/50 flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {formatRelativeDate(article.pubDate, article.language)}
+              <RelativeTime date={article.pubDate} lang={article.language} />
             </span>
           )}
         </div>
@@ -236,9 +237,9 @@ function GridCard({ article, isRead, engData, maxEngagement }: { article: NewsAr
         <h3 className="font-inter text-sm font-semibold text-white leading-snug line-clamp-3 min-h-[3.6em]">
           {article.title}
         </h3>
-        {formatRelativeDate(article.pubDate, article.language) && (
+        {hasValidDate(article.pubDate) && (
           <span className="font-inter text-[11px] text-stadium-muted mt-2 block">
-            {formatRelativeDate(article.pubDate, article.language)}
+            <RelativeTime date={article.pubDate} lang={article.language} />
           </span>
         )}
         <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
@@ -278,10 +279,10 @@ function ExpandedCard({ article, isRead, engData, maxEngagement }: { article: Ne
           <Badge source={article.source} />
           <CategoryBadge category={article.category} />
           <HotBadge engagement={engData} />
-          {formatRelativeDate(article.pubDate, article.language) && (
+          {hasValidDate(article.pubDate) && (
             <span className="font-inter text-[11px] text-stadium-muted flex items-center gap-1">
               <Clock className="w-3 h-3" />
-              {formatRelativeDate(article.pubDate, article.language)}
+              <RelativeTime date={article.pubDate} lang={article.language} />
             </span>
           )}
         </div>
@@ -332,9 +333,9 @@ function ListCard({ article, isRead, engData }: { article: NewsArticle; isRead: 
           {article.title}
         </p>
       </div>
-      {formatRelativeDate(article.pubDate, article.language) && (
+      {hasValidDate(article.pubDate) && (
         <span className="font-inter text-[11px] text-stadium-muted shrink-0 hidden sm:block">
-          {formatRelativeDate(article.pubDate, article.language)}
+          <RelativeTime date={article.pubDate} lang={article.language} />
         </span>
       )}
     </Link>
@@ -383,9 +384,9 @@ function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolea
         <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2">
           {article.title}
         </p>
-        {formatRelativeDate(article.pubDate, article.language) && (
+        {hasValidDate(article.pubDate) && (
           <span className="font-inter text-[11px] text-stadium-muted">
-            {formatRelativeDate(article.pubDate, article.language)}
+            <RelativeTime date={article.pubDate} lang={article.language} />
           </span>
         )}
       </div>

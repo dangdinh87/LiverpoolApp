@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { makePageMeta, buildBreadcrumbJsonLd, buildImageGalleryJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { GalleryPage as GalleryClient } from "@/components/gallery/gallery-page";
@@ -18,8 +19,9 @@ import galleryFallback from "@/data/gallery.json";
 const GALLERY_PAGE_SIZE = 50;
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("Gallery.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Gallery.metadata" });
   const title = t("title");
   const description = t("description");
   return { title, description, ...makePageMeta(title, description, { path: "/gallery" }) };
@@ -58,7 +60,9 @@ async function resolveIsAdmin(): Promise<boolean> {
   }
 }
 
-export default async function GalleryRoute() {
+export default async function GalleryRoute({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   let images: ClientGalleryImage[];
   let totalImages = 0;
   let categoryCounts: Record<string, number> = {};

@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { getTopScorers, getTopAssists, getFixtures, getStandings, computeSeasonStats } from "@/lib/football";
 import { StatChart } from "@/components/stats/stat-chart";
 import { SeasonOverview } from "@/components/stats/season-overview";
@@ -17,8 +18,9 @@ import {
 } from "@/lib/football/current-season";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
-export async function generateMetadata() {
-  const t = await getTranslations("Stats.metadata");
+export async function generateMetadata({ params }: LocaleParams) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Stats.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/stats" }) };
@@ -29,10 +31,15 @@ export const revalidate = 3600; // 1 hour
 // Derived from the date; see src/lib/football/current-season.ts.
 const CURRENT_SEASON = getCurrentSeasonYear();
 
-export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
+export default async function StatsPage({
+  params,
+  searchParams,
+}: LocaleParams & { searchParams: Promise<{ season?: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("Stats");
-  const params = await searchParams;
-  const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
+  const query = await searchParams;
+  const selectedSeason = query.season ? parseInt(query.season, 10) : CURRENT_SEASON;
   const isCurrentSeason = selectedSeason === CURRENT_SEASON;
   const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;
 

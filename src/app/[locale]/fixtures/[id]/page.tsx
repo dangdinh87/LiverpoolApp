@@ -6,7 +6,7 @@ import {
   ArrowLeft, MapPin, Calendar, Users,
   CircleDot, ArrowUpFromLine, ArrowDownToLine, Goal,
 } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
   getFixtureEvents,
@@ -27,6 +27,12 @@ import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 export const revalidate = 300; // 5 minutes
 
+// Empty list = nothing prerendered at build, each path is rendered on first
+// request and then cached for `revalidate` (without it the route renders per request).
+export async function generateStaticParams() {
+  return [];
+}
+
 const LFC_ID = 40;
 
 function teamLogo(id: number, apiLogo: string): string {
@@ -34,7 +40,7 @@ function teamLogo(id: number, apiLogo: string): string {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -52,7 +58,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function FixtureDetailPage({ params }: PageProps) {
-  const { id } = await params;
+  const { id, locale } = await params;
+  setRequestLocale(locale);
   const fixtureId = Number(id);
 
   const [fixtures, tDetail, tMatch] = await Promise.all([

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
@@ -10,7 +10,15 @@ import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonic
 import { JsonLd } from "@/components/seo/json-ld";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 
-type Params = Promise<{ date: string }>;
+type Params = Promise<{ date: string; locale: string }>;
+
+export const revalidate = 3600;
+
+// Empty list = nothing prerendered at build, each path is rendered on first
+// request and then cached for `revalidate` (without it the route renders per request).
+export async function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({
   params,
@@ -43,7 +51,8 @@ export default async function DigestPage({
 }: {
   params: Params;
 }) {
-  const { date } = await params;
+  const { date, locale } = await params;
+  setRequestLocale(locale);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
   const [digest, t] = await Promise.all([

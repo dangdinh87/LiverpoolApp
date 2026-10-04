@@ -11,12 +11,11 @@ import type { Fixture } from "@/lib/types/football";
 import {
   decodeArticleSlug,
   encodeArticleSlug,
-  formatRelativeDate,
   type NewsSource,
 } from "@/lib/news-config";
 import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
 import { ArticleImageViewer } from "@/components/news/article-image-viewer";
@@ -25,13 +24,20 @@ import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
 import { ArticleEndSections } from "@/components/news/article-end-sections";
+import { RelativeTime } from "@/components/news/relative-time";
 
 export const revalidate = 600; // 10 minutes
 
-function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
+// Empty list = nothing prerendered at build, each path is rendered on first
+// request and then cached for `revalidate` (without it the route renders per request).
+export async function generateStaticParams() {
+  return [];
+}
+
+function formatPublishDate(dateStr: string, source: NewsSource): { iso: string; lang: "en" | "vi"; absolute: string } {
   const lang = VI_SOURCES.has(source) ? "vi" : "en";
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return { relative: "", absolute: "" };
+  if (isNaN(date.getTime())) return { iso: "", lang, absolute: "" };
   const absolute = date.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB", {
     weekday: "short",
     day: "numeric",
@@ -40,7 +46,7 @@ function formatPublishDate(dateStr: string, source: NewsSource): { relative: str
     hour: "2-digit",
     minute: "2-digit",
   });
-  return { relative: formatRelativeDate(dateStr, lang), absolute };
+  return { iso: dateStr, lang, absolute };
 }
 
 // Improved keyword-based related articles with stopwords + diversity
@@ -83,7 +89,7 @@ function getRelatedArticles(
     .map((r) => r.article);
 }
 
-type Params = Promise<{ slug: string[] }>;
+type Params = Promise<{ slug: string[]; locale: string }>;
 
 export async function generateMetadata({
   params,
@@ -128,7 +134,8 @@ export default async function ArticlePage({
 }: {
   params: Params;
 }) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
+  setRequestLocale(locale);
   const url = decodeArticleSlug(slug);
   if (!url) notFound();
 
@@ -300,7 +307,7 @@ export default async function ArticlePage({
               {publishDate && (
                 <div className="flex items-center gap-3 mb-4 lg:mb-3">
                   <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
-                    {publishDate.relative}
+                    <RelativeTime date={publishDate.iso} lang={publishDate.lang} />
                   </span>
                 </div>
               )}
@@ -339,7 +346,7 @@ export default async function ArticlePage({
             {publishDate && (
               <div className="flex items-center gap-3 mb-4 lg:mb-3">
                 <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
-                  {publishDate.relative}
+                  <RelativeTime date={publishDate.iso} lang={publishDate.lang} />
                 </span>
               </div>
             )}

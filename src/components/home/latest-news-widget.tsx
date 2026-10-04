@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
-import { formatRelativeDate } from "@/lib/news-config";
+import { RelativeTime } from "@/components/news/relative-time";
 
 interface LatestNewsWidgetProps {
   articles: NewsArticle[];
@@ -41,7 +41,7 @@ export function LatestNewsWidget({ articles }: LatestNewsWidgetProps) {
                 {article.title}
               </p>
               <p className="font-inter text-xs text-stadium-muted">
-                {formatRelativeDate(article.pubDate, article.language)}
+                <RelativeTime date={article.pubDate} lang={article.language} />
               </p>
             </div>
           </a>

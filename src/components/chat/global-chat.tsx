@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
 import { Thread } from "@/components/assistant-ui/thread";

@@ -8,10 +8,10 @@ import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import {
   SOURCE_CONFIG,
-  formatRelativeDate,
   getArticleUrl,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { RelativeTime } from "@/components/news/relative-time";
 
 interface RelatedArticlesProps {
   articles: NewsArticle[];
@@ -77,7 +77,7 @@ export function RelatedArticles({ articles }: RelatedArticlesProps) {
                     </span>
                   )}
                   <span className="font-inter text-[11px] text-stadium-muted">
-                    {formatRelativeDate(article.pubDate, article.language)}
+                    <RelativeTime date={article.pubDate} lang={article.language} />
                   </span>
                   {articleRead && (
                     <CheckCheck className="w-3 h-3 text-stadium-muted ml-auto shrink-0" />

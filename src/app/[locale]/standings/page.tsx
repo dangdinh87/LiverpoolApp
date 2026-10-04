@@ -1,12 +1,14 @@
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { getStandings } from "@/lib/football";
 import { StandingsTable } from "@/components/standings/standings-table";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
-export async function generateMetadata() {
-  const t = await getTranslations("Standings.metadata");
+export async function generateMetadata({ params }: LocaleParams) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Standings.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
   return { title, description, ...makePageMeta(title, description, { path: "/standings" }) };
@@ -14,7 +16,9 @@ export async function generateMetadata() {
 
 export const revalidate = 21600; // 6 hours
 
-export default async function StandingsPage() {
+export default async function StandingsPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("Standings");
   const standings = await getStandings();
 

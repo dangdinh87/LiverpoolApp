@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, getLocale, setRequestLocale } from 'next-intl/server';
+import { hasLocale } from 'next-intl';
+import { getMessages, setRequestLocale } from 'next-intl/server';
+import { notFound } from "next/navigation";
+import { routing } from "@/i18n/routing";
 import { Suspense } from "react";
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { Footer } from "@/components/layout/footer";
@@ -14,7 +17,7 @@ import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { GoogleAdsense } from "@/components/analytics/google-adsense";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { Analytics } from '@vercel/analytics/next';
-import "./globals.css";
+import "../globals.css";
 
 // League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
 const leagueGothic = League_Gothic({
@@ -41,8 +44,11 @@ const barlowCondensed = Barlow_Condensed({
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const DEFAULT_OG_IMAGE = "/assets/lfc/branding/lfc-crest-main.webp";
-// Locale is cookie/header-driven. Keep layout request-bound to avoid static locale lock.
-export const dynamic = "force-dynamic";
+
+// Both locales are prerendered; pages then follow their own `revalidate`.
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -113,8 +119,10 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
-  const locale = await getLocale();
+  params,
+}: Readonly<{ children: React.ReactNode; params: Promise<{ locale: string }> }>) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const messages = await getMessages();
 

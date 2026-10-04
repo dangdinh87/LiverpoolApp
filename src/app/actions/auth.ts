@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 /** Validate redirect path to prevent open redirect */
@@ -23,7 +24,7 @@ export async function loginWithEmail(formData: FormData) {
 
   if (error) return { error: error.message };
 
-  revalidatePath("/");
+  revalidateLocalizedPath("/");
   redirect(redirectTo);
 }
 
@@ -58,7 +59,7 @@ export async function registerWithEmail(formData: FormData) {
     }
   }
 
-  revalidatePath("/");
+  revalidateLocalizedPath("/");
   redirect("/profile");
 }
 

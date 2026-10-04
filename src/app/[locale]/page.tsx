@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
@@ -135,7 +137,9 @@ function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>) {
   ];
 }
 
-export default async function HomePage() {
+export default async function HomePage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult] =
     await Promise.allSettled([
       getCachedHomeFixtures(),

@@ -1,25 +1,33 @@
 import { type NextRequest, NextResponse } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
+import { routing } from "@/i18n/routing";
 
-// Routes that require authentication
+const handleI18nRouting = createIntlMiddleware(routing);
+
+// Routes that require authentication (matched without the /en prefix)
 const PROTECTED_ROUTES = ["/profile"];
+const NOINDEX_PREFIXES = ["/auth", "/profile"];
 
 function addNoIndex(response: NextResponse): NextResponse {
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 
+function splitLocalePrefix(pathname: string): { path: string; prefix: string } {
+  return /^\/en(?=\/|$)/.test(pathname)
+    ? { path: pathname.slice(3) || "/", prefix: "/en" }
+    : { path: pathname, prefix: "" };
+}
+
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
+  // Rewrites /x → /vi/x (or redirects to /en/x when the NEXT_LOCALE cookie or
+  // Accept-Language asks for English) so pages can be prerendered per locale.
+  const response = handleI18nRouting(request);
+  const { path, prefix } = splitLocalePrefix(request.nextUrl.pathname);
 
-  // For protected routes: full auth check with Supabase
-  if (isProtected) {
-    const response = NextResponse.next({
-      request: { headers: request.headers },
-    });
-
+  if (PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -49,22 +57,19 @@ export async function middleware(request: NextRequest) {
       .catch(() => null);
 
     if (!user) {
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
+      const loginUrl = new URL(`${prefix}/auth/login`, request.url);
+      loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
       return addNoIndex(NextResponse.redirect(loginUrl));
     }
-
-    return addNoIndex(response);
   }
 
-  // Only /auth/* reaches here (see matcher).
-  return addNoIndex(NextResponse.next());
+  if (NOINDEX_PREFIXES.some((r) => path.startsWith(r))) addNoIndex(response);
+  return response;
 }
 
-// Scoped to the two route groups that need it. Matching every page made each
-// view (and each crawler hit) a billed edge invocation in the visitor's region,
-// and the private Cache-Control it set on public pages was overwritten by the
-// dynamic render's own header anyway.
 export const config = {
-  matcher: ["/profile/:path*", "/auth/:path*"],
+  // Every page needs the locale rewrite. Skipped: API routes, the OAuth callback
+  // (not localized), Next/Vercel internals, the root OG image route and any path
+  // with a file extension (robots.txt, sitemap.xml, images, manifest).
+  matcher: ["/((?!api|auth/callback|_next|_vercel|opengraph-image|.*\\..*).*)"],
 };

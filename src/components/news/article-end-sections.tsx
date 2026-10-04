@@ -15,11 +15,11 @@ import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
 import {
   SOURCE_CONFIG,
-  formatRelativeDate,
   getArticleUrl,
   type NewsSource,
 } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
+import { RelativeTime } from "@/components/news/relative-time";
 import { formatDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 // --- Lazy wrapper: only renders children when scrolled into view ---
@@ -270,7 +270,7 @@ function MoreFromSource({
               <div className="p-3">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="font-inter text-[11px] text-stadium-muted">
-                    {formatRelativeDate(article.pubDate, article.language)}
+                    <RelativeTime date={article.pubDate} lang={article.language} />
                   </span>
                   {isRead && <CheckCheck className="w-3 h-3 text-stadium-muted ml-auto" />}
                 </div>

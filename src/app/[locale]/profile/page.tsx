@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isAdminEmail } from "@/lib/constants";
 import { getSiteSetting } from "@/lib/gallery/queries";
@@ -12,7 +14,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

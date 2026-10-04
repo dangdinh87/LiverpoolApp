@@ -15,7 +15,7 @@ interface ArticleSidebarProps {
   sourceName: string;
   sourceUrl: string;
   author?: string;
-  publishDate?: { relative: string; absolute: string };
+  publishDate?: { absolute: string };
   readingTime?: number;
   articleTitle: string;
   articleSlugUrl: string;

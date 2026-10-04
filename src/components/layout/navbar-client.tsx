@@ -3,7 +3,8 @@
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird } from "lucide-react";
 import { useTranslations } from "next-intl";

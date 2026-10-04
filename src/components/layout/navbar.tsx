@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

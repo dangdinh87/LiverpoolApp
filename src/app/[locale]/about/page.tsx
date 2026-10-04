@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { LocaleParams } from "@/i18n/routing";
 import {
   Coffee,
   Heart,
@@ -19,8 +20,9 @@ import { MomoModal } from "./momo-modal";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("About.metadata");
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "About.metadata" });
   const title = t("title");
   const description = t("description");
   return { title, description, ...makePageMeta(title, description, { path: "/about" }) };
@@ -48,7 +50,11 @@ const FEATURE_KEYS = [
   "i18n",
 ] as const;
 
-export default async function AboutPage() {
+export const revalidate = 86400;
+
+export default async function AboutPage({ params }: LocaleParams) {
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("About");
 
   return (
