@@ -18,8 +18,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
-import { ArticleImageViewer } from "@/components/news/article-image-viewer";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
+import { buildExcerpt } from "@/lib/news/excerpt";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
@@ -189,18 +189,15 @@ export default async function ArticlePage({
     ? formatPublishDate(content.publishedAt, source)
     : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
-
-  const extraImages = content.htmlContent
-    ? []
-    : content.images.filter((img) => img !== content.heroImage).slice(0, 3);
+  const { excerpt, truncated } = buildExcerpt(content.paragraphs);
 
   const renderExtras = () => (
     <>
-      {/* Clickable image grid + lightbox for inline htmlContent images */}
-      <ArticleImageViewer extraImages={extraImages} />
-      {(content.isThinContent || content.paragraphs.length <= 2) && (
+      {(truncated || content.isThinContent) && (
         <div className="mt-8 p-5 bg-stadium-surface border border-stadium-border text-center">
-          <p className="font-inter text-sm text-white/60 mb-4">{t("thinContentMsg")}</p>
+          <p className="font-inter text-sm text-white/60 mb-4">
+            {content.isThinContent ? t("thinContentMsg") : t("excerptMsg")}
+          </p>
           <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-5 py-2.5 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold">
             {t("readFullOn", { source: content.sourceName })} <ExternalLink className="w-3.5 h-3.5" />
           </a>
@@ -292,7 +289,7 @@ export default async function ArticlePage({
           articleUrl={url}
           originalTitle={content.title}
           originalDescription={content.description}
-          originalParagraphs={content.paragraphs}
+          originalParagraphs={excerpt}
         >
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
             {/* Header area */}
@@ -363,28 +360,22 @@ export default async function ArticlePage({
           {/* 2-column grid */}
           <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
             <div>
-              {content.htmlContent ? (
-                <div
-                  id="article-body"
-                  className="article-html-content space-y-6"
-                  dangerouslySetInnerHTML={{ __html: content.htmlContent }}
-                />
-              ) : (
-                <div id="article-body" className="space-y-6">
-                  {content.paragraphs.map((p, i) => (
-                    <p
-                      key={i}
-                      className={
-                        i === 0
-                          ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
-                          : "font-inter text-[17px] text-white/80 leading-[1.85]"
-                      }
-                    >
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
+              {/* Excerpt only — never the scraped htmlContent/full paragraphs,
+                  see buildExcerpt() above for why. */}
+              <div id="article-body" className="space-y-6">
+                {excerpt.map((p, i) => (
+                  <p
+                    key={i}
+                    className={
+                      i === 0
+                        ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
+                        : "font-inter text-[17px] text-white/80 leading-[1.85]"
+                    }
+                  >
+                    {p}
+                  </p>
+                ))}
+              </div>
               {renderExtras()}
             </div>
             {renderSidebar()}

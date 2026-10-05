@@ -14,6 +14,7 @@ import {
   getCachedTranslation,
   setCachedTranslation,
 } from "@/lib/news/translation-cache";
+import { buildExcerpt } from "@/lib/news/excerpt";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -98,7 +99,10 @@ export function TranslateProvider({
       setTranslatedDescription(
         cached.description_vi ? stripPrefix(cached.description_vi) : null
       );
-      setTranslatedParagraphs(filterJunk(cached.paragraphs.map(stripPrefix)));
+      // Cap here too: this localStorage entry can be up to 7 days old, from
+      // before the excerpt limit shipped, and may still hold the full article.
+      const { excerpt: cachedExcerpt } = buildExcerpt(filterJunk(cached.paragraphs.map(stripPrefix)));
+      setTranslatedParagraphs(cachedExcerpt);
       setMode("translated");
       return;
     }

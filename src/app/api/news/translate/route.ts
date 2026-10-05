@@ -3,6 +3,7 @@ import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
 import { scrapeArticle } from "@/lib/news";
+import { buildExcerpt } from "@/lib/news/excerpt";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import type { ArticleContent } from "@/lib/news/types";
@@ -87,11 +88,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (cached && isUsableTranslation(cached.content_vi)) {
+      // Cap here too: rows translated before the excerpt limit shipped may
+      // still hold the full article.
+      const { excerpt: cachedExcerpt } = buildExcerpt(cached.content_vi.paragraphs ?? []);
       return NextResponse.json({
         title_vi: cached.title_vi,
         description_vi: cached.content_vi.description || null,
         snippet_vi: cached.snippet_vi,
-        paragraphs: cached.content_vi.paragraphs,
+        paragraphs: cachedExcerpt,
         cached: true,
       });
     }
@@ -123,14 +127,16 @@ export async function POST(req: NextRequest) {
 
     // Filter out junk paragraphs (social media CTAs, newsletter promos, source attribution noise)
     const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|IconSport|Getty Images|Image:/i;
-    const cleanParagraphs = content.paragraphs
-      .filter((p) => !junkPattern.test(p))
-      .slice(0, 15);
+    const cleanParagraphs = content.paragraphs.filter((p) => !junkPattern.test(p));
+    // Only ever translate (and cache) the same excerpt the reader sees — a full
+    // machine translation of someone else's article is itself an unlicensed
+    // derivative work, on top of reproducing the original text.
+    const { excerpt } = buildExcerpt(cleanParagraphs);
 
     // Build translation input: title + description (if any) + paragraphs
     const sections = [content.title];
     if (content.description) sections.push(content.description);
-    sections.push(...cleanParagraphs);
+    sections.push(...excerpt);
     const input = sections.join("\n|||\n");
 
     // Model fallback on rate limit / provider error

@@ -164,6 +164,7 @@
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc đầy đủ trên {source}",
       "thinContentMsg": "Bài viết này nên xem trên trang gốc để có trải nghiệm đọc tốt nhất.",
+      "excerptMsg": "Đây là trích đoạn. Đọc toàn bộ bài viết trên trang gốc.",
       "sourcedFrom": "Nội dung từ <source>{sourceName}</source>. Bản quyền thuộc về nhà xuất bản gốc."
     },
     "feed": {
