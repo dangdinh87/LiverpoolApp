@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { X, MessageCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useAuthStore } from "@/stores/auth-store";

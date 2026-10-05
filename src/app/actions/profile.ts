@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
 const MAX_USERNAME_LENGTH = 30;
@@ -29,7 +29,7 @@ export async function updateProfile(formData: FormData) {
 
   if (error) return { error: error.message };
 
-  revalidatePath("/profile");
+  revalidateLocalizedPath("/profile");
   return { success: true };
 }
 
@@ -49,7 +49,7 @@ export async function updateAvatarUrl(publicUrl: string) {
 
   if (error) return { error: "Failed to update avatar" };
 
-  revalidatePath("/profile");
+  revalidateLocalizedPath("/profile");
   return { success: true };
 }
 
@@ -79,8 +79,8 @@ export async function toggleFavouritePlayer(
 
     if (error) return { error: "Failed to remove favourite" };
 
-    revalidatePath("/profile");
-    revalidatePath(`/player/${playerId}`);
+    revalidateLocalizedPath("/profile");
+    revalidateLocalizedPath(`/player/${playerId}`);
     return { favourited: false };
   } else {
     const { error } = await supabase.from("favourite_players").insert({
@@ -92,8 +92,8 @@ export async function toggleFavouritePlayer(
 
     if (error) return { error: "Failed to add favourite" };
 
-    revalidatePath("/profile");
-    revalidatePath(`/player/${playerId}`);
+    revalidateLocalizedPath("/profile");
+    revalidateLocalizedPath(`/player/${playerId}`);
     return { favourited: true };
   }
 }
@@ -128,7 +128,7 @@ export async function toggleSavedArticle(article: {
       .eq("article_url", article.url);
 
     if (error) return { error: "Failed to unsave" };
-    revalidatePath("/profile");
+    revalidateLocalizedPath("/profile");
     return { saved: false };
   } else {
     const { error } = await supabase.from("saved_articles").insert({
@@ -143,7 +143,7 @@ export async function toggleSavedArticle(article: {
     });
 
     if (error) return { error: "Failed to save" };
-    revalidatePath("/profile");
+    revalidateLocalizedPath("/profile");
     return { saved: true };
   }
 }
@@ -160,6 +160,6 @@ export async function unsaveArticle(articleUrl: string) {
     .eq("article_url", articleUrl);
 
   if (error) return { error: "Failed to unsave" };
-  revalidatePath("/profile");
+  revalidateLocalizedPath("/profile");
   return { success: true };
 }

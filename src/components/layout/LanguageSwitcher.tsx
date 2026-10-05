@@ -14,7 +14,12 @@ const LOCALES = [
 function setLocaleAndReload(code: string, current: string) {
   if (code === current) return;
   Cookies.set("NEXT_LOCALE", code, { expires: 365, path: "/", sameSite: "lax" });
-  window.location.reload();
+  // The locale is part of the URL (/x Vietnamese, /en/x English), so reloading
+  // the same URL would keep the old language.
+  const { pathname, search, hash } = window.location;
+  const bare = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
+  const target = code === "en" ? `/en${bare === "/" ? "" : bare}` : bare;
+  window.location.assign(target + search + hash);
 }
 
 /**

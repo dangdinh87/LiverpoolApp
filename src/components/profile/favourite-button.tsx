@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTransition, useState } from "react";
 import { Heart } from "lucide-react";
 import { toggleFavouritePlayer } from "@/app/actions/profile";
@@ -26,14 +27,14 @@ export function FavouriteButton({
 
   if (!isLoggedIn) {
     return (
-      <a
+      <Link
         href="/auth/login"
         className="flex items-center gap-2 px-3 py-2 border border-stadium-border rounded-none text-stadium-muted hover:border-white/30 hover:text-white font-inter text-sm transition-colors"
         title="Sign in to save favourites"
       >
         <Heart size={16} />
         Favourite
-      </a>
+      </Link>
     );
   }
 

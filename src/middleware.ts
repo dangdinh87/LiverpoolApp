@@ -1,30 +1,33 @@
 import { type NextRequest, NextResponse } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
+import { routing } from "@/i18n/routing";
 
-// Routes that require authentication
+const handleI18nRouting = createIntlMiddleware(routing);
+
+// Routes that require authentication (matched without the /en prefix)
 const PROTECTED_ROUTES = ["/profile"];
-
-// Routes that are always dynamic (auth-dependent or API)
-const DYNAMIC_PREFIXES = ["/api/", "/auth/", "/profile"];
-const NOINDEX_PREFIXES = ["/auth/", "/profile"];
+const NOINDEX_PREFIXES = ["/auth", "/profile"];
 
 function addNoIndex(response: NextResponse): NextResponse {
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 
+function splitLocalePrefix(pathname: string): { path: string; prefix: string } {
+  return /^\/en(?=\/|$)/.test(pathname)
+    ? { path: pathname.slice(3) || "/", prefix: "/en" }
+    : { path: pathname, prefix: "" };
+}
+
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_ROUTES.some((r) => pathname.startsWith(r));
-  const isDynamic = DYNAMIC_PREFIXES.some((r) => pathname.startsWith(r));
+  // Rewrites /x → /vi/x (or redirects to /en/x when the NEXT_LOCALE cookie or
+  // Accept-Language asks for English) so pages can be prerendered per locale.
+  const response = handleI18nRouting(request);
+  const { path, prefix } = splitLocalePrefix(request.nextUrl.pathname);
 
-  // For protected routes: full auth check with Supabase
-  if (isProtected) {
-    const response = NextResponse.next({
-      request: { headers: request.headers },
-    });
-
+  if (PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -56,33 +59,28 @@ export async function middleware(request: NextRequest) {
       .catch(() => null);
 
     if (!user) {
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
+      const loginUrl = new URL(`${prefix}/auth/login`, request.url);
+      loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
       return addNoIndex(NextResponse.redirect(loginUrl));
     }
-
-    return addNoIndex(response);
   }
 
-  // Locale-sensitive public pages vary by cookie/header, so avoid shared CDN cache
-  // but allow a short private browser cache to improve repeat page loads.
-  if (!isDynamic) {
-    const response = NextResponse.next();
-    response.headers.set("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
-    response.headers.set("Vary", "Cookie, Accept-Language");
-    return response;
-  }
-
-  const response = NextResponse.next();
-  if (NOINDEX_PREFIXES.some((r) => pathname.startsWith(r))) {
-    return addNoIndex(response);
-  }
+  if (NOINDEX_PREFIXES.some((r) => path.startsWith(r))) addNoIndex(response);
   return response;
 }
 
 export const config = {
+  // Every page needs the locale rewrite. Skipped: API routes, the OAuth callback
+  // (not localized), Next/Vercel internals, the root OG image route, the Google
+  // site-verification file, and real static-asset extensions (robots.txt,
+  // sitemap.xml, images, manifest).
+  //
+  // This used to exclude "any path with a dot" (`.*\..*`), which also matched
+  // scraped Vietnamese news URLs — many keep their source's literal `.html`
+  // suffix (e.g. bongda24h.com.vn, 24h.com.vn) via encodeArticleSlug(). Those
+  // never got rewritten to /vi/news/... and 404'd. Matching a known extension
+  // list instead of "contains a dot" fixes that.
   matcher: [
-    // Run on all routes except static files and Next.js internals
-    "/((?!_next/static|_next/image|favicon.ico|assets/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api|auth/callback|_next|_vercel|opengraph-image|google583c5c945cf216b2\\.html|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|json|xml|txt|docx|woff2?|ttf|map)$).*)",
   ],
 };

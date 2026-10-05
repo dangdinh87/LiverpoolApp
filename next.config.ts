@@ -83,6 +83,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'bongdaso.com' },
       { protocol: 'https', hostname: '*.bongdaso.com' },
       // News sources — Webthethao
+      { protocol: 'https', hostname: '*.webthethao.vn' },
+      // News sources — Webthethao
       // News sources — Empire of the Kop
       { protocol: 'https', hostname: '*.empireofthekop.com' },
       // News sources — VnExpress (thethao)

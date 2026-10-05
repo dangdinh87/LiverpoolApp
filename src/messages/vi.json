@@ -113,6 +113,7 @@
   "Bento": {
     "season": "Mùa giải {season}",
     "title": "Tổng quan câu lạc bộ",
+    "latestNews": "Tin mới nhất",
     "allNews": "Xem tất cả",
     "squad": "Đội hình",
     "premierLeague": "Ngoại hạng Anh",
@@ -184,6 +185,7 @@
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc đầy đủ trên {source}",
       "thinContentMsg": "Bài viết này nên xem trên trang gốc để có trải nghiệm đọc tốt nhất.",
+      "excerptMsg": "Đây là trích đoạn. Đọc toàn bộ bài viết trên trang gốc.",
       "sourcedFrom": "Nội dung từ <source>{sourceName}</source>. Bản quyền thuộc về nhà xuất bản gốc.",
       "videoUnavailable": "Không phát được video tại đây. Nhấn để xem trên trang gốc.",
       "linkOutMsg": "Bài đầy đủ chỉ có trên {source}. Hãy mở trang gốc để đọc tiếp.",

@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { SOURCE_CONFIG, type ArticleCategory, type NewsSource } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
-import { loadMoreNews } from "@/app/news/actions";
+import { loadMoreNews } from "@/app/actions/news";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NewsCard, NewsCardSkeleton } from "./news-card";
 import { cleanTitle, isHttpUrl } from "./news-text";

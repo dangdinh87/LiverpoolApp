@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getSafeRedirect } from "@/lib/safe-redirect";
 import { toAuthErrorCode, type AuthErrorCode } from "@/lib/auth-error-code";
@@ -24,7 +25,7 @@ export async function loginWithEmail(formData: FormData): Promise<AuthFormResult
 
   if (error) return { error: toAuthErrorCode(error) };
 
-  revalidatePath("/");
+  revalidateLocalizedPath("/");
   redirect(redirectTo);
 }
 
@@ -60,7 +61,7 @@ export async function registerWithEmail(formData: FormData): Promise<AuthFormRes
     }
   }
 
-  revalidatePath("/");
+  revalidateLocalizedPath("/");
   redirect("/profile");
 }
 

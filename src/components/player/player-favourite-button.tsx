@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useTransition } from "react";
 import { Heart } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -82,14 +83,14 @@ export function PlayerFavouriteButton({
 
   if (state === "guest") {
     return (
-      <a
+      <Link
         href="/auth/login"
         className={cn(BTN, "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white")}
         title={t("loginToFav")}
       >
         <Heart size={18} aria-hidden />
         {t("favourite")}
-      </a>
+      </Link>
     );
   }
 

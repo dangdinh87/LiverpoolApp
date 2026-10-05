@@ -4,7 +4,10 @@ import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+// usePathname from @/i18n/navigation (not next/navigation): it strips the /en
+// prefix, so active-link checks against bare paths like "/history" still work
+// on English pages.
+import { usePathname } from "@/i18n/navigation";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "./LanguageSwitcher";

@@ -113,6 +113,7 @@
   "Bento": {
     "season": "Season {season}",
     "title": "Club Overview",
+    "latestNews": "Latest News",
     "allNews": "All News",
     "squad": "Squad",
     "premierLeague": "Premier League",
@@ -184,6 +185,7 @@
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
       "thinContentMsg": "This article is best viewed on the original site for the full reading experience.",
+      "excerptMsg": "This is an excerpt. Read the full article on the original site.",
       "sourcedFrom": "Content sourced from <source>{sourceName}</source>. All rights belong to the original publisher.",
       "videoUnavailable": "This video cannot be played here. Tap to watch on the original site.",
       "linkOutMsg": "The full story is only available on {source}. Open it there to keep reading.",

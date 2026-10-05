@@ -14,10 +14,10 @@ import {
   getCachedTranslation,
   setCachedTranslation,
 } from "@/lib/news/translation-cache";
-import { ArticleHtmlBody } from "./article-html-body";
 import { ARTICLE_LEAD_CLASS, ARTICLE_TITLE_CLASS } from "./article-header";
 import { ArticleFigures } from "./article-figures";
 import { filterJunk } from "./news-text";
+import { buildExcerpt } from "@/lib/news/excerpt";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -89,7 +89,10 @@ export function TranslateProvider({
     if (cached) {
       setTranslatedTitle(stripPrefix(cached.title_vi));
       setTranslatedDescription(cached.description_vi ? stripPrefix(cached.description_vi) : null);
-      setTranslatedParagraphs(filterJunk(cached.paragraphs.map(stripPrefix)));
+      // Cap here too: this localStorage entry can be up to 7 days old, from
+      // before the excerpt limit shipped, and may still hold the full article.
+      const { excerpt: cachedExcerpt } = buildExcerpt(filterJunk(cached.paragraphs.map(stripPrefix)));
+      setTranslatedParagraphs(cachedExcerpt);
       setMode("translated");
       return;
     }
@@ -173,13 +176,11 @@ export function TranslateHeader({ originalDescription }: { originalDescription?:
 // ─── Body slot: toggle + article body (original HTML, or translated text + photos) ──
 
 interface TranslateBodyProps {
-  /** Extracted article HTML (figures, embeds, video placeholders), if the source gave any. */
-  html?: string;
   /** Photos shown with the plain-text body, hero already removed. */
   images: string[];
 }
 
-export function TranslateBody({ html, images }: TranslateBodyProps) {
+export function TranslateBody({ images }: TranslateBodyProps) {
   const { mode, loading, failed, displayParagraphs, handleTranslate } = useTranslate();
   const t = useTranslations("News.translate");
   const isTranslated = mode === "translated";
@@ -212,8 +213,6 @@ export function TranslateBody({ html, images }: TranslateBodyProps) {
               </div>
             ))}
           </div>
-        ) : !isTranslated && html ? (
-          <ArticleHtmlBody html={html} />
         ) : (
           <ArticleFigures paragraphs={displayParagraphs} images={images} />
         )}

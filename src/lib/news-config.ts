@@ -144,10 +144,15 @@ export function getArticleUrl(articleLink: string): string {
   return `/news/${encodeArticleSlug(articleLink)}`;
 }
 
+// Time-independent, unlike the relative text itself, so it is safe to branch
+// on during render of prerendered pages.
+export function hasValidDate(dateStr: string): boolean {
+  return !!dateStr && !isNaN(new Date(dateStr).getTime());
+}
+
 export function formatRelativeDate(dateStr: string, lang?: "en" | "vi"): string {
-  if (!dateStr) return "";
+  if (!hasValidDate(dateStr)) return "";
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "";
 
   const now = Date.now();
   const diff = now - date.getTime();

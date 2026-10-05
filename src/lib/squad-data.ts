@@ -52,20 +52,16 @@ export type { PlayerPosition };
 
 // ─── Data access ────────────────────────────────────────────────────────────
 
-/**
- * squad.json is refreshed from liverpoolfc.com, and recent signings come
- * without an `honors` key at all (13 of 31 players in Oct 2026). The type says
- * `string[]`, so normalise once here instead of letting every consumer crash:
- * the player page used to throw on `player.honors.length` for those players.
- */
+// squad.json entries added for newer signings omit `honors`; normalize once so
+// every consumer can rely on the typed `string[]` (the player page crashed on it).
 export function normalizeSquad(raw: SquadData): SquadData {
   return {
     ...raw,
-    players: raw.players.map((p) => ({ ...p, honors: Array.isArray(p.honors) ? p.honors : [] })),
+    players: raw.players.map((p) => ({ ...p, honors: p.honors ?? [] })),
   };
 }
 
-const data = normalizeSquad(squadJson as unknown as SquadData);
+const data: SquadData = normalizeSquad(squadJson as SquadData);
 
 /** Get all players (active squad, excludes on-loan and forever unless specified) */
 export function getSquadPlayers(opts?: { includeLoans?: boolean; includeForever?: boolean }): LfcPlayer[] {

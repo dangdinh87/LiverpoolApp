@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { withCronAuth } from "@/lib/cron";
 
@@ -60,8 +61,8 @@ export const GET = withCronAuth(async () => {
   }
 
   revalidateTag("news", "max");
-  revalidatePath("/");
-  revalidatePath("/news");
+  revalidateLocalizedPath("/");
+  revalidateLocalizedPath("/news");
 
   return NextResponse.json({
     ok: true,
