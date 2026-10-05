@@ -69,7 +69,16 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Every page needs the locale rewrite. Skipped: API routes, the OAuth callback
-  // (not localized), Next/Vercel internals, the root OG image route and any path
-  // with a file extension (robots.txt, sitemap.xml, images, manifest).
-  matcher: ["/((?!api|auth/callback|_next|_vercel|opengraph-image|.*\\..*).*)"],
+  // (not localized), Next/Vercel internals, the root OG image route, the Google
+  // site-verification file, and real static-asset extensions (robots.txt,
+  // sitemap.xml, images, manifest).
+  //
+  // This used to exclude "any path with a dot" (`.*\..*`), which also matched
+  // scraped Vietnamese news URLs — many keep their source's literal `.html`
+  // suffix (e.g. bongda24h.com.vn, 24h.com.vn) via encodeArticleSlug(). Those
+  // never got rewritten to /vi/news/... and 404'd. Matching a known extension
+  // list instead of "contains a dot" fixes that.
+  matcher: [
+    "/((?!api|auth/callback|_next|_vercel|opengraph-image|google583c5c945cf216b2\\.html|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|json|xml|txt|docx|woff2?|ttf|map)$).*)",
+  ],
 };
