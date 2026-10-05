@@ -239,15 +239,16 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
     return (
       <form onSubmit={handleSubmitReply} className="mt-1 pl-[42px] pr-3">
         <div className="flex items-center gap-1.5 mb-1">
-          <span className="font-inter text-[11px] text-white/40">
+          <span className="text-xs text-stadium-muted">
             {t("replyingTo", { name: target?.username || "" })}
           </span>
           <button
             type="button"
             onClick={closeReply}
-            className="p-0.5 text-stadium-muted hover:text-white transition-colors cursor-pointer"
+            className="inline-flex size-8 items-center justify-center text-stadium-muted hover:text-white transition-colors cursor-pointer"
+            aria-label={t("cancel")}
           >
-            <X className="w-3 h-3" />
+            <X className="size-4" aria-hidden />
           </button>
         </div>
         <div className="flex gap-2">
@@ -263,15 +264,17 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
               if (e.key === "Escape") closeReply();
             }}
             placeholder={t("replyPlaceholder")}
+            aria-label={t("replyPlaceholder")}
             maxLength={1000}
             rows={1}
             disabled={submitting}
-            className="flex-1 bg-stadium-surface border border-stadium-border/60 px-3 py-1.5 font-inter text-[13px] text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-lfc-red/50 transition-colors disabled:opacity-50"
+            className="flex-1 min-w-0 border border-[var(--line-strong)] bg-[var(--surface-1)] px-3 py-2 text-base text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-white/50 transition-colors disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!replyContent.trim() || submitting}
-            className="self-end h-8 w-8 bg-lfc-red text-white hover:bg-lfc-red/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer shrink-0"
+            className="self-end size-11 bg-lfc-red text-white hover:bg-lfc-red-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer shrink-0"
+            aria-label={t("send")}
           >
             {submitting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -285,11 +288,11 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   };
 
   return (
-    <div className="mt-10 pt-8 border-t border-stadium-border/50">
-      <h3 className="font-bebas text-2xl text-white flex items-center gap-2 mb-6">
-        <MessageSquareText className="w-5 h-5 text-lfc-red" />
+    <section aria-labelledby="comments-title" className="mt-12 border-t border-[var(--line)] pt-8">
+      <h2 id="comments-title" className="mb-6 flex items-center gap-2 font-bebas text-3xl leading-none text-white">
+        <MessageSquareText className="size-6 text-lfc-red" aria-hidden />
         {t("title")} {comments.length > 0 && t("count", { count: comments.length })}
-      </h3>
+      </h2>
 
       {/* Top-level comment form */}
       {userId ? (
@@ -305,15 +308,16 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
                 }
               }}
               placeholder={t("placeholder")}
+              aria-label={t("placeholder")}
               maxLength={1000}
               rows={2}
               disabled={submitting}
-              className="flex-1 bg-stadium-surface border border-stadium-border px-4 py-3 font-inter text-sm text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-lfc-red/50 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-0 border border-[var(--line-strong)] bg-[var(--surface-1)] px-4 py-3 text-base text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-white/50 transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
               disabled={!newComment.trim() || submitting}
-              className="self-end h-10 w-10 bg-lfc-red text-white hover:bg-lfc-red/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer shrink-0"
+              className="self-end size-11 bg-lfc-red text-white hover:bg-lfc-red-dark disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center cursor-pointer shrink-0"
               aria-label={t("send")}
             >
               {submitting ? (
@@ -323,18 +327,18 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
               )}
             </button>
           </div>
-          <p className="font-inter text-[10px] text-stadium-muted mt-1.5">
+          <p className="mt-1.5 text-xs text-stadium-muted">
             {t("charCount", { n: newComment.length })}
           </p>
         </form>
       ) : (
-        <div className="mb-8 p-5 bg-stadium-surface/60 border border-stadium-border/50 text-center">
-          <p className="font-inter text-sm text-stadium-muted mb-3">
+        <div className="surface mb-8 p-5 text-center">
+          <p className="mb-3 text-[15px] text-stadium-muted">
             {t("login")}
           </p>
           <Link
             href="/auth/login"
-            className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-4 py-2 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider"
+            className="inline-flex min-h-11 items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark"
           >
             <LogIn className="w-3.5 h-3.5" />
             {t("loginBtn")}
@@ -346,17 +350,17 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
       {loading ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex gap-3 animate-pulse">
-              <div className="w-9 h-9 rounded-full bg-stadium-surface shrink-0" />
+            <div key={i} aria-hidden className="flex gap-3">
+              <div className="skeleton size-8 rounded-full shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-3 w-24 bg-stadium-surface" />
-                <div className="h-4 w-3/4 bg-stadium-surface" />
+                <div className="skeleton h-3 w-24" />
+                <div className="skeleton h-4 w-3/4" />
               </div>
             </div>
           ))}
         </div>
       ) : comments.length === 0 ? (
-        <p className="font-inter text-sm text-stadium-muted text-center py-8">
+        <p className="surface px-4 py-8 text-center text-[15px] text-stadium-muted">
           {t("empty")}
         </p>
       ) : (
@@ -399,7 +403,7 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
@@ -428,7 +432,7 @@ function CommentItem({
 
   return (
     <div
-      className={`flex gap-2.5 py-2.5 px-3 hover:bg-stadium-surface/30 transition-colors group ${
+      className={`flex gap-2.5 py-3 px-1 sm:px-3 hover:bg-white/[0.03] transition-colors group ${
         isDeleting ? "opacity-50" : ""
       }`}
     >
@@ -457,13 +461,13 @@ function CommentItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         {/* Username + content on same line for compact look */}
-        <p className={`font-inter text-white/85 leading-relaxed break-words ${isReply ? "text-[13px]" : "text-sm"}`}>
+        <p className="text-[15px] leading-relaxed text-white/90 break-words">
           <span className="font-semibold text-white mr-1.5">
             {comment.username}
           </span>
           {/* Show @mention for reply-to-reply */}
           {comment.replyToName && (
-            <span className="text-lfc-red font-medium mr-1">
+            <span className="text-brand font-medium mr-1">
               @{comment.replyToName}
             </span>
           )}
@@ -471,14 +475,14 @@ function CommentItem({
         </p>
 
         {/* Meta row: time · reply · delete */}
-        <div className="flex items-center gap-3 mt-0.5">
-          <span className="font-inter text-[10px] text-stadium-muted">
+        <div className="flex items-center gap-1 mt-0.5">
+          <span className="mr-2 text-xs text-stadium-muted">
             {formatDate(comment.createdAt)}
           </span>
           {userId && (
             <button
               onClick={onReply}
-              className="opacity-0 group-hover:opacity-100 transition-opacity font-inter text-[11px] text-stadium-muted hover:text-lfc-red cursor-pointer font-medium"
+              className="inline-flex min-h-9 items-center px-2 text-xs font-medium text-stadium-muted hover:text-white transition-colors cursor-pointer"
             >
               {t("reply")}
             </button>
@@ -487,12 +491,13 @@ function CommentItem({
             <button
               onClick={() => onDelete(comment.id)}
               disabled={isDeleting}
-              className="opacity-0 group-hover:opacity-100 transition-opacity font-inter text-[11px] text-stadium-muted hover:text-rose-400 cursor-pointer disabled:cursor-not-allowed"
+              aria-label={t("delete")}
+              className="inline-flex size-9 items-center justify-center text-stadium-muted hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               {isDeleting ? (
-                <Loader2 className="w-3 h-3 animate-spin inline" />
+                <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : (
-                <Trash2 className="w-3 h-3 inline" />
+                <Trash2 className="size-4" aria-hidden />
               )}
             </button>
           )}

@@ -33,12 +33,13 @@ interface EspnScheduleEvent {
   seasonType: { name: string };
   competitions: {
     venue?: { fullName?: string; address?: { city?: string } };
-    status: { type: { detail: string; state: string; completed: boolean } };
+    status: { type: { name?: string; detail: string; state: string; completed: boolean } };
     competitors: {
       id: string;
       homeAway: string;
       winner: boolean;
-      score?: { value: number; displayValue: string };
+      // Team schedules send an object; scoreboards send a bare string ("3").
+      score?: { value: number; displayValue: string } | string;
       team: {
         id: string;
         displayName: string;
@@ -196,8 +197,10 @@ async function fetchSummary(espnId: string): Promise<EspnSummary | null> {
 
 // ─── Event type mapping ─────────────────────────────────────────────────────
 
-function mapEventType(espnType: string): { type: FixtureEvent["type"]; detail: string } | null {
-  if (espnType.startsWith("goal") || espnType === "penalty---scored") {
+/** Exported for tests. */
+export function mapEventType(espnType: string): { type: FixtureEvent["type"]; detail: string } | null {
+  // ESPN labels own goals "own-goal" (not "goal-…"), so they used to be dropped.
+  if (espnType.startsWith("goal") || espnType === "penalty---scored" || espnType === "own-goal") {
     const detail = espnType.includes("header") ? "Header"
       : espnType.includes("penalty") ? "Penalty"
       : espnType.includes("free-kick") ? "Free Kick"
@@ -352,11 +355,17 @@ const SLUG_COMP_NAME: Record<string, string> = {
 
 // Local competition logos (downloaded to /public/assets/lfc/)
 const SLUG_COMP_LOGO: Record<string, string> = {
-  "eng.1": "/assets/lfc/premier-league.svg",
+  "eng.1": "/assets/lfc/premier-league-white.svg",
   "uefa.champions": "/assets/lfc/champions-league.png",
   "eng.fa": "/assets/lfc/fa-cup.png",
   "eng.league_cup": "/assets/lfc/carabao-cup.png",
 };
+
+function parseEspnScore(score: { value: number } | string | undefined): number | null {
+  if (score === undefined) return null;
+  const value = typeof score === "string" ? Number(score) : score.value;
+  return Number.isFinite(value) ? value : null;
+}
 
 function espnTeamId(espnId: string): number {
   return espnId === ESPN_LFC_ID ? 40 : parseInt(espnId, 10);
@@ -364,7 +373,8 @@ function espnTeamId(espnId: string): number {
 
 // ─── Shared: map an ESPN schedule event to Fixture ─────────────────────────────
 
-function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo: string): Fixture | null {
+/** Exported for tests. */
+export function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo: string): Fixture | null {
   const comp = ev.competitions[0];
   if (!comp?.competitors?.length) return null;
 
@@ -374,21 +384,29 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
 
   const detail = comp.status.type.detail;
   const state = comp.status.type.state;
-  const statusShort = detail === "FT" ? "FT"
+  const statusName = comp.status.type.name ?? "";
+  // A "post" event that is not completed was postponed/cancelled, not played —
+  // falling through to "FT" counted it as a finished match.
+  const statusShort = statusName === "STATUS_POSTPONED" ? "PST"
+    : statusName === "STATUS_CANCELED" ? "CANC"
+    : detail === "FT" ? "FT"
     : detail === "AET" ? "AET"
     : detail.includes("Pens") ? "PEN"
     : state === "pre" ? "NS"
     : state === "in" ? "LIVE"
-    : "FT";
+    : comp.status.type.completed ? "FT"
+    : "PST";
   const statusLong = statusShort === "FT" ? "Match Finished"
     : statusShort === "AET" ? "After Extra Time"
     : statusShort === "PEN" ? "Penalties"
     : statusShort === "NS" ? "Not Started"
     : statusShort === "LIVE" ? "In Play"
+    : statusShort === "PST" ? "Postponed"
+    : statusShort === "CANC" ? "Cancelled"
     : detail;
 
-  const hScore = home.score?.value ?? null;
-  const aScore = away.score?.value ?? null;
+  const hScore = parseEspnScore(home.score);
+  const aScore = parseEspnScore(away.score);
   const isFinished = comp.status.type.completed;
 
   return {
@@ -407,7 +425,9 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
       name: compName,
       country: "England",
       logo: compLogo,
-      season: getCurrentSeasonYear(),
+      // From the event's own date: ESPN's team schedule also returns last
+      // season's cup run, which was being labelled as the current season.
+      season: getCurrentSeasonYear(new Date(ev.date)),
       round: ev.seasonType?.name ?? "",
     },
     teams: {
@@ -436,28 +456,20 @@ function mapEspnEventToFixture(ev: EspnScheduleEvent, compName: string, compLogo
 
 // ─── Scoreboard: fetch upcoming cup fixtures ESPN team schedule misses ────────
 
-/** Build "YYYYMMDD-YYYYMMDD" date range from today to +90 days. */
-function buildDateRange(): string {
-  const now = new Date();
-  const end = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10).replace(/-/g, "");
-  return `${fmt(now)}-${fmt(end)}`;
-}
-
-interface EspnScoreboardResponse {
-  events: EspnScheduleEvent[];
-}
-
-/** Fetch Liverpool cup fixtures from ESPN scoreboard (catches upcoming matches the team schedule misses). */
-async function getEspnCupScoreboardFixtures(): Promise<Fixture[]> {
+/**
+ * Upcoming Liverpool cup fixtures. The plain team schedule only lists played
+ * matches; `?fixture=true` lists the scheduled ones. (This used to query the
+ * scoreboard with a YYYYMMDD-YYYYMMDD range, which ESPN now rejects with 400,
+ * so upcoming cup ties — e.g. the Carabao Cup R4 v Chelsea — never appeared.)
+ */
+async function getEspnUpcomingCupFixtures(): Promise<Fixture[]> {
   const cupSlugs = ["eng.fa", "eng.league_cup"] as const;
-  const dateRange = buildDateRange();
   const fixtures: Fixture[] = [];
 
   const results = await Promise.allSettled(
     cupSlugs.map((slug) =>
-      espnFetch<EspnScoreboardResponse>(
-        `${ESPN_BASE}/${slug}/scoreboard?dates=${dateRange}`,
+      espnFetch<{ events: EspnScheduleEvent[] }>(
+        `${ESPN_BASE}/${slug}/teams/${ESPN_LFC_ID}/schedule?fixture=true`,
         21600, // 6h
       )
     )
@@ -469,13 +481,7 @@ async function getEspnCupScoreboardFixtures(): Promise<Fixture[]> {
     const slug = cupSlugs[i];
     const compName = SLUG_COMP_NAME[slug] ?? slug;
     const compLogo = SLUG_COMP_LOGO[slug] ?? "";
-
-    for (const ev of result.value.events) {
-      // Only include events where Liverpool is a competitor
-      const comp = ev.competitions[0];
-      const teamIds = comp?.competitors?.map((c) => c.team?.id) ?? [];
-      if (!teamIds.includes(ESPN_LFC_ID)) continue;
-
+    for (const ev of result.value.events ?? []) {
       const fixture = mapEspnEventToFixture(ev, compName, compLogo);
       if (fixture) fixtures.push(fixture);
     }
@@ -514,17 +520,17 @@ export async function getEspnCupFixtures(): Promise<Fixture[]> {
     }
   }
 
-  // Source 2: scoreboard (catches upcoming matches the team schedule misses)
+  // Source 2: scheduled fixtures (the plain schedule only has played matches)
   try {
-    const scoreboardFixtures = await getEspnCupScoreboardFixtures();
+    const upcoming = await getEspnUpcomingCupFixtures();
     const existingIds = new Set(fixtures.map((f) => f.fixture.id));
-    for (const sf of scoreboardFixtures) {
-      if (!existingIds.has(sf.fixture.id)) {
-        fixtures.push(sf);
+    for (const uf of upcoming) {
+      if (!existingIds.has(uf.fixture.id)) {
+        fixtures.push(uf);
       }
     }
   } catch (err) {
-    console.error("[espn] scoreboard cup fixtures failed:", err);
+    console.error("[espn] upcoming cup fixtures failed:", err);
   }
 
   return fixtures;

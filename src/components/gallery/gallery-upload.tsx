@@ -93,7 +93,7 @@ export function GalleryUpload({ onUploadComplete }: GalleryUploadProps) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-lfc-red/10 border border-lfc-red/30 text-lfc-red text-xs font-barlow font-bold uppercase tracking-widest hover:bg-lfc-red/20 transition-colors cursor-pointer"
+        className="flex items-center gap-2 px-4 py-2 bg-lfc-red/10 border border-lfc-red/30 text-lfc-red-text text-xs font-barlow font-bold uppercase tracking-widest hover:bg-lfc-red/20 transition-colors cursor-pointer"
       >
         <Upload size={14} />
         {t("upload.button")}

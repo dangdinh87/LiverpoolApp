@@ -1,0 +1,19 @@
+# Task: SITE-WIDE QUALITY PASS (engineer "sitewide", dev port 3310, build dir .build-sitewide)
+
+Read first: `plans/reports/task-261005-00-common-rules.md`, `plans/reports/design-brief-261005-ui-rebuild.md`, CLAUDE.md. The site was just rebuilt (header/footer, home, football pages, news, club pages). You are the independent QA + fix engineer for everything EXCEPT news.
+
+## You own
+Everything under src/ EXCEPT: src/app/news/**, src/components/news/**, src/lib/news/**, src/lib/news-config.ts, src/app/api/news/** (another engineer, "articleqa", owns those). Also e2e/** (extend the Playwright suite). Do NOT touch next.config.ts `images.remotePatterns` (keep ≤ 49; a test guards it). Do not change src/lib/football/** data-layer behaviour except for the bugs listed here.
+
+## Do
+1. **Crawl every route** in vi and en at 320, 390, 768, 1024, 1440 with Playwright (routes: / /squad /player/<slug> /fixtures /fixtures/<id> /season /standings /stats /history /gallery /about /legal /chat /auth/login /auth/register /profile /404). For each: horizontal overflow, text clipped/overlapping, tap targets <40px, images missing/0×0, CLS (PerformanceObserver), console errors/warnings, failed requests, hydration warnings, one h1, heading order, landmarks, labels/alt/aria, focus visibility, contrast of muted text on each surface (compute with the real colors), keyboard traversal of header → main → footer (Tab order sane, no traps, Esc closes menus/dialogs), `prefers-reduced-motion` honoured.
+2. **Vietnamese stress**: the longest strings (club names, player names like "Giorgi Mamardashvili", competition names, buttons) in header, cards, tables, chips — no clipping/overflow/ugly wraps. Long numbers/dates. Verify English too.
+3. **Known leftovers to fix**: (a) shared `PageHero` is ~230px tall at 390 (aim ≤ 180px content + header) and logged a one-time next/image "fill height 0" warning on /history — find the cause and fix; (b) `src/components/season/season-tabs.tsx` uses `--navbar-h` → use `--header-h`; (c) dead code left by the rebuild: `src/components/squad/injury-widget.tsx`, unused i18n keys listed by a script you write (report them; delete only keys you are certain are unused in src/ — grep each) — keep the key-parity test green; (d) `/chat` crest `next/image` width/height warning; (e) check the Premier League competition logo is invisible on dark cards (data-layer asset is dark): fix with a light backing chip or an alternative local asset; (f) anything the crawl finds.
+4. **Performance pass**: measure first-load JS per route via HTTP (sum gzip of script tags, as before: /about was 370 KB gz), find the heaviest shared chunks (use a bundle analysis by reading chunk contents/names — no new dependency), cut what is avoidable: e.g. framer-motion still used in shared components (replace with CSS if simple), supabase browser client in the navbar (lazy/idle-load), unused large libs in layout. Report before/after numbers. Never trade correctness for bytes.
+5. **e2e**: extend `e2e/` with focused specs for the new UX (mobile menu opens/closes with Esc and returns focus; language switch; fixtures filter chips; standings sticky columns present at 390; gallery lightbox keyboard; chat widget open/close focus (logged out: not rendered — assert absence); no horizontal overflow on all routes at 320 and 390; reduced-motion). Keep the suite deterministic (no dependence on live news data) and under ~2 minutes; the existing 86 tests must stay green.
+
+## Gates
+tsc, eslint on your files, `npx vitest run`, `npm run test:e2e` all green (e2e uses its own server on :3100 and builds the app; if the machine is heavily loaded and a test times out, re-run once and say so).
+
+## Report
+Defects found/fixed per route with evidence (screenshot paths or measured values), bundle before/after, new e2e specs, anything not fixed and why, anything the "articleqa" engineer must handle.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
+import { AuthCardSkeleton } from "@/components/auth/auth-card-skeleton";
 
 export const metadata: Metadata = {
   title: "Create Account",
@@ -10,8 +11,8 @@ export const metadata: Metadata = {
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
-      <Suspense fallback={null}>
+    <div className="min-h-dvh flex items-center justify-center px-4 pb-16 pt-[calc(var(--header-h)+1.5rem)]">
+      <Suspense fallback={<AuthCardSkeleton />}>
         <LoginForm defaultMode="register" />
       </Suspense>
     </div>

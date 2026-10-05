@@ -7,7 +7,10 @@ import "server-only";
 // ─── Configuration ──────────────────────────────────────────────────────────
 
 const FPL_API = "https://fantasy.premierleague.com/api/bootstrap-static/";
-const FPL_LFC_TEAM_ID = 12; // Liverpool's FPL team ID
+// FPL team ids are the alphabetical position of that season's 20 clubs, so they
+// change every season (Liverpool was 12 last season; 12 is now Ipswich). Look
+// the club up by its stable short name instead of hard-coding the id.
+const FPL_LFC_SHORT_NAME = "LIV";
 const REVALIDATE_SEC = 21_600; // 6h cache
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -48,7 +51,7 @@ export interface FplPlayerStats {
 
 // ─── Raw FPL element ────────────────────────────────────────────────────────
 
-interface FplElement {
+export interface FplElement {
   id: number;
   web_name: string;
   first_name: string;
@@ -83,8 +86,25 @@ interface FplElement {
   form: string;
 }
 
-interface FplBootstrapResponse {
+interface FplTeam {
+  id: number;
+  name: string;
+  short_name: string;
+}
+
+export interface FplBootstrapResponse {
   elements: FplElement[];
+  teams: FplTeam[];
+}
+
+/** Liverpool's players from a bootstrap-static payload ([] if the club is absent). */
+export function selectLiverpoolElements(data: FplBootstrapResponse): FplPlayerStats[] {
+  const lfc = data.teams?.find((t) => t.short_name === FPL_LFC_SHORT_NAME);
+  if (!lfc) {
+    console.warn("[fpl-stats] Liverpool not found in FPL teams list");
+    return [];
+  }
+  return data.elements.filter((e) => e.team === lfc.id).map(mapFplElement);
 }
 
 // ─── Mapper ─────────────────────────────────────────────────────────────────
@@ -196,9 +216,7 @@ async function fetchLfcFplStats(): Promise<FplPlayerStats[]> {
   if (!res.ok) throw new Error(`[fpl-stats] HTTP ${res.status}`);
 
   const data: FplBootstrapResponse = await res.json();
-  const lfcPlayers = data.elements
-    .filter((e) => e.team === FPL_LFC_TEAM_ID)
-    .map(mapFplElement);
+  const lfcPlayers = selectLiverpoolElements(data);
 
   _fplCache = lfcPlayers;
   _fplCacheTime = now;

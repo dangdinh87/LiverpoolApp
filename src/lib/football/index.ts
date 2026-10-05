@@ -1,6 +1,7 @@
 // Football data barrel — uses Football-Data.org as primary provider.
 // Import "server-only" to prevent any client component from importing this module.
 
+import { getCurrentSeasonYear, getSelectableSeasons } from "./current-season";
 import "server-only";
 import { cache } from "react";
 import type { Standing } from "@/lib/types/football";
@@ -38,11 +39,16 @@ export const getFixtures = cache(async (season?: number) => {
     const allFixtures = await getFdoLfcFixtures(season);
     const coveredComps = new Set(allFixtures.map((f) => f.league.name));
 
-    // ESPN: FA Cup, EFL Cup (free, no key needed) — only for current season
-    if (!season) {
+    // ESPN: FA Cup, EFL Cup (free, no key needed). ESPN only serves the
+    // current campaign's schedule, which can still contain last season's cup
+    // run, so keep just the events dated inside the requested season.
+    const currentSeason = getCurrentSeasonYear();
+    if (!season || season === currentSeason) {
       try {
         const espnCups = await getEspnCupFixtures();
-        const newCups = espnCups.filter((f) => !coveredComps.has(f.league.name));
+        const newCups = espnCups.filter(
+          (f) => f.league.season === currentSeason && !coveredComps.has(f.league.name),
+        );
         allFixtures.push(...newCups);
       } catch (err) {
         console.error("[football] ESPN cup fixtures failed:", err);
@@ -54,6 +60,24 @@ export const getFixtures = cache(async (season?: number) => {
     console.error("[football] FDO fixtures failed:", err);
     return [];
   }
+});
+
+/**
+ * One fixture by id, from the current season or — failing that — the archived
+ * seasons the season picker offers. Match cards on /season?season=2025 link
+ * here, and looking only at the current season sent them all to a 404.
+ * Finished seasons are cached for 30 days, so the fallback is cheap.
+ */
+export const getFixtureById = cache(async (id: number) => {
+  const current = await getFixtures();
+  const hit = current.find((f) => f.fixture.id === id);
+  if (hit) return hit;
+  for (const season of getSelectableSeasons().slice(1)) {
+    const archived = await getFixtures(season);
+    const match = archived.find((f) => f.fixture.id === id);
+    if (match) return match;
+  }
+  return null;
 });
 
 // Standings: Football-Data.org (real W/D/L/GF/GA/form)

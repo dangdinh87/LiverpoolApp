@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,7 +23,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
@@ -28,7 +34,27 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".build-sitewide/types/**/*.ts",
+    ".build-sitewide/dev/types/**/*.ts",
+    ".build-articleqa/types/**/*.ts",
+    ".build-articleqa/dev/types/**/*.ts",
+    ".build-sitewide-prod/types/**/*.ts",
+    ".build-sitewide-prod/dev/types/**/*.ts",
+    ".build-sitewide-prod2/types/**/*.ts",
+    ".build-sitewide-prod2/dev/types/**/*.ts",
+    ".build-sitewide-prod3/types/**/*.ts",
+    ".build-sitewide-prod3/dev/types/**/*.ts",
+    ".build-sitewide-prod4/types/**/*.ts",
+    ".build-sitewide-prod4/dev/types/**/*.ts",
+    ".build-sitewide-prod5/types/**/*.ts",
+    ".build-sitewide-prod5/dev/types/**/*.ts",
+    ".build-sitewide-prod6/types/**/*.ts",
+    ".build-sitewide-prod6/dev/types/**/*.ts",
+    ".build-preview/types/**/*.ts",
+    ".build-preview/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

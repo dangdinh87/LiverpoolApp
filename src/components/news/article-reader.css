@@ -1,0 +1,254 @@
+/* Reading typography for article bodies (scraped HTML and plain paragraphs).
+   Measure ~65ch, 17px/18px body, 1.7 line-height. Imported by the article page. */
+.article-prose {
+  max-width: 42rem;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.88);
+  overflow-wrap: break-word;
+}
+@media (min-width: 640px) {
+  .article-prose {
+    font-size: 1.125rem;
+  }
+}
+
+.article-prose > * + * {
+  margin-top: 1.25em;
+}
+
+.article-prose p {
+  margin-block: 0;
+}
+
+.article-prose h2,
+.article-prose h3,
+.article-prose h4 {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.article-prose h2 {
+  font-size: 1.5rem;
+  margin-top: 2em;
+}
+.article-prose h3 {
+  font-size: 1.25rem;
+  margin-top: 1.75em;
+}
+.article-prose h4 {
+  font-size: 1.0625rem;
+  margin-top: 1.5em;
+}
+.article-prose h2 + *,
+.article-prose h3 + *,
+.article-prose h4 + * {
+  margin-top: 0.6em;
+}
+
+.article-prose strong,
+.article-prose b {
+  color: #fff;
+  font-weight: 700;
+}
+
+.article-prose a {
+  color: #ff5c75;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.article-prose a:hover {
+  color: #fff;
+}
+
+.article-prose ul,
+.article-prose ol {
+  padding-left: 1.4em;
+}
+.article-prose ul {
+  list-style: disc;
+}
+.article-prose ol {
+  list-style: decimal;
+}
+.article-prose li + li {
+  margin-top: 0.4em;
+}
+.article-prose li::marker {
+  color: #ff5c75;
+}
+
+.article-prose blockquote {
+  border-left: 3px solid #c8102e;
+  padding: 0.25rem 0 0.25rem 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-style: italic;
+}
+.article-prose blockquote > * + * {
+  margin-top: 0.75em;
+}
+
+.article-prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin-block: 2em;
+}
+
+/* Images: width/height attributes (when present) reserve the box before load. */
+.article-prose img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface-3);
+  cursor: zoom-in;
+}
+.article-prose img:not([width]):not([height]) {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.article-prose figure {
+  margin-inline: 0;
+  margin-block: 1.75em;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.article-prose figure figure {
+  margin-block: 0;
+}
+.article-prose figcaption {
+  padding: 0.5rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #a0a0a0;
+}
+/* On phones, photos run edge to edge of the page gutter. */
+@media (max-width: 639px) {
+  .article-prose figure,
+  .article-prose > img {
+    margin-inline: -1rem;
+  }
+  .article-prose figure > figcaption {
+    padding-inline: 1rem;
+  }
+  /* A figure inside a figure (Independent, Bongda) must not bleed a second time: 16px of horizontal scroll. */
+  .article-prose figure figure {
+    margin-inline: 0;
+  }
+}
+
+.article-prose table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+.article-prose th,
+.article-prose td {
+  border: 1px solid var(--line-strong);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.article-prose th {
+  background: var(--surface-3);
+  color: #fff;
+}
+
+/* Embedded video: iframes (YouTube etc.) and the HLS/MP4 player share a 16:9 box. */
+.article-prose .article-embed,
+.article-prose .article-video-container {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.article-prose .article-embed iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.article-prose .article-video-container .article-video,
+.article-prose video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+.article-prose .article-video-player {
+  margin-block: 1.75em;
+}
+.article-prose .article-video-placeholder a {
+  position: relative;
+  display: block;
+  text-decoration: none;
+}
+.article-prose .article-video-placeholder .video-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+.article-prose .article-video-placeholder .video-play-overlay::after {
+  content: "";
+  width: 4rem;
+  height: 4rem;
+  border-radius: 9999px;
+  background: rgba(200, 16, 46, 0.92)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 6.5v11l9-5.5z'/%3E%3C/svg%3E")
+    center / 2rem no-repeat;
+}
+
+.article-prose iframe {
+  max-width: 100%;
+}
+
+/* Reserve the player's box before it mounts so the page does not jump. */
+.article-prose .article-video-player {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+.article-prose .article-video-player .article-video-host,
+.article-prose .article-video-player .article-video-container {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+}
+.article-prose .article-video-player .article-video-placeholder {
+  margin: 0;
+}
+.article-prose .article-video-player .article-video-placeholder,
+.article-prose .article-video-player .article-video-placeholder a,
+.article-prose .article-video-player .article-video-placeholder img {
+  height: 100%;
+}
+.article-prose .article-video-player .article-video-placeholder img {
+  object-fit: cover;
+  cursor: pointer;
+}
+.article-prose .article-video-player .article-video-placeholder figcaption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+}
+
+/* Sectioned long-form (daily digest): sections breathe, paragraphs stack evenly. */
+.article-prose section + section {
+  margin-top: 2em;
+}
+.article-prose section > * + * {
+  margin-top: 1.25em;
+}
+.article-prose section > h2:first-child {
+  margin-top: 0;
+}

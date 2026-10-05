@@ -1,5 +1,6 @@
 import type { NewsArticle } from "../types";
 import { extractImageUrlFromHtml } from "../image";
+import { NEWS_USER_AGENT } from "../http";
 
 interface OgMeta {
   image?: string;
@@ -21,13 +22,13 @@ function extractMetaContent(html: string, name: string): string | undefined {
   return undefined;
 }
 
-export async function fetchOgMeta(url: string): Promise<OgMeta> {
+export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta> {
   try {
     const readBodyFallback = /bongda24h\.vn/i.test(url);
     const res = await fetch(url, {
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; LiverpoolApp/1.0)",
+        "User-Agent": NEWS_USER_AGENT,
         Accept: "text/html",
       },
       next: { revalidate: 86400 },

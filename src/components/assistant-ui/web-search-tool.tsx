@@ -1,7 +1,7 @@
 "use client";
 
 import type { ToolCallMessagePartComponent } from "@assistant-ui/react";
-import { Globe, ExternalLink, Loader2, ChevronDown } from "lucide-react";
+import { Globe, Loader2, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -86,11 +86,11 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 							rel="noopener noreferrer"
 							className="flex items-start gap-2 rounded-md p-1.5 hover:bg-white/5 transition-colors group"
 						>
-							<span className="inline-flex items-center justify-center size-4 rounded-full bg-lfc-red/20 text-lfc-red text-[10px] font-bold shrink-0 mt-0.5">
+							<span className="inline-flex items-center justify-center size-4 rounded-full bg-lfc-red/20 text-lfc-red-text text-[10px] font-bold shrink-0 mt-0.5">
 								{i + 1}
 							</span>
 							<div className="min-w-0">
-								<p className="text-sm font-medium truncate group-hover:text-lfc-red transition-colors">
+								<p className="text-sm font-medium truncate group-hover:text-lfc-red-text transition-colors">
 									{s.title || new URL(s.url).hostname}
 								</p>
 								{s.snippet && (

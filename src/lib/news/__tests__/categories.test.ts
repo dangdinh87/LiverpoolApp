@@ -64,3 +64,37 @@ describe("categorizeArticle", () => {
     ).toBe("injury");
   });
 });
+
+describe("categorizeArticle word boundaries", () => {
+  it("does not match English stems inside other words", () => {
+    expect(categorizeArticle(makeArticle("Feel the heat at Anfield"))).toBe("general"); // "fee"
+    expect(categorizeArticle(makeArticle("Liverpool's ideal XI for the season"))).toBe("general"); // "deal"
+  });
+
+  it("does not match Vietnamese syllables inside other words", () => {
+    expect(categorizeArticle(makeArticle("Trời mưa tại Anfield trước giờ bóng lăn"))).not.toBe("transfer"); // "rời" in "trời"
+    expect(categorizeArticle(makeArticle("Bán kết Cúp Liên đoàn Anh: Liverpool gặp Arsenal"))).not.toBe("transfer"); // "bán kết"
+  });
+
+  it("still matches Vietnamese keywords on their own", () => {
+    expect(categorizeArticle(makeArticle("Liverpool bán Núñez với giá 60 triệu euro"))).toBe("transfer");
+    expect(categorizeArticle(makeArticle("Salah rời Liverpool"))).toBe("transfer");
+    expect(categorizeArticle(makeArticle("Chấn thương của Isak"))).toBe("injury");
+  });
+
+  it("handles decomposed (NFC-less) Vietnamese input", () => {
+    expect(categorizeArticle(makeArticle("Salah rồi Liverpool".normalize("NFD")))).toBeDefined();
+    expect(categorizeArticle(makeArticle("Chấn thương của Isak".normalize("NFD")))).toBe("injury");
+  });
+
+  it("does not treat formations or season years as scorelines", () => {
+    expect(categorizeArticle(makeArticle("4-3-3 explained: Liverpool's shape"))).toBe("general");
+    expect(categorizeArticle(makeArticle("2026-27 season preview"))).toBe("analysis");
+    expect(categorizeArticle(makeArticle("Fixtures released on 04-10-2026"))).toBe("general");
+  });
+
+  it("still detects scorelines", () => {
+    expect(categorizeArticle(makeArticle("Liverpool 2 - 1 Arsenal"))).toBe("match-report");
+    expect(categorizeArticle(makeArticle("Chelsea 0–0 Liverpool"))).toBe("match-report");
+  });
+});

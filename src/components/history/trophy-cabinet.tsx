@@ -1,7 +1,5 @@
-"use client";
-
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { getTranslations } from "next-intl/server";
 
 interface Trophy {
   name: string;
@@ -10,71 +8,27 @@ interface Trophy {
   image: string;
 }
 
-interface TrophyCabinetProps {
-  trophies: Trophy[];
-}
-
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
-const item = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.45 } },
-};
-
-export function TrophyCabinet({ trophies }: TrophyCabinetProps) {
+/** Trophy tiles: big gold count, name, and the winning years behind a native disclosure. */
+export async function TrophyCabinet({ trophies }: { trophies: Trophy[] }) {
+  const t = await getTranslations("History.trophies");
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-60px" }}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-    >
+    <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
       {trophies.map((trophy) => (
-        <motion.div
-          key={trophy.name}
-          variants={item}
-          className="group relative bg-stadium-surface border border-stadium-border/50 p-6 flex flex-col gap-4 hover:border-lfc-gold/50 transition-all duration-500 overflow-hidden"
-        >
-          {/* Accent glow on hover */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-lfc-gold/5 blur-[80px] -mr-16 -mt-16 group-hover:bg-lfc-gold/15 transition-colors duration-500" />
-
-          <div className="flex items-center justify-between gap-4">
-            <div className="relative w-14 h-14 shrink-0 drop-shadow-[0_0_8px_rgba(246,235,97,0.2)] group-hover:drop-shadow-[0_0_12px_rgba(246,235,97,0.4)] transition-all duration-500">
-              <Image
-                src={trophy.image}
-                alt={trophy.name}
-                width={56}
-                height={56}
-                className="object-contain"
-              />
-            </div>
-            <span className="font-bebas text-6xl text-lfc-gold leading-none tracking-tighter drop-shadow-sm select-none">
-              {trophy.count}
-            </span>
+        <li key={trophy.name} className="surface-interactive flex flex-col p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-2">
+            <Image src={trophy.image} alt="" width={48} height={48} className="size-12 object-contain" />
+            <span className="font-bebas text-5xl leading-none text-lfc-gold sm:text-6xl">{trophy.count}</span>
           </div>
-
-          <div>
-            <p className="font-bebas text-2xl text-white tracking-wider leading-tight mb-2 group-hover:text-lfc-gold transition-colors duration-500">
-              {trophy.name}
-            </p>
-            <div className="h-px w-8 bg-lfc-gold/30 mb-3 group-hover:w-full transition-all duration-700" />
-            <div className="flex flex-wrap gap-x-2 gap-y-1">
-              {trophy.years.map((year, idx) => (
-                <span
-                  key={year}
-                  className="font-inter text-[10px] text-stadium-muted font-bold tracking-tighter"
-                >
-                  {year}{idx !== trophy.years.length - 1 ? " ·" : ""}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+          <h3 className="mt-3 font-bebas text-xl leading-tight text-white sm:text-2xl">{trophy.name}</h3>
+          <details className="group mt-2 text-xs text-stadium-muted">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center gap-1 font-barlow font-semibold uppercase tracking-[0.12em] hover:text-white [&::-webkit-details-marker]:hidden">
+              {t("years")}
+              <span aria-hidden className="transition-transform group-open:rotate-90">›</span>
+            </summary>
+            <p className="pb-1 leading-relaxed">{trophy.years.join(" · ")}</p>
+          </details>
+        </li>
       ))}
-    </motion.div>
+    </ul>
   );
 }

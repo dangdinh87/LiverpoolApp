@@ -1,33 +1,37 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Mirrors the compact player hero + facts grid + stats cards. */
 export default function PlayerLoading() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Skeleton className="h-5 w-32 mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1">
-            <div className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden">
-              <Skeleton className="h-72 w-full rounded-none" />
-              <div className="p-5 flex flex-col gap-3">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-3/4" />
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-4 w-full" />
-                ))}
-              </div>
+    <div className="min-h-screen" aria-busy="true">
+      <div className="border-b border-[var(--line)]">
+        <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+1.5rem)]">
+          <Skeleton className="mb-4 h-10 w-36" />
+          <div className="flex items-end gap-4 sm:gap-8 md:items-center">
+            <Skeleton className="aspect-[4/5] w-32 shrink-0 sm:w-56 md:order-2 md:ml-auto md:w-72 lg:w-80" />
+            <div className="min-w-0 flex-1 space-y-3 md:order-1">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-12 w-16 sm:h-16" />
+              <Skeleton className="h-10 w-full max-w-sm sm:h-14" />
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-11 w-36" />
             </div>
-          </div>
-          <div className="md:col-span-2">
-            <Skeleton className="h-8 w-56 mb-6" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-none" />
-              ))}
-            </div>
-            <Skeleton className="h-48 w-full rounded-none" />
           </div>
         </div>
+      </div>
+      <div className="page-container space-y-10 pb-20 pt-8 sm:space-y-14 sm:pt-12">
+        <section>
+          <Skeleton className="mb-4 h-10 w-48 sm:mb-6" />
+          <div className="grid grid-cols-2 gap-px sm:grid-cols-4">
+            {Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-[4.25rem]" />)}
+          </div>
+        </section>
+        <section>
+          <Skeleton className="mb-4 h-10 w-64 sm:mb-6" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-24" />)}
+          </div>
+        </section>
       </div>
     </div>
   );

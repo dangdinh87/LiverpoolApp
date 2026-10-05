@@ -3,9 +3,13 @@ import { unstable_cache } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { getLocale } from "next-intl/server";
 import { getNewsFromDB } from "@/lib/news";
+import { requireNonEmptyNews } from "@/lib/news/db";
+import type { NewsArticle } from "@/lib/news/types";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
+import { PageHero } from "@/components/ui/page-hero";
+import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
@@ -24,8 +28,8 @@ const NEWS_PAGE_LIMIT = 36;
 // `lang` is part of the cache key so EN/VI keep separate entries. The "news"
 // tag is busted by the sync route, so a fresh sync shows up immediately.
 const getCachedNewsList = unstable_cache(
-  async () => getNewsFromDB(NEWS_PAGE_LIMIT, undefined, { skipSync: true }),
-  ["news-page-list-v2"],
+  async () => requireNonEmptyNews(getNewsFromDB(NEWS_PAGE_LIMIT, undefined, { skipSync: true })),
+  ["news-page-list-v3"],
   { revalidate: 300, tags: ["news"] },
 );
 
@@ -35,28 +39,30 @@ const getCachedNewsDigest = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
-export default async function NewsPage() {
-  const [t, locale] = await Promise.all([
+export default async function NewsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ source?: string | string[] }>;
+}) {
+  const [t, locale, params] = await Promise.all([
     getTranslations("News"),
     getLocale(),
+    searchParams,
   ]);
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
-  // Fetch a balanced EN/VI set. The client tabs map fixed languages:
-  // Vietnamese = vi, International = en.
+  const sourceParam = Array.isArray(params.source) ? params.source[0] : params.source;
+  const initialSource =
+    sourceParam && Object.hasOwn(SOURCE_CONFIG, sourceParam) ? (sourceParam as NewsSource) : undefined;
+
   const [allArticles, digest] = await Promise.all([
-    getCachedNewsList(),
-    getCachedNewsDigest(),
+    getCachedNewsList().catch((): NewsArticle[] => []),
+    // getLatestDigest throws on a DB error so the failure is not cached.
+    getCachedNewsDigest().catch(() => null),
   ]);
   const nowMs = new Date().getTime();
 
-  // Strict language separation for the two tabs.
-  // Vietnamese tab always shows VI articles; International always shows EN.
-  const localArticles = allArticles
-    .filter((a) => a.language === "vi")
-    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
-  const globalArticles = allArticles
-    .filter((a) => a.language === "en")
-    .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  const localArticles = allArticles.filter((a) => a.language === "vi");
+  const globalArticles = allArticles.filter((a) => a.language === "en");
 
   const sources = [
     "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
@@ -73,53 +79,38 @@ export default async function NewsPage() {
         { name: "Home", url: getCanonical("/") },
         { name: "News", url: getCanonical("/news") },
       ])} />
-      {/* Hero Banner — compact, with pt for navbar clearance */}
-      <div className="relative min-h-[160px] flex items-end pt-16">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('/assets/lfc/fans/fans-anfield-crowd.webp')",
-          }}
-        />
-        <div className="absolute inset-0 bg-linear-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
-        <div className="absolute inset-0 bg-linear-to-r from-stadium-bg/80 to-transparent" />
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 pt-6 w-full">
-          <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-wider leading-none mb-1">
-            {t("title")}
-          </h1>
-          <p className="font-inter text-stadium-muted text-sm max-w-2xl">
-            {t("heroDesc")}
-          </p>
+
+      <PageHero
+        eyebrow={t("tagline")}
+        title={t("title")}
+        description={t("heroDesc")}
+        image="/assets/lfc/fans/fans-anfield.webp"
+      />
+
+      {digest && (
+        <div className="page-container pt-4 sm:pt-6">
+          <DigestCard
+            as="h2"
+            date={digest.digest_date}
+            title={digest.title}
+            summary={digest.summary}
+            articleCount={digest.article_count}
+            generatedAt={digest.generated_at}
+          />
         </div>
-      </div>
+      )}
 
-      {/* News Feed */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-16">
-        {digest && (
-          <div className="mb-4">
-            <DigestCard
-              date={digest.digest_date}
-              title={digest.title}
-              summary={digest.summary}
-              articleCount={digest.article_count}
-              generatedAt={digest.generated_at}
-            />
-          </div>
-        )}
+      <NewsFeed
+        localArticles={localArticles}
+        globalArticles={globalArticles}
+        locale={userLang}
+        nowMs={nowMs}
+        initialSource={initialSource}
+      />
 
-        <NewsFeed
-          localArticles={localArticles}
-          globalArticles={globalArticles}
-          locale={userLang}
-          nowMs={nowMs}
-        />
-
-        {/* Attribution */}
-        <p className="text-center text-stadium-muted font-inter text-xs mt-10">
-          {t("attribution", { sources })}
-        </p>
-      </div>
+      <p className="page-container pb-12 text-xs leading-relaxed text-stadium-muted">
+        {t("attribution", { sources })}
+      </p>
     </div>
   );
 }

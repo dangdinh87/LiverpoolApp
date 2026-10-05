@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils";
 import type { PlayerStatistic } from "@/lib/types/football";
 import type { FplPlayerStats } from "@/lib/football/fpl-stats";
 import {
-  Trophy, Clock, Target, Shield, Shirt,
+  Trophy, Clock, Target, Shield, Shirt, BarChart3,
   Crosshair, ArrowRightLeft, Star,
 } from "lucide-react";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
+import { SectionHeader } from "@/components/ui/section-header";
+import { EmptyState } from "@/components/ui/empty-state";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -43,11 +45,14 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
   // No stats available or insufficient game time
   if (statistics.length === 0 || !fplStats || fplStats.minutes < 90) {
     return (
-      <section className="bg-stadium-surface border border-stadium-border p-6 md:p-8">
-        <h2 className="font-bebas text-3xl text-white tracking-wider mb-4">
-          {t("seasonStats", { season: getCurrentSeasonLabel() })}
-        </h2>
-        <p className="text-stadium-muted font-inter text-sm">{t("noStats")}</p>
+      <section>
+        <SectionHeader title={t("seasonStats", { season: getCurrentSeasonLabel() })} />
+        <EmptyState
+          className="py-8 sm:py-10"
+          icon={<BarChart3 className="size-8" aria-hidden />}
+          title={t("noStatsTitle")}
+          description={t("noStatsDescription")}
+        />
       </section>
     );
   }
@@ -61,18 +66,10 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
 
   return (
     <section className="space-y-4">
-      {/* ─── Section title ─── */}
-      <div className="flex items-center gap-3">
-        <div className="w-1 h-8 bg-lfc-red rounded-full" />
-        <div>
-          <h2 className="font-bebas text-3xl text-white tracking-wider leading-none">
-            {t("seasonStats", { season: getCurrentSeasonLabel() })}
-          </h2>
-          <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-[0.15em] mt-0.5">
-            Premier League {getCurrentSeasonLabel()}
-          </p>
-        </div>
-      </div>
+      <SectionHeader
+        title={t("seasonStats", { season: getCurrentSeasonLabel() })}
+        eyebrow={`Premier League ${getCurrentSeasonLabel()}`}
+      />
 
       {/* ─── Hero summary cards ─── */}
       <div className={cn(
@@ -128,7 +125,7 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
       {/* ─── Detailed stats grid ─── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Attack */}
-        <DetailCard title={t("attack")} icon={<Target size={14} className="text-lfc-red" />}>
+        <DetailCard title={t("attack")} icon={<Target size={14} className="text-brand" />}>
           <StatRow label={t("goals")} value={fplStats.goalsScored} />
           <StatRow label={t("assists")} value={fplStats.assists} />
           <StatRow label="xG" value={formatDecimal(fplStats.expectedGoals)} />
@@ -173,7 +170,7 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
 
       {/* ─── Discipline bar ─── */}
       {(fplStats.yellowCards > 0 || fplStats.redCards > 0) && (
-        <div className="flex items-center gap-4 bg-stadium-surface border border-stadium-border px-5 py-3">
+        <div className="flex items-center gap-4 surface px-5 py-3">
           <span className="font-barlow text-xs text-stadium-muted uppercase tracking-widest">
             {t("discipline")}
           </span>
@@ -209,21 +206,21 @@ function SummaryCard({
   accent?: "red" | "gold";
 }) {
   return (
-    <div className="bg-stadium-surface border border-stadium-border p-4 text-center relative overflow-hidden group hover:border-stadium-muted/40 transition-colors">
-      <div className="absolute top-2.5 left-2.5 text-stadium-muted/40">{icon}</div>
+    <div className="surface p-4 text-center relative overflow-hidden group ">
+      <div className="absolute top-2.5 left-2.5 text-stadium-muted/50">{icon}</div>
       <div className={cn(
         "font-bebas text-4xl md:text-5xl leading-none mb-0.5",
-        accent === "red" ? "text-lfc-red"
+        accent === "red" ? "text-brand"
           : accent === "gold" ? "text-lfc-gold"
             : "text-white"
       )}>
         {value}
       </div>
-      <div className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest">
+      <div className="font-barlow text-xs text-stadium-muted uppercase tracking-widest">
         {label}
       </div>
       {sub && (
-        <div className="font-inter text-[10px] text-stadium-muted/60 mt-0.5">{sub}</div>
+        <div className="font-inter text-xs text-stadium-muted mt-0.5">{sub}</div>
       )}
     </div>
   );
@@ -237,7 +234,7 @@ function DetailCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-stadium-surface border border-stadium-border overflow-hidden">
+    <div className="surface overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b border-stadium-border">
         {icon}
         <h3 className="font-bebas text-lg text-white tracking-wider">{title}</h3>

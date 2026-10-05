@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { Heart } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
-import { createClient } from "@/lib/supabase";
+import { hasSupabaseSession, loadSupabaseClient } from "@/lib/supabase-lazy";
 import { toggleFavouritePlayer } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
 import {
@@ -18,6 +17,9 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
+const BTN =
+  "inline-flex min-h-11 items-center gap-2.5 border px-4 text-sm font-medium transition-colors duration-[var(--dur-base)] ease-[var(--ease-out)]";
 
 interface PlayerFavouriteButtonProps {
   playerId: number;
@@ -42,9 +44,13 @@ export function PlayerFavouriteButton({
   const t = useTranslations("Profile");
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function init() {
+      // No session cookie means a guest; don't load the Supabase client for that.
+      if (!hasSupabaseSession()) {
+        setState("guest");
+        return;
+      }
+      const supabase = await loadSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setState("guest");
@@ -67,9 +73,9 @@ export function PlayerFavouriteButton({
 
   if (state === "loading") {
     return (
-      <div className="inline-flex items-center gap-2.5 px-4 py-2.5 border border-stadium-border text-stadium-muted font-inter text-sm">
-        <Heart size={16} className="animate-pulse" />
-        <span className="animate-pulse">{t("favourite")}</span>
+      <div className={cn(BTN, "border-[var(--line-strong)] text-stadium-muted")} aria-busy="true">
+        <Heart size={18} aria-hidden />
+        {t("favourite")}
       </div>
     );
   }
@@ -78,10 +84,10 @@ export function PlayerFavouriteButton({
     return (
       <a
         href="/auth/login"
-        className="inline-flex items-center gap-2.5 px-4 py-2.5 border border-stadium-border text-stadium-muted hover:border-lfc-red/40 hover:text-white font-inter text-sm transition-all group"
+        className={cn(BTN, "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white")}
         title={t("loginToFav")}
       >
-        <Heart size={16} className="transition-transform group-hover:scale-110" />
+        <Heart size={18} aria-hidden />
         {t("favourite")}
       </a>
     );
@@ -142,30 +148,22 @@ export function PlayerFavouriteButton({
         </AlertDialogContent>
       </AlertDialog>
 
-      <motion.button
+      <button
+        type="button"
         onClick={handleClick}
         disabled={isPending}
-        whileTap={{ scale: 0.95 }}
+        aria-pressed={favourited}
         className={cn(
-          "inline-flex items-center gap-2.5 px-4 py-2.5 border font-inter text-sm transition-all cursor-pointer",
+          BTN,
+          "cursor-pointer disabled:opacity-60",
           favourited
-            ? "bg-lfc-red/10 border-lfc-red/40 text-lfc-red hover:bg-lfc-red/20"
-            : "border-stadium-border text-stadium-muted hover:border-lfc-red/40 hover:text-white"
+            ? "border-lfc-red/60 bg-lfc-red/15 text-white hover:bg-lfc-red/25"
+            : "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white"
         )}
       >
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={favourited ? "filled" : "empty"}
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.5, opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            <Heart size={16} className={cn(favourited && "fill-lfc-red")} />
-          </motion.span>
-        </AnimatePresence>
+        <Heart size={18} aria-hidden className={cn(favourited && "fill-lfc-red text-lfc-red")} />
         {favourited ? t("favourited") : t("favourite")}
-      </motion.button>
+      </button>
     </>
   );
 }

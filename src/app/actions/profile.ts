@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-import type { SavedArticle } from "@/lib/supabase";
 
 const MAX_USERNAME_LENGTH = 30;
 const MAX_BIO_LENGTH = 200;

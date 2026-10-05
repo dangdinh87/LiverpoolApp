@@ -66,7 +66,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
         </p>
         <Link
           href="/squad"
-          className="font-inter text-sm text-lfc-red hover:underline"
+          className="inline-flex min-h-11 items-center font-inter text-sm text-brand hover:underline"
         >
           {t("browseSquad")}
         </Link>
@@ -110,9 +110,9 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
             <motion.div
               key={fav.player_id}
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="bg-stadium-surface border border-stadium-border overflow-hidden group relative"
             >
@@ -133,7 +133,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
                   )}
                 </div>
                 <div className="px-3 py-2.5 flex items-center justify-between gap-1">
-                  <p className="font-inter text-xs text-white font-semibold truncate group-hover:text-lfc-red transition-colors">
+                  <p className="font-inter text-xs text-white font-semibold truncate group-hover:text-white transition-colors">
                     {fav.player_name}
                   </p>
                   <Heart size={12} className="text-lfc-red fill-lfc-red shrink-0" />
@@ -144,10 +144,10 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
               <button
                 onClick={() => setConfirmTarget(fav)}
                 disabled={isPending}
-                className="absolute top-1.5 right-1.5 p-1 bg-black/70 backdrop-blur-sm border border-white/10 text-stadium-muted hover:text-white hover:border-red-500/40 transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                className="absolute top-1 right-1 inline-flex size-10 items-center justify-center bg-black/70 text-stadium-muted transition-colors hover:text-white focus-visible:text-white cursor-pointer"
                 aria-label={t("removeFav")}
               >
-                <X size={12} />
+                <X size={14} aria-hidden />
               </button>
             </motion.div>
           ))}

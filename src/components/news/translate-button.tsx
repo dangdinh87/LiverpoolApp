@@ -14,6 +14,10 @@ import {
   getCachedTranslation,
   setCachedTranslation,
 } from "@/lib/news/translation-cache";
+import { ArticleHtmlBody } from "./article-html-body";
+import { ARTICLE_LEAD_CLASS, ARTICLE_TITLE_CLASS } from "./article-header";
+import { ArticleFigures } from "./article-figures";
+import { filterJunk } from "./news-text";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -21,19 +25,12 @@ function stripPrefix(s: string): string {
   return s.replace(/^(TITLE|TIÊU ĐỀ|P\d+)\s*[:：]\s*/i, "").trim();
 }
 
-const JUNK_PATTERN =
-  /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|All the latest|dedicated .* page|IconSport|Getty Images|Image:|^\s*Share\s*$/i;
-
-function filterJunk(paragraphs: string[]): string[] {
-  return paragraphs.filter((p) => !JUNK_PATTERN.test(p) && p.length > 15);
-}
-
 // ─── Shared context between header + body ───────────────────────────────────────
 
 interface TranslateState {
   mode: "original" | "translated";
   loading: boolean;
-  error: string | null;
+  failed: boolean;
   displayTitle: string;
   displayDescription?: string;
   displayParagraphs: string[];
@@ -48,7 +45,7 @@ function useTranslate() {
   return ctx;
 }
 
-// ─── Provider (wraps header + grid) ─────────────────────────────────────────────
+// ─── Provider (wraps header + body) ─────────────────────────────────────────────
 
 interface TranslateProviderProps {
   articleUrl: string;
@@ -67,14 +64,10 @@ export function TranslateProvider({
 }: TranslateProviderProps) {
   const [mode, setMode] = useState<"original" | "translated">("original");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
-  const [translatedDescription, setTranslatedDescription] = useState<
-    string | null
-  >(null);
-  const [translatedParagraphs, setTranslatedParagraphs] = useState<
-    string[] | null
-  >(null);
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [translatedParagraphs, setTranslatedParagraphs] = useState<string[] | null>(null);
 
   const cleanOriginalParagraphs = useMemo(
     () => filterJunk(originalParagraphs),
@@ -95,16 +88,14 @@ export function TranslateProvider({
     const cached = getCachedTranslation(articleUrl);
     if (cached) {
       setTranslatedTitle(stripPrefix(cached.title_vi));
-      setTranslatedDescription(
-        cached.description_vi ? stripPrefix(cached.description_vi) : null
-      );
+      setTranslatedDescription(cached.description_vi ? stripPrefix(cached.description_vi) : null);
       setTranslatedParagraphs(filterJunk(cached.paragraphs.map(stripPrefix)));
       setMode("translated");
       return;
     }
 
     setLoading(true);
-    setError(null);
+    setFailed(false);
 
     try {
       const res = await fetch("/api/news/translate", {
@@ -112,34 +103,22 @@ export function TranslateProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: articleUrl }),
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || `Translation failed (${res.status})`);
-      }
+      if (!res.ok) throw new Error(`Translation failed (${res.status})`);
 
       const data = await res.json();
       const cleanTitle = stripPrefix(data.title_vi || "");
-      const cleanDesc = data.description_vi
-        ? stripPrefix(data.description_vi)
-        : null;
-      const cleanParagraphs = filterJunk(
-        (data.paragraphs || []).map((p: string) => stripPrefix(p))
-      );
+      const cleanDesc = data.description_vi ? stripPrefix(data.description_vi) : null;
+      const cleanParagraphs = filterJunk((data.paragraphs || []).map((p: string) => stripPrefix(p)));
 
       setTranslatedTitle(cleanTitle);
       setTranslatedDescription(cleanDesc);
       setTranslatedParagraphs(cleanParagraphs);
       setMode("translated");
 
-      setCachedTranslation(
-        articleUrl,
-        cleanTitle,
-        cleanParagraphs,
-        cleanDesc || undefined
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Translation failed");
+      setCachedTranslation(articleUrl, cleanTitle, cleanParagraphs, cleanDesc || undefined);
+    } catch {
+      // Calm, generic message in the UI: raw error text is never shown.
+      setFailed(true);
     } finally {
       setLoading(false);
     }
@@ -150,128 +129,93 @@ export function TranslateProvider({
   const value: TranslateState = {
     mode,
     loading,
-    error,
-    displayTitle:
-      isTranslated && translatedTitle ? translatedTitle : originalTitle,
+    failed,
+    displayTitle: isTranslated && translatedTitle ? translatedTitle : originalTitle,
     displayDescription:
-      isTranslated && translatedDescription
-        ? translatedDescription
-        : originalDescription,
+      isTranslated && translatedDescription ? translatedDescription : originalDescription,
     displayParagraphs:
-      isTranslated && translatedParagraphs
-        ? translatedParagraphs
-        : cleanOriginalParagraphs,
+      isTranslated && translatedParagraphs ? translatedParagraphs : cleanOriginalParagraphs,
     handleTranslate,
   };
 
   return <TranslateCtx.Provider value={value}>{children}</TranslateCtx.Provider>;
 }
 
-// ─── Header slot: title + description (rendered in hero overlap area) ───────────
+// ─── Header slot: title + description ───────────────────────────────────────────
 
-export function TranslateHeader({
-  originalDescription,
-}: {
-  originalDescription?: string;
-}) {
+export function TranslateHeader({ originalDescription }: { originalDescription?: string }) {
   const { loading, displayTitle, displayDescription } = useTranslate();
 
   return (
     <>
-      <h1 className="font-inter text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.15] mb-6 max-w-4xl">
+      <h1 className={ARTICLE_TITLE_CLASS}>
         {loading ? (
-          <span className="inline-block w-full">
-            <span className="block h-10 sm:h-12 bg-stadium-surface/60 animate-pulse mb-3 w-[95%]" />
-            <span className="block h-10 sm:h-12 bg-stadium-surface/60 animate-pulse w-[70%]" />
+          <span aria-busy className="block">
+            <span className="skeleton mb-3 block h-9 w-[95%] sm:h-11" />
+            <span className="skeleton block h-9 w-[70%] sm:h-11" />
           </span>
         ) : (
           displayTitle
         )}
       </h1>
 
-      {displayDescription && !loading && (
-        <blockquote className="font-inter text-lg sm:text-xl text-white/60 leading-relaxed mb-8 pl-5 border-l-4 border-lfc-red italic max-w-3xl">
-          {displayDescription}
-        </blockquote>
-      )}
+      {displayDescription && !loading && <p className={ARTICLE_LEAD_CLASS}>{displayDescription}</p>}
       {loading && originalDescription && (
-        <div className="mb-8 pl-5 border-l-4 border-lfc-red space-y-2 animate-pulse">
-          <div className="h-5 bg-stadium-surface/50 w-[90%]" />
-          <div className="h-5 bg-stadium-surface/50 w-[75%]" />
+        <div className="mt-4 max-w-3xl space-y-2 border-l-4 border-lfc-red pl-4">
+          <div className="skeleton h-5 w-[90%]" />
+          <div className="skeleton h-5 w-[75%]" />
         </div>
       )}
     </>
   );
 }
 
-// ─── Body slot: toggle button + article paragraphs (rendered in grid) ───────────
+// ─── Body slot: toggle + article body (original HTML, or translated text + photos) ──
 
-export function TranslateBody() {
-  const { mode, loading, error, displayParagraphs, handleTranslate } =
-    useTranslate();
+interface TranslateBodyProps {
+  /** Extracted article HTML (figures, embeds, video placeholders), if the source gave any. */
+  html?: string;
+  /** Photos shown with the plain-text body, hero already removed. */
+  images: string[];
+}
+
+export function TranslateBody({ html, images }: TranslateBodyProps) {
+  const { mode, loading, failed, displayParagraphs, handleTranslate } = useTranslate();
   const t = useTranslations("News.translate");
   const isTranslated = mode === "translated";
 
   return (
     <div>
-      {/* Toggle button + AI disclaimer */}
-      <div className="flex items-center justify-between gap-3 mb-8">
-        {isTranslated && (
-          <p className="font-inter text-[11px] text-amber-400/70">
-            {t("aiDisclaimer")}
-          </p>
-        )}
-        {error && (
-          <span className="font-inter text-xs text-red-400">{error}</span>
-        )}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p aria-live="polite" className="min-w-0 flex-1 text-xs text-stadium-muted">
+          {failed ? t("error") : isTranslated ? t("aiDisclaimer") : ""}
+        </p>
         <button
+          type="button"
           onClick={handleTranslate}
           disabled={loading}
-          className="ml-auto inline-flex items-center gap-1.5 font-barlow text-xs uppercase tracking-wider px-3 py-1.5 border border-stadium-border hover:border-lfc-red/40 bg-stadium-surface text-white/80 hover:text-white transition-all disabled:opacity-50"
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-2)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40 disabled:opacity-60 cursor-pointer"
         >
-          {loading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Languages className="w-3.5 h-3.5" />
-          )}
-          {loading
-            ? t("translating")
-            : isTranslated
-              ? t("showOriginal")
-              : t("showTranslated")}
+          {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Languages className="size-4" aria-hidden />}
+          {loading ? t("translating") : isTranslated ? t("showOriginal") : t("showTranslated")}
         </button>
       </div>
 
-      {/* Article body */}
       <div id="article-body">
         {loading ? (
-          <div className="space-y-6">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="space-y-2.5 animate-pulse">
-                <div className="h-[17px] bg-stadium-surface/40 w-full" />
-                <div className="h-[17px] bg-stadium-surface/40 w-[92%]" />
-                <div className="h-[17px] bg-stadium-surface/40 w-[78%]" />
-                {i < 3 && (
-                  <div className="h-[17px] bg-stadium-surface/40 w-[60%]" />
-                )}
+          <div aria-busy className="space-y-6">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="space-y-2.5">
+                <div className="skeleton h-[18px] w-full" />
+                <div className="skeleton h-[18px] w-[92%]" />
+                <div className="skeleton h-[18px] w-[78%]" />
               </div>
             ))}
           </div>
+        ) : !isTranslated && html ? (
+          <ArticleHtmlBody html={html} />
         ) : (
-          <div className="space-y-6">
-            {displayParagraphs.map((p, i) => (
-              <p
-                key={`${mode}-${i}`}
-                className={
-                  i === 0
-                    ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
-                    : "font-inter text-[17px] text-white/80 leading-[1.85]"
-                }
-              >
-                {p}
-              </p>
-            ))}
-          </div>
+          <ArticleFigures paragraphs={displayParagraphs} images={images} />
         )}
       </div>
     </div>

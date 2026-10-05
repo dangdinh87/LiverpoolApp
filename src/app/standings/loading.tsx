@@ -1,29 +1,30 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Mirrors PageHero + the 20-row table card (44px rows). */
 export default function StandingsLoading() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Skeleton className="h-12 w-48 mb-8" />
-        <div className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden">
-          <div className="flex gap-4 px-6 py-3 border-b border-stadium-border">
-            <Skeleton className="h-3 flex-1" />
-            {[20, 16, 16, 16, 16, 16, 16, 24].map((w, i) => (
-              <div key={i} className="flex-none" style={{ width: `${w}px` }}>
-                <Skeleton className="h-3 w-full" />
-              </div>
-            ))}
-          </div>
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 px-6 py-3 border-b border-stadium-border/40">
-              <Skeleton className="h-4 w-6" />
-              <Skeleton className="h-6 w-6 rounded-full flex-shrink-0" />
+    <div className="min-h-screen" aria-busy="true">
+      <div className="border-b border-[var(--line)]">
+        <div className="page-container pb-6 pt-[calc(var(--header-h)+1.5rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
+          <Skeleton className="mb-3 h-3.5 w-40" />
+          <Skeleton className="h-12 w-56 sm:h-16" />
+          <Skeleton className="mt-4 h-4 w-64 max-w-full" />
+        </div>
+      </div>
+      <div className="page-container pb-16 pt-4 sm:pt-6">
+        <div className="surface overflow-hidden">
+          <div className="h-[2.6rem] border-b border-[var(--line)] bg-[var(--surface-1)]" />
+          {Array.from({ length: 20 }, (_, i) => (
+            <div key={i} className="flex h-11 items-center gap-3 border-b border-[var(--line)] px-3 last:border-0">
+              <Skeleton className="h-4 w-5" />
+              <Skeleton className="size-6 shrink-0" />
               <Skeleton className="h-4 flex-1" />
-              {[4, 3, 3, 4, 4, 4, 4].map((w, j) => (
-                <Skeleton key={j} className={`h-4 w-${w * 2}`} />
-              ))}
+              <Skeleton className="h-4 w-7" />
+              <Skeleton className="h-4 w-8" />
+              <Skeleton className="h-5 w-8" />
             </div>
           ))}
+          <div className="h-[2.75rem] border-t border-[var(--line)]" />
         </div>
       </div>
     </div>

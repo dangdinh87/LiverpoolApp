@@ -4,7 +4,7 @@
 
 import "server-only";
 import type { Fixture, Coach } from "@/lib/types/football";
-import { getCurrentSeasonYear } from "@/lib/football/current-season";
+import { getCurrentSeasonYear, seasonRevalidate } from "@/lib/football/current-season";
 
 const FDO_BASE = "https://api.football-data.org/v4";
 const FETCH_TIMEOUT_MS = 10_000;
@@ -32,10 +32,14 @@ interface FdoMatch {
   awayTeam: FdoMatchTeam;
   score: {
     winner: string | null;
-    duration: string;
-    fullTime: { home: number | null; away: number | null };
-    halfTime: { home: number | null; away: number | null };
+    duration: string; // REGULAR | EXTRA_TIME | PENALTY_SHOOTOUT
+    fullTime: FdoScore;
+    halfTime: FdoScore;
+    regularTime?: FdoScore;
+    extraTime?: FdoScore;
+    penalties?: FdoScore;
   };
+  season?: { startDate: string };
   competition: {
     id: number;
     name: string;
@@ -43,6 +47,11 @@ interface FdoMatch {
     emblem: string;
   };
   referees: { id: number; name: string; type: string; nationality: string }[];
+}
+
+interface FdoScore {
+  home: number | null;
+  away: number | null;
 }
 
 interface FdoMatchesResponse {
@@ -91,7 +100,8 @@ const STATUS_MAP: Record<string, { short: string; long: string }> = {
   IN_PLAY: { short: "LIVE", long: "In Play" },
   PAUSED: { short: "HT", long: "Half Time" },
   EXTRA_TIME: { short: "ET", long: "Extra Time" },
-  PENALTY_SHOOTOUT: { short: "PEN", long: "Penalty Shootout" },
+  // Live shootout ("P"); a finished one becomes "PEN" in mapMatchToFixture.
+  PENALTY_SHOOTOUT: { short: "P", long: "Penalty Shootout" },
   FINISHED: { short: "FT", long: "Match Finished" },
   POSTPONED: { short: "PST", long: "Postponed" },
   SUSPENDED: { short: "SUSP", long: "Suspended" },
@@ -112,7 +122,7 @@ function mapTeamId(fdoId: number): number {
 
 // Local competition logos (override remote FDO emblems)
 const COMP_LOGO: Record<string, string> = {
-  "Premier League": "/assets/lfc/premier-league.svg",
+  "Premier League": "/assets/lfc/premier-league-white.svg",
   "UEFA Champions League": "/assets/lfc/champions-league.png",
   "FA Cup": "/assets/lfc/fa-cup.png",
   "Carabao Cup": "/assets/lfc/carabao-cup.png",
@@ -121,10 +131,40 @@ const COMP_LOGO: Record<string, string> = {
 
 // ─── Fixture mapper ─────────────────────────────────────────────────────────
 
-function mapMatchToFixture(m: FdoMatch): Fixture {
+const NO_SCORE: FdoScore = { home: null, away: null };
+
+function addScores(a: FdoScore, b: FdoScore): FdoScore {
+  if (a.home === null || a.away === null) return a;
+  return { home: a.home + (b.home ?? 0), away: a.away + (b.away ?? 0) };
+}
+
+function subtractPenalties(fullTime: FdoScore, pens: FdoScore): FdoScore {
+  if (fullTime.home === null || fullTime.away === null) return fullTime;
+  return { home: fullTime.home - (pens.home ?? 0), away: fullTime.away - (pens.away ?? 0) };
+}
+
+/** Exported for tests. */
+export function mapMatchToFixture(m: FdoMatch): Fixture {
   const status = mapStatus(m.status);
-  const hGoals = m.score.fullTime.home;
-  const aGoals = m.score.fullTime.away;
+  const { score } = m;
+  const extra = score.extraTime ?? NO_SCORE;
+  const penalties = score.penalties ?? NO_SCORE;
+  // For a shootout, Football-Data.org's `fullTime` also counts the penalties
+  // (Liverpool v PSG 2025: fullTime 1-5 = 0-1 + 1-4 pens), which showed a
+  // 1-5 defeat and skewed season stats. The match score is regular + extra time.
+  const isShootout = score.duration === "PENALTY_SHOOTOUT";
+  const played = !isShootout
+    ? score.fullTime
+    : score.regularTime
+      ? addScores(score.regularTime, extra)
+      : subtractPenalties(score.fullTime, penalties);
+  if (m.status === "FINISHED" && isShootout) {
+    status.short = "PEN";
+    status.long = "Match Finished After Penalties";
+  } else if (m.status === "FINISHED" && score.duration === "EXTRA_TIME") {
+    status.short = "AET";
+    status.long = "Match Finished After Extra Time";
+  }
 
   return {
     fixture: {
@@ -138,7 +178,8 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
       name: m.competition.name,
       country: "England",
       logo: COMP_LOGO[m.competition.name] ?? m.competition.emblem,
-      season: getCurrentSeasonYear(),
+      // The match's own season: archived seasons were tagged as the current one.
+      season: getCurrentSeasonYear(new Date(m.season?.startDate ?? m.utcDate)),
       round: m.matchday ? `Matchday ${m.matchday}` : m.stage,
     },
     teams: {
@@ -155,12 +196,12 @@ function mapMatchToFixture(m: FdoMatch): Fixture {
         winner: m.score.winner === "AWAY_TEAM" ? true : m.score.winner === "HOME_TEAM" ? false : null,
       },
     },
-    goals: { home: hGoals, away: aGoals },
+    goals: { home: played.home, away: played.away },
     score: {
-      halftime: m.score.halfTime,
-      fulltime: m.score.fullTime,
-      extratime: { home: null, away: null },
-      penalty: { home: null, away: null },
+      halftime: score.halfTime,
+      fulltime: played,
+      extratime: score.duration === "REGULAR" ? NO_SCORE : extra,
+      penalty: isShootout ? penalties : NO_SCORE,
     },
   };
 }
@@ -175,7 +216,7 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
   const seasonParam = season ? `&season=${season}` : "";
   const data = await fdoFetch<FdoMatchesResponse>(
     `/competitions/PL/matches?status=FINISHED${seasonParam}`,
-    21600, // 6h — same as standings
+    seasonRevalidate(season, 21600), // 6h — same as standings; finished seasons 30d
   );
 
   // Group matches by team, sorted by date
@@ -215,7 +256,7 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 export async function getFdoLfcFixtures(season?: number): Promise<Fixture[]> {
   const seasonParam = season ? `?season=${season}` : "";
   // Use shorter cache (5min) for current season to pick up live status faster
-  const revalidate = season ? 3600 : 300;
+  const revalidate = season ? seasonRevalidate(season, 3600) : 300;
   const data = await fdoFetch<FdoMatchesResponse>(
     `/teams/${FDO_LFC_ID}/matches${seasonParam}`,
     revalidate,

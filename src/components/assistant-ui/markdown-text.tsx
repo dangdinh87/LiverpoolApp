@@ -138,7 +138,7 @@ const defaultComponents = memoizeMarkdownComponents({
         <sup className="aui-md-citation-sup">
           <a
             href={href}
-            className="inline-flex items-center justify-center size-[18px] rounded-full bg-lfc-red/20 text-lfc-red text-[10px] font-bold no-underline hover:bg-lfc-red/40 transition-colors align-super ml-0.5"
+            className="inline-flex items-center justify-center size-[18px] rounded-full bg-lfc-red/20 text-lfc-red-text text-[10px] font-bold no-underline hover:bg-lfc-red/40 transition-colors align-super ml-0.5"
             title={`Source ${href.replace("#citation-", "")}`}
             {...props}
           >

@@ -1,10 +1,10 @@
 // Local squad data from liverpoolfc.com (replaces API-Football for squad/player)
 import squadJson from "@/data/squad.json";
 import playerBiosVi from "@/data/player-bios.vi.json";
+import { POSITION_DISPLAY, POSITION_ORDER, type PlayerPosition } from "@/lib/squad-positions";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type PlayerPosition = "goalkeeper" | "defender" | "midfielder" | "forward";
 
 export interface LfcPlayer {
   id: number;
@@ -47,23 +47,25 @@ export interface SquadData {
 
 // ─── Position display ───────────────────────────────────────────────────────
 
-export const POSITION_DISPLAY: Record<PlayerPosition, string> = {
-  goalkeeper: "GK",
-  defender: "DEF",
-  midfielder: "MID",
-  forward: "FWD",
-};
-
-export const POSITION_ORDER: Record<PlayerPosition, number> = {
-  goalkeeper: 0,
-  defender: 1,
-  midfielder: 2,
-  forward: 3,
-};
+export { POSITION_DISPLAY, POSITION_ORDER };
+export type { PlayerPosition };
 
 // ─── Data access ────────────────────────────────────────────────────────────
 
-const data = squadJson as SquadData;
+/**
+ * squad.json is refreshed from liverpoolfc.com, and recent signings come
+ * without an `honors` key at all (13 of 31 players in Oct 2026). The type says
+ * `string[]`, so normalise once here instead of letting every consumer crash:
+ * the player page used to throw on `player.honors.length` for those players.
+ */
+export function normalizeSquad(raw: SquadData): SquadData {
+  return {
+    ...raw,
+    players: raw.players.map((p) => ({ ...p, honors: Array.isArray(p.honors) ? p.honors : [] })),
+  };
+}
+
+const data = normalizeSquad(squadJson as unknown as SquadData);
 
 /** Get all players (active squad, excludes on-loan and forever unless specified) */
 export function getSquadPlayers(opts?: { includeLoans?: boolean; includeForever?: boolean }): LfcPlayer[] {

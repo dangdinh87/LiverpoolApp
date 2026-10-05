@@ -1,41 +1,39 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { NewsCardSkeleton } from "@/components/news/news-card";
 
+/** Same geometry as the news page: hero, filter bar, lead story, card grid. */
 export default function NewsLoading() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Banner Skeleton */}
-      <div className="h-[36vh] min-h-[280px] bg-stadium-surface" />
+    <div className="min-h-screen" aria-busy="true">
+      <div className="border-b border-[var(--line)]">
+        <div className="page-container pt-[calc(var(--header-h)+1.5rem)] pb-6 sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
+          <Skeleton className="mb-2 h-4 w-24" />
+          <Skeleton className="h-12 w-56 sm:h-16" />
+          <Skeleton className="mt-3 h-5 w-full max-w-md" />
+        </div>
+      </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 space-y-8">
-        {/* Hero card skeleton */}
-        <Skeleton className="w-full aspect-[21/9] rounded-sm" />
-
-        {/* Secondary grid skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="space-y-0">
-              <Skeleton className="w-full aspect-video rounded-t-sm" />
-              <div className="p-4 space-y-2 bg-stadium-surface border border-stadium-border border-t-0 rounded-b-sm">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            </div>
+      <div className="border-b border-[var(--line)]">
+        <div className="page-container flex gap-2 py-2">
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={i} className="h-10 w-24 shrink-0" />
           ))}
         </div>
+      </div>
 
-        {/* Compact list skeleton */}
-        <div className="space-y-0">
-          <Skeleton className="h-3 w-20 mb-3" />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-3 py-3 border-b border-stadium-border/50"
-            >
-              <Skeleton className="h-4 w-12" />
-              <Skeleton className="h-4 flex-1" />
-              <Skeleton className="h-3 w-12" />
-            </div>
+      <div className="page-container space-y-4 pb-12 pt-4 sm:space-y-5 sm:pt-6">
+        <div className="h-6" />
+        <div aria-hidden className="surface grid overflow-hidden lg:grid-cols-5">
+          <Skeleton className="aspect-[16/10] lg:col-span-3 lg:aspect-auto lg:min-h-[340px]" />
+          <div className="space-y-3 p-4 sm:p-6 lg:col-span-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-7 w-4/5" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <NewsCardSkeleton key={i} />
           ))}
         </div>
       </div>

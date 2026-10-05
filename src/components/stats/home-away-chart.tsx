@@ -35,11 +35,13 @@ export function HomeAwayChart({ home, away, labels }: Props) {
   return (
     <ResponsiveContainer width="100%" height={250}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-        <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <XAxis dataKey="name" tick={{ fill: "#A0A0A0", fontSize: 12 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: "#A0A0A0", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+        {/* Series colours stay on the swatch; the label itself must be readable (red text on #1a1a1a is 3:1). */}
         <Legend
-          wrapperStyle={{ fontSize: 11, color: "#A0A0A0" }}
+          formatter={(value) => <span style={{ color: "#A0A0A0" }}>{value}</span>}
+          wrapperStyle={{ fontSize: 12, color: "#A0A0A0" }}
           iconType="square"
           iconSize={10}
         />

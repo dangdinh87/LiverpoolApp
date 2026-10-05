@@ -60,3 +60,21 @@ export function isSelectableSeason(
 ): boolean {
   return getSelectableSeasons(now, depth).includes(year);
 }
+
+/**
+ * Data-cache lifetime for a finished season. Its fixtures and table no longer
+ * change, and Football-Data.org's free tier allows only 10 requests/min, so
+ * re-fetching them every few hours just spends quota the live pages need.
+ */
+export const PAST_SEASON_REVALIDATE_S = 30 * 24 * 3600;
+
+/** Cache lifetime for season-scoped data: `currentTtl` unless the season is over. */
+export function seasonRevalidate(
+  season: number | undefined,
+  currentTtl: number,
+  now: Date = new Date(),
+): number {
+  return season !== undefined && season < getCurrentSeasonYear(now)
+    ? PAST_SEASON_REVALIDATE_S
+    : currentTtl;
+}

@@ -50,6 +50,29 @@ describe("createSupabaseFetch", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it("surfaces every give-up as an AbortError so postgrest-js does not retry it", async () => {
+    // postgrest-js retries with 1s/2s/4s backoff unless error.name === "AbortError".
+    globalThis.fetch = vi.fn(
+      (_input, init?: RequestInit) =>
+        new Promise((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("timed out", "TimeoutError")),
+          );
+        }),
+    ) as typeof fetch;
+    const doFetch = createSupabaseFetch(20);
+
+    await expect(doFetch("https://example.test")).rejects.toMatchObject({ name: "AbortError" });
+    // Breaker is now open: the short-circuit must be an AbortError too.
+    await expect(doFetch("https://example.test")).rejects.toMatchObject({ name: "AbortError" });
+
+    resetSupabaseBreaker();
+    globalThis.fetch = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    await expect(doFetch("https://example.test")).rejects.toMatchObject({ name: "AbortError" });
+  });
+
   it("treats a 52x origin error as an outage", async () => {
     globalThis.fetch = vi.fn(async () => new Response("", { status: 522 })) as typeof fetch;
     const res = await createSupabaseFetch()("https://example.test");

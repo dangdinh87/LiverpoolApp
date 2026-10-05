@@ -3,6 +3,7 @@
 // Returns real W/D/L/GF/GA/form data (FPL teams have zeros for these fields).
 
 import "server-only";
+import { seasonRevalidate } from "@/lib/football/current-season";
 import type { Standing, StandingRecord } from "@/lib/types/football";
 import { derivePLFormMap } from "./fdo-matches";
 
@@ -107,6 +108,7 @@ function mapEntry(
     team: {
       id: canonicalId,
       name: total.team.name,
+      shortName: total.team.shortName || undefined,
       logo: canonicalId === CANONICAL_LFC_ID ? "/assets/lfc/crest.webp" : total.team.crest,
     },
     points: total.points,
@@ -127,7 +129,7 @@ function mapEntry(
 export async function getFdoStandings(season?: number): Promise<Standing[]> {
   const seasonParam = season ? `?season=${season}` : "";
   const [data, formMap] = await Promise.all([
-    fdoFetch<FdoStandingsResponse>(`/competitions/PL/standings${seasonParam}`, 21600),
+    fdoFetch<FdoStandingsResponse>(`/competitions/PL/standings${seasonParam}`, seasonRevalidate(season, 21600)),
     derivePLFormMap(season).catch(() => new Map<number, string>()),
   ]);
 
@@ -151,7 +153,7 @@ export async function getFdoUclStandings(season?: number): Promise<Standing[]> {
   const seasonParam = season ? `?season=${season}` : "";
   const data = await fdoFetch<FdoStandingsResponse>(
     `/competitions/CL/standings${seasonParam}`,
-    21600
+    seasonRevalidate(season, 21600)
   );
 
   const totalGroup = data.standings.find((s) => s.type === "TOTAL");

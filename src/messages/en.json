@@ -8,6 +8,11 @@
     "notFoundTitle": "Offside!",
     "notFoundMessage": "The page you're looking for doesn't exist or has been moved.",
     "backHome": "Back to Home",
+    "scrollToTop": "Scroll to top",
+    "skipToContent": "Skip to content",
+    "dismiss": "Dismiss",
+    "notFoundHint": "Try one of these instead",
+    "errorRef": "Reference: {digest}",
     "nav": {
       "home": "Home",
       "squad": "Squad",
@@ -22,6 +27,10 @@
       "members": "Members",
       "memberArea": "Member Area",
       "auth": "Login / Register",
+      "menu": "Open menu",
+      "primary": "Main navigation",
+      "closeMenu": "Close menu",
+      "language": "Language",
       "hot": "Hot",
       "streak": "Streak",
       "day": "day",
@@ -32,8 +41,7 @@
       "gallery": "Gallery",
       "clubOverview": "Overview",
       "clubGallery": "Gallery",
-      "matchSoon": "Soon",
-      "matchLive": "Live"
+      "matchSoon": "Soon"
     },
     "labels": {
       "opponent": "Opponent",
@@ -42,25 +50,17 @@
       "bonus": "Bon",
       "points": "Pts",
       "season": "Season",
-      "allTeams": "All Teams",
       "last5": "Last 5",
       "halftime": "HT",
       "player": "Player",
       "pos": "Pos",
       "search": "Search players...",
-      "pageOf": "Page {page} of {total}",
       "goals": "Goals",
       "goalsShort": "G",
       "assists": "Assists",
       "assistsShort": "A",
       "cleanSheets": "Clean Sheets",
-      "cleanSheetsShort": "CS",
-      "yellowCards": "Yellow Cards",
-      "yellowCardsShort": "YC",
-      "price": "Price",
-      "priceShort": "£",
-      "playerSingular": "player",
-      "playerPlural": "players"
+      "yellowCards": "Yellow Cards"
     }
   },
   "Hero": {
@@ -68,7 +68,6 @@
     "title": "Welcome to Anfield",
     "subtitle": "LFCVN — Liverpool FC Vietnam",
     "description": "Stay connected to The Reds — matches, squad, news, and the pursuit of glory.",
-    "cta": "Explore the Squad",
     "badge": "Liverpool FC Vietnam Fan Community",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
@@ -78,31 +77,51 @@
     "breaking": {
       "label": "Breaking",
       "read": "Read"
+    },
+    "match": {
+      "kickoffIn": "Kick-off in",
+      "vnTime": "Vietnam time",
+      "days": "d",
+      "hours": "h",
+      "minutes": "m",
+      "seconds": "s",
+      "noMatchHint": "Fixtures will appear here as soon as the next match is confirmed."
+    },
+    "results": {
+      "title": "Recent results",
+      "all": "All results",
+      "win": "Win",
+      "draw": "Draw",
+      "loss": "Loss",
+      "empty": "No finished matches yet this season."
+    },
+    "news": {
+      "emptyTitle": "News is taking a breather",
+      "emptyDescription": "We could not load the latest headlines right now. Try the news page in a moment.",
+      "emptyAction": "Open news",
+      "byCategory": "More by topic"
+    },
+    "standings": {
+      "emptyTitle": "Table unavailable",
+      "emptyDescription": "The league table could not be loaded right now. It refreshes automatically.",
+      "emptyAction": "Open standings"
+    },
+    "squad": {
+      "viewAll": "Full squad"
     }
   },
   "Bento": {
     "season": "Season {season}",
     "title": "Club Overview",
-    "gameweekComplete": "Complete",
-    "deadline": "Deadline",
-    "recentForm": "Recent Form",
-    "latestNews": "Latest News",
     "allNews": "All News",
     "squad": "Squad",
     "premierLeague": "Premier League",
     "fullTable": "Full Table",
-    "currentPosition": "Current position",
     "points": "Points",
     "goalDiff": "Goal diff",
-    "viewFixtures": "Fixtures",
-    "viewTable": "Table",
     "record": "Record",
-    "top4Gap": "Gap to top 4",
-    "leaderGap": "Gap to leader",
     "leading": "Leading the table",
-    "unbeatenRun": "{count} unbeaten",
-    "winsLast5": "{count} wins in the last 5",
-    "toughRun": "Form needs a response",
+    "winStreak": "{count} wins in a row",
     "goalsFor": "Goals for",
     "goalsAgainst": "Goals against"
   },
@@ -154,7 +173,9 @@
       "tooShort": "Comment must be at least 2 characters",
       "tooLong": "Comment must be under 1000 characters",
       "duplicate": "You just posted the same comment",
-      "submitError": "Failed to post comment. Please try again."
+      "submitError": "Failed to post comment. Please try again.",
+      "cancel": "Cancel reply",
+      "delete": "Delete comment"
     },
     "article": {
       "backToNews": "Back to News",
@@ -163,7 +184,11 @@
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
       "thinContentMsg": "This article is best viewed on the original site for the full reading experience.",
-      "sourcedFrom": "Content sourced from <source>{sourceName}</source>. All rights belong to the original publisher."
+      "sourcedFrom": "Content sourced from <source>{sourceName}</source>. All rights belong to the original publisher.",
+      "videoUnavailable": "This video cannot be played here. Tap to watch on the original site.",
+      "linkOutMsg": "The full story is only available on {source}. Open it there to keep reading.",
+      "moreFrom": "More from {source}",
+      "viewAll": "View all"
     },
     "feed": {
       "all": "All",
@@ -203,7 +228,16 @@
       "catOpinion": "Opinion",
       "newsSourceLabel": "News Source",
       "newsSourceAll": "All",
-      "hot": "Hot"
+      "hot": "Hot",
+      "filtersLabel": "Filters",
+      "searchLabel": "Search news",
+      "clearSearch": "Clear search",
+      "latest": "Latest stories",
+      "resultsCount": "{count} results",
+      "unavailableTitle": "News is taking a breather",
+      "unavailableDesc": "We could not load the latest stories right now. Try again in a moment.",
+      "retry": "Reload",
+      "loadMoreError": "Could not load more stories. Try again."
     },
     "sidebar": {
       "source": "Source",
@@ -217,7 +251,8 @@
       "aiDisclaimer": "Auto-translated by AI — may not be 100% accurate",
       "translating": "Translating...",
       "showOriginal": "English",
-      "showTranslated": "Tiếng Việt"
+      "showTranslated": "Tiếng Việt",
+      "error": "Translation is unavailable right now. Please try again."
     },
     "actions": {
       "like": "Like",
@@ -232,7 +267,8 @@
       "articleSaved": "Article saved",
       "articleUnsaved": "Article removed from saved",
       "loginRequired": "Log in to continue",
-      "loginRequiredDesc": "You need to log in to like and save articles."
+      "loginRequiredDesc": "You need to log in to like and save articles.",
+      "actionsLabel": "Article actions"
     },
     "digest": {
       "badge": "Briefing",
@@ -251,7 +287,15 @@
       "generatedBy": "LiverpoolFCVN",
       "generatedAt": "Published {time}",
       "refresh": "Sync",
-      "syncing": "Syncing..."
+      "syncing": "Syncing...",
+      "navLabel": "Other briefings",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "notGeneratedTitle": "No briefing yet",
+      "notGeneratedDesc": "The daily briefing for this day has not been published. Check the latest one or browse the news.",
+      "openLatest": "Open the latest briefing",
+      "unavailableTitle": "Briefings are unavailable",
+      "unavailableDesc": "We could not load the daily briefing right now. Try again in a moment."
     }
   },
   "NextMatch": {
@@ -267,7 +311,6 @@
   },
   "LiveBanner": {
     "live": "LIVE",
-    "watchNow": "Live Score",
     "fixtures": "Fixtures"
   },
   "Squad": {
@@ -288,7 +331,6 @@
       "stats": "Player Stats",
       "fpl": "FPL"
     },
-    "dataSource": "Data: {source}",
     "positions": {
       "all": "All",
       "goalkeeper": "Goalkeeper",
@@ -304,88 +346,16 @@
       "onLoan": "On Loan",
       "forever": "Forever",
       "unavailable": "Unavailable",
-      "injured": "Injured",
-      "suspended": "Suspended",
-      "doubtful": "Doubtful"
+      "injured": "Injured"
     },
-    "injuries": {
-      "label": "Injuries",
-      "title": "Injury Room",
-      "out": "{count} out",
-      "doubtful": "{count} doubtful",
-      "statuses": {
-        "OUT": "OUT",
-        "DOUBT": "DOUBT",
-        "5050": "50/50"
-      },
-      "descriptions": {
-        "out": "Confirmed out",
-        "doubtful": "Unlikely to play",
-        "questionable": "Fitness test required"
-      }
-    },
-    "glossary": {
-      "title": "Stats Glossary",
-      "subtitle": "What does each stat mean?",
-      "description": "All statistics sourced from Fantasy Premier League (FPL) — {season} season.",
-      "items": {
-        "Pts": {
-          "name": "Total Points",
-          "desc": "Total FPL points earned this season. Accumulated from goals, assists, clean sheets, bonus, and minutes played."
-        },
-        "Min": {
-          "name": "Minutes",
-          "desc": "Total minutes played across all Premier League appearances this season."
-        },
-        "St": {
-          "name": "Starts",
-          "desc": "Number of matches the player started in the first XI."
-        },
-        "G": {
-          "name": "Goals",
-          "desc": "Total goals scored in the Premier League this season."
-        },
-        "A": {
-          "name": "Assists",
-          "desc": "Total assists — the final pass or cross leading directly to a goal."
-        },
-        "xG": {
-          "name": "Expected Goals",
-          "desc": "Statistical measure of the quality of chances. An xG of 0.5 means a 50% probability of scoring from that position."
-        },
-        "xA": {
-          "name": "Expected Assists",
-          "desc": "Statistical measure of the quality of chances created for teammates."
-        },
-        "CS": {
-          "name": "Clean Sheets",
-          "desc": "Matches where the team conceded zero goals while the player was on the pitch for 60+ minutes."
-        },
-        "Bon": {
-          "name": "Bonus Points",
-          "desc": "Extra FPL points awarded to the top 3 performers in each match based on the Bonus Points System (BPS)."
-        },
-        "Form": {
-          "name": "Form",
-          "desc": "Average FPL points per match over the last 30 days. A higher number indicates stronger recent performance."
-        },
-        "PPG": {
-          "name": "Points per Game",
-          "desc": "Average FPL points earned per match across the entire season."
-        },
-        "xP": {
-          "name": "Expected Points Next",
-          "desc": "FPL's predicted points for the next gameweek, factoring in fixture difficulty, form, and historical data."
-        },
-        "Price": {
-          "name": "Price",
-          "desc": "Current FPL price in millions. Price rises when many managers transfer a player in, and falls when transferred out."
-        },
-        "DT": {
-          "name": "Dream Team",
-          "desc": "Number of times the player appeared in the FPL Gameweek Dream Team — the best XI of each week."
-        }
-      }
+    "searchLabel": "Search players by name or number",
+    "positionsLabel": "Filter by position",
+    "noPlayersTitle": "No players found",
+    "groups": {
+      "goalkeeper": "Goalkeepers",
+      "defender": "Defenders",
+      "midfielder": "Midfielders",
+      "forward": "Forwards"
     }
   },
   "PlayerDetail": {
@@ -395,8 +365,6 @@
     "status": {
       "available": "Available",
       "injured": "Injured",
-      "suspended": "Suspended",
-      "doubtful": "Doubtful",
       "unavailable": "Unavailable",
       "onLoan": "On Loan",
       "forever": "Forever",
@@ -406,9 +374,7 @@
       "points": "Points",
       "goals": "Goals",
       "assists": "Assists",
-      "form": "Form",
-      "ppg": "PPG",
-      "price": "Price"
+      "form": "Form"
     },
     "sections": {
       "seasonStats": "{season} Season Stats",
@@ -434,9 +400,6 @@
     },
     "stats": {
       "seasonStats": "{season} Season Statistics",
-      "allCompetitions": "All Competitions",
-      "perCompetition": "Per Competition",
-      "noStats": "Statistics not available. API key may not be configured.",
       "appearances": "Apps",
       "starts": "Starts",
       "minutes": "Minutes",
@@ -451,29 +414,24 @@
       "shots": "Shots",
       "shotsOnTarget": "On Target",
       "passes": "Passes",
-      "keyPasses": "Key Passes",
-      "passAccuracy": "Pass Accuracy",
       "tackles": "Tackles",
       "interceptions": "Interceptions",
       "blocks": "Blocks",
-      "duelsWon": "Duels Won",
       "dribbles": "Dribbles",
-      "dribblesSuccess": "Successful",
-      "foulsDrawn": "Fouls Drawn",
       "foulsCommitted": "Fouls Committed",
-      "penScored": "Pens Scored",
       "ownGoals": "Own Goals",
       "penMissed": "Pens Missed",
       "penSaved": "Pens Saved",
       "subIn": "Sub In",
-      "subOut": "Sub Out",
       "bench": "Benched",
       "competition": "Competition",
       "attack": "Attack",
       "defence": "Defence",
       "discipline": "Discipline",
       "passing": "Passing",
-      "general": "Overview"
+      "general": "Overview",
+      "noStatsTitle": "No stats yet",
+      "noStatsDescription": "Season statistics appear here once the player has played at least 90 minutes."
     },
     "positions": {
       "goalkeeper": "Goalkeeper",
@@ -521,6 +479,16 @@
     "tabs": {
       "fixtures": "Fixtures",
       "standings": "Table"
+    },
+    "hero": {
+      "eyebrow": "Premier League · {season}",
+      "description": "Every fixture, result and the league table for the season."
+    },
+    "tabsLabel": "Fixtures or table",
+    "outage": {
+      "title": "Season data is unavailable",
+      "description": "We could not load fixtures and standings right now. Please try again in a few minutes.",
+      "action": "Read the latest news"
     }
   },
   "Stats": {
@@ -531,11 +499,11 @@
     "hero": {
       "season": "Season {season} · All Competitions",
       "seasonLabel": "Season",
-      "title": "Statistics"
+      "title": "Statistics",
+      "description": "Season record, scorers, form and club records."
     },
     "overview": {
       "title": "Season Overview",
-      "allComps": "All Competitions · {season}",
       "allCompsLabel": "All Competitions",
       "played": "Played",
       "wins": "Wins",
@@ -553,8 +521,7 @@
     },
     "headlines": {
       "goals": "LFC Goals",
-      "assists": "LFC Assists",
-      "topScorerGoals": "Top Scorer Goals"
+      "assists": "LFC Assists"
     },
     "charts": {
       "scorers": "Top Scorers",
@@ -574,9 +541,18 @@
       "draw": "Draw",
       "loss": "Loss",
       "months": {
-        "jan": "Jan", "feb": "Feb", "mar": "Mar", "apr": "Apr",
-        "may": "May", "jun": "Jun", "jul": "Jul", "aug": "Aug",
-        "sep": "Sep", "oct": "Oct", "nov": "Nov", "dec": "Dec"
+        "jan": "Jan",
+        "feb": "Feb",
+        "mar": "Mar",
+        "apr": "Apr",
+        "may": "May",
+        "jun": "Jun",
+        "jul": "Jul",
+        "aug": "Aug",
+        "sep": "Sep",
+        "oct": "Oct",
+        "nov": "Nov",
+        "dec": "Dec"
       }
     },
     "competitions": {
@@ -608,7 +584,13 @@
     "comparison": {
       "title": "Season Comparison",
       "subtitle": "Compare across recent seasons"
-    }
+    },
+    "noData": {
+      "title": "No data for this season yet",
+      "description": "Match data for this season isn't available right now. Please check back later.",
+      "action": "View fixtures"
+    },
+    "seasonPicker": "Select season"
   },
   "History": {
     "metadata": {
@@ -618,7 +600,8 @@
     "hero": {
       "est": "Established 1892",
       "trophies": "Major Trophies",
-      "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world."
+      "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world.",
+      "tagline": "Since 1892 — 20 league titles, 6 European Cups and one Anfield."
     },
     "sections": {
       "profile": "Club Profile",
@@ -688,6 +671,16 @@
       "honours": "Honours",
       "timeline": "Timeline",
       "legends": "Legends"
+    },
+    "nav": {
+      "label": "On this page",
+      "timeline": "Timeline",
+      "trophies": "Trophies",
+      "legends": "Legends",
+      "stadium": "Stadium"
+    },
+    "trophies": {
+      "years": "Winning years"
     }
   },
   "About": {
@@ -703,10 +696,10 @@
       "description": "LFCVN started with a simple idea: create a place where Vietnamese Liverpool fans can follow everything about the club they love — in their own language. Built by fans, for fans, LFCVN brings together match data, bilingual news, club history, and an AI assistant in one platform. You'll Never Walk Alone.",
       "featuresTitle": "Features",
       "features": {
-        "squad": "Full squad with FPL stats — form, price, xG/xA, selection %, injury updates",
+        "squad": "Full squad and player profiles with season stats and form",
         "season": "Season dashboard with fixtures, PL & UCL standings, top scorers & assists charts",
         "fixtures": "Match timeline across 4 competitions — Premier League, Champions League, FA Cup, EFL Cup",
-        "news": "News from 10+ sources in English & Vietnamese with smart categorisation and in-app reading",
+        "news": "News from 17+ sources in English & Vietnamese with smart categorisation and in-app reading",
         "history": "Club heritage — Anfield stadium, trophy cabinet, historical timeline, legends & managers",
         "profile": "Personal account with avatar, favourite players, and saved preferences",
         "ai": "LiverBird AI — ask about match results, player stats, transfer rumours, club history & more",
@@ -734,8 +727,10 @@
       "title": "Support This Project",
       "description": "Free forever. A small contribution helps cover API and hosting costs.",
       "buyCoffee": "Buy Me a Coffee",
-      "momoAlt": "MoMo QR - Nguyen Dang Dinh"
-    }
+      "momoAlt": "MoMo QR - Nguyen Dang Dinh",
+      "momoTitle": "MoMo QR code"
+    },
+    "tagline": "Built by fans, for fans — everything Liverpool, in your own language."
   },
   "Standings": {
     "metadata": {
@@ -783,6 +778,13 @@
     "comp": {
       "pl": "Premier League",
       "ucl": "Champions League"
+    },
+    "description": "The latest Premier League table.",
+    "compLabel": "Competition",
+    "outage": {
+      "title": "The table is unavailable",
+      "description": "We could not load the standings right now. Please try again in a few minutes.",
+      "action": "Read the latest news"
     }
   },
   "Fixtures": {
@@ -810,7 +812,11 @@
         "results": "Results"
       },
       "noFixtures": "No fixtures found for this competition.",
-      "noRecentFixtures": "No recently played matches in the last 7 days."
+      "viewLabel": "Fixtures view",
+      "filterLabel": "Filter by competition",
+      "gmtHint": "Kick-off times are shown in Vietnam time (GMT+7).",
+      "emptyTitle": "Nothing to show here",
+      "noResults": "No finished matches for this competition yet."
     },
     "detail": {
       "back": "Fixtures & Table",
@@ -821,7 +827,31 @@
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
       "coach": "Coach",
-      "noData": "Match details will be available after kickoff."
+      "noData": "Match details will be available after kickoff.",
+      "empty": {
+        "afterKickoff": "This will appear once the match kicks off.",
+        "events": {
+          "title": "No match events yet",
+          "description": "Goals, cards and substitutions are not available for this match."
+        },
+        "stats": {
+          "title": "No statistics yet",
+          "description": "The data provider has no statistics for this match."
+        },
+        "lineups": {
+          "title": "Lineups not announced",
+          "description": "Team sheets usually appear about an hour before kick-off."
+        },
+        "h2h": {
+          "title": "No head-to-head data",
+          "description": "We have no recent meetings with this opponent."
+        }
+      }
+    },
+    "outage": {
+      "title": "Fixtures are taking a break",
+      "description": "We could not load the match schedule right now. Please try again in a few minutes.",
+      "action": "Read the latest news"
     }
   },
   "Legal": {
@@ -843,13 +873,14 @@
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News content is aggregated from 17+ RSS sources in English and Vietnamese. AI features (chat, translation, daily digest) are powered by Groq. Use of this site constitutes acceptance of these terms."
+        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News content is aggregated from 17+ RSS sources in English and Vietnamese. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures, and squad data are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. News articles are aggregated from 17+ RSS feeds — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, and Webthethao. AI chat and article translation are powered by Groq API. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures, and squad data are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. News articles are aggregated from 17+ RSS feeds — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, and Webthethao. AI chat, article translation and the daily digest are powered by VietAPI; live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
       }
-    }
+    },
+    "toc": "On this page"
   },
   "Auth": {
     "login": {
@@ -863,6 +894,9 @@
       "register": "Register here",
       "error": "Invalid login credentials",
       "google": "Continue with Google",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "close": "Close",
       "or": "or"
     },
     "register": {
@@ -878,7 +912,21 @@
       "error": "Failed to create account",
       "confirm": "Confirm Password",
       "confirmMismatch": "Passwords do not match",
-      "passwordShort": "Password must be at least 6 characters"
+      "passwordShort": "Password must be at least 6 characters",
+      "checkEmail": "Check your email to confirm your account."
+    },
+    "errors": {
+      "unavailable": "Sign-in is temporarily unavailable. Please try again in a few minutes.",
+      "invalidCredentials": "Incorrect email or password.",
+      "emailNotConfirmed": "Please confirm your email first — check your inbox.",
+      "userExists": "An account with this email already exists. Try signing in.",
+      "weakPassword": "That password is too weak. Use a longer, less common one.",
+      "rateLimited": "Too many attempts. Please wait a moment and try again.",
+      "emailRequired": "Please enter your email.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Please enter your password.",
+      "passwordShort": "Password must be at least 6 characters.",
+      "unknown": "Something went wrong. Please try again."
     }
   },
   "Profile": {
@@ -914,18 +962,18 @@
       "removing": "Removing...",
       "error": "Failed to upload avatar",
       "clickToChange": "Click to change avatar (max 2MB)",
-      "uploading": "Uploading..."
+      "uploading": "Uploading...",
+      "errorType": "Use a JPEG, PNG, WebP or GIF image.",
+      "errorSize": "Image must be under 2 MB.",
+      "errorAuth": "Your session expired. Please sign in again.",
+      "errorUpload": "Upload failed. Please try again."
     },
     "savedArticles": "Saved Articles",
     "savedArticlesEmpty": "No saved articles yet. Bookmark articles from the News page and they'll appear here.",
     "unsave": "Remove",
     "confirmUnsave": "Remove saved article?",
     "confirmUnsaveDesc": "This article will be removed from your saved list.",
-    "savedAt": "Saved {date}",
-    "viewArticle": "Read",
-    "saveSuccess": "Article saved!",
     "unsaveSuccess": "Article removed from saved.",
-    "loginToSave": "Log in to save articles",
     "loginAction": "Log in",
     "coverTitle": "Homepage Background",
     "coverUpdated": "Homepage background updated!",
@@ -934,7 +982,14 @@
     "coverError": "Failed to update background.",
     "coverDefault": "Default",
     "streakCount": "{count} day streak",
-    "streakLabel": "Daily visit streak"
+    "streakLabel": "Daily visit streak",
+    "signedOut": {
+      "title": "Sign in to see your profile",
+      "description": "Your avatar, favourite players and saved articles live here once you are signed in.",
+      "action": "Sign in",
+      "home": "Back to home"
+    },
+    "usernameTooShort": "Username needs at least {min} characters."
   },
   "Match": {
     "live": "LIVE",
@@ -991,7 +1046,9 @@
       "Interceptions": "Interceptions",
       "Clearances": "Clearances",
       "Expected Goals": "Expected Goals"
-    }
+    },
+    "nextMatch": "Next match",
+    "penShort": "Pens {score}"
   },
   "Footer": {
     "about": "LFCVN — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
@@ -1000,7 +1057,6 @@
     "contact": "Contact",
     "rights": "All rights reserved.",
     "disclaimer": "LFCVN is a Liverpool FC page built for the Vietnamese Reds community.",
-    "buildVersion": "Version: {version}",
     "newsSources": "Aggregated from trusted news sources worldwide",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
@@ -1020,9 +1076,14 @@
     "sources": "sources",
     "newChat": "New Chat",
     "subtitle": "AI Assistant",
-    "historyTitle": "Chat History",
     "noConversations": "No conversations yet. Start a new chat!",
     "deleteConfirmTitle": "Delete conversation?",
+    "widget": {
+      "open": "Open LiverBird AI chat",
+      "close": "Close chat",
+      "openFull": "Open full chat",
+      "dialog": "LiverBird AI chat"
+    },
     "deleteConfirmDescription": "This action cannot be undone. All messages in this conversation will be permanently deleted.",
     "conversationGroups": {
       "older": "Older"
@@ -1031,7 +1092,6 @@
       "welcome": "LiverBird AI",
       "welcomeSubtitle": "Your AI companion for all things Liverpool FC",
       "welcomeDescription": "Ask about match results, player stats, transfer rumours, club history, tactical analysis, and everything Red. Powered by AI, built for the Kop.",
-      "instruction": "I can help with LFC history, player stats, match info, transfer news, and more. YNWA!",
       "scrollToBottom": "Scroll to bottom",
       "inputPlaceholder": "Ask about Liverpool FC...",
       "sendMessage": "Send message",
@@ -1067,6 +1127,12 @@
           "prompt": "What is this website? What can I do here?"
         }
       }
+    },
+    "prompts": {
+      "nextMatch": "When is Liverpool's next match and who do they play?",
+      "standings": "Where is Liverpool in the Premier League table right now?",
+      "news": "What is the latest Liverpool news today?",
+      "squad": "Who is in the current Liverpool squad?"
     }
   },
   "history": {
@@ -1132,15 +1198,10 @@
       "setHomepage": "Set as Homepage Background",
       "setHomepageConfirm": "Use this image as the homepage background?",
       "setHomepageSuccess": "Homepage background updated",
-      "setHeroBg": "Set as Gallery Banner",
-      "setHeroBgConfirm": "Use this image as the gallery page banner?",
-      "setHeroBgSuccess": "Gallery banner updated",
       "download": "Download",
       "cancel": "Cancel",
       "confirm": "Confirm",
-      "actionError": "Action failed. Please try again.",
-      "resetHomepage": "Reset to Default",
-      "resetHomepageSuccess": "Homepage background reset to default"
+      "actionError": "Action failed. Please try again."
     },
     "loadMore": {
       "button": "Load More",
@@ -1151,7 +1212,20 @@
       "list": "List View"
     },
     "search": {
-      "placeholder": "Search photos..."
+      "placeholder": "Search photos...",
+      "clear": "Clear search"
+    },
+    "empty": {
+      "title": "No photos found",
+      "description": "There are no photos in this category yet. Try another one.",
+      "searchHint": "Nothing matches your search. Try a different word or pick another category."
+    },
+    "lightbox": {
+      "previous": "Previous photo",
+      "next": "Next photo",
+      "close": "Close",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
     }
   }
 }

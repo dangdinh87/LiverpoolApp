@@ -5,6 +5,8 @@ import { getEnv } from "@/lib/env";
 import { scrapeArticle } from "@/lib/news";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { isKnownNewsSourceUrl } from "@/lib/news-config";
+import { articleUrlVariants } from "@/lib/news/url";
 import type { ArticleContent } from "@/lib/news/types";
 
 export const maxDuration = 60;
@@ -13,7 +15,9 @@ const TRANSLATE_PROMPT = `You are a senior Vietnamese sports journalist who writ
 
 Context — this is about Liverpool FC. Key people and roles:
 - Andoni Iraola = HLV trưởng (head coach)
-- Richard Hughes = giám đốc thể thao (sporting director), NOT a player
+- Julian Ward = giám đốc thể thao (sporting director, appointed Sept 2026), NOT a player
+- Richard Hughes = cựu giám đốc thể thao (former sporting director), NOT a player
+- Mike Gordon = chủ tịch FSG (FSG president)
 - Michael Edwards = CEO bóng đá (CEO of football)
 - FSG = chủ sở hữu (owners)
 
@@ -76,14 +80,24 @@ export async function POST(req: NextRequest) {
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "Missing url" }, { status: 400 });
     }
+    // Anonymous callers must not be able to point the scraper (and the LLM bill)
+    // at arbitrary hosts.
+    if (!isKnownNewsSourceUrl(url)) {
+      return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
+    }
 
     const supabase = getServiceClient();
+    // Slugs decode to the bare URL; rows may be stored with a trailing slash or
+    // feed tracking params (legacy), so match every spelling.
+    const urlVariants = articleUrlVariants(url);
 
     // Check DB cache first
     const { data: cached } = await supabase
       .from("articles")
       .select("title_vi, snippet_vi, content_vi, content_en")
-      .eq("url", url)
+      .in("url", urlVariants)
+      .order("content_scraped_at", { ascending: false, nullsFirst: false })
+      .limit(1)
       .maybeSingle();
 
     if (cached && isUsableTranslation(cached.content_vi)) {
@@ -123,9 +137,11 @@ export async function POST(req: NextRequest) {
 
     // Filter out junk paragraphs (social media CTAs, newsletter promos, source attribution noise)
     const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|IconSport|Getty Images|Image:/i;
+    // Cap each paragraph so one malformed page cannot blow up the prompt size.
     const cleanParagraphs = content.paragraphs
       .filter((p) => !junkPattern.test(p))
-      .slice(0, 15);
+      .slice(0, 15)
+      .map((p) => p.slice(0, 2000));
 
     // Build translation input: title + description (if any) + paragraphs
     const sections = [content.title];
@@ -191,7 +207,7 @@ export async function POST(req: NextRequest) {
         snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
         content_vi: contentVi,
       })
-      .eq("url", url);
+      .in("url", urlVariants);
 
     return NextResponse.json({
       title_vi: titleVi,

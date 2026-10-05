@@ -2,6 +2,9 @@
 // Types re-exported from the news module types
 export type { NewsSource, NewsLanguage, ArticleCategory } from "./news/types";
 import type { NewsSource, ArticleCategory } from "./news/types";
+// Hosts/aliases live in ONE table (news/source-hosts.ts) shared with source-detect.
+import { formatDayMonth } from "./format-match-date";
+import { findSourceByHost, getSourceEntry, isHostOfSource } from "./news/source-hosts";
 
 export const SOURCE_CONFIG: Record<
   NewsSource,
@@ -51,65 +54,54 @@ export const CATEGORY_CONFIG: Record<
   general: { label: "General", color: "bg-gray-500/20 text-gray-400" },
 };
 
-// Source → hostname mapping for URL reconstruction
-const SOURCE_HOSTS: Record<string, string> = {
-  lfc: "www.liverpoolfc.com",
-  bbc: "www.bbc.com",
-  guardian: "www.theguardian.com",
-  echo: "www.liverpoolecho.co.uk",
-  sky: "www.skysports.com",
-  mirror: "www.mirror.co.uk",
-  independent: "www.independent.co.uk",
-  men: "www.manchestereveningnews.co.uk",
-  anfieldindex: "anfieldindex.com",
-  liverpoolcom: "www.liverpool.com",
-  tia: "www.thisisanfield.com",
-  espn: "www.espn.com",
-  "anfield-watch": "www.anfieldwatch.co.uk",
-  bongda: "bongda.com.vn",
-  "24h": "www.24h.com.vn",
-  bongdaplus: "bongdaplus.vn",
-  vnexpress: "vnexpress.net",
-  tuoitre: "tuoitre.vn",
-  thanhnien: "thanhnien.vn",
-  dantri: "dantri.com.vn",
-  zingnews: "znews.vn",
-  vietnamnet: "vietnamnet.vn",
-  webthethao: "webthethao.vn",
-  eotk: "www.empireofthekop.com",
-  vietnamvn: "www.vietnam.vn",
-  bongda24h: "bongda24h.vn",
-  thethao247: "thethao247.vn",
-  soha: "soha.vn",
-  goal: "www.goal.com",
-};
-
-// Hostname → source prefix (reverse lookup, with and without www)
-const HOST_TO_SOURCE: Record<string, string> = {};
-for (const [src, host] of Object.entries(SOURCE_HOSTS)) {
-  HOST_TO_SOURCE[host] = src;
-  // Support both www and non-www variants for encoding
-  if (host.startsWith("www.")) {
-    HOST_TO_SOURCE[host.replace(/^www\./, "")] = src;
-  } else {
-    HOST_TO_SOURCE[`www.${host}`] = src;
+/**
+ * True only for http(s) URLs on a configured news source (or a subdomain of one).
+ * Anything that fetches an article on a visitor's behalf must check this first:
+ * the legacy base64 slug decodes to an arbitrary URL, and without this guard the
+ * server would fetch — and render under our domain — any page an attacker names.
+ */
+export function isKnownNewsSourceUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
   }
+  if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+  if (u.username || u.password || u.port) return false;
+  return !!findSourceByHost(u.hostname);
 }
 
-// Encode article URL → readable slug: {source}/{url-path-segments}
+/** Marks a path segment that carries the exact host when it is not the source's canonical one. */
+const HOST_SEGMENT_PREFIX = "~";
+
+function toBase64Url(value: string): string {
+  if (typeof window !== "undefined") {
+    return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  return Buffer.from(value).toString("base64url");
+}
+
+/**
+ * Encode article URL → readable slug.
+ *   canonical host:  {source}/{path}                e.g. bbc/sport/football/x
+ *   other host:      {source}/~{host}/{path}        e.g. bbc/~www.bbc.co.uk/sport/football/x
+ * The slug always decodes back to the exact original URL (host included), and
+ * `/news/{source}/{path}` links for canonical hosts stay valid.
+ * URLs outside every known source fall back to the opaque base64url form.
+ */
 export function encodeArticleSlug(url: string): string {
   try {
     const u = new URL(url);
-    const source = HOST_TO_SOURCE[u.hostname] ?? "ext";
-    // Strip leading slash from pathname, keep rest as-is
+    const entry = findSourceByHost(u.hostname);
+    if (!entry) return toBase64Url(url);
     const path = (u.pathname + u.search).replace(/^\//, "");
-    return `${source}/${path}`;
+    const host = u.hostname.toLowerCase();
+    if (host === entry.canonical) return `${entry.id}/${path}`;
+    return `${entry.id}/${HOST_SEGMENT_PREFIX}${host}/${path}`;
   } catch {
     // Fallback to base64url for malformed URLs
-    if (typeof window !== "undefined") {
-      return btoa(url).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    }
-    return Buffer.from(url).toString("base64url");
+    return toBase64Url(url);
   }
 }
 
@@ -119,10 +111,18 @@ export function decodeArticleSlug(segments: string[]): string | null {
 
   const [source, ...pathParts] = segments;
 
-  // New format: {source}/{path...}
-  const host = SOURCE_HOSTS[source];
-  if (host && pathParts.length > 0) {
-    return `https://${host}/${pathParts.join("/")}`;
+  // New format: {source}/[~{host}/]{path...}
+  const entry = getSourceEntry(source);
+  if (entry && pathParts.length > 0) {
+    let host = entry.canonical;
+    let rest = pathParts;
+    if (pathParts[0].startsWith(HOST_SEGMENT_PREFIX)) {
+      const override = pathParts[0].slice(HOST_SEGMENT_PREFIX.length).toLowerCase();
+      if (!isHostOfSource(source, override) || pathParts.length < 2) return null;
+      host = override;
+      rest = pathParts.slice(1);
+    }
+    return `https://${host}/${rest.join("/")}`;
   }
 
   // Legacy base64url format (single segment, no known source prefix)
@@ -165,8 +165,6 @@ export function formatRelativeDate(dateStr: string, lang?: "en" | "vi"): string 
   const days = Math.floor(diff / 86_400_000);
   if (days < 3) return lang === "vi" ? `${days} ngày trước` : `${days}d ago`;
 
-  return date.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB", {
-    day: "numeric",
-    month: "short",
-  });
+  // Vietnam-time calendar day (the runtime zone is UTC on Vercel).
+  return formatDayMonth(date, lang === "vi" ? "vi" : "en");
 }

@@ -1,9 +1,5 @@
-"use client";
-
 import Image from "next/image";
-import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
 
 interface Legend {
   name: string;
@@ -15,11 +11,6 @@ interface Legend {
   image?: string;
 }
 
-interface LegendCardProps {
-  legend: Legend;
-}
-
-// Deterministic initials from name
 function getInitials(name: string): string {
   return name
     .split(" ")
@@ -29,82 +20,53 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
-export function LegendCard({ legend }: LegendCardProps) {
+/** Legend card: photo (or initials), role badge, career numbers, short bio. Server component. */
+export function LegendCard({ legend }: { legend: Legend }) {
   const t = useTranslations("History.legends");
-  const [imgError, setImgError] = useState(false);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="bg-stadium-surface border border-stadium-border group relative overflow-hidden transition-all duration-500 hover:border-white/20"
-    >
-      {/* Photo or initials banner */}
-      <div className="relative h-52 overflow-hidden bg-stadium-surface2">
-        {legend.image && !imgError ? (
+    <article className="surface-interactive flex flex-col overflow-hidden">
+      <div className="relative aspect-[4/3] bg-[var(--surface-3)]">
+        {legend.image ? (
           <Image
             src={legend.image}
-            alt={legend.name}
+            alt=""
             fill
-            className="object-cover object-center transition-transform duration-700 scale-105 group-hover:scale-100"
-            sizes="(max-width: 768px) 100vw, 33vw"
-            unoptimized
-            onError={() => setImgError(true)}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"
+            className="object-cover object-top"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="font-bebas text-[100px] text-white/10 leading-none select-none">
-              {getInitials(legend.name)}
-            </span>
+          <div className="flex size-full items-center justify-center">
+            <span className="font-bebas text-8xl leading-none text-white/10 select-none">{getInitials(legend.name)}</span>
           </div>
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-linear-to-t from-stadium-surface via-stadium-surface/40 to-transparent" />
-        {/* Role badge */}
-        <div className="absolute top-3 left-3">
-          <span className="font-barlow text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-1 bg-lfc-red/90 text-white">
-            {legend.role}
-          </span>
-        </div>
-      </div>
-
-      {/* Profile Header */}
-      <div className="relative px-5 pt-4 pb-2 border-b border-stadium-border/30">
-        <h3 className="font-bebas text-3xl text-white tracking-widest leading-none mb-1 group-hover:text-lfc-red transition-colors duration-500">
-          {legend.name}
-        </h3>
-        <span className="font-inter text-stadium-muted text-[10px] uppercase tracking-widest font-semibold opacity-70">
-          {legend.years}
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-[var(--surface-2)] via-transparent to-transparent" />
+        <span className="absolute left-3 top-3 bg-lfc-red px-2 py-1 font-barlow text-xs font-bold uppercase tracking-[0.16em] text-white">
+          {legend.role}
         </span>
       </div>
-
-      <div className="px-5 py-4">
-        {/* Stats Row */}
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
+        <div>
+          <h3 className="font-bebas text-3xl leading-none text-white">{legend.name}</h3>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-stadium-muted">{legend.years}</p>
+        </div>
         {(legend.caps !== null || legend.goals !== null) && (
-          <div className="flex gap-8 mb-4">
+          <dl className="flex gap-8">
             {legend.caps !== null && (
-              <div className="flex flex-col">
-                <p className="font-bebas text-2xl text-white leading-none mb-0.5">{legend.caps}</p>
-                <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("appearances")}</p>
+              <div>
+                <dd className="font-bebas text-2xl leading-none text-white">{legend.caps}</dd>
+                <dt className="mt-0.5 font-barlow text-xs font-bold uppercase tracking-[0.16em] text-stadium-muted">{t("appearances")}</dt>
               </div>
             )}
             {legend.goals !== null && (
-              <div className="flex flex-col">
-                <p className="font-bebas text-2xl text-lfc-red leading-none mb-0.5">{legend.goals}</p>
-                <p className="font-barlow text-[9px] text-stadium-muted uppercase tracking-[0.2em] font-bold">{t("goals")}</p>
+              <div>
+                <dd className="font-bebas text-2xl leading-none text-brand">{legend.goals}</dd>
+                <dt className="mt-0.5 font-barlow text-xs font-bold uppercase tracking-[0.16em] text-stadium-muted">{t("goals")}</dt>
               </div>
             )}
-          </div>
+          </dl>
         )}
-
-        <p className="font-inter text-xs text-stadium-muted leading-relaxed opacity-80 group-hover:opacity-100 transition-opacity duration-500 border-l border-white/5 pl-4">
-          {legend.bio}
-        </p>
+        <p className="text-sm leading-relaxed text-stadium-muted">{legend.bio}</p>
       </div>
-
-      {/* Hover Line */}
-      <div className="absolute bottom-0 left-0 w-0 h-1 bg-lfc-red transition-all duration-700 group-hover:w-full" />
-    </motion.div>
+    </article>
   );
 }

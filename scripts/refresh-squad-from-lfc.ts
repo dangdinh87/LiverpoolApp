@@ -18,43 +18,38 @@ import { writeFile, mkdir, readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-const SQUAD_URL = "https://www.liverpoolfc.com/team/mens";
+const SITE = "https://www.liverpoolfc.com";
+const SQUAD_URL = `${SITE}/teams/mens-team`;
 const SQUAD_JSON = path.join(process.cwd(), "src/data/squad.json");
 const ASSET_DIR = path.join(process.cwd(), "public/assets/lfc/players");
 const ASSET_URL_PREFIX = "/assets/lfc/players";
-const USER_AGENT =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+// Honest UA: the site blocks some spoofed browser user agents.
+const USER_AGENT = "LiverpoolApp/1.0";
+// Contentful Images API: ask for webp so files match their .webp names.
+const PHOTO_PARAMS = "?fm=webp&w=800&q=80";
+const BODY_PARAMS = "?fm=webp&w=1200&q=80";
+// Listed on the squad page as a tribute, not an active player.
+const EXCLUDED_SLUGS = new Set(["diogo-jota"]);
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
-interface ImageSize {
-  url?: string;
-  webpUrl?: string;
-  width?: number;
-  height?: number;
-}
-interface LfcImage {
-  sizes?: Record<string, ImageSize>;
-}
-interface LfcPlayer {
-  id: number;
+/** One player card on the squad page (RSC payload). */
+interface LfcCard {
   name: string;
   slug: string;
-  shirtNumber?: number | null;
-  shirtName?: string;
-  position?: { type?: string; displayName?: string } | string;
+  shirtNumber: number | null;
+  position: string; // lower-cased: goalkeeper | defender | midfielder | forward | head coach
+  onLoan: boolean;
+  photo?: string; // profile image, no size params
+  bodyShot?: string; // "action shot" hover image, no size params
+}
+
+/** Extra data from an individual profile page (only fetched for new players). */
+interface LfcProfile {
+  id?: number;
   nationality?: string;
   dateOfBirth?: string;
-  height?: string;
-  weight?: string;
   bio?: string;
-  metaDescription?: string;
-  honors?: unknown;
-  onLoan?: boolean;
-  forever?: boolean;
-  profileImage?: LfcImage;
-  bodyShot?: LfcImage;
-  propositions?: { team?: string };
 }
 
 interface SquadPlayer {
@@ -80,68 +75,128 @@ interface SquadPlayer {
   localBodyShot?: string;
 }
 
-/** Read the Next.js payload the squad page embeds; it holds the full player list. */
-async function fetchLfcPlayers(): Promise<LfcPlayer[]> {
-  const res = await fetch(SQUAD_URL, { headers: { "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`LFC squad page returned ${res.status}`);
-
-  const html = await res.text();
-  // [\s\S] rather than the /s flag: tsconfig targets below es2018.
-  const match = html.match(
-    /<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/
-  );
-  if (!match) throw new Error("__NEXT_DATA__ not found — page structure changed");
-
-  const data = JSON.parse(match[1]);
-  const players = data?.props?.pageProps?.players;
-  if (!Array.isArray(players)) throw new Error("players[] not found in page data");
-  return players;
+async function fetchText(url: string): Promise<string> {
+  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  if (!res.ok) throw new Error(`${url} returned ${res.status}`);
+  return res.text();
 }
 
-/** Largest available rendition, preferring webp. */
-function pickImage(image: LfcImage | undefined): string | undefined {
-  const sizes = image?.sizes;
-  if (!sizes) return undefined;
-  for (const key of ["xl", "lg", "md", "sm", "xs"]) {
-    const size = sizes[key];
-    if (size?.webpUrl) return size.webpUrl;
-    if (size?.url) return size.url;
+/**
+ * The site is an RSC page: all data arrives as `self.__next_f.push([1, "..."])`
+ * chunks. Joining the string chunks gives the flight payload.
+ */
+function flightPayload(html: string): string {
+  const re = /self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g;
+  let out = "";
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    try {
+      const chunk = JSON.parse(m[1]);
+      if (typeof chunk[1] === "string") out += chunk[1];
+    } catch {
+      // not a data chunk
+    }
   }
-  return undefined;
+  if (!out) throw new Error("RSC payload not found — page structure changed");
+  return out;
 }
 
-function positionOf(player: LfcPlayer): string {
-  const position = player.position;
-  if (typeof position === "string") return position;
-  return position?.type ?? "unknown";
+/** Strip Contentful size params so we can request our own. */
+const baseUrl = (url: string) => url.split("?")[0];
+
+/** Pull every player card (name, number, slug, position, images) from the payload. */
+function parseCards(payload: string): LfcCard[] {
+  const cardEnd =
+    /"onLoan":(true|false),"isHomegrown":\w+,"nationality":"[^"]*","squadNumber":"?([^",]*)"?,"firstName":"?([^",]*)"?,"surname":"([^"]*)","knownAs":("[^"]*"|\$undefined),"url":"(\/teams\/mens-team\/([^"]+))","position":"([^"]*)"/g;
+  const cards = new Map<string, LfcCard>();
+  let prevEnd = 0;
+  let m: RegExpExecArray | null;
+  while ((m = cardEnd.exec(payload))) {
+    // Images sit just before the card's scalar fields.
+    const segment = payload.slice(prevEnd, m.index);
+    prevEnd = cardEnd.lastIndex;
+    let photo: string | undefined;
+    let bodyShot: string | undefined;
+    const img = /"url":"(https:\/\/images\.ctfassets\.net[^"]+)"[\s\S]*?"alt":"([^"]*)"/g;
+    let im: RegExpExecArray | null;
+    while ((im = img.exec(segment))) {
+      const alt = im[2].toLowerCase();
+      if (alt.includes("action shot")) bodyShot = baseUrl(im[1]);
+      // Most cards say "<name> profile"; some are named "<name> 2026-27 v2".
+      else if (alt.endsWith("profile") || !photo) photo = baseUrl(im[1]);
+    }
+    const slug = m[7];
+    const number = Number.parseInt(m[2], 10);
+    cards.set(slug, {
+      name: `${m[3].trim()} ${m[4].trim()}`.trim(),
+      slug,
+      shirtNumber: Number.isFinite(number) ? number : null,
+      position: m[8].trim().toLowerCase(),
+      onLoan: m[1] === "true",
+      photo,
+      bodyShot,
+    });
+  }
+  if (cards.size === 0) throw new Error("no player cards found — page structure changed");
+  return [...cards.values()];
 }
 
-/** The squad page mixes casings ("first-team" / "First-Team") and academy entries. */
-function isFirstTeam(player: LfcPlayer): boolean {
-  return (player.propositions?.team ?? "").toLowerCase() === "first-team";
+/** DOB / nationality / id / bio from a profile page; every field is best-effort. */
+async function fetchProfile(slug: string): Promise<LfcProfile> {
+  const html = await fetchText(`${SITE}/teams/mens-team/${slug}`);
+  const profile: LfcProfile = {};
+
+  const ld = html.match(
+    /<script type="application\/ld\+json" id="profile-schema"[^>]*>([\s\S]*?)<\/script>/
+  );
+  if (ld) {
+    try {
+      const data = JSON.parse(ld[1]);
+      profile.dateOfBirth = data.birthDate;
+      profile.nationality = data.nationality?.name;
+    } catch {
+      // keep going without JSON-LD
+    }
+  }
+
+  const payload = flightPayload(html);
+  const pid = payload.match(/"playerId":"(\d+)"/);
+  if (pid) profile.id = Number(pid[1]);
+
+  // Bio ships as a text chunk `<id>:T<hex byte length>,<text>` ahead of the profile body.
+  const textChunk = /(?:^|\n)[0-9a-f]+:T([0-9a-f]+),/g;
+  let t: RegExpExecArray | null;
+  while ((t = textChunk.exec(payload))) {
+    const bytes = Buffer.from(payload.slice(textChunk.lastIndex), "utf8");
+    const text = bytes.subarray(0, Number.parseInt(t[1], 16)).toString("utf8").trim();
+    if (text.includes("\n\n") && !text.startsWith("{")) {
+      profile.bio = text
+        .split(/\n\s*\n/)
+        .map((para) => `<p>${para.trim()}</p>`)
+        .join("");
+      break;
+    }
+  }
+  return profile;
+}
+
+/** Deterministic fallback id when a profile exposes no numeric id. */
+function fallbackId(slug: string): number {
+  let h = 0;
+  for (const ch of slug) h = (h * 31 + ch.charCodeAt(0)) % 1_000_000;
+  return 9_000_000 + h;
 }
 
 const PLAYER_POSITIONS = new Set(["goalkeeper", "defender", "midfielder", "forward"]);
-
-/**
- * The first-team list also carries coaching and medical staff — head coach,
- * physios, doctors — all marked `position.type === "staff"`. Only the four
- * playing positions belong in the squad.
- */
-function isPlayer(player: LfcPlayer): boolean {
-  return PLAYER_POSITIONS.has(positionOf(player));
-}
-
-function isHeadCoach(player: LfcPlayer): boolean {
-  const position = player.position;
-  if (typeof position === "string") return false;
-  return (position?.displayName ?? "").toLowerCase() === "head coach";
-}
 
 async function download(url: string, destination: string): Promise<boolean> {
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) {
     console.warn(`  ! ${res.status} ${path.basename(destination)}`);
+    return false;
+  }
+  if (!(res.headers.get("content-type") ?? "").startsWith("image/")) {
+    console.warn(`  ! not an image: ${path.basename(destination)}`);
     return false;
   }
   const body = Buffer.from(await res.arrayBuffer());
@@ -152,22 +207,24 @@ async function download(url: string, destination: string): Promise<boolean> {
 async function main() {
   console.log(DRY_RUN ? "Dry run — nothing will be written.\n" : "");
 
-  const firstTeam = (await fetchLfcPlayers()).filter(isFirstTeam);
-  const lfcPlayers = firstTeam.filter(isPlayer);
-  const headCoach = firstTeam.find(isHeadCoach);
+  const cards = parseCards(flightPayload(await fetchText(SQUAD_URL)));
+  const headCoach = cards.find((c) => c.position === "head coach");
+  const lfcPlayers = cards.filter(
+    (c) => PLAYER_POSITIONS.has(c.position) && !EXCLUDED_SLUGS.has(c.slug)
+  );
   console.log(
     `liverpoolfc.com first-team: ${lfcPlayers.length} players ` +
-      `(+${firstTeam.length - lfcPlayers.length} staff ignored)`
+      `(+${cards.length - lfcPlayers.length} staff/excluded ignored)`
   );
   if (headCoach) console.log(`Head coach: ${headCoach.name}`);
 
   const existing = JSON.parse(await readFile(SQUAD_JSON, "utf8"));
   const existingPlayers: SquadPlayer[] = existing.players ?? [];
-  const existingById = new Map(existingPlayers.map((p) => [p.id, p]));
-  const lfcIds = new Set(lfcPlayers.map((p) => p.id));
+  const existingBySlug = new Map(existingPlayers.map((p) => [p.slug, p]));
+  const lfcSlugs = new Set(lfcPlayers.map((p) => p.slug));
 
-  const departed = existingPlayers.filter((p) => !lfcIds.has(p.id));
-  const arrived = lfcPlayers.filter((p) => !existingById.has(p.id));
+  const departed = existingPlayers.filter((p) => !lfcSlugs.has(p.slug));
+  const arrived = lfcPlayers.filter((p) => !existingBySlug.has(p.slug));
   if (departed.length) {
     console.log(`\nNo longer in the squad (${departed.length}):`);
     for (const p of departed) console.log(`  - ${p.name}`);
@@ -181,64 +238,89 @@ async function main() {
 
   console.log("\nDownloading images…");
   const players: SquadPlayer[] = [];
+  const usedIds = new Set(existingPlayers.map((p) => p.id));
 
-  for (const player of lfcPlayers) {
-    const previous = existingById.get(player.id);
-    const photo = pickImage(player.profileImage);
-    const bodyShot = pickImage(player.bodyShot);
+  for (const card of lfcPlayers) {
+    const previous = existingBySlug.get(card.slug);
+    const profile: LfcProfile = previous ? {} : await fetchProfile(card.slug);
 
     // Keep the committed filename when we already have one, so asset paths in
     // git (and any external references) do not churn on every refresh.
+    // `||`, not `??`: a stored folder path ("/assets/lfc/players/") pops to "".
     const headshotFile =
-      previous?.localPhoto?.split("/").pop() ?? `${player.slug}.webp`;
+      previous?.localPhoto?.split("/").pop() || `${card.slug}.webp`;
     const bodyFile =
-      previous?.localBodyShot?.split("/").pop() ?? `${player.slug}-body.webp`;
+      previous?.localBodyShot?.split("/").pop() || `${card.slug}-body.webp`;
 
-    if (photo) await download(photo, path.join(ASSET_DIR, headshotFile));
-    if (bodyShot) await download(bodyShot, path.join(ASSET_DIR, bodyFile));
+    const photo = card.photo ? card.photo + PHOTO_PARAMS : undefined;
+    const bodyShot = card.bodyShot ? card.bodyShot + BODY_PARAMS : undefined;
+    const gotPhoto = photo
+      ? await download(photo, path.join(ASSET_DIR, headshotFile))
+      : false;
+    const gotBody = bodyShot
+      ? await download(bodyShot, path.join(ASSET_DIR, bodyFile))
+      : false;
 
-    const hasBody = Boolean(bodyShot) || existsSync(path.join(ASSET_DIR, bodyFile));
+    const hasHeadshot = gotPhoto || existsSync(path.join(ASSET_DIR, headshotFile));
+    const hasBody = gotBody || existsSync(path.join(ASSET_DIR, bodyFile));
 
+    let id = previous?.id ?? profile.id ?? fallbackId(card.slug);
+    if (!previous && usedIds.has(id)) id = fallbackId(card.slug);
+    usedIds.add(id);
+
+    // Existing values win unless the page has newer data (shirt, position, loan,
+    // images); never blank a field the page does not carry.
+    const base: SquadPlayer = previous ?? {
+      id,
+      name: card.name,
+      shirtNumber: card.shirtNumber,
+      shirtName: "",
+      slug: card.slug,
+      position: card.position,
+      nationality: profile.nationality ?? "",
+      dateOfBirth: profile.dateOfBirth ?? "",
+      height: "",
+      weight: "",
+      bio: profile.bio ?? "",
+      metaDescription: "",
+      honors: [],
+      onLoan: false,
+      forever: false,
+      localPhoto: "",
+    };
     players.push({
-      id: player.id,
-      name: player.name,
-      shirtNumber: player.shirtNumber ?? null,
-      shirtName: player.shirtName,
-      slug: player.slug,
-      position: positionOf(player),
-      nationality: player.nationality,
-      dateOfBirth: player.dateOfBirth,
-      height: player.height,
-      weight: player.weight,
-      bio: player.bio,
-      metaDescription: player.metaDescription,
-      honors: player.honors,
-      onLoan: Boolean(player.onLoan),
-      forever: Boolean(player.forever),
-      photo,
-      photoLg: photo,
-      bodyShot,
-      localPhoto: `${ASSET_URL_PREFIX}/${headshotFile}`,
-      ...(hasBody ? { localBodyShot: `${ASSET_URL_PREFIX}/${bodyFile}` } : {}),
+      ...base,
+      id: base.id,
+      shirtNumber: card.shirtNumber ?? base.shirtNumber,
+      position: card.position,
+      onLoan: card.onLoan,
+      photo: photo ?? base.photo,
+      photoLg: photo ?? base.photoLg,
+      bodyShot: bodyShot ?? base.bodyShot,
+      localPhoto: hasHeadshot ? `${ASSET_URL_PREFIX}/${headshotFile}` : base.localPhoto,
+      localBodyShot: hasBody ? `${ASSET_URL_PREFIX}/${bodyFile}` : undefined,
     });
-    console.log(`  ${player.name}`);
+    console.log(`  ${card.name}${previous ? "" : " (new)"}`);
   }
 
   players.sort((a, b) => (a.shirtNumber ?? 999) - (b.shirtNumber ?? 999));
 
+  const keepCoach = existing.coach && headCoach && existing.coach.slug === headCoach.slug;
   const output = {
     ...existing,
     lastUpdated: new Date().toISOString().slice(0, 10),
     source: "liverpoolfc.com",
-    ...(headCoach
+    // Coach: keep the stored entry while the head coach is unchanged; a new coach
+    // gets the basics from the card (nationality/description not on the list page).
+    ...(headCoach && !keepCoach
       ? {
           coach: {
-            id: headCoach.id,
+            id: fallbackId(headCoach.slug),
             name: headCoach.name,
             slug: headCoach.slug,
-            nationality: headCoach.nationality,
-            photo: pickImage(headCoach.profileImage),
-            metaDescription: headCoach.metaDescription,
+            nationality: "",
+            photo: headCoach.photo ? headCoach.photo + PHOTO_PARAMS : "",
+            metaDescription: "",
           },
         }
       : {}),

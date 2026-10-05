@@ -1,7 +1,34 @@
 import "server-only";
+import { revalidateTag } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 import type { GalleryCategory } from "@/lib/constants";
+
+/** Cache tag for gallery reads; admin writes revalidate it. */
+export const GALLERY_CACHE_TAG = "gallery";
+/** Cache tag for site settings (homepage hero, gallery background). */
+export const SITE_SETTINGS_CACHE_TAG = "site-settings";
+
+/**
+ * Anonymous, cookie-less client for public reads (RLS allows public SELECT on
+ * gallery_images and site_settings). Reading cookies() would make a read
+ * uncacheable — it is not allowed inside unstable_cache — and the session
+ * adds nothing to a public query. Writes keep the cookie-bound server client,
+ * whose session the admin RLS policies check.
+ */
+function createPublicReadClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      // Bounded fetch, no postgrest retries: see supabase-fetch-with-timeout.ts.
+      global: { fetch: createSupabaseFetch() },
+      db: { retry: false },
+      auth: { persistSession: false, autoRefreshToken: false },
+    },
+  );
+}
 
 export interface GalleryImage {
   id: string;
@@ -23,7 +50,7 @@ export async function listGalleryImagesFromDB(options?: {
   category?: string;
   search?: string;
 }): Promise<{ images: GalleryImage[]; total: number }> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicReadClient();
   const limit = options?.limit ?? 50;
   const offset = options?.offset ?? 0;
 
@@ -53,7 +80,7 @@ export async function listGalleryImagesFromDB(options?: {
 
 /** Get image counts per category from DB */
 export async function getGalleryCategoryCounts(): Promise<Record<string, number>> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicReadClient();
   const { data, error } = await supabase
     .from("gallery_images")
     .select("category");
@@ -69,7 +96,7 @@ export async function getGalleryCategoryCounts(): Promise<Record<string, number>
 export async function getGalleryImageById(
   id: string,
 ): Promise<GalleryImage | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = createPublicReadClient();
   const { data, error } = await supabase
     .from("gallery_images")
     .select("*")
@@ -96,6 +123,7 @@ export async function insertGalleryImage(image: {
     .select()
     .single();
   if (error) throw error;
+  revalidateTag(GALLERY_CACHE_TAG, "max");
   return data as GalleryImage;
 }
 
@@ -107,20 +135,12 @@ export async function deleteGalleryImageFromDB(id: string): Promise<void> {
     .delete()
     .eq("id", id);
   if (error) throw error;
+  revalidateTag(GALLERY_CACHE_TAG, "max");
 }
 
 /** Get a site setting by key */
 export async function getSiteSetting<T>(key: string): Promise<T | null> {
-  // Use anon client directly to avoid cookies() which forces dynamic rendering
-  const { createClient } = await import("@supabase/supabase-js");
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    // Without a bounded fetch this call inherits the upstream proxy's ~90s
-    // timeout, which stalled the whole homepage render whenever the database
-    // was unreachable.
-    { global: { fetch: createSupabaseFetch() } },
-  );
+  const supabase = createPublicReadClient();
   const { data, error } = await supabase
     .from("site_settings")
     .select("value")
@@ -144,6 +164,7 @@ export async function setSiteSetting(
       .delete()
       .eq("key", key);
     if (error) throw error;
+    revalidateTag(SITE_SETTINGS_CACHE_TAG, "max");
     return;
   }
 
@@ -154,4 +175,5 @@ export async function setSiteSetting(
       { onConflict: "key" },
     );
   if (error) throw error;
+  revalidateTag(SITE_SETTINGS_CACHE_TAG, "max");
 }

@@ -7,12 +7,17 @@ export interface WebSearchResult {
 }
 
 /**
- * Live web search, via Groq's `compound-mini` built-in browser tool.
+ * Live web search, via Groq's `openai/gpt-oss-20b` with the built-in
+ * `browser_search` tool.
  *
  * This is the one place that still calls Groq. Everything else moved to VietAPI
  * (see src/lib/ai/vietapi.ts), but no VietAPI model exposes a server-side web
- * search tool, and `groq/compound-mini` remains available. Keep GROQ_API_KEY set
- * for this; chat still answers without it, just without live results.
+ * search tool. `groq/compound-mini`, used before, was retired (404
+ * model_not_found, Oct 2026). Keep GROQ_API_KEY set for this; chat still
+ * answers without it, just without live results.
+ *
+ * The system prompt carries today's date: without it the model searched for
+ * "Liverpool FC manager 2024" and answered with the previous head coach.
  */
 export async function webSearch(query: string): Promise<WebSearchResult> {
   const apiKey = process.env.GROQ_API_KEY;
@@ -20,11 +25,9 @@ export async function webSearch(query: string): Promise<WebSearchResult> {
     throw new Error('GROQ_API_KEY is not configured');
   }
 
-  console.log('[Web Search] Groq compound-mini search:', query);
+  console.log('[Web Search] Groq browser_search:', query);
 
-  // Use groq/compound-mini — designed for single tool calls (web search),
-  // returns structured executed_tools with search_results (title, url, content, score).
-  // No tools/tool_choice needed — compound models auto-decide when to search.
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -32,15 +35,16 @@ export async function webSearch(query: string): Promise<WebSearchResult> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'groq/compound-mini',
+      model: 'openai/gpt-oss-20b',
       messages: [
         {
           role: 'system',
           content:
-            'You are a football research assistant. Always search the web for the latest information. Provide factual, up-to-date data with source references. Respond concisely.',
+            `Today is ${today}. You are a football research assistant. Always search the web for the latest information and prefer sources from the last few weeks over older ones. Provide factual, up-to-date data with source references. Respond concisely.`,
         },
         { role: 'user', content: query },
       ],
+      tools: [{ type: 'browser_search' }],
       max_completion_tokens: 1024,
       stream: false,
     }),
@@ -54,16 +58,10 @@ export async function webSearch(query: string): Promise<WebSearchResult> {
 
   const data = await response.json();
   const message = data.choices?.[0]?.message;
-  const answer = message?.content || '';
+  // Drop the model's inline citation markers, e.g. "【1†L15-L22】".
+  const answer = (message?.content || '').replace(/【[^】]*】/g, '').trim();
 
-  // Debug: log the executed_tools structure from compound model
-  if (message?.executed_tools) {
-    console.log('[Web Search] executed_tools:', JSON.stringify(message.executed_tools, null, 2));
-  } else {
-    console.log('[Web Search] No executed_tools in response. Keys:', Object.keys(message || {}));
-  }
-
-  // Extract structured sources from executed_tools (Groq returns search_results)
+  // Extract structured sources from executed_tools[].search_results.results
   let sources: { title: string; url: string; snippet: string }[] = [];
   const executedTools = message?.executed_tools;
 
@@ -72,9 +70,11 @@ export async function webSearch(query: string): Promise<WebSearchResult> {
       const results = tool?.search_results?.results;
       if (Array.isArray(results)) {
         for (const r of results) {
-          if (r.url) {
+          // Skip the search engine's own result pages; keep the articles.
+          if (r.url && !/^https?:\/\/(www\.)?exa\.ai\//.test(r.url)) {
             sources.push({
-              title: r.title || new URL(r.url).hostname.replace('www.', ''),
+              // Page-view entries are titled "<title> - viewing lines [0 - 48] of 48".
+              title: String(r.title || '').replace(/\s*-\s*viewing lines.*$/i, '') || new URL(r.url).hostname.replace('www.', ''),
               url: r.url,
               snippet: r.content || '',
             });

@@ -16,6 +16,8 @@ export async function createServerSupabaseClient() {
     {
       // Bounded fetch: a paused/unreachable database must fail fast, not hang.
       global: { fetch: createSupabaseFetch() },
+      // No postgrest backoff retries: during an outage they add 7s per query.
+      db: { retry: false },
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -7,6 +7,19 @@ const SITE_URL =
 
 const SITE_NAME = "Liverpool FC Việt Nam";
 
+/**
+ * Site-wide share image: the generated 1200×630 card at app/opengraph-image.tsx.
+ * Pages without their own image must still name it — a page's `openGraph`
+ * object replaces the root layout's, so leaving `images` out removed the
+ * preview from every page built with makePageMeta.
+ */
+export const DEFAULT_OG_IMAGE = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: SITE_NAME,
+};
+
 const PUBLISHER = {
   "@type": "Organization" as const,
   name: SITE_NAME,
@@ -68,7 +81,10 @@ export function makePageMeta(
       description,
       type: options?.type ?? "website",
       siteName: SITE_NAME,
-      ...(options?.image && { images: [{ url: options.image }] }),
+      locale: "vi_VN",
+      alternateLocale: "en_GB",
+      ...(options?.path && { url: getCanonical(options.path) }),
+      images: options?.image ? [{ url: options.image }] : [DEFAULT_OG_IMAGE],
       ...(options?.publishedTime && {
         publishedTime: options.publishedTime,
       }),
@@ -80,7 +96,7 @@ export function makePageMeta(
       card: "summary_large_image",
       title,
       description,
-      ...(options?.image && { images: [options.image] }),
+      images: [options?.image ?? DEFAULT_OG_IMAGE.url],
     },
   };
 

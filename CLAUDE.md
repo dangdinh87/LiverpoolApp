@@ -135,7 +135,6 @@ src/
 │   ├── cloudinary.ts       # Cloudinary upload/transform config
 │   ├── news-config.ts      # Source labels/colors + URL slug encode/decode
 │   ├── squad-data.ts       # Squad data helpers
-│   ├── player-photos.ts    # Player photo URL mapping
 │   ├── rate-limit.ts       # Rate limiting utility
 │   ├── seo.ts              # SEO/metadata helpers
 │   ├── constants.ts        # App-wide constants
@@ -197,9 +196,29 @@ src/
 
 - 17+ RSS sources in 2 languages:
   - **EN:** LFC Official, BBC Sport, The Guardian, Liverpool Echo, Anfield Watch, Empire of the Kop, Sky Sports, GOAL
-  - **VI:** VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Webthethao
+  - **VI:** VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Bóng Đá 24h, Soha
+  - Hosts and aliases for every source live in one table: `src/lib/news/source-hosts.ts`
+    (used by slug encode/decode, `isKnownNewsSourceUrl` and `detectSource`).
+  - Scraping uses the honest `NEWS_USER_AGENT` (`src/lib/news/http.ts`) — Reach sites and ESPN
+    block spoofed browser UAs. This Is Anfield blocks every UA, so it is link-out only.
+  - Zone-less dates from Vietnamese feeds are read as +07:00; future dates are clamped to fetch time.
+    Zone names V8 cannot parse are resolved explicitly (Sky `BST` = +01:00; ESPN `EST` = -04:00 from March to November).
+  - Source list changes (Oct 2026): Manchester Evening News feed dropped (~2 items); Bongdaplus scrapes
+    `/liverpool-tags` + `/tin-chuyen-nhuong-liverpool`; Mirror / Independent / MEN are no longer "trusted
+    Liverpool" sources in `relevance.ts`; LFC adapter skips Women / Academy / Media Watch / retail; Sky videos
+    and liveblogs and Guardian `/live/` pages are dropped at ingest.
+  - Each adapter records a fetch status (`ok | http_error | timeout | parse_error | error`); the sync result and
+    `sync_logs.source_stats` carry it (`sourceFailures`, `consecutiveZeroInsertRuns`) and the news-sync workflow alerts on both.
+  - Feed fetches use `cache: "no-store"`, newest-first sorting and a 14-day age cutoff BEFORE the 30-item cap.
+- **Canonical article URL** (`src/lib/news/url.ts`): tracking params (`at_*`, `utm_*`, …) and the trailing slash are
+  stripped at ingest; the in-app slug cannot carry either, so stored `articles.url` must be in that form. Reads
+  (`getArticleContentFromDB`, extractor cache, translate, likes, comments) also try legacy spellings via
+  `articleUrlVariants()`, and sync updates a legacy-spelled row in place instead of inserting a duplicate.
+- Thumbnails: every sync run fills up to 10 rows without a thumbnail (cached `content_en.heroImage` first, then a
+  short og:image fetch, random pick); `?deep=1` raises it to 30.
 - Sync pipeline: RSS fetch → dedup → relevance scoring → category detection → upsert to Supabase
-- Article URLs encoded as readable slugs: `/news/{source}/{path}` (e.g., `/news/bbc/sport/football/...`)
+- Article URLs encoded as readable slugs: `/news/{source}/{path}` (e.g., `/news/bbc/sport/football/...`);
+  a non-canonical host of a known source adds a `~host` segment: `/news/bbc/~www.bbc.co.uk/sport/...`
 - **Content Extraction (article-extractor.ts):**
   - Per-source CSS selectors (verified 2026-03-11) extract `htmlContent` from article DOM
   - 24-hour cache (CONTENT_CACHE_TTL_MS) — skips re-extraction of recently scraped articles
@@ -207,14 +226,18 @@ src/
   - Inline video detection: embeds HLS/MP4 videos as `<div class="article-video-player" data-video-src="...">` placeholders
   - Returns ArticleContent: `{ title, heroImage, paragraphs, htmlContent?, videoUrl?, images, readingTime, isThinContent }`
 - Translation: VietAPI on-demand, cached in `content_en` / `content_vi` columns
-- Daily digest: AI-generated summary of top stories, stored in `news_digests` table (VietAPI)
+- Daily digest: AI-generated summary of top stories, stored in `news_digests` table (VietAPI). Two parallel LLM
+  requests (core digest / SEO article, ~35s wall time) because one 600-900 word request took ~84s, over the route's
+  60s; the prompt starts with `buildCurrentFactsBlock()` (head coach, squad, season).
+  Generated **only** by `/api/news/digest/generate` (daily cron + hourly retry step in the news
+  sync workflow). Pages read the latest digest with `getLatestDigest()` and never generate it.
 - **Article Rendering Components:**
   - `ArticleHtmlBody` — renders `htmlContent` with imperatively-mounted video player React portals (avoids dangerouslySetInnerHTML conflicts)
   - `ArticleVideoPlayer` — HLS.js + fallback to native HTML5 video; supports HLS and MP4 formats
 
 ### i18n
 
-- 2 locales: `en`, `vi` (default: `en`)
+- 2 locales: `en`, `vi` (default: `vi` — also what crawlers get)
 - Detection order: `NEXT_LOCALE` cookie → `Accept-Language` header
 - Translation files: `src/messages/en.json`, `src/messages/vi.json`
 - Static data has `.vi.json` variants (trophies, history, legends, club-info, player-bios)
@@ -246,7 +269,7 @@ See `.env.example`. All required for full functionality:
 | `FOOTBALL_DATA_ORG_KEY` | Football-Data.org API (free: 10 req/min) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL — SEO, metadataBase, OAuth redirects |
 | `VIETAPI_KEY` | VietAPI — AI chat + article translation + digest |
-| `GROQ_API_KEY` | Groq — live web search only (`groq/compound-mini`); chat works without it |
+| `GROQ_API_KEY` | Groq — live web search only (`openai/gpt-oss-20b` + `browser_search`; `compound-mini` was retired); chat works without it |
 | `CRON_SECRET` | Protects cron endpoints (random string) |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |
@@ -261,17 +284,19 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 3. `003_article_interactions.sql` — `article_likes`, `article_comments`
 4. `004_saved_articles.sql` — user bookmarks
 5. `005_gallery.sql` — gallery images metadata
-6. `chat_schema.sql` — `conversations`, `messages` for AI chat persistence
+6. `006_news_digests_seo_article.sql` — `news_digests` + SEO article payload
+7. `007_news_tables_rls_and_comment_privacy.sql` — RLS on `articles` / `sync_logs` / `news_digests`, missing comment columns, scrub emails from comment author names
+8. `chat_schema.sql` — `conversations`, `messages` for AI chat persistence
 
 ## Scheduled Jobs
 
-- **GitHub Actions (`.github/workflows/news-sync.yml`)** calls `/api/news/sync` hourly (`0 * * * *`) with `CRON_SECRET` bearer auth.
+- **GitHub Actions (`.github/workflows/news-sync.yml`)** calls `/api/news/sync` hourly (`0 * * * *`) with `CRON_SECRET` bearer auth, then (01:00–16:59 UTC) calls `/api/news/digest/generate` as an idempotent retry for the daily digest.
 - **Vercel Cron (`vercel.json`)** keeps daily jobs for cleanup and digest only.
-- All routes require `CRON_SECRET` via `Authorization: Bearer` header (auto-sent by Vercel cron) or `?key=` query param.
+- All routes require `CRON_SECRET` via `Authorization: Bearer` header (auto-sent by Vercel cron) only (the `?key=` query param was removed — URLs leak into logs).
 
 | Route | Scheduler | Schedule | maxDuration | Purpose |
 |---|---|---|---|---|
-| `/api/news/sync` | GitHub Actions | `0 * * * *` | 300s | Sync RSS feeds, pre-scrape article content, revalidate homepage |
+| `/api/news/sync` | GitHub Actions | `0 * * * *` | 120s | Sync RSS feeds, pre-scrape article content, revalidate homepage |
 | `/api/news/cleanup` | Vercel cron | `0 3 * * *` (3 AM UTC) | default | Soft-delete >30d, clear cached content >60d, hard-delete >60d |
 | `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via VietAPI, skip if already generated |
 
@@ -289,6 +314,8 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 ## Testing
 
 - **Unit:** Vitest — `npm run test`. Specs live beside their subject in `__tests__/`.
+  - `src/messages/__tests__/messages-parity.test.ts` fails if en/vi keys diverge or if code calls
+    `t("key")` on a key that exists in neither locale — add translations to both files.
 - **E2E:** Playwright — `npm run test:e2e`. Specs in `e2e/`, config in `playwright.config.ts`.
   - Runs against a production build (`next build` + `next start`) on port 3100, desktop + mobile.
   - `e2e/support/routes.ts` is the route manifest driving the smoke sweep — add new pages there.
@@ -300,8 +327,16 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 ## Resilience
 
 - Every Supabase client uses `createSupabaseFetch()` (`src/lib/supabase-fetch-with-timeout.ts`):
-  an 8s per-request timeout plus a 30s circuit breaker. Without it a paused database made pages
-  hang for ~90s and failed the production build.
+  a 3s per-request timeout plus a 30s circuit breaker, and `db: { retry: false }`. Without the
+  timeout a paused database made pages hang for ~90s; without disabling retries postgrest-js
+  added 1s+2s+4s of backoff to every failed query (the "~7s fixed cold cost"). New clients must
+  use both.
+- Public reads that should be cacheable (gallery, site settings) use the cookie-less client in
+  `src/lib/gallery/queries.ts`; `cookies()` cannot be read inside `unstable_cache`.
+- Inside `unstable_cache`, catch errors and return a fallback only when caching that fallback is
+  acceptable — a thrown error is never cached, so it is retried on every request.
+- Server-side fetches of article URLs must pass `isKnownNewsSourceUrl()` (`src/lib/news-config.ts`);
+  slugs can decode to arbitrary URLs.
 - Time-dependent UI must use `useNowAfterMount()` rather than reading the clock during render —
   a render-time `Date.now()` disagrees between the server render and hydration.
 - The season year comes from `src/lib/football/current-season.ts`, never a literal.

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { createClient } from "@/lib/supabase";
+import { hasSupabaseSession, loadSupabaseClient } from "@/lib/supabase-lazy";
 
 /**
  * Client-side hook that fetches the current user's favourite player IDs.
@@ -13,9 +13,13 @@ export function useFavourites() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function load() {
+      // Guests have no session cookie: skip loading the Supabase client at all.
+      if (!hasSupabaseSession()) {
+        setLoading(false);
+        return;
+      }
+      const supabase = await loadSupabaseClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setLoading(false);

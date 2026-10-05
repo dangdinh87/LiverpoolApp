@@ -1,196 +1,43 @@
 "use client";
 
-import { useMemo, useState, useCallback, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { AssistantRuntimeProvider } from "@assistant-ui/react";
-import { useChatRuntime, AssistantChatTransport } from "@assistant-ui/react-ai-sdk";
-import { Thread } from "@/components/assistant-ui/thread";
-import { useAuthStore } from "@/stores/auth-store";
-import { Loader2, LogIn } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ChatSidebar, SidebarToggleButton } from "@/components/chat/chat-history-panel";
-import { ChatHistorySkeleton } from "@/components/chat/thinking-indicator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Loader2, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { UIMessage } from "ai";
-import { DEFAULT_CHAT_AI_MODEL } from "@/config/constants";
-import type { ChatMessage, Conversation } from "@/lib/chat/conversation-types";
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/stores/auth-store";
 
-const ChatInterface = ({
-	initialMessages,
-	conversationId,
-	model,
-	onConversationCreated,
-}: {
-	initialMessages: UIMessage[];
-	conversationId: string | null;
-	model: string;
-	onConversationCreated?: (id: string, title: string) => void;
-}) => {
-	const conversationIdRef = useRef(conversationId);
-	useEffect(() => {
-		conversationIdRef.current = conversationId;
-	}, [conversationId]);
+const Spinner = () => (
+	<div className="flex h-full items-center justify-center">
+		<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" aria-hidden />
+	</div>
+);
 
-	const transport = useMemo(
-		() =>
-			new AssistantChatTransport({
-				api: "/api/chat-groq",
-				body: {
-					model: model,
-					get conversationId() {
-						return conversationIdRef.current;
-					},
-				},
-			}),
-		[model]
-	);
-
-	const runtime = useChatRuntime({
-		transport,
-		messages: initialMessages.length > 0 ? initialMessages : undefined,
-		onError: (error) => {
-			console.error("[ChatInterface] Stream error:", error.message);
-		},
-		onData: (dataPart) => {
-			if (dataPart.type === "data-conversation") {
-				const data = dataPart.data as { conversationId?: string; conversationTitle?: string };
-				if (data.conversationId && data.conversationTitle && onConversationCreated) {
-					onConversationCreated(data.conversationId, data.conversationTitle);
-				}
-			}
-		},
-	});
-
-	return (
-		<AssistantRuntimeProvider runtime={runtime}>
-			<Thread />
-		</AssistantRuntimeProvider>
-	);
-};
+// The chat app (assistant-ui + AI SDK + markdown + react-query) is only fetched
+// for a signed-in visitor; /chat used to ship ~525 KB gzip of JS to everyone,
+// including people who only ever see the sign-in prompt below.
+const ChatApp = dynamic(() => import("./chat-app"), { ssr: false, loading: Spinner });
 
 export default function ChatPage() {
 	const router = useRouter();
 	const { user, isLoading: authLoading } = useAuthStore();
 	const t = useTranslations();
-	const queryClient = useQueryClient();
 
-	const selectedModel = DEFAULT_CHAT_AI_MODEL;
+	if (authLoading) return <Spinner />;
 
-	const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-	const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-	// Identifies the mounted chat thread; changing it starts a fresh one.
-	// Seeded from a counter rather than the clock: this component is server
-	// rendered, and a timestamp key differs between the server and hydration,
-	// which silently remounts the thread on load.
-	const [chatKey, setChatKey] = useState("new-0");
-	// Monotonic so a reset always yields a key React has not seen, even when
-	// the current key names a saved conversation.
-	const newChatCount = useRef(0);
-	const [isNewThread, setIsNewThread] = useState(true);
-
-	// Fetch conversations
-	const { data: conversations = [] } = useQuery<Conversation[]>({
-		queryKey: ["conversations", user?.id],
-		queryFn: async () => {
-			if (!user) return [];
-			const res = await fetch("/api/conversations");
-			if (!res.ok) throw new Error("Failed to fetch conversations");
-			const data = await res.json();
-			return data.conversations || [];
-		},
-		enabled: !!user,
-		staleTime: 10 * 1000,
-		refetchInterval: 15 * 1000,
-		refetchOnWindowFocus: false,
-	});
-
-	// Fetch conversation messages
-	const { data: historyData, isLoading: isHistoryLoading } = useQuery<UIMessage[]>({
-		queryKey: ["conversationHistory", currentConversationId],
-		queryFn: async () => {
-			if (!currentConversationId || !user) return [];
-			const res = await fetch(`/api/conversations/${currentConversationId}/messages`);
-			if (!res.ok) return [];
-			const data = await res.json();
-			return ((data.messages || []) as ChatMessage[]).map((msg) => ({
-				...msg,
-				createdAt: msg.createdAt ? new Date(msg.createdAt) : undefined,
-			}));
-		},
-		enabled: !!currentConversationId && !!user && !isNewThread,
-		staleTime: 5 * 60 * 1000,
-		refetchOnWindowFocus: false,
-		refetchOnMount: false,
-	});
-
-	const initialMessages = historyData || [];
-
-	const handleNewChat = useCallback(() => {
-		setCurrentConversationId(null);
-		setChatKey(`new-${(newChatCount.current += 1)}`);
-		setIsNewThread(true);
-	}, []);
-
-	const handleConversationCreated = useCallback(
-		(id: string, title: string) => {
-			setCurrentConversationId(id);
-			queryClient.setQueryData(["conversations", user?.id], (old: Conversation[] = []) => {
-				if (old.some((c) => c.id === id)) return old;
-				return [{ id, title, updated_at: new Date().toISOString() }, ...old];
-			});
-			queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
-		},
-		[queryClient, user?.id]
-	);
-
-	const handleDeleteConversation = useCallback(
-		async (id: string) => {
-			try {
-				const res = await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-				if (res.ok) {
-					if (currentConversationId === id) handleNewChat();
-					queryClient.invalidateQueries({ queryKey: ["conversations"] });
-				}
-			} catch (error) {
-				console.error("Failed to delete conversation:", error);
-			}
-		},
-		[currentConversationId, queryClient, handleNewChat]
-	);
-
-	const handleSelectConversation = useCallback((id: string) => {
-		if (id === currentConversationId) return;
-		setCurrentConversationId(id);
-		setChatKey(`conv-${id}`);
-		setIsNewThread(false);
-		// Auto-close sidebar on mobile
-		if (window.innerWidth < 768) setSidebarCollapsed(true);
-	}, [currentConversationId]);
-
-	// Auth loading
-	if (authLoading) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-			</div>
-		);
-	}
-
-	// Not logged in
 	if (!user) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8 relative overflow-hidden">
 				<div className="relative z-10 flex flex-col items-center gap-4">
-					<div className="hover:scale-105 transition-transform duration-300">
+					<div>
 						<Image
 							src="/assets/lfc/crest.webp"
 							alt="LFC"
-							width={72}
+							width={58}
 							height={72}
-							className="drop-shadow-[0_0_20px_rgba(200,16,46,0.4)]"
+							priority
+							className="h-[72px] w-auto drop-shadow-[0_0_20px_rgba(200,16,46,0.4)]"
 						/>
 					</div>
 					<div className="text-center">
@@ -210,43 +57,5 @@ export default function ChatPage() {
 		);
 	}
 
-	return (
-		<div className="relative z-10 flex h-full overflow-hidden">
-			{/* Left sidebar */}
-			<ChatSidebar
-				conversations={conversations}
-				currentConversationId={currentConversationId}
-				onSelect={handleSelectConversation}
-				onNewChat={handleNewChat}
-				onDelete={handleDeleteConversation}
-				collapsed={sidebarCollapsed}
-				onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
-			/>
-
-			{/* Right: chat area */}
-			<div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
-				{/* Floating toggle for sidebar open/close */}
-				<div className="absolute top-2 left-2 z-20">
-					<SidebarToggleButton collapsed={sidebarCollapsed} onClick={() => setSidebarCollapsed(prev => !prev)} />
-				</div>
-
-				{/* Chat thread */}
-				<div className="flex-1 overflow-hidden relative">
-					{isHistoryLoading && !isNewThread ? (
-						<ScrollArea className="h-full">
-							<ChatHistorySkeleton />
-						</ScrollArea>
-					) : (
-						<ChatInterface
-							key={chatKey}
-							initialMessages={initialMessages}
-							conversationId={currentConversationId}
-							model={selectedModel}
-							onConversationCreated={handleConversationCreated}
-						/>
-					)}
-				</div>
-			</div>
-		</div>
-	);
+	return <ChatApp />;
 }

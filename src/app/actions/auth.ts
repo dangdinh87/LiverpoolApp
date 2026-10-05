@@ -3,36 +3,37 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getSafeRedirect } from "@/lib/safe-redirect";
+import { toAuthErrorCode, type AuthErrorCode } from "@/lib/auth-error-code";
 
-/** Validate redirect path to prevent open redirect */
-function getSafeRedirect(raw: string): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/";
-  return raw;
-}
+// Errors are codes, translated by the form (Auth.errors.*), never raw
+// provider messages.
+export type AuthFormError = AuthErrorCode | "emailRequired" | "passwordRequired" | "passwordShort";
+type AuthFormResult = { error?: AuthFormError; success?: "checkEmail" } | undefined;
 
-export async function loginWithEmail(formData: FormData) {
+export async function loginWithEmail(formData: FormData): Promise<AuthFormResult> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const redirectTo = getSafeRedirect(String(formData.get("redirectTo") ?? "/"));
 
-  if (!email) return { error: "Email is required" };
-  if (!password) return { error: "Password is required" };
+  if (!email) return { error: "emailRequired" };
+  if (!password) return { error: "passwordRequired" };
 
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error) return { error: error.message };
+  if (error) return { error: toAuthErrorCode(error) };
 
   revalidatePath("/");
   redirect(redirectTo);
 }
 
-export async function registerWithEmail(formData: FormData) {
+export async function registerWithEmail(formData: FormData): Promise<AuthFormResult> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!email) return { error: "Email is required" };
-  if (password.length < 6) return { error: "Password must be at least 6 characters" };
+  if (!email) return { error: "emailRequired" };
+  if (password.length < 6) return { error: "passwordShort" };
 
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.signUp({
@@ -43,18 +44,19 @@ export async function registerWithEmail(formData: FormData) {
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) return { error: toAuthErrorCode(error) };
 
   if (data.user) {
-    // Always create profile row (even for unconfirmed users)
+    // Always create profile row (even for unconfirmed users). Insert-only, so a
+    // repeat signup can never blank out a profile the user already filled in.
     await supabase.from("user_profiles").upsert(
       { user_id: data.user.id, username: null, avatar_url: null, bio: null },
-      { onConflict: "user_id" }
+      { onConflict: "user_id", ignoreDuplicates: true }
     );
 
     // If email not yet confirmed, tell user to check email
     if (!data.user.email_confirmed_at) {
-      return { success: "Check your email to confirm your account." };
+      return { success: "checkEmail" };
     }
   }
 

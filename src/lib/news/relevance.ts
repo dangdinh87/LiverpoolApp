@@ -53,15 +53,15 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
 };
 
 // Liverpool-dedicated feeds get a trust boost, but still pass through identity/competitor checks.
+// Mirror / Independent / MEN publish all-football streams (Oct 2026 audit: city
+// stories and other clubs passed on the strength of the feed alone), so they are
+// NOT in this set: their items need a Liverpool identity signal like any other.
 const LFC_DEDICATED: Set<NewsSource> = new Set([
   "lfc",
   "anfield-watch",
   "eotk",
   "echo",
   "tia",
-  "mirror",
-  "independent",
-  "men",
   "anfieldindex",
   "liverpoolcom",
 ]);
@@ -102,6 +102,45 @@ const TOPIC_PATTERNS: WeightedPattern[] = [
 
 const OTHER_BIG_CLUB_PATTERN =
   /\b(man\s?utd|manchester united|mu|arsenal|chelsea|man city|manchester city|tottenham|real madrid|barcelona|psg|bayern)\b|quỷ đỏ/i;
+
+// "Liverpool" the city / other clubs, not Liverpool FC men's team news.
+const NON_LFC_LIVERPOOL_PATTERNS: { pattern: RegExp; label: string }[] = [
+  { pattern: /liverpool\s+street|liverpool\s+lime\s+street|lime\s+street/i, label: "Liverpool Street / Lime Street station" },
+  { pattern: /liverpool\s+city\s+(council|region|centre|center)|mayor of liverpool/i, label: "Liverpool city/council news" },
+  { pattern: /\b(liverpool|lfc)(\s+fc)?\s+(women|ladies)\b|\blfcw\b|\bgareth taylor\b/i, label: "women's team" },
+];
+
+// "WSL" / "Women's Super League" alone is not enough (a men's story can mention it),
+// but together with a women's-football marker it is the women's team.
+const WSL_PATTERN = /\bwsl\b|women'?s super league/i;
+const WOMENS_MARKER_PATTERN = /\b(women|ladies|female|she|her)\b/i;
+
+// National-team reports name Liverpool players too ("ĐT Hà Lan thoát thua" via Van Dijk).
+const NATIONAL_TEAM_PATTERN =
+  /(?<![\p{L}\p{N}])(?:đt|đtqg|đội tuyển|tuyển (?!thủ)|national team|nations league|world cup|vòng loại|international (?:break|duty)|internationals?)(?![\p{L}\p{N}])/iu;
+
+
+// Everton mentions are only "ours" when a clear LFC signal or a fixture/derby framing is present.
+const EVERTON_PATTERN = /\beverton\b/i;
+// "v" counts as versus only when whitespace-delimited: the "v" of Vietnamese
+// "với" (with) must not satisfy the Everton guard.
+const VERSUS = "(?:(?<=\\s)v(?=\\s)|\\bvs\\.?(?=\\s)|đối đầu|đấu với|đụng độ|gặp)";
+const STRONG_LFC_SIGNAL_PATTERN = new RegExp(
+  "\\blfc\\b|\\banfield\\b|\\bliverpool fc\\b|\\bthe kop\\b|\\bthe reds\\b|lữ\\s*đoàn\\s*đỏ|\\bderby\\b|" +
+    `\\bliverpool\\b.{0,40}${VERSUS}.{0,40}\\beverton\\b|\\beverton\\b.{0,40}${VERSUS}.{0,40}\\bliverpool\\b`,
+  "i"
+);
+
+function detectNonLfcContext(text: string, hasStrongPlayerIdentity: boolean): string | null {
+  for (const { pattern, label } of NON_LFC_LIVERPOOL_PATTERNS) {
+    if (pattern.test(text)) return label;
+  }
+  if (WSL_PATTERN.test(text) && WOMENS_MARKER_PATTERN.test(text)) return "women's team (WSL)";
+  if (EVERTON_PATTERN.test(text) && !hasStrongPlayerIdentity && !STRONG_LFC_SIGNAL_PATTERN.test(text)) {
+    return "Everton story mentioning Liverpool only as a place";
+  }
+  return null;
+}
 
 const CONTEXTUAL_PLAYER_TERMS = new Set(
   LFC_KEYWORDS_WEIGHTED
@@ -158,6 +197,41 @@ export function analyzeArticleRelevance(article: NewsArticle): ArticleRelevanceA
   const hasDirectIdentity = direct.score > 0;
   const hasStrongPlayerIdentity = players.score >= 2.5;
 
+  const nonLfcContext = detectNonLfcContext(text, hasStrongPlayerIdentity);
+  if (nonLfcContext) {
+    return {
+      score: -1,
+      isRelevant: false,
+      reasons: [`rejected: ${nonLfcContext}`],
+      signals: {
+        identity: 0,
+        source: SOURCE_PRIORITY[article.source] ?? 3,
+        freshness: 0,
+        topic: 0,
+        language: 0,
+        penalty: 4,
+      },
+    };
+  }
+
+  // A national-team report that merely names a Liverpool player is not club news:
+  // it needs a Liverpool/Anfield mention or a second distinct player.
+  if (!hasDirectIdentity && NATIONAL_TEAM_PATTERN.test(text) && players.labels.length < 2) {
+    return {
+      score: -1,
+      isRelevant: false,
+      reasons: ["rejected: national-team report without club context"],
+      signals: {
+        identity: 0,
+        source: SOURCE_PRIORITY[article.source] ?? 3,
+        freshness: 0,
+        topic: 0,
+        language: 0,
+        penalty: 4,
+      },
+    };
+  }
+
   if (!isDedicatedSource && !hasDirectIdentity && !hasStrongPlayerIdentity) {
     return {
       score: -1,
@@ -174,7 +248,13 @@ export function analyzeArticleRelevance(article: NewsArticle): ArticleRelevanceA
     };
   }
 
-  if (!hasDirectIdentity && !hasStrongPlayerIdentity && OTHER_BIG_CLUB_PATTERN.test(text)) {
+  // The official LFC site is trusted: "Iraola: we must be brave against Man City" is ours.
+  if (
+    article.source !== "lfc" &&
+    !hasDirectIdentity &&
+    !hasStrongPlayerIdentity &&
+    OTHER_BIG_CLUB_PATTERN.test(text)
+  ) {
     return {
       score: -1,
       isRelevant: false,

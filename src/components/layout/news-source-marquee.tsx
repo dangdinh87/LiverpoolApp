@@ -1,6 +1,3 @@
-"use client";
-
-import { useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 
@@ -25,8 +22,6 @@ const NEWS_SOURCES: SourceLogo[] = [
   { key: "24h", label: "24h", logo: "/assets/news/logos/24h.svg", width: 80, height: 40, url: "https://www.24h.com.vn" },
   { key: "bongda", label: "Bóng Đá", logo: "/assets/news/logos/bongda.png", width: 100, height: 40, url: "https://bongda.com.vn" },
   { key: "bongdaplus", label: "Bóng Đá+", logo: "/assets/news/logos/bongdaplus.png", width: 80, height: 40, url: "https://bongdaplus.vn" },
-  { key: "webthethao", label: "Webthethao", logo: "/assets/news/logos/webthethao.png", width: 120, height: 40, url: "https://webthethao.vn" },
-  { key: "vietnamvn", label: "Vietnam.vn", logo: "/assets/news/logos/vietnamvn.png", width: 120, height: 40, url: "https://www.vietnam.vn" },
   // English sources
   { key: "bbc", label: "BBC Sport", logo: "/assets/news/logos/bbc.svg", width: 120, height: 40, url: "https://www.bbc.com/sport" },
   { key: "guardian", label: "The Guardian", logo: "/assets/news/logos/guardian.svg", width: 140, height: 40, url: "https://www.theguardian.com" },
@@ -39,7 +34,7 @@ const NEWS_SOURCES: SourceLogo[] = [
 
 /* ── Single logo item ────────────────────────────────────────────── */
 
-function LogoItem({ source }: { source: SourceLogo }) {
+function LogoItem({ source, hidden }: { source: SourceLogo; hidden?: boolean }) {
   const isLFC = source.key === "liverpoolfc";
   return (
     <a
@@ -47,14 +42,15 @@ function LogoItem({ source }: { source: SourceLogo }) {
       target="_blank"
       rel="noopener noreferrer"
       aria-label={source.label}
-      className="flex-shrink-0 mx-4 sm:mx-6 flex items-center justify-center gap-2 px-3 py-2 transition-all duration-300 hover:scale-105 hover:opacity-100 opacity-70"
+      tabIndex={hidden ? -1 : undefined}
+      className="flex-shrink-0 mx-4 sm:mx-6 flex items-center justify-center gap-2 px-3 py-2 transition-opacity duration-200 hover:opacity-100 focus-visible:opacity-100 opacity-70"
     >
       <Image
         src={source.logo}
         alt={source.label}
         width={source.width}
         height={source.height}
-        className={`${isLFC ? "h-7 sm:h-9" : "h-6 sm:h-8"} w-auto object-contain brightness-150 contrast-125 transition-all duration-300`}
+        className={`${isLFC ? "h-7 sm:h-9" : "h-6 sm:h-8"} w-auto object-contain brightness-150 contrast-125`}
         unoptimized
       />
       {isLFC && (
@@ -66,95 +62,29 @@ function LogoItem({ source }: { source: SourceLogo }) {
   );
 }
 
-/* ── Marquee with manual scroll + infinite auto-scroll ───────────── */
+/* ── Marquee: pure CSS (compositor-only transform), no per-frame JS ── */
 
 export function NewsSourceMarquee() {
   const t = useTranslations("Footer");
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef(true);
-  const pauseTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // Infinite loop: when scrolled past halfway, jump back seamlessly
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const half = el.scrollWidth / 2;
-    if (el.scrollLeft >= half) {
-      el.scrollLeft -= half;
-    } else if (el.scrollLeft <= 0) {
-      el.scrollLeft += half;
-    }
-  }, []);
-
-  // Auto-scroll with time-based delta — consistent speed on any refresh rate.
-  // Frame-based scroll (e.g. `+= 0.5 px/frame`) runs 2-4x faster on 144Hz/240Hz
-  // displays compared to 60Hz, so we compute delta time and scale by it.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    let rafId: number;
-    let lastTime: number | null = null;
-    const SPEED_PX_PER_SEC = 30; // ~30 px/s — matches old 0.5 px/frame at 60Hz
-
-    const tick = (now: number) => {
-      if (lastTime === null) lastTime = now;
-      const delta = (now - lastTime) / 1000; // seconds since last frame
-      lastTime = now;
-
-      if (autoScrollRef.current && el) {
-        el.scrollLeft += SPEED_PX_PER_SEC * delta;
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) {
-          el.scrollLeft -= half;
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, []);
-
-  // Pause auto-scroll on user interaction, resume after 3s idle
-  const pauseAutoScroll = useCallback(() => {
-    autoScrollRef.current = false;
-    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-    pauseTimerRef.current = setTimeout(() => {
-      autoScrollRef.current = true;
-    }, 3000);
-  }, []);
-
-  // Resume immediately on mouse leave
-  const resumeAutoScroll = useCallback(() => {
-    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-    autoScrollRef.current = true;
-  }, []);
 
   return (
-    <div className="bg-white/5 border-t border-white/10 pt-6 pb-4">
-      {/* Description */}
-      <p className="text-center text-stadium-muted text-sm font-bebas uppercase tracking-[0.2em] mb-4">
+    <div className="bg-white/5 border-t border-white/10 pt-5 pb-3">
+      <p className="text-center text-stadium-muted text-sm font-bebas uppercase tracking-[0.2em] mb-3">
         {t("newsSources")}
       </p>
 
-      {/* Scrollable track — manual drag + auto-scroll */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        onPointerDown={pauseAutoScroll}
-        onMouseEnter={pauseAutoScroll}
-        onMouseLeave={resumeAutoScroll}
-        onWheel={pauseAutoScroll}
-        onTouchStart={pauseAutoScroll}
-        onTouchEnd={resumeAutoScroll}
-        className="flex overflow-x-auto scrollbar-none cursor-grab active:cursor-grabbing"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {/* Duplicate items 3x for seamless infinite loop */}
-        {[0, 1, 2].map((i) =>
-          NEWS_SOURCES.map((s) => (
-            <LogoItem key={`${i}-${s.key}`} source={s} />
-          ))
-        )}
+      {/* Two identical halves; the track slides by exactly one half, then loops.
+          Pauses on hover/focus. Reduced motion: static, scrollable row. */}
+      <div className="news-marquee overflow-hidden">
+        <div className="news-marquee-track flex w-max">
+          {[false, true].map((dup) => (
+            <div key={String(dup)} className="flex shrink-0" aria-hidden={dup || undefined}>
+              {NEWS_SOURCES.map((s) => (
+                <LogoItem key={s.key} source={s} hidden={dup} />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

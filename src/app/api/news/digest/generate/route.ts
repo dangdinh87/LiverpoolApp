@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getEnv } from "@/lib/env";
 import {
   generateDailyDigest,
@@ -39,6 +40,8 @@ export const GET = withCronAuth(async (req) => {
     const digest = await generateDailyDigest();
 
     await upsertDigestRecord(existing, today, digest);
+    // Pages cache the latest digest for 30 min; show the new one right away.
+    revalidateTag("news-digest", "max");
 
     return NextResponse.json({
       ok: true,

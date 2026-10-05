@@ -1,96 +1,61 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { Newspaper, CheckCheck } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import type { NewsArticle } from "@/lib/news/types";
-import {
-  SOURCE_CONFIG,
-  formatRelativeDate,
-  getArticleUrl,
-} from "@/lib/news-config";
-import { getReadArticles } from "@/lib/news/read-history";
+import { SOURCE_CONFIG, getArticleUrl } from "@/lib/news-config";
+import { SectionHeader } from "@/components/ui/section-header";
+import { NewsThumb } from "./news-thumb";
+import { cleanTitle, formatNewsDate } from "./news-text";
 
-interface RelatedArticlesProps {
+/**
+ * Related stories: a swipeable strip on phones (snap, no page-width overflow),
+ * a grid from `sm` up. Server component: no client JS.
+ */
+export async function RelatedArticles({
+  articles,
+  title,
+  eyebrow,
+  href,
+  linkLabel,
+}: {
   articles: NewsArticle[];
-}
-
-export function RelatedArticles({ articles }: RelatedArticlesProps) {
-  const t = useTranslations("News.related");
-  const [readSet, setReadSet] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    // Read history lives in localStorage, so it can only be read after mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setReadSet(getReadArticles());
-  }, []);
-
+  /** Defaults to "Related news". */
+  title?: string;
+  eyebrow?: string;
+  href?: string;
+  linkLabel?: string;
+}) {
   if (articles.length === 0) return null;
+  const t = await getTranslations("News.related");
+  const nowMs = new Date().getTime();
 
   return (
-    <div className="mt-14 pt-10 border-t border-stadium-border/50">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-1 h-6 bg-lfc-red" />
-        <h2 className="font-bebas text-3xl text-white tracking-wider">
-          {t("title")}
-        </h2>
-      </div>
-      {/* Vertical cards: image on top + text below */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <section className="mt-12 border-t border-[var(--line)] pt-8">
+      <SectionHeader title={title ?? t("title")} eyebrow={eyebrow} href={href} linkLabel={linkLabel} />
+      <ul className="scroll-x -mx-4 flex snap-x snap-mandatory gap-3 px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
         {articles.map((article) => {
-          const aCfg = SOURCE_CONFIG[article.source];
-          const articleRead = readSet.has(article.link);
+          const source = SOURCE_CONFIG[article.source];
           return (
-            <Link
-              key={article.link}
-              href={getArticleUrl(article.link)}
-              className={`group block bg-stadium-surface border border-stadium-border overflow-hidden hover:border-lfc-red/40 transition-all duration-300 cursor-pointer ${articleRead ? "opacity-60" : ""}`}
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-video w-full overflow-hidden">
-                {article.thumbnail ? (
-                  <Image
-                    src={article.thumbnail}
-                    alt={article.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    loading="lazy"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-linear-to-br from-lfc-red/15 to-stadium-surface flex items-center justify-center">
-                    <Newspaper className="w-6 h-6 text-stadium-muted" />
-                  </div>
-                )}
-              </div>
-              {/* Text content */}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  {aCfg && (
-                    <span
-                      className={`font-barlow text-[10px] uppercase tracking-wider px-2 py-0.5 ${aCfg.color}`}
-                    >
-                      {aCfg.label}
-                    </span>
-                  )}
-                  <span className="font-inter text-[11px] text-stadium-muted">
-                    {formatRelativeDate(article.pubDate, article.language)}
-                  </span>
-                  {articleRead && (
-                    <CheckCheck className="w-3 h-3 text-stadium-muted ml-auto shrink-0" />
-                  )}
+            <li key={article.link} className="w-[260px] shrink-0 snap-start sm:w-auto">
+              <Link href={getArticleUrl(article.link)} className="group surface-interactive block h-full overflow-hidden">
+                <div className="relative aspect-video bg-[var(--surface-3)]">
+                  <NewsThumb src={article.thumbnail ?? article.heroImage} source={article.source} sizes="(max-width: 640px) 260px, (max-width: 1024px) 50vw, 360px" />
                 </div>
-                <p className="font-inter text-sm font-semibold text-white group-hover:text-lfc-red transition-colors leading-snug line-clamp-2">
-                  {article.title}
-                </p>
-              </div>
-            </Link>
+                <div className="space-y-2 p-3">
+                  <div className="flex items-center gap-2">
+                    {source && (
+                      <span className={`font-barlow text-[11px] font-bold uppercase tracking-wider px-1.5 py-0.5 ${source.color}`}>{source.label}</span>
+                    )}
+                    <span className="text-xs text-stadium-muted">{formatNewsDate(article.pubDate, article.language, nowMs)}</span>
+                  </div>
+                  <p className="line-clamp-3 font-inter text-[15px] font-bold leading-snug text-white group-hover:underline decoration-lfc-red decoration-2 underline-offset-4">
+                    {cleanTitle(article.title)}
+                  </p>
+                </div>
+              </Link>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ul>
+    </section>
   );
 }

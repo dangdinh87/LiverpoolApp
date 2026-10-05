@@ -7,7 +7,11 @@ import {
 } from "@/lib/football";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
+import { CloudOff } from "lucide-react";
 import { SeasonTabs } from "@/components/season/season-tabs";
+import { ChipBar } from "@/components/fixtures/chip-bar";
+import { PageHero } from "@/components/ui/page-hero";
+import { EmptyState } from "@/components/ui/empty-state";
 import { makePageMeta } from "@/lib/seo";
 import {
   formatSeasonLabel,
@@ -36,6 +40,7 @@ export default async function SeasonPage({
   searchParams: Promise<{ tab?: string; season?: string }>;
 }) {
   const { tab, season: seasonParam } = await searchParams;
+  const t = await getTranslations("Season");
 
   // Validate season param — fallback to current if invalid
   const currentYear = getCurrentSeasonYear();
@@ -55,26 +60,44 @@ export default async function SeasonPage({
     apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
   ]);
 
-  /* ── Tab panels ── */
-  const fixturesPanel = <FixtureTimeline fixtures={fixtures} />;
-  const standingsPanel = (
-    <StandingsCompTabs
-      plStandings={standings}
-      uclStandings={uclStandings}
-    />
-  );
+  const seasonItems = AVAILABLE_SEASONS.map((y) => {
+    const qs = new URLSearchParams();
+    if (y !== currentYear) qs.set("season", String(y));
+    if (tab === "standings") qs.set("tab", "standings");
+    const query = qs.toString();
+    return { key: String(y), label: seasonLabel(y), href: query ? `/season?${query}` : "/season" };
+  });
+
   return (
-    <div className="min-h-screen pt-16">
-      <SeasonTabs
-        fixturesPanel={fixturesPanel}
-        standingsPanel={standingsPanel}
-        defaultTab={tab}
-        matchCount={fixtures.length}
-        teamCount={standings.length}
-        seasons={AVAILABLE_SEASONS.map((y) => ({ value: y, label: seasonLabel(y) }))}
-        currentSeason={selectedSeason}
-        liveSeasonYear={currentYear}
+    <div className="min-h-screen">
+      <PageHero
+        eyebrow={t("hero.eyebrow", { season: seasonLabel(selectedSeason) })}
+        title={t("title")}
+        description={t("hero.description")}
+        image="/assets/lfc/stadium/anfield-main-stand.jpg"
+        actions={<ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonSelect")} />}
       />
+      <div className="page-container pb-16">
+        {fixtures.length === 0 && standings.length === 0 ? (
+          <EmptyState
+            className="mt-6"
+            tone="error"
+            icon={<CloudOff className="size-9" aria-hidden />}
+            title={t("outage.title")}
+            description={t("outage.description")}
+            actionHref="/news"
+            actionLabel={t("outage.action")}
+          />
+        ) : (
+          <SeasonTabs
+            fixturesPanel={<FixtureTimeline fixtures={fixtures} sticky={false} />}
+            standingsPanel={<StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />}
+            defaultTab={tab}
+            matchCount={fixtures.length}
+            teamCount={standings.length}
+          />
+        )}
+      </div>
     </div>
   );
 }

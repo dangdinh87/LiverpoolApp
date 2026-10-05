@@ -12,6 +12,7 @@ function getInitials(name: string) {
   return name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
+/** Round manager portrait that falls back to initials when the (often remote) photo fails. */
 export function ManagerAvatar({ name, image }: ManagerAvatarProps) {
   const [error, setError] = useState(false);
 
@@ -19,9 +20,9 @@ export function ManagerAvatar({ name, image }: ManagerAvatarProps) {
     return (
       <Image
         src={image}
-        alt={name}
+        alt=""
         fill
-        className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
+        className="object-cover object-top"
         sizes="56px"
         unoptimized
         onError={() => setError(true)}
@@ -30,7 +31,7 @@ export function ManagerAvatar({ name, image }: ManagerAvatarProps) {
   }
 
   return (
-    <span className="w-full h-full flex items-center justify-center font-bebas text-2xl text-white/20">
+    <span aria-hidden className="flex size-full items-center justify-center font-bebas text-2xl text-white/60">
       {getInitials(name)}
     </span>
   );

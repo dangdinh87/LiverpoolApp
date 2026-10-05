@@ -47,13 +47,13 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
             key={s.label}
             className="bg-stadium-surface border border-stadium-border p-4 text-center"
           >
-            <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-wider mb-2">
+            <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider mb-2">
               {s.label}
             </p>
             <p className="font-bebas text-3xl text-white leading-none mb-1">
               {s.overview.played}
             </p>
-            <p className="font-barlow text-[9px] text-stadium-muted uppercase">
+            <p className="font-barlow text-xs text-stadium-muted uppercase">
               {labels.played}
             </p>
             <div className="flex justify-center gap-3 mt-2">
@@ -61,10 +61,10 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
               <span className="font-bebas text-sm text-amber-400">{s.overview.draws}D</span>
               <span className="font-bebas text-sm text-red-400">{s.overview.losses}L</span>
             </div>
-            <p className="font-bebas text-lg text-lfc-red mt-1">
+            <p className="font-bebas text-lg text-lfc-red-text mt-1">
               {s.overview.winRate.toFixed(0)}%
             </p>
-            <p className="font-barlow text-[9px] text-stadium-muted uppercase">
+            <p className="font-barlow text-xs text-stadium-muted uppercase">
               {labels.winRate}
             </p>
           </div>
@@ -77,12 +77,12 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
           <BarChart data={wdlData} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
             <XAxis dataKey="name" stroke="#A0A0A0" fontSize={12} fontFamily="Barlow Condensed" />
-            <YAxis stroke="#A0A0A0" fontSize={11} />
+            <YAxis stroke="#A0A0A0" fontSize={12} />
             <Tooltip
               contentStyle={{ backgroundColor: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 0 }}
               labelStyle={{ color: "#fff", fontFamily: "Barlow Condensed" }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Barlow Condensed" }} />
+            <Legend formatter={(value) => <span style={{ color: "#A0A0A0" }}>{value}</span>} wrapperStyle={{ fontSize: 12, fontFamily: "Barlow Condensed" }} />
             <Bar dataKey={labels.wins} fill={OUTCOME_SERIES.win} radius={[2, 2, 0, 0]} />
             <Bar dataKey={labels.draws} fill={OUTCOME_SERIES.draw} radius={[2, 2, 0, 0]} />
             <Bar dataKey={labels.losses} fill={OUTCOME_SERIES.loss} radius={[2, 2, 0, 0]} />
@@ -96,12 +96,12 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
           <BarChart data={goalsData} barCategoryGap="20%">
             <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
             <XAxis dataKey="name" stroke="#A0A0A0" fontSize={12} fontFamily="Barlow Condensed" />
-            <YAxis stroke="#A0A0A0" fontSize={11} />
+            <YAxis stroke="#A0A0A0" fontSize={12} />
             <Tooltip
               contentStyle={{ backgroundColor: "#1A1A1A", border: "1px solid #2A2A2A", borderRadius: 0 }}
               labelStyle={{ color: "#fff", fontFamily: "Barlow Condensed" }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, fontFamily: "Barlow Condensed" }} />
+            <Legend formatter={(value) => <span style={{ color: "#A0A0A0" }}>{value}</span>} wrapperStyle={{ fontSize: 12, fontFamily: "Barlow Condensed" }} />
             <Bar dataKey={labels.goalsFor} fill="#C8102E" radius={[2, 2, 0, 0]} />
             <Bar dataKey={labels.goalsAgainst} fill="#A0A0A0" radius={[2, 2, 0, 0]} />
           </BarChart>

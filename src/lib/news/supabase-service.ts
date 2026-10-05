@@ -11,5 +11,7 @@ export function getServiceClient() {
   // Bounded fetch: a paused/unreachable database must fail fast, not hang.
   return createClient(url, key, {
     global: { fetch: createSupabaseFetch() },
+    // No postgrest backoff retries: during an outage they add 7s per query.
+    db: { retry: false },
   });
 }

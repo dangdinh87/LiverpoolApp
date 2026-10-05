@@ -5,15 +5,17 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale, setRequestLocale } from 'next-intl/server';
 import { Suspense } from "react";
 import { NavbarAuth } from "@/components/layout/navbar-auth";
+import { NavProgress } from "@/components/layout/nav-progress";
+import { SkipLink } from "@/components/layout/skip-link";
 import { Footer } from "@/components/layout/footer";
 import { GlobalChat } from "@/components/chat/global-chat";
 import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
-import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { GoogleAdsense } from "@/components/analytics/google-adsense";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { Analytics } from '@vercel/analytics/next';
+import { DEFAULT_OG_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 // League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
@@ -40,7 +42,6 @@ const barlowCondensed = Barlow_Condensed({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const DEFAULT_OG_IMAGE = "/assets/lfc/branding/lfc-crest-main.webp";
 // Locale is cookie/header-driven. Keep layout request-bound to avoid static locale lock.
 export const dynamic = "force-dynamic";
 
@@ -72,20 +73,15 @@ export const metadata: Metadata = {
     siteName: "Liverpool FC Việt Nam",
     title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
     description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
-    images: [
-      {
-        url: DEFAULT_OG_IMAGE,
-        width: 1200,
-        height: 630,
-        alt: "Liverpool FC Việt Nam",
-      },
-    ],
+    // The real 1200×630 card (app/opengraph-image.tsx). This used to be a
+    // 110×200 crest declared as 1200×630.
+    images: [DEFAULT_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
     title: "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA",
     description: "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.",
-    images: [DEFAULT_OG_IMAGE],
+    images: [DEFAULT_OG_IMAGE.url],
   },
   robots: {
     index: true,
@@ -106,9 +102,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.webmanifest",
-  alternates: {
-    canonical: SITE_URL,
-  },
+  // No site-wide canonical: child routes inherit it, which pointed /chat,
+  // /auth/* and 404 pages at the homepage. Each page sets its own via
+  // makePageMeta({ path }) / getHreflangAlternates.
 };
 
 export default async function RootLayout({
@@ -133,16 +129,16 @@ export default async function RootLayout({
           defaultTheme="dark"
           enableSystem={false}
         >
-          <QueryProvider>
-            <NextIntlClientProvider messages={messages}>
-              <Suspense><NavbarAuth /></Suspense>
-              <main className="min-h-screen">{children}</main>
-              <Footer />
-              <GlobalToast />
-              <ScrollToTop />
-              <GlobalChat />
-            </NextIntlClientProvider>
-          </QueryProvider>
+          <NextIntlClientProvider messages={messages}>
+            <SkipLink />
+            <Suspense><NavProgress /></Suspense>
+            <Suspense><NavbarAuth /></Suspense>
+            <main id="main-content" tabIndex={-1} className="min-h-dvh outline-none">{children}</main>
+            <Footer />
+            <GlobalToast />
+            <ScrollToTop />
+            <GlobalChat />
+          </NextIntlClientProvider>
         </ThemeProvider>
         <Analytics />
       </body>

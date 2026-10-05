@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ArrowRight, Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
-import { getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
+import { getLocale, getTranslations } from "next-intl/server";
+import { getAllDigestDates, getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
+import { DigestNav } from "@/components/news/digest-nav";
+import { EmptyState } from "@/components/ui/empty-state";
+import { cleanTitle } from "@/components/news/news-text";
+import { formatMatchDayMonth } from "@/lib/format-match-date";
 
 type Params = Promise<{ date: string }>;
 
@@ -18,9 +23,9 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { date } = await params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found", robots: { index: false } };
   const digest = await getDigestByDate(date);
-  if (!digest) return { title: "Digest Not Found" };
+  if (!digest) return { title: "Digest Not Found", robots: { index: false } };
   const description =
     digest.seo_description ||
     getSeoArticleFromDigest(digest)?.metaDescription ||
@@ -46,12 +51,44 @@ export default async function DigestPage({
   const { date } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
-  const [digest, t] = await Promise.all([
+  const [digest, dates, t, locale] = await Promise.all([
     getDigestByDate(date),
+    getAllDigestDates(),
     getTranslations("News.digest"),
+    getLocale(),
   ]);
 
-  if (!digest) notFound();
+  // Dates arrive newest first: the next index is the previous (older) briefing.
+  const at = dates.findIndex((d) => d.digest_date === date);
+  const prev = at >= 0 ? dates[at + 1]?.digest_date : dates.find((d) => d.digest_date < date)?.digest_date;
+  const next = at > 0 ? dates[at - 1]?.digest_date : at < 0 ? [...dates].reverse().find((d) => d.digest_date > date)?.digest_date : undefined;
+  const latest = dates[0]?.digest_date;
+
+  if (!digest) {
+    return (
+      <div className="min-h-screen">
+        <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1rem)]">
+          <Link
+            href="/news"
+            className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            {t("backToNews")}
+          </Link>
+          <div className="mt-4">
+            <EmptyState
+              icon={<Newspaper className="size-10" aria-hidden />}
+              title={t("notGeneratedTitle")}
+              description={t("notGeneratedDesc")}
+              actionHref={latest ? `/news/digest/${latest}` : "/news"}
+              actionLabel={latest ? t("openLatest") : t("backToNews")}
+            />
+          </div>
+          <DigestNav prev={prev} next={next} />
+        </div>
+      </div>
+    );
+  }
 
   const sections = getVisibleDigestSections(digest.sections as {
     category: string;
@@ -61,7 +98,7 @@ export default async function DigestPage({
     articleUrls: string[];
   }[]);
   const seoArticle = getSeoArticleFromDigest(digest);
-  const displayTitle = seoArticle?.title || digest.title;
+  const displayTitle = cleanTitle(seoArticle?.title || digest.title);
   const displayDescription =
     seoArticle?.metaDescription || seoArticle?.excerpt || digest.summary.slice(0, 160);
   const digestDate = new Date(`${date}T00:00:00+07:00`);
@@ -71,7 +108,7 @@ export default async function DigestPage({
   const titleMap = await getArticleTitlesByUrls(allUrls);
 
   return (
-    <div className="min-h-screen">
+    <article className="min-h-screen">
       <JsonLd data={[
         buildBreadcrumbJsonLd([
           { name: "Home", url: getCanonical("/") },
@@ -86,145 +123,99 @@ export default async function DigestPage({
           sourceName: seoArticle?.sourceName,
         }),
       ]} />
-      {/* Header */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-28 pb-8">
+
+      <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1rem)]">
         <Link
           href="/news"
-          className="inline-flex items-center gap-2 font-barlow text-sm text-white/70 hover:text-white mb-8"
+          className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          <ArrowLeft className="size-4" aria-hidden />
           {t("backToNews")}
         </Link>
 
-        <div className="flex items-center gap-2 mb-4">
-          <span className="font-barlow text-xs uppercase tracking-widest text-lfc-gold font-bold">
-            {t("by", { author: t("author") })}
-          </span>
-          <span className="font-inter text-xs text-stadium-muted ml-2">
-            {digestDate.toLocaleDateString("vi-VN", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </span>
-        </div>
+        <header className="reveal mt-2">
+          <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <SiteArticleBadge label={t("proBadge")} />
+            <span className="text-sm text-stadium-muted">
+              {formatMatchDayMonth(digestDate, locale === "vi" ? "vi" : "en", true)}
+            </span>
+          </div>
+          <h1 className="max-w-3xl text-balance font-bebas text-[40px] font-normal leading-[1.02] tracking-wide text-white sm:text-5xl lg:text-6xl">
+            {displayTitle}
+          </h1>
+          <p className="mt-3 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted">
+            {t("by", { author: t("author") })}{digest.article_count > 0 ? ` · ${t("articleCount", { count: digest.article_count })}` : ""}
+          </p>
+        </header>
 
-        <h1 className="font-inter text-3xl sm:text-4xl font-extrabold text-white leading-tight mb-4">
-          {displayTitle}
-        </h1>
-
-        {seoArticle ? (
-          <article className="mb-12">
-            <div className="flex flex-wrap items-center gap-2 mb-5">
-              <SiteArticleBadge label={t("proBadge")} />
-            </div>
-
-            <p className="font-inter text-lg text-white/70 leading-relaxed pl-5 border-l-4 border-lfc-red mb-7">
-              {seoArticle.excerpt}
-            </p>
-
-            <div className="space-y-9">
+        <div className="mt-8">
+          {seoArticle ? (
+            <div className="article-prose">
+              <p className="border-l-4 border-lfc-red pl-4 text-lg leading-relaxed text-stadium-muted sm:text-xl">
+                {seoArticle.excerpt}
+              </p>
               {seoArticle.body.map((section, i) => (
                 <section key={`${section.heading}-${i}`}>
-                  <h2 className="font-inter text-2xl font-extrabold text-white leading-tight mb-4">
-                    {section.heading}
-                  </h2>
-                  <div className="space-y-5">
-                    {section.paragraphs.map((paragraph, j) => (
-                      <p
-                        key={j}
-                        className="font-inter text-[17px] text-white/80 leading-[1.85]"
-                      >
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
+                  <h2>{section.heading}</h2>
+                  {section.paragraphs.map((paragraph, j) => (
+                    <p key={j}>{paragraph}</p>
+                  ))}
                 </section>
               ))}
+              {seoArticle.conclusion && (
+                <p className="border-t border-[var(--line)] pt-6 text-white">{seoArticle.conclusion}</p>
+              )}
             </div>
-
-            {seoArticle.conclusion && (
-              <p className="font-inter text-[17px] text-white/85 leading-[1.85] mt-9 border-t border-stadium-border/60 pt-6">
-                {seoArticle.conclusion}
-              </p>
-            )}
-          </article>
-        ) : (
-          <blockquote className="font-inter text-lg text-white/60 leading-relaxed pl-5 border-l-4 border-lfc-red italic mb-10">
-            {digest.summary}
-          </blockquote>
-        )}
-
-        {/* Sections */}
-        <div className="border-t border-stadium-border/60 pt-8 mb-5">
-          <p className="font-barlow text-xs uppercase tracking-[0.18em] text-lfc-red font-bold mb-2">
-            {t("sourceDigestTitle")}
-          </p>
-          {seoArticle && (
-            <p className="font-inter text-sm text-white/55 leading-relaxed">
+          ) : (
+            <p className="max-w-3xl border-l-4 border-lfc-red pl-4 text-lg leading-relaxed text-stadium-muted sm:text-xl">
               {digest.summary}
             </p>
           )}
         </div>
 
-        <div className="space-y-8">
-          {sections.map((section, i) => {
-            const catConfig =
-              CATEGORY_CONFIG[
-                section.category as keyof typeof CATEGORY_CONFIG
-              ];
-            return (
-              <div
-                key={i}
-                className="bg-stadium-surface border border-stadium-border/50 p-5"
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  {catConfig && (
-                    <span
-                      className={`font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 ${catConfig.color}`}
-                    >
-                      {section.categoryVi}
-                    </span>
-                  )}
-                </div>
-                <h3 className="font-inter text-lg font-bold text-white mb-2">
-                  {section.headline}
-                </h3>
-                <p className="font-inter text-sm text-white/70 leading-relaxed mb-3">
-                  {section.body}
-                </p>
-                {section.articleUrls.length > 0 && (
-                  <div className="flex flex-col gap-1.5 pt-1 border-t border-stadium-border/40">
-                    {section.articleUrls.map((url, j) => {
-                      const articleTitle = titleMap[url];
-                      return (
-                        <Link
-                          key={j}
-                          href={getArticleUrl(url)}
-                          className="inline-flex items-start gap-1.5 font-inter text-xs text-stadium-muted hover:text-lfc-red transition-colors group"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="w-3 h-3 shrink-0 mt-0.5 group-hover:text-lfc-red" />
-                          <span className="line-clamp-1">
-                            {articleTitle ?? t("sourceArticle", { n: j + 1 })}
-                          </span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {sections.length > 0 && (
+          <section className="mt-12 border-t border-[var(--line)] pt-8">
+            <p className="section-label mb-2 text-brand">{t("sourceDigestTitle")}</p>
+            {seoArticle && <p className="mb-6 text-[15px] leading-relaxed text-stadium-muted">{digest.summary}</p>}
 
-        {/* Footer */}
-        <p className="font-inter text-xs text-stadium-muted mt-10 text-center">
-          {t("generatedBy")}
-        </p>
+            <div className="space-y-4">
+              {sections.map((section, i) => {
+                const catConfig = CATEGORY_CONFIG[section.category as keyof typeof CATEGORY_CONFIG];
+                return (
+                  <div key={i} className="surface p-5">
+                    {catConfig && (
+                      <span className={`mb-3 inline-block px-1.5 py-0.5 font-barlow text-[11px] font-bold uppercase tracking-wider ${catConfig.color}`}>
+                        {locale === "vi" ? section.categoryVi : catConfig.label}
+                      </span>
+                    )}
+                    <h2 className="font-inter text-lg font-bold leading-snug text-white">{section.headline}</h2>
+                    <p className="mt-2 text-[15px] leading-relaxed text-stadium-muted">{section.body}</p>
+                    {section.articleUrls.length > 0 && (
+                      <ul className="mt-4 divide-y divide-[var(--line)] border-t border-[var(--line)]">
+                        {section.articleUrls.map((url, j) => (
+                          <li key={j}>
+                            <Link
+                              href={getArticleUrl(url)}
+                              className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-white transition-colors hover:text-brand"
+                            >
+                              <span className="line-clamp-2">{titleMap[url] ? cleanTitle(titleMap[url]) : t("sourceArticle", { n: j + 1 })}</span>
+                              <ArrowRight className="size-4 shrink-0 text-stadium-muted" aria-hidden />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        <DigestNav prev={prev} next={next} />
+
+        <p className="mt-10 text-center text-xs text-stadium-muted">{t("generatedBy")}</p>
       </div>
-    </div>
+    </article>
   );
 }

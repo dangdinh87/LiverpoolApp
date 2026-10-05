@@ -1,18 +1,17 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+// Node runtime (the Edge runtime is deprecated). The crest is read from disk:
+// fetching it from NEXT_PUBLIC_SITE_URL made the image depend on the live site
+// being reachable — including at build time, when it is prerendered.
 export const alt = "Liverpool FC Việt Nam — Tin tức, Đội hình, Lịch thi đấu";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export default async function OGImage() {
-  // Fetch crest as ArrayBuffer for edge runtime compatibility
-  const crestData = await fetch(new URL("/assets/lfc/crest-red.png", SITE_URL)).then(
-    (res) => res.arrayBuffer()
-  );
-  const crestBase64 = `data:image/png;base64,${Buffer.from(crestData).toString("base64")}`;
+  const crestData = await readFile(join(process.cwd(), "public/assets/lfc/crest-red.png"));
+  const crestBase64 = `data:image/png;base64,${crestData.toString("base64")}`;
 
   return new ImageResponse(
     (

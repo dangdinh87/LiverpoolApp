@@ -156,7 +156,7 @@ export function ChatSidebar({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="z-80 min-w-[140px] bg-stadium-surface border-stadium-border">
                     <DropdownMenuItem
-                        className="cursor-pointer text-lfc-red/80 hover:text-lfc-red focus:text-lfc-red focus:bg-lfc-red/10"
+                        className="cursor-pointer text-lfc-red-text hover:text-white focus:text-white focus:bg-lfc-red/20"
                         onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             handleDeleteClick(conversation, e);
@@ -283,7 +283,7 @@ export function ChatSidebar({
                         </AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleConfirmDelete}
-                            className="bg-lfc-red/15 text-lfc-red hover:bg-lfc-red/25 border border-lfc-red/30"
+                            className="bg-lfc-red/15 text-lfc-red-text hover:bg-lfc-red/25 border border-lfc-red/30"
                         >
                             {t('common.delete')}
                         </AlertDialogAction>

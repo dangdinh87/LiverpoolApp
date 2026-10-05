@@ -1,45 +1,50 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, Newspaper } from "lucide-react";
-import { scrapeArticle, getNewsFromDB, getArticleContentFromDB } from "@/lib/news";
+import { ArrowLeft, Clock, ExternalLink, User } from "lucide-react";
+import { scrapeArticle, getNewsFromDB, getArticleContentFromDB, getArticleByUrl } from "@/lib/news";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
 import {
   decodeArticleSlug,
   encodeArticleSlug,
   formatRelativeDate,
+  isKnownNewsSourceUrl,
+  SOURCE_CONFIG,
   type NewsSource,
 } from "@/lib/news-config";
-import { detectSource as detectArticleSource, VI_SOURCES } from "@/lib/news/source-detect";
+import { detectSource as detectArticleSource, isLinkOutOnlyUrl, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import "@/components/news/article-reader.css";
 import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
 import { ArticleImageViewer } from "@/components/news/article-image-viewer";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
+import { ArticleNextMatch } from "@/components/news/article-end-sections";
+import { ArticleActions } from "@/components/news/article-actions";
+import { ArticleHtmlBody } from "@/components/news/article-html-body";
+import { ArticleFigures } from "@/components/news/article-figures";
+import { ArticleTitle } from "@/components/news/article-header";
+import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
 import { CommentSection } from "@/components/news/comment-section";
-import { ArticleEndSections } from "@/components/news/article-end-sections";
+import { assessReadability, cleanSnippet, cleanTitle, dropHeroDuplicate, filterJunk, imageKey, isHttpUrl, pickTitle } from "@/components/news/news-text";
 
 export const revalidate = 600; // 10 minutes
 
-function formatPublishDate(dateStr: string, source: NewsSource): { relative: string; absolute: string } {
+function formatPublishDate(dateStr: string, source: string): { relative: string; absolute: string } {
   const lang = VI_SOURCES.has(source) ? "vi" : "en";
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return { relative: "", absolute: "" };
-  const absolute = date.toLocaleDateString(lang === "vi" ? "vi-VN" : "en-GB", {
-    weekday: "short",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // Fixed Vietnam zone via the shared helper: toLocaleDateString without timeZone used the
+  // runtime zone (UTC on Vercel), so times disagreed with the VN times shown elsewhere.
+  const absolute = `${formatMatchDayMonth(date, lang, true)} · ${formatMatchTime(date)}`;
   return { relative: formatRelativeDate(dateStr, lang), absolute };
 }
 
@@ -54,8 +59,9 @@ function getRelatedArticles(
   currentUrl: string,
   currentTitle: string,
   all: NewsArticle[],
-  currentSource?: NewsSource,
-  count = 6,
+  currentSource?: string,
+  count = 4,
+  avoidImage?: string,
 ) {
   // Filter by same language: Vietnamese articles → only Vietnamese related, English → only English
   const isCurrentVi = currentSource ? VI_SOURCES.has(currentSource) : false;
@@ -70,6 +76,8 @@ function getRelatedArticles(
   );
   return sameLangArticles
     .filter((a) => a.link !== currentUrl)
+    // A card showing the same picture as this article is the same story syndicated elsewhere.
+    .filter((a) => !avoidImage || imageKey(a.thumbnail ?? a.heroImage) !== avoidImage)
     .map((a) => {
       const words = a.title.toLowerCase().split(/\s+/)
         .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
@@ -92,22 +100,31 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const url = decodeArticleSlug(slug);
-  if (!url) return { title: "Article Not Found" };
+  // Unresolvable article pages still answer 200 (the status is sent before the
+  // page body streams), so keep them out of the index explicitly.
+  if (!url || !isKnownNewsSourceUrl(url)) return { title: "Article Not Found", robots: { index: false } };
 
   const content = await getArticleContentFromDB(url) ?? await scrapeArticle(url);
-  if (!content) return { title: "Article Not Found" };
+  if (!content) {
+    // Source blocked us: the page shows the stored headline with a "read original" link.
+    const listing = await getArticleByUrl(url);
+    if (!listing) return { title: "Article Not Found", robots: { index: false } };
+    return { title: cleanTitle(listing.title), robots: { index: false } };
+  }
 
+  const listing = await getArticleByUrl(url);
+  const title = pickTitle(content.title, listing?.title, detectArticleSource(url).name);
   const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
   const images = content.heroImage ? [{ url: content.heroImage, width: 1200, height: 630 }] : [];
 
   const articlePath = `/news/${slug.join("/")}`;
   return {
-    title: content.title,
+    title,
     description,
     alternates: getHreflangAlternates(articlePath),
     openGraph: {
       type: "article",
-      title: content.title,
+      title,
       description,
       images,
       ...(content.publishedAt && { publishedTime: content.publishedAt }),
@@ -116,7 +133,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: content.title,
+      title,
       description,
       ...(content.heroImage && { images: [content.heroImage] }),
     },
@@ -130,14 +147,16 @@ export default async function ArticlePage({
 }) {
   const { slug } = await params;
   const url = decodeArticleSlug(slug);
-  if (!url) notFound();
+  // Legacy base64 slugs decode to any URL; only news sources are articles.
+  if (!url || !isKnownNewsSourceUrl(url)) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
-  const [content, allArticles, fixtures, t] = await Promise.all([
+  const [content, allArticles, fixtures, t, tSidebar] = await Promise.all([
     dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
     getNewsFromDB(100, undefined, { skipSync: true }),
     getFixtures(),
     getTranslations("News.article"),
+    getTranslations("News.sidebar"),
   ]);
 
   const nextMatch: Fixture | null =
@@ -145,253 +164,246 @@ export default async function ArticlePage({
       .filter((f) => f.fixture.status.short === "NS")
       .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
 
-  if (!content || content.paragraphs.length === 0) {
+  // isKnownNewsSourceUrl above and detectSource share one host table, so this is never "unknown".
+  const source = detectArticleSource(url).id as NewsSource;
+  const sourceCfg = SOURCE_CONFIG[source];
+  // The newest-100 list misses older articles; look the single row up so a blocked
+  // source still shows its real headline, summary and picture.
+  const listed = allArticles.find((a) => a.link === url) ?? (await getArticleByUrl(url)) ?? undefined;
+  // The table label wins: older stored rows carry the raw host ("www.espn.com") as sourceName.
+  const sourceName = sourceCfg?.label || content?.sourceName || "";
+
+  // Nothing extracted: still give the reader the headline we have and a way to the source.
+  if (!content) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
-        <Newspaper className="w-16 h-16 text-stadium-muted mb-6" />
-        <h1 className="font-bebas text-4xl text-white mb-3">
-          {t("contentUnavailable")}
-        </h1>
-        <p className="font-inter text-stadium-muted text-sm mb-6 text-center max-w-md">
-          {t("contentUnavailableDesc")}
-        </p>
-        <div className="flex gap-3">
-          <Link
-            href="/news"
-            className="font-barlow text-sm text-white bg-stadium-surface border border-stadium-border px-4 py-2 hover:border-lfc-red/40 transition-colors"
-          >
-            ← {t("backToNews")}
-          </Link>
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-barlow text-sm text-white bg-lfc-red px-4 py-2 hover:bg-lfc-red/80 transition-colors flex items-center gap-2"
-          >
-            {t("readOriginal")} <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
-      </div>
+      <ArticleLinkOut
+        url={url}
+        title={listed ? cleanTitle(listed.title) : undefined}
+        lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : undefined}
+        heroImage={listed?.thumbnail ?? listed?.heroImage}
+        source={source}
+        sourceName={sourceName}
+      />
     );
   }
 
-  const source = detectArticleSource(url).id;
+  const title = pickTitle(content.title, listed?.title, sourceCfg?.label);
+  const description = content.description ? cleanSnippet(content.description) ?? undefined : undefined;
+  const paragraphs = filterJunk(content.paragraphs);
+  const hasVideo = !!content.videoUrl || !!content.htmlContent?.includes("article-video-player");
+  const readability = isLinkOutOnlyUrl(url)
+    ? "linkout"
+    : assessReadability({
+        paragraphs,
+        hasVideo,
+        imageCount: content.images.length,
+        flaggedThin: content.isThinContent,
+      });
+
+  if (readability === "linkout") {
+    return (
+      <ArticleLinkOut
+        url={url}
+        title={title || undefined}
+        lead={description ?? (paragraphs[0] || undefined)}
+        heroImage={content.heroImage ?? listed?.thumbnail}
+        source={source}
+        sourceName={sourceName}
+      />
+    );
+  }
+
   const isEnglishArticle = !VI_SOURCES.has(source);
-  const related = getRelatedArticles(url, content.title, allArticles, source);
-  const publishDate = content.publishedAt
-    ? formatPublishDate(content.publishedAt, source)
-    : null;
+  // One strip of four, not two stacked strips of ten (a wall of thumbnails under every article).
+  const related = getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage));
+  // Older stored extractions have no date of their own; the feed row usually does.
+  const shownAt = content.publishedAt || listed?.pubDate;
+  const publishDate = shownAt ? formatPublishDate(shownAt, source) : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
+  const canonicalPath = `/news/${slug.join("/")}`;
+  const heroImage = isHttpUrl(content.heroImage) ? content.heroImage : undefined;
+  // Photos for the plain-text body; the extracted HTML already carries its own.
+  // At most one photo per two paragraphs (6 max): a short text must not become a wall of pictures.
+  const bodyImages = content.images
+    .filter((img) => imageKey(img) !== imageKey(content.heroImage))
+    .slice(0, Math.max(1, Math.min(6, Math.floor(paragraphs.length / 2))));
+  const byline = content.author && !/^https?:/i.test(content.author) ? content.author : null;
 
-  const extraImages = content.htmlContent
-    ? []
-    : content.images.filter((img) => img !== content.heroImage).slice(0, 3);
+  const meta = (
+    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-stadium-muted">
+      {sourceCfg && (
+        <span className={`px-2 py-1 font-barlow text-xs font-bold uppercase tracking-wider ${sourceCfg.color}`}>
+          {sourceName}
+        </span>
+      )}
+      {publishDate && (
+        <span className="inline-flex items-center gap-1.5" title={publishDate.absolute}>
+          <Clock className="size-3.5" aria-hidden />
+          <span className="sm:hidden">{publishDate.relative}</span>
+          <span className="hidden sm:inline">{publishDate.absolute}</span>
+        </span>
+      )}
+      {content.readingTime ? <span>{tSidebar("minRead", { n: content.readingTime })}</span> : null}
+      {byline && (
+        <span className="inline-flex items-center gap-1.5">
+          <User className="size-3.5" aria-hidden />
+          {byline}
+        </span>
+      )}
+    </div>
+  );
 
-  const renderExtras = () => (
+  const actions = (
+    <div className="mt-6 max-w-xl">
+      <ArticleActions
+        articleUrl={url}
+        articleTitle={title}
+        articleSlugUrl={articleSlugUrl}
+        articleMeta={{
+          snippet: content.description,
+          thumbnail: content.heroImage,
+          source,
+          language: isEnglishArticle ? "en" : "vi",
+          publishedAt: content.publishedAt,
+        }}
+      />
+    </div>
+  );
+
+  const footer = (
     <>
-      {/* Clickable image grid + lightbox for inline htmlContent images */}
-      <ArticleImageViewer extraImages={extraImages} />
-      {(content.isThinContent || content.paragraphs.length <= 2) && (
-        <div className="mt-8 p-5 bg-stadium-surface border border-stadium-border text-center">
-          <p className="font-inter text-sm text-white/60 mb-4">{t("thinContentMsg")}</p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-5 py-2.5 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold">
-            {t("readFullOn", { source: content.sourceName })} <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+      {readability === "thin" && (
+        <div className="surface mt-10 flex flex-col gap-4 p-5">
+          <p className="text-[15px] leading-relaxed text-stadium-muted">{t("thinContentMsg")}</p>
+          {isHttpUrl(url) && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-12 items-center justify-center gap-2 bg-lfc-red px-6 font-barlow text-base font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark sm:self-start"
+            >
+              {t("readFullOn", { source: sourceName })}
+              <ExternalLink className="size-4" aria-hidden />
+            </a>
+          )}
         </div>
       )}
-      <div className="mt-14 pt-6 border-t border-stadium-border/50">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="font-inter text-xs text-white/40">
-            {t.rich("sourcedFrom", {
-              sourceName: content.sourceName,
-              source: (chunks) => (
-                <a href={url} target="_blank" rel="noopener noreferrer" className="text-lfc-red hover:underline">{chunks}</a>
-              ),
-            })}
-          </p>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-barlow text-sm text-white bg-lfc-red px-4 py-2 hover:bg-lfc-red/80 transition-colors uppercase tracking-wider font-semibold">
-            {t("readOriginal")} <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-        </div>
+      <div className="mt-10 flex flex-col gap-4 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-relaxed text-stadium-muted">
+          {t.rich("sourcedFrom", {
+            sourceName,
+            source: (chunks) => (
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-2 hover:text-white">
+                {chunks}
+              </a>
+            ),
+          })}
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-[var(--line-strong)] px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/50"
+        >
+          {t("readOriginal")}
+          <ExternalLink className="size-4" aria-hidden />
+        </a>
       </div>
     </>
   );
 
-  const renderSidebar = () => (
-    <aside className="hidden lg:block">
-      <ArticleSidebar
-        source={source}
-        sourceName={content.sourceName}
-        sourceUrl={content.sourceUrl}
-        author={content.author}
-        publishDate={publishDate ?? undefined}
-        readingTime={content.readingTime}
-        articleTitle={content.title}
-        articleSlugUrl={articleSlugUrl}
-        nextMatch={nextMatch}
-        articleMeta={{
-          snippet: content.description,
-          thumbnail: content.heroImage,
-          language: VI_SOURCES.has(source) ? "vi" : "en",
-          publishedAt: content.publishedAt,
-        }}
-      />
-    </aside>
+  const layout = (header: React.ReactNode, body: React.ReactNode) => (
+    <div className="page-container pb-16 pt-[calc(var(--header-h)+1rem)]">
+      <Link
+        href="/news"
+        className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
+      >
+        <ArrowLeft className="size-4" aria-hidden />
+        {t("backToNews")}
+      </Link>
+
+      <header className="reveal mt-2 max-w-4xl">
+        {meta}
+        {header}
+      </header>
+      {actions}
+
+      {heroImage && (
+        <div className="relative -mx-4 mt-6 aspect-video max-h-[480px] bg-[var(--surface-3)] sm:mx-0">
+          <Image
+            src={heroImage}
+            alt={title}
+            fill
+            priority
+            sizes="(max-width: 1152px) 100vw, 1152px"
+            unoptimized
+            referrerPolicy="no-referrer"
+            className="object-cover"
+          />
+        </div>
+      )}
+
+      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
+        <div className="min-w-0">
+          {body}
+          {footer}
+          <CommentSection articleUrl={url} />
+        </div>
+        <aside className="hidden lg:block">
+          <ArticleSidebar source={source} sourceName={sourceName} sourceUrl={content.sourceUrl || url} nextMatch={nextMatch} />
+        </aside>
+      </div>
+
+      <RelatedArticles articles={related} />
+      {nextMatch && <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />}
+    </div>
   );
 
+  const plainBody = <ArticleFigures paragraphs={paragraphs} images={bodyImages} />;
+
   return (
-    <div className="min-h-screen">
+    <article className="min-h-screen">
       <ReadingProgress />
       <ReadTracker articleUrl={url} />
-      {content && (
-        <JsonLd data={[
-          buildBreadcrumbJsonLd([
-            { name: "Home", url: getCanonical("/") },
-            { name: "News", url: getCanonical("/news") },
-            { name: content.title, url: getCanonical(`/news/${slug.join("/")}`) },
-          ]),
-          buildNewsArticleJsonLd({
-            title: content.title,
-            description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
-            url: getCanonical(`/news/${slug.join("/")}`),
-            image: content.heroImage,
-            author: content.author,
-            publishedAt: content.publishedAt,
-            sourceName: content.sourceName,
-          }),
-        ]} />
-      )}
+      <ArticleImageViewer />
+      <JsonLd data={[
+        buildBreadcrumbJsonLd([
+          { name: "Home", url: getCanonical("/") },
+          { name: "News", url: getCanonical("/news") },
+          { name: title, url: getCanonical(canonicalPath) },
+        ]),
+        buildNewsArticleJsonLd({
+          title,
+          description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
+          url: getCanonical(canonicalPath),
+          image: content.heroImage,
+          author: content.author,
+          publishedAt: content.publishedAt,
+          sourceName: content.sourceName,
+        }),
+      ]} />
 
-      {/* Hero Image — full viewport */}
-      {content.heroImage && (
-        <div className="relative w-full h-[60vh] min-h-[400px] max-h-[600px]">
-          <Image
-            src={content.heroImage}
-            alt={content.title}
-            fill
-            className="object-cover"
-            sizes="100vw"
-            priority
-            unoptimized
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/40 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-stadium-bg to-transparent" />
-        </div>
-      )}
-
-      {/* Article content — wrapped in TranslateProvider for EN articles */}
       {isEnglishArticle ? (
+        // Translate keeps the original (HTML with photos/embeds) and a Vietnamese version side by side.
         <TranslateProvider
           articleUrl={url}
-          originalTitle={content.title}
-          originalDescription={content.description}
-          originalParagraphs={content.paragraphs}
+          originalTitle={title}
+          originalDescription={description}
+          originalParagraphs={paragraphs}
         >
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-            {/* Header area */}
-            <div className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}>
-              <Link
-                href="/news"
-                className="inline-flex items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-wider text-white bg-white/15 backdrop-blur-md px-4 py-2 border border-white/20 hover:bg-lfc-red hover:border-lfc-red hover:text-white transition-all mb-8"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                {t("backToNews")}
-              </Link>
-              {publishDate && (
-                <div className="flex items-center gap-3 mb-4 lg:mb-3">
-                  <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
-                    {publishDate.relative}
-                  </span>
-                </div>
-              )}
-              <TranslateHeader originalDescription={content.description} />
-            </div>
-
-            {/* 2-column grid */}
-            <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
-              <div>
-                <TranslateBody />
-                {renderExtras()}
-              </div>
-              {renderSidebar()}
-            </div>
-            <CommentSection articleUrl={url} />
-            <RelatedArticles articles={related} />
-            <ArticleEndSections
-              source={source}
-              allArticles={allArticles}
-              nextMatch={nextMatch}
-              currentArticleUrl={url}
-            />
-          </div>
+          {layout(
+            <TranslateHeader originalDescription={description} />,
+            <TranslateBody html={content.htmlContent} images={bodyImages} />,
+          )}
         </TranslateProvider>
       ) : (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-          {/* Header area */}
-          <div className={content.heroImage ? "-mt-40 relative z-10" : "pt-28"}>
-            <Link
-              href="/news"
-              className="inline-flex items-center gap-2 font-barlow text-sm text-white/70 hover:text-white bg-white/10 backdrop-blur-sm px-3.5 py-1.5 border border-white/10 hover:border-white/25 transition-all mb-8"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              {t("backToNews")}
-            </Link>
-            {publishDate && (
-              <div className="flex items-center gap-3 mb-4 lg:mb-3">
-                <span className="font-inter text-xs text-white/50 lg:hidden" title={publishDate.absolute}>
-                  {publishDate.relative}
-                </span>
-              </div>
-            )}
-            <h1 className="font-inter text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-[1.15] mb-6 max-w-4xl">
-              {content.title}
-            </h1>
-            {content.description && (
-              <blockquote className="font-inter text-lg sm:text-xl text-white/60 leading-relaxed mb-8 pl-5 border-l-4 border-lfc-red italic max-w-3xl">
-                {content.description}
-              </blockquote>
-            )}
-          </div>
-
-          {/* 2-column grid */}
-          <div className="lg:grid lg:grid-cols-[1fr_280px] lg:gap-10">
-            <div>
-              {content.htmlContent ? (
-                <div
-                  id="article-body"
-                  className="article-html-content space-y-6"
-                  dangerouslySetInnerHTML={{ __html: content.htmlContent }}
-                />
-              ) : (
-                <div id="article-body" className="space-y-6">
-                  {content.paragraphs.map((p, i) => (
-                    <p
-                      key={i}
-                      className={
-                        i === 0
-                          ? "font-inter text-lg text-white/90 leading-[1.9] font-medium"
-                          : "font-inter text-[17px] text-white/80 leading-[1.85]"
-                      }
-                    >
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              )}
-              {renderExtras()}
-            </div>
-            {renderSidebar()}
-          </div>
-          <CommentSection articleUrl={url} />
-          <RelatedArticles articles={related} />
-          <ArticleEndSections
-            source={source}
-            allArticles={allArticles}
-            nextMatch={nextMatch}
-            currentArticleUrl={url}
-          />
-        </div>
+        layout(
+          <ArticleTitle title={title} description={description} />,
+          <div id="article-body">
+            {content.htmlContent ? <ArticleHtmlBody html={dropHeroDuplicate(content.htmlContent, content.heroImage)} /> : plainBody}
+          </div>,
+        )
       )}
-    </div>
+    </article>
   );
 }

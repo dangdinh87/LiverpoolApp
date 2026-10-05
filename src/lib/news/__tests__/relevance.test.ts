@@ -149,3 +149,63 @@ describe("scoreArticle", () => {
     expect(freshScore).toBeGreaterThan(staleScore);
   });
 });
+
+describe("analyzeArticleRelevance - non-LFC 'Liverpool' context", () => {
+  const reject = (title: string, source: NewsArticle["source"] = "echo", contentSnippet = "") =>
+    analyzeArticleRelevance(makeArticle({ title, source, contentSnippet }));
+
+  it("rejects the city, station and council stories", () => {
+    expect(reject("Liverpool City Council approves new bus lanes").isRelevant).toBe(false);
+    expect(reject("London Liverpool Street station closed after signal failure", "mirror").isRelevant).toBe(false);
+    expect(reject("Liverpool Lime Street disruption this weekend", "echo").isRelevant).toBe(false);
+  });
+
+  it("rejects women's team stories", () => {
+    expect(reject("Liverpool Women beat Arsenal Women in WSL thriller", "mirror").isRelevant).toBe(false);
+    expect(reject("LFC Women sign new striker").isRelevant).toBe(false);
+  });
+
+  it("rejects Everton stories that only mention Liverpool as a place", () => {
+    expect(reject("Everton fans celebrate stadium milestone in Liverpool").isRelevant).toBe(false);
+  });
+
+  it("keeps Merseyside derby and Everton-with-LFC-signal stories", () => {
+    expect(reject("Merseyside derby: Everton v Liverpool preview").isRelevant).toBe(true);
+    expect(reject("Everton target Liverpool academy graduate after Anfield exit").isRelevant).toBe(true);
+    expect(reject("Liverpool vs Everton: team news").isRelevant).toBe(true);
+  });
+
+  it("does not reject normal Liverpool FC items", () => {
+    expect(reject("Liverpool beat Arsenal at Anfield", "echo").isRelevant).toBe(true);
+  });
+});
+
+describe("analyzeArticleRelevance - head coach and official source", () => {
+  it("keeps the official LFC headline that names a rival", () => {
+    const analysis = analyzeArticleRelevance(
+      makeArticle({ title: "Iraola: we must be brave against Man City", source: "lfc" })
+    );
+    expect(analysis.isRelevant).toBe(true);
+    expect(analysis.score).toBeGreaterThan(0);
+  });
+
+  it("recognises the surname alone and the reds as Liverpool signals", () => {
+    const iraola = analyzeArticleRelevance(
+      makeArticle({ title: "Iraola praises midfield after Man City win", source: "bbc" })
+    );
+    expect(iraola.isRelevant).toBe(true);
+    const reds = analyzeArticleRelevance(
+      makeArticle({ title: "The Reds confirm squad for Champions League trip", source: "sky" })
+    );
+    // "the reds" alone is weak (Forest, Man Utd also use it) - must not pass a general feed.
+    expect(reds.isRelevant).toBe(false);
+  });
+
+  it("still rejects competitor-only stories from non-official sources", () => {
+    const analysis = analyzeArticleRelevance(
+      makeArticle({ title: "Pep: we must be brave against Man City", source: "soha", language: "vi" })
+    );
+    expect(analysis.isRelevant).toBe(false);
+  });
+});
+

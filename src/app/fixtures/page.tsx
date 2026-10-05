@@ -1,6 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { getFixtures } from "@/lib/football";
+import { CloudOff } from "lucide-react";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
+import { PageHero } from "@/components/ui/page-hero";
+import { EmptyState } from "@/components/ui/empty-state";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
@@ -24,30 +27,26 @@ export default async function FixturesPage() {
         { name: "Home", url: getCanonical("/") },
         { name: "Fixtures", url: getCanonical("/fixtures") },
       ])} />
-      {/* Hero */}
-      <div className="relative h-[40vh] min-h-[320px] flex items-end">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/assets/lfc/stadium/anfield-champions-league.webp')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
-          <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
-            {t("hero.season", { season: getCurrentSeasonLabel() })}
-          </p>
-          <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none mb-3">
-            {t("hero.title")}
-          </h1>
-          <p className="font-inter text-stadium-muted">
-            {t("hero.subtitle", { count: fixtures.length })}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        eyebrow={t("hero.season", { season: getCurrentSeasonLabel() })}
+        title={t("hero.title")}
+        description={t("hero.subtitle", { count: fixtures.length })}
+        image="/assets/lfc/stadium/anfield-champions-league.webp"
+      />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
-        {/* Timeline with filter */}
-        <FixtureTimeline fixtures={fixtures} />
+      <div className="page-container pb-16 pt-4 sm:pt-6">
+        {fixtures.length > 0 ? (
+          <FixtureTimeline fixtures={fixtures} />
+        ) : (
+          <EmptyState
+            tone="error"
+            icon={<CloudOff className="size-9" aria-hidden />}
+            title={t("outage.title")}
+            description={t("outage.description")}
+            actionHref="/news"
+            actionLabel={t("outage.action")}
+          />
+        )}
       </div>
     </div>
   );

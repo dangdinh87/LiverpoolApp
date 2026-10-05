@@ -52,4 +52,8 @@ export interface FeedConfig {
   source: NewsSource;
   language: NewsLanguage;
   filter?: string;
+  /** Per-feed fetch timeout (default 3.5s); big feeds (vietnamnet ~900KB) need more. */
+  timeoutMs?: number;
+  /** Drop items older than this many days (default 14 = DB retention). */
+  maxAgeDays?: number;
 }

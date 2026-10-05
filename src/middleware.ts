@@ -32,6 +32,8 @@ export async function middleware(request: NextRequest) {
         // Bounded fetch: this runs on every request to a protected route, so an
         // unreachable auth service must fail fast instead of hanging the edge.
         global: { fetch: createSupabaseFetch() },
+        // No postgrest backoff retries: during an outage they add 7s per query.
+        db: { retry: false },
         cookies: {
           getAll() {
             return request.cookies.getAll();

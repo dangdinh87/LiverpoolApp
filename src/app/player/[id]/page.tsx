@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Ruler, Shirt, Trophy, Weight } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { ArrowLeft, Trophy } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { getPlayerStats } from "@/lib/football";
 import { getFplPlayerStats } from "@/lib/football/fpl-stats";
-import { Badge } from "@/components/ui/badge";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
+import { PlayerPhoto } from "@/components/player/player-photo";
+import { SectionHeader } from "@/components/ui/section-header";
 import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildPersonJsonLd, getCanonical } from "@/lib/seo";
@@ -69,14 +70,37 @@ const HONOR_TROPHY_IMAGE: Record<string, string> = {
   "Community Shield": "/assets/lfc/trophies/community-shield.svg",
 };
 
-const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string; border: string }> = {
-  goalkeeper: { bg: "bg-yellow-500", text: "text-white", border: "border-yellow-500" },
-  defender: { bg: "bg-blue-500", text: "text-white", border: "border-blue-500" },
-  midfielder: { bg: "bg-green-600", text: "text-white", border: "border-green-600" },
-  forward: { bg: "bg-lfc-red", text: "text-white", border: "border-lfc-red" },
+const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string }> = {
+  goalkeeper: { bg: "bg-yellow-400", text: "text-black" },
+  defender: { bg: "bg-blue-600", text: "text-white" },
+  midfielder: { bg: "bg-green-700", text: "text-white" },
+  forward: { bg: "bg-lfc-red", text: "text-white" },
 };
 
 // ─── Static generation ───────────────────────────────────────────────────────
+
+/** First ~155 characters of a bio, cut at a word boundary, for meta descriptions. */
+function summarize(text: string, max = 155): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, clean.lastIndexOf(" ", max - 1))}…`;
+}
+
+/**
+ * Split a bio into paragraphs. Bios with blank-line breaks keep them; a bio
+ * written as one block is grouped three sentences at a time. (Splitting on
+ * every sentence turned the Vietnamese bios into one-line paragraphs.)
+ */
+function toParagraphs(text: string): string[] {
+  const blocks = text.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+  if (blocks.length !== 1) return blocks;
+  const sentences = blocks[0].match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) ?? [blocks[0]];
+  const paragraphs: string[] = [];
+  for (let i = 0; i < sentences.length; i += 3) {
+    paragraphs.push(sentences.slice(i, i + 3).join("").trim());
+  }
+  return paragraphs;
+}
 
 export async function generateStaticParams() {
   const players = getAllPlayers();
@@ -87,7 +111,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { id } = await params;
   const player = getPlayerBySlug(id);
   if (!player) return { title: "Player" };
-  const description = player.metaDescription || `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
+  const locale = await getLocale();
+  // metaDescription is English-only; Vietnamese visitors (and Googlebot, which
+  // gets the default "vi") get the opening of the Vietnamese bio instead.
+  const viSummary = locale === "vi" ? summarize(getPlayerBio(player.slug, "vi")) : "";
+  const description =
+    viSummary ||
+    player.metaDescription ||
+    `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
   const images = player.photoLg ? [{ url: player.photoLg, width: 400, height: 400 }] : [];
   return {
     title: player.name,
@@ -116,28 +147,42 @@ export default async function PlayerPage({ params }: PageProps) {
   const player = getPlayerBySlug(id);
   if (!player) notFound();
 
-  const t = await getTranslations("PlayerDetail");
+  const [t, locale] = await Promise.all([getTranslations("PlayerDetail"), getLocale()]);
 
   const age = calculateAge(player.dateOfBirth);
-  const dob = new Date(player.dateOfBirth).toLocaleDateString("vi-VN", {
+  // dateOfBirth is a date-only string (UTC midnight): format in UTC so it never
+  // shifts a day, and in the visitor's language.
+  const dob = new Date(player.dateOfBirth).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: "UTC",
   });
   const accent = POS_ACCENT[player.position];
-  const heroImage = player.localBodyShot || player.localPhoto;
   const flag = getFlag(player.nationality);
 
-  // Fetch player stats: canonical (mapped from FPL) + raw FPL data
   const [playerStats, fplStats] = await Promise.all([
     getPlayerStats(player.id),
     getFplPlayerStats(player.name),
   ]);
 
-  const bio = getPlayerBio(player.slug, "vi");
-  const bioParagraphs = bio
-    ? bio.split(/\n{2,}|(?<=\.)(?=\s[A-Z])/).filter(Boolean).slice(0, 6)
-    : [];
+  const bio = getPlayerBio(player.slug, locale);
+  const bioParagraphs = toParagraphs(bio).slice(0, 6);
+
+  const facts: { label: string; value: string; highlight?: boolean }[] = [
+    { label: t("info.nationality"), value: `${flag} ${player.nationality}` },
+    { label: t("info.age"), value: t("info.ageYears", { age }) },
+    { label: t("info.dob"), value: dob },
+    { label: t("info.position"), value: t(`positions.${player.position}`) },
+    ...(player.height ? [{ label: t("info.height"), value: player.height }] : []),
+    ...(player.weight ? [{ label: t("info.weight"), value: player.weight }] : []),
+    { label: t("info.shirtName"), value: player.shirtName || "—" },
+    {
+      label: t("info.status"),
+      value: player.forever ? t("status.forever") : player.onLoan ? t("status.onLoan") : t("status.active"),
+      highlight: player.forever,
+    },
+  ];
 
   return (
     <div className="min-h-screen">
@@ -156,186 +201,99 @@ export default async function PlayerPage({ params }: PageProps) {
           position: player.position,
         }),
       ]} />
-      {/* ═══════════════════════════════════════════════════════════════════════
-          HERO — body shot + key info overlay
-         ═══════════════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[70vh] md:min-h-[80vh] overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-stadium-bg via-stadium-surface to-stadium-bg" />
 
-        {/* Giant shirt number watermark */}
+      {/* ─── Hero: compact row on phones (photo left), split layout from md ─── */}
+      <header className="relative isolate overflow-hidden border-b border-[var(--line)]">
+        <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-[var(--surface-2)] via-stadium-bg to-stadium-bg" />
         <span
-          className="absolute -right-8 top-1/2 -translate-y-1/2 font-bebas text-white/[0.10] leading-none pointer-events-none select-none"
-          style={{ fontSize: "clamp(20rem, 50vw, 40rem)" }}
-          aria-hidden="true"
+          aria-hidden
+          className="pointer-events-none absolute -right-2 bottom-0 -z-10 select-none font-bebas leading-[0.8] text-white/[0.05]"
+          style={{ fontSize: "clamp(12rem, 38vw, 28rem)" }}
         >
           {player.shirtNumber}
         </span>
+        <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+1.5rem)]">
+          <Link
+            href="/squad"
+            className="group mb-4 inline-flex min-h-10 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
+          >
+            <ArrowLeft size={16} aria-hidden className="transition-transform group-hover:-translate-x-1" />
+            {t("backSquad")}
+          </Link>
 
-        {/* LFC crest watermark */}
-        <div className="absolute left-8 md:left-16 top-1/2 -translate-y-1/2 w-48 md:w-72 opacity-[0.10] pointer-events-none select-none">
-          <Image src="/assets/lfc/crest.webp" alt="" width={288} height={288} aria-hidden="true" />
-        </div>
-
-        {/* Red accent line */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-lfc-red to-transparent" />
-
-        {/* Content grid */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-12 flex flex-col md:flex-row items-end md:items-center min-h-[70vh] md:min-h-[80vh] gap-8">
-          {/* Left: player info */}
-          <div className="flex-1 order-2 md:order-1 pb-8 md:pb-0">
-            {/* Back nav */}
-            <Link
-              href="/squad"
-              className="inline-flex items-center gap-2 text-stadium-muted hover:text-white font-inter text-sm transition-colors group mb-8"
-            >
-              <ArrowLeft size={16} className="transition-transform group-hover:-translate-x-1" />
-              {t("backSquad")}
-            </Link>
-
-            {/* Position badge + status */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              <Badge
-                className={cn(
-                  "text-sm font-barlow font-bold uppercase tracking-widest px-4 py-1.5",
-                  accent.bg, accent.text, accent.border
-                )}
-              >
-                {t(`positions.${player.position}`)}
-              </Badge>
-              {player.onLoan && (
-                <Badge className="text-sm bg-amber-500 text-white border-amber-500 font-barlow font-bold uppercase tracking-widest px-3 py-1.5">
-                  {t("status.onLoan")}
-                </Badge>
-              )}
-              {player.forever && (
-                <Badge className="text-sm bg-lfc-gold text-black border-lfc-gold font-barlow font-bold uppercase tracking-widest px-3 py-1.5">
-                  {t("status.forever")}
-                </Badge>
-              )}
-            </div>
-
-            {/* Shirt number + name + favourite */}
-            <div className="flex items-end gap-4 mb-2">
-              <span className="font-bebas text-lfc-red text-6xl md:text-8xl leading-none">
-                {player.shirtNumber}
-              </span>
-              <div className="pb-1 md:pb-2">
-                <h1 className="font-bebas text-5xl md:text-7xl text-white tracking-wider leading-none">
-                  {player.name}
-                </h1>
-              </div>
-              <div className="pb-2 md:pb-3">
-                <PlayerFavouriteButton
-                  playerId={player.id}
-                  playerName={player.name}
-                  playerPhoto={player.photo}
-                />
-              </div>
-            </div>
-
-            {/* Meta description */}
-            {player.metaDescription && (
-              <p className="text-stadium-muted font-inter text-sm md:text-base leading-relaxed max-w-xl mt-4">
-                {player.metaDescription}
-              </p>
-            )}
-
-            {/* Quick info pills with flag */}
-            <div className="flex flex-wrap gap-3 mt-6">
-              <InfoPill icon={<span className="text-base">{flag}</span>} label={player.nationality} />
-              <InfoPill icon={<Calendar size={14} />} label={`${dob} (${age})`} />
-              <InfoPill icon={<Shirt size={14} />} label={`#${player.shirtNumber}`} />
-              {player.height && <InfoPill icon={<Ruler size={14} />} label={player.height} />}
-              {player.weight && <InfoPill icon={<Weight size={14} />} label={player.weight} />}
-            </div>
-          </div>
-
-          {/* Right: body shot image */}
-          <div className="relative order-1 md:order-2 w-full md:w-auto flex-shrink-0">
-            <div className="relative h-[50vh] md:h-[70vh] w-full md:w-[400px] lg:w-[480px]">
-              <div className={cn(
-                "absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-1/2 rounded-full blur-3xl opacity-20",
-                accent.bg
-              )} />
-              <Image
-                src={heroImage}
+          <div className="flex items-end gap-4 sm:gap-8 md:items-center">
+            {/* Photo box: fixed aspect, object-contain so square or missing body shots never crop badly */}
+            <div className="relative aspect-[4/5] w-32 shrink-0 sm:w-56 md:w-72 lg:w-80 md:order-2 md:ml-auto">
+              <span aria-hidden className={cn("absolute inset-x-[12%] bottom-0 h-1/2 rounded-full opacity-25 blur-3xl", accent.bg)} />
+              <PlayerPhoto
+                src={player.localBodyShot}
+                fallback={player.localPhoto}
                 alt={player.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 480px"
-                className="object-contain object-bottom drop-shadow-2xl"
+                sizes="(min-width:1024px) 320px, (min-width:768px) 288px, (min-width:640px) 224px, 128px"
                 priority
               />
             </div>
-          </div>
-        </div>
 
-        {/* Bottom gradient fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-stadium-bg to-transparent" />
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════════
-          DETAIL SECTIONS
-         ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 -mt-8 relative z-10 space-y-8">
-
-        {/* ─── Player Information ─── */}
-        <section className="bg-stadium-surface border border-stadium-border rounded-none overflow-hidden">
-          <div className="p-6 md:p-8">
-            <h2 className="font-bebas text-3xl text-white tracking-wider mb-6">
-              {t("sections.playerInfo")}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-4">
-              <InfoRow label={t("info.fullName")} value={player.name} />
-              <InfoRow label={t("info.shirtName")} value={player.shirtName || "—"} />
-              <InfoRow label={t("info.nationality")} value={`${flag} ${player.nationality}`} />
-              <InfoRow label={t("info.dob")} value={dob} />
-              <InfoRow label={t("info.age")} value={t("info.ageYears", { age })} />
-              {player.height && <InfoRow label={t("info.height")} value={player.height} />}
-              {player.weight && <InfoRow label={t("info.weight")} value={player.weight} />}
-              <InfoRow label={t("info.position")} value={t(`positions.${player.position}`)} />
-              <InfoRow label={t("info.shirtNumber")} value={`#${player.shirtNumber}`} />
-              <InfoRow
-                label={t("info.status")}
-                value={player.forever ? t("status.forever") : player.onLoan ? t("status.onLoan") : t("status.active")}
-                highlight={player.forever ? "gold" : undefined}
-              />
+            <div className="min-w-0 flex-1 pb-1 md:order-1 md:pb-0">
+              <div className="mb-3 flex flex-wrap items-center gap-2 font-barlow text-xs font-bold uppercase tracking-[0.12em]">
+                <span className={cn("px-2.5 py-1", accent.bg, accent.text)}>{t(`positions.${player.position}`)}</span>
+                {player.onLoan && <span className="bg-amber-500 px-2.5 py-1 text-black">{t("status.onLoan")}</span>}
+                {player.forever && <span className="bg-lfc-gold px-2.5 py-1 text-black">{t("status.forever")}</span>}
+              </div>
+              <p className="font-bebas text-5xl leading-none text-brand sm:text-7xl">{player.shirtNumber}</p>
+              <h1 className="mt-1 font-bebas text-4xl leading-[0.95] text-white text-balance sm:text-6xl lg:text-7xl">{player.name}</h1>
+              <p className="mt-3 text-[15px] text-stadium-muted">
+                <span aria-hidden>{flag} </span>
+                {player.nationality} · {t("info.ageYears", { age })}
+              </p>
+              <div className="mt-4">
+                <PlayerFavouriteButton playerId={player.id} playerName={player.name} playerPhoto={player.photo} />
+              </div>
             </div>
           </div>
+        </div>
+      </header>
+
+      <div className="page-container space-y-10 pb-20 pt-8 sm:space-y-14 sm:pt-12">
+        {/* ─── Key facts ─── */}
+        <section>
+          <SectionHeader title={t("sections.playerInfo")} />
+          <dl className="surface grid grid-cols-2 gap-px bg-[var(--line)] sm:grid-cols-4">
+            {facts.map((f) => (
+              <div key={f.label} className="bg-[var(--surface-2)] px-4 py-3.5">
+                <dt className="font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-stadium-muted">{f.label}</dt>
+                <dd className={cn("mt-1 text-[15px] font-medium", f.highlight ? "text-lfc-gold" : "text-white")}>{f.value}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
-        {/* ─── Stats cards ─── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label={t("info.shirtNumber")} value={`#${player.shirtNumber}`} />
-          <StatCard label={t("info.position")} value={t(`positions.${player.position}`)} accent />
-          <StatCard label={t("info.age")} value={String(age)} />
-          <StatCard label={t("info.honours")} value={String(player.honors.length)} gold />
-        </div>
-
-        {/* ─── Season Statistics ─── */}
+        {/* ─── Season statistics (has its own empty state) ─── */}
         <PlayerSeasonStats
           statistics={playerStats?.statistics ?? []}
           fplStats={fplStats}
           position={player.position}
         />
 
-        {/* ─── Honours showcase ─── */}
-        {player.honors.length > 0 && (
-          <section className="bg-stadium-surface border border-stadium-border rounded-none p-6 md:p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <Image
-                src="/assets/lfc/trophies/european-cup.svg"
-                alt="Trophy"
-                width={40}
-                height={40}
-                className="object-contain"
-              />
-              <h2 className="font-bebas text-3xl text-white tracking-wider">
-                {t("sections.honours")}
-              </h2>
+        {/* ─── Biography ─── */}
+        {bio && (
+          <section>
+            <SectionHeader title={t("sections.biography")} />
+            <div className="max-w-[65ch] space-y-4">
+              {bioParagraphs.map((paragraph, i) => (
+                <p key={i} className="text-[15px] leading-7 text-white/80 sm:text-base sm:leading-8">
+                  {paragraph.trim()}
+                </p>
+              ))}
             </div>
+          </section>
+        )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* ─── Honours ─── */}
+        {player.honors.length > 0 && (
+          <section>
+            <SectionHeader title={t("sections.honours")} eyebrow={t("info.honours")} />
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {player.honors.map((honor) => {
                 const match = honor.match(/^(.+?)\s*\((.+)\)$/);
                 const trophy = match ? match[1] : honor;
@@ -344,126 +302,44 @@ export default async function PlayerPage({ params }: PageProps) {
                 const trophyImage = HONOR_TROPHY_IMAGE[trophy];
 
                 return (
-                  <div
-                    key={honor}
-                    className="group relative overflow-hidden rounded-none bg-gradient-to-br from-stadium-surface2/80 to-stadium-surface border border-stadium-border/50 p-4 hover:border-lfc-gold/30 transition-all duration-300"
-                  >
+                  <li key={honor} className="surface relative flex min-h-16 items-center gap-3 p-4">
                     {yearCount > 1 && (
-                      <span className="absolute top-3 right-3 font-bebas text-lfc-gold/80 text-2xl leading-none">
-                        ×{yearCount}
-                      </span>
+                      <span className="absolute right-3 top-2 font-bebas text-2xl leading-none text-lfc-gold">×{yearCount}</span>
                     )}
-                    <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 shrink-0 mt-0.5">
-                        {trophyImage ? (
-                          <Image
-                            src={trophyImage}
-                            alt={trophy}
-                            width={36}
-                            height={36}
-                            className="object-contain w-full h-full"
-                          />
-                        ) : (
-                          <div className="w-full h-full rounded-none bg-lfc-gold/10 flex items-center justify-center">
-                            <Trophy size={16} className="text-lfc-gold" />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-white text-sm font-inter font-semibold leading-tight">
-                          {trophy}
-                        </p>
-                        {years && (
-                          <p className="text-stadium-muted text-xs font-inter mt-1">{years}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    <span className="relative size-9 shrink-0">
+                      {trophyImage ? (
+                        <Image src={trophyImage} alt="" fill sizes="36px" className="object-contain" />
+                      ) : (
+                        <span className="flex size-full items-center justify-center bg-lfc-gold/10">
+                          <Trophy size={16} aria-hidden className="text-lfc-gold" />
+                        </span>
+                      )}
+                    </span>
+                    <span className="min-w-0 pr-8">
+                      <span className="block text-sm font-semibold leading-tight text-white">{trophy}</span>
+                      {years && <span className="mt-1 block text-xs text-stadium-muted">{years}</span>}
+                    </span>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           </section>
         )}
 
-        {/* ─── Biography ─── */}
-        {bio && (
-          <section className="bg-stadium-surface border border-stadium-border rounded-none p-6 md:p-8">
-            <h2 className="font-bebas text-3xl text-white tracking-wider mb-6">
-              {t("sections.biography")}
-            </h2>
-            <div className="prose prose-invert prose-sm max-w-none">
-              {bioParagraphs.map((paragraph, i) => (
-                <p
-                  key={i}
-                  className="text-stadium-muted font-inter text-sm leading-relaxed mb-4 last:mb-0"
-                >
-                  {paragraph.trim()}
-                </p>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ─── View on LFC link ─── */}
-        <div className="text-center">
+        <p className="text-center">
           <a
             href={`https://www.liverpoolfc.com/team/mens/player/${player.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-stadium-muted hover:text-lfc-red font-inter text-sm transition-colors"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
           >
             {t("viewOnLfc")}
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg aria-hidden className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
-        </div>
+        </p>
       </div>
-    </div>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function InfoPill({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stadium-surface border border-stadium-border text-sm font-inter text-stadium-muted">
-      {icon}
-      {label}
-    </span>
-  );
-}
-
-function StatCard({ label, value, accent, gold }: { label: string; value: string; accent?: boolean; gold?: boolean }) {
-  return (
-    <div className="bg-stadium-surface border border-stadium-border rounded-none p-5 text-center">
-      <div
-        className={cn(
-          "font-bebas text-4xl md:text-5xl leading-none mb-1",
-          gold ? "text-lfc-gold" : accent ? "text-lfc-red" : "text-white"
-        )}
-      >
-        {value}
-      </div>
-      <div className="font-barlow text-stadium-muted text-[10px] uppercase tracking-widest">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function InfoRow({ label, value, highlight }: { label: string; value: string; highlight?: "gold" | "red" }) {
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-stadium-border/30 last:border-0">
-      <dt className="text-stadium-muted font-inter text-sm">{label}</dt>
-      <dd
-        className={cn(
-          "font-inter text-sm font-medium",
-          highlight === "gold" ? "text-lfc-gold" : highlight === "red" ? "text-lfc-red" : "text-white"
-        )}
-      >
-        {value}
-      </dd>
     </div>
   );
 }

@@ -1,12 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
-
-/** Validate redirect path to prevent open redirect attacks */
-function getSafeRedirect(raw: string | null): string {
-  if (!raw) return "/";
-  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
-  return raw;
-}
+import { getSafeRedirect } from "@/lib/safe-redirect";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -17,7 +11,9 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerSupabaseClient();
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Ensure profile exists for OAuth users
+      // Ensure profile exists for OAuth users. Insert-only: a plain upsert ran on
+      // every sign-in and reset username/avatar to the provider's values and bio
+      // to null, wiping whatever the user had edited on /profile.
       if (data.user) {
         await supabase.from("user_profiles").upsert(
           {
@@ -26,7 +22,7 @@ export async function GET(request: NextRequest) {
             avatar_url: data.user.user_metadata?.avatar_url ?? null,
             bio: null,
           },
-          { onConflict: "user_id" }
+          { onConflict: "user_id", ignoreDuplicates: true }
         );
       }
       return NextResponse.redirect(`${origin}${redirectTo}`);

@@ -53,7 +53,7 @@ function PlayerDot({
       >
         {number}
       </div>
-      <span className="font-inter text-[9px] sm:text-[10px] text-white text-center leading-tight line-clamp-1 max-w-full">
+      <span className="font-inter text-[11px] sm:text-xs text-white text-center leading-tight line-clamp-1 max-w-full">
         {short}
       </span>
     </div>
@@ -131,7 +131,7 @@ function HalfPitch({
         {lineup.coach.name && (
           <>
             <span className="text-white/20 text-xs">·</span>
-            <span className="font-inter text-[10px] text-white/50">{lineup.coach.name}</span>
+            <span className="font-inter text-xs text-stadium-muted">{lineup.coach.name}</span>
           </>
         )}
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getSquadPlayers } from "@/lib/squad-data";
+import { PageHero } from "@/components/ui/page-hero";
 import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -16,7 +17,19 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function SquadPage() {
   const t = await getTranslations("Squad");
 
-  const squadPlayers = getSquadPlayers({ includeLoans: true, includeForever: true });
+  // Slim the data: cards need no bios or honours, and everything passed here is shipped to the browser.
+  const squadPlayers = getSquadPlayers({ includeLoans: true, includeForever: true }).map((p) => ({
+    id: p.id,
+    name: p.name,
+    shirtNumber: p.shirtNumber,
+    shirtName: p.shirtName,
+    slug: p.slug,
+    position: p.position,
+    onLoan: p.onLoan,
+    forever: p.forever,
+    photo: p.photo,
+    localPhoto: p.localPhoto,
+  }));
 
   return (
     <div className="min-h-screen">
@@ -24,31 +37,13 @@ export default async function SquadPage() {
         { name: "Home", url: getCanonical("/") },
         { name: "Squad", url: getCanonical("/squad") },
       ])} />
-      {/* Hero — compact */}
-      <div className="relative h-[25vh] min-h-[200px] flex items-end overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/assets/lfc/stadium/anfield-pitch.webp')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/50 via-transparent to-transparent" />
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6 w-full">
-          <p className="font-barlow text-lfc-red uppercase tracking-[0.3em] text-[10px] font-bold mb-1">
-            {t("season", { season: getCurrentSeasonLabel() })}
-          </p>
-          <div className="flex items-baseline gap-4">
-            <h1 className="font-bebas text-5xl md:text-6xl text-white tracking-widest leading-none">
-              {t("title")}
-            </h1>
-            <span className="font-bebas text-lg text-stadium-muted tracking-wider">
-              {t("count", { count: squadPlayers.length, n: squadPlayers.length })}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+      <PageHero
+        eyebrow={t("season", { season: getCurrentSeasonLabel() })}
+        title={t("title")}
+        description={t("count", { count: squadPlayers.length, n: squadPlayers.length })}
+        image="/assets/lfc/stadium/anfield-pitch.webp"
+      />
+      <div className="page-container pb-16 pt-5 sm:pt-8">
         <SquadGrid players={squadPlayers} />
       </div>
     </div>

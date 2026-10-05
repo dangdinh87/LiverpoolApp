@@ -112,13 +112,20 @@ export function getMatchResult(
   teamId: number = 40
 ): MatchResult {
   const { fixture: f, teams, goals } = fixture;
-  if (f.status.short !== "FT") return "NS";
+  // AET/PEN are finished too (the FDO mapper emits them for extra time and shootouts).
+  if (!["FT", "AET", "PEN"].includes(f.status.short)) return "NS";
   if (goals.home === null || goals.away === null) return "NS";
   const isHome = teams.home.id === teamId;
   const lfcGoals = isHome ? goals.home : goals.away;
   const oppGoals = isHome ? goals.away : goals.home;
   if (lfcGoals > oppGoals) return "W";
   if (lfcGoals < oppGoals) return "L";
+  // Level after extra time: a shootout decides it.
+  if (f.status.short === "PEN") {
+    const lfcWon = isHome ? teams.home.winner : teams.away.winner;
+    if (lfcWon === true) return "W";
+    if (lfcWon === false) return "L";
+  }
   return "D";
 }
 
@@ -126,7 +133,8 @@ export function getMatchResult(
 
 export interface Standing {
   rank: number;
-  team: { id: number; name: string; logo: string };
+  /** `shortName` is the provider's compact club name ("Man City"); optional: not every source has one. */
+  team: { id: number; name: string; shortName?: string; logo: string };
   points: number;
   goalsDiff: number;
   group: string | null;

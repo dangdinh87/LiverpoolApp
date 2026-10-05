@@ -2,14 +2,20 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
+import { requireNonEmptyNews } from "@/lib/news/db";
 import { getLatestDigest } from "@/lib/news/digest";
-import { getSiteSetting } from "@/lib/gallery/queries";
+import { getSiteSetting, SITE_SETTINGS_CACHE_TAG } from "@/lib/gallery/queries";
+import { getLocale } from "next-intl/server";
 import { Hero } from "@/components/home/hero";
-import { BentoGrid } from "@/components/home/bento-grid";
-import { NewsSection } from "@/components/home/news-section";
-import { LiveMatchBanner } from "@/components/home/live-match-banner";
+import { NextMatchWidget } from "@/components/home/next-match-widget";
+import { FormWidget, pickRecentResults } from "@/components/home/form-widget";
+import { NewsSection, NewsByCategory } from "@/components/home/news-section";
+import { selectHomeNews } from "@/components/home/news-utils";
+import { StandingsPreview } from "@/components/home/standings-preview";
+import { SquadCarousel } from "@/components/home/squad-carousel";
+import { getSquadPlayers } from "@/lib/squad-data";
 import { JsonLd } from "@/components/seo/json-ld";
-import { buildBreadcrumbJsonLd, getCanonical, makePageMeta } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, DEFAULT_OG_IMAGE, getCanonical, makePageMeta } from "@/lib/seo";
 import { getArticleUrl } from "@/lib/news-config";
 import type { Fixture } from "@/lib/types/football";
 
@@ -17,19 +23,18 @@ function getOptimizedHeroUrl(url: string): string {
   if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
     return url;
   }
-  if (url.includes("/upload/w_1920,h_1080,c_fill,q_auto,f_auto/")) {
+  if (url.includes("/upload/w_1280,h_720,c_fill,q_auto,f_auto/")) {
     return url;
   }
   return url.replace(
     "/upload/",
-    "/upload/w_1920,h_1080,c_fill,q_auto,f_auto/"
+    "/upload/w_1280,h_720,c_fill,q_auto,f_auto/"
   );
 }
 
 const HOME_TITLE = "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA";
 const HOME_DESCRIPTION =
   "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.";
-const HOME_OG_IMAGE = "/assets/lfc/branding/lfc-crest-main.webp";
 const HOME_NEWS_LIMIT = 18;
 
 const getCachedHomeFixtures = unstable_cache(
@@ -45,8 +50,8 @@ const getCachedHomeStandings = unstable_cache(
 );
 
 const getCachedHomeNews = unstable_cache(
-  async () => getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true }),
-  ["home-news-vi-first-v1"],
+  async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true })),
+  ["home-news-vi-first-v2"],
   { revalidate: 300, tags: ["news"] },
 );
 
@@ -56,14 +61,20 @@ const getCachedHomeDigest = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
+// Errors resolve to null *inside* the cache: unstable_cache never stores a
+// rejection, so a throwing lookup re-ran against a dead database on every
+// homepage request. With null the default hero shows for one 5-min window.
 const getCachedHomeHeroSetting = unstable_cache(
   async () =>
     getSiteSetting<{
       gallery_image_id: string;
       cloudinary_url: string;
-    }>("homepage_hero_image"),
-  ["home-hero-setting-v1"],
-  { revalidate: 300 },
+    }>("homepage_hero_image").catch((err: unknown) => {
+      console.warn("[homepage] Hero setting unavailable:", err instanceof Error ? err.message : err);
+      return null;
+    }),
+  ["home-hero-setting-v2"],
+  { revalidate: 300, tags: [SITE_SETTINGS_CACHE_TAG] },
 );
 
 export const metadata: Metadata = {
@@ -74,7 +85,7 @@ export const metadata: Metadata = {
   ...makePageMeta(
     HOME_TITLE,
     HOME_DESCRIPTION,
-    { path: "/", image: HOME_OG_IMAGE },
+    { path: "/" },
   ),
 };
 
@@ -118,7 +129,7 @@ function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>) {
       },
       primaryImageOfPage: {
         "@type": "ImageObject",
-        url: getCanonical(HOME_OG_IMAGE),
+        url: getCanonical(DEFAULT_OG_IMAGE.url),
       },
     },
     buildBreadcrumbJsonLd([{ name: "Home", url: canonical }]),
@@ -177,17 +188,39 @@ export default async function HomePage() {
       .filter((f) => f.fixture.status.short === "NS")
       .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
 
+  const locale: "vi" | "en" = (await getLocale()) === "en" ? "en" : "vi";
+  const topNews = selectHomeNews(allNews, locale, 5);
+  const shown = new Set(topNews.map((a) => a.link));
+  const moreNews = allNews.filter((a) => !shown.has(a.link));
+  const squadTeaser = getSquadPlayers()
+    .sort((a, b) => a.shirtNumber - b.shirtNumber)
+    .slice(0, 12);
+
   return (
     <>
       <JsonLd data={buildHomeJsonLd(allNews)} />
-      <LiveMatchBanner fixtures={fixtures} />
-      <Hero backgroundUrl={heroBackgroundUrl} />
-      <section className="py-10 pb-16">
-        <NewsSection articles={allNews} digest={digest} />
-      </section>
-      <section className="py-10">
-        <BentoGrid nextMatch={nextMatch} standings={standings} />
-      </section>
+      <Hero backgroundUrl={heroBackgroundUrl}>
+        <NextMatchWidget fixture={nextMatch} />
+      </Hero>
+      <div className="page-container py-6 sm:py-10 lg:py-12">
+        {/* grid-cols-1 = minmax(0,1fr): an implicit auto track grew to the widest nowrap row of the table preview (326px in a 256px card at 320px). */}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-8 lg:gap-y-6">
+          {/* Mobile order: results, news, table. On desktop news spans two rows beside both widgets. */}
+          <div className="lg:col-span-4 lg:col-start-9 lg:row-start-1">
+            <FormWidget results={pickRecentResults(fixtures)} />
+          </div>
+          <div className="lg:col-span-8 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+            <NewsSection articles={topNews} digest={digest} locale={locale} />
+          </div>
+          <div className="lg:col-span-4 lg:col-start-9 lg:row-start-2">
+            <StandingsPreview standings={standings} />
+          </div>
+        </div>
+        <div className="mt-10 space-y-10 sm:mt-14 sm:space-y-14">
+          <SquadCarousel players={squadTeaser} />
+          <NewsByCategory articles={moreNews} locale={locale} />
+        </div>
+      </div>
     </>
   );
 }

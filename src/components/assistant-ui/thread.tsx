@@ -27,10 +27,10 @@ import {
 	DownloadIcon,
 	PencilIcon,
 	RefreshCwIcon,
-	Globe,
-	Swords,
-	BarChart3,
-	Flame,
+	CalendarClock,
+	Table2,
+	Newspaper,
+	Users,
 } from "lucide-react";
 import { type FC } from "react";
 import { useTranslations } from "next-intl";
@@ -96,7 +96,7 @@ const ThreadWelcome: FC<{ compact?: boolean }> = ({ compact = false }) => {
 							/>
 						)}
 						<h1
-							className={cn("font-bebas tracking-wider text-lfc-red", compact ? "text-2xl" : "text-4xl")}
+							className={cn("font-bebas tracking-wider text-lfc-red-text", compact ? "text-2xl" : "text-4xl")}
 							suppressHydrationWarning
 						>
 							LIVERBIRD AI
@@ -124,54 +124,35 @@ const ThreadWelcome: FC<{ compact?: boolean }> = ({ compact = false }) => {
 };
 
 const SUGGESTION_ICONS = [
-	<Flame key="flame" className="size-4 text-lfc-red shrink-0" />,
-	<Swords key="swords" className="size-4 text-lfc-red shrink-0" />,
-	<BarChart3 key="chart" className="size-4 text-lfc-red shrink-0" />,
-	<Globe key="globe" className="size-4 text-lfc-red shrink-0" />,
+	<CalendarClock key="match" className="size-4 text-lfc-red shrink-0" />,
+	<Table2 key="table" className="size-4 text-lfc-red shrink-0" />,
+	<Newspaper key="news" className="size-4 text-lfc-red shrink-0" />,
+	<Users key="squad" className="size-4 text-lfc-red shrink-0" />,
 ];
 
 const ThreadSuggestions: FC = () => {
 	const t = useTranslations();
 
-	const suggestions = [
-		{
-			key: "topScorer",
-			title: t("chat.thread.suggestions.topScorer.title"),
-			label: t("chat.thread.suggestions.topScorer.label"),
-			prompt: t("chat.thread.suggestions.topScorer.prompt"),
-		},
-		{
-			key: "istanbul",
-			title: t("chat.thread.suggestions.istanbul.title"),
-			label: t("chat.thread.suggestions.istanbul.label"),
-			prompt: t("chat.thread.suggestions.istanbul.prompt"),
-		},
-		{
-			key: "salahLegends",
-			title: t("chat.thread.suggestions.salahLegends.title"),
-			label: t("chat.thread.suggestions.salahLegends.label"),
-			prompt: t("chat.thread.suggestions.salahLegends.prompt"),
-		},
-		{
-			key: "trophies",
-			title: t("chat.thread.suggestions.trophies.title"),
-			label: t("chat.thread.suggestions.trophies.label"),
-			prompt: t("chat.thread.suggestions.trophies.prompt"),
-		},
-	];
+	// Practical first questions (one set, shown on the empty /chat page); each sends on tap.
+	const suggestions = (["nextMatch", "standings", "news", "squad"] as const).map((key) => ({
+		key,
+		title: t(`chat.prompts.${key}Label`),
+		label: t(`chat.prompts.${key}`),
+		prompt: t(`chat.prompts.${key}`),
+	}));
 
 	return (
 		<div className="aui-thread-welcome-suggestions grid w-full @md:grid-cols-2 gap-3 pb-4 px-1">
 			{suggestions.map((suggestion, index) => (
 				<div
 					key={suggestion.key}
-					className="fade-in slide-in-from-bottom-2 @md:nth-[n+3]:block nth-[n+3]:hidden animate-in fill-mode-both duration-300"
+					className="fade-in slide-in-from-bottom-2 animate-in fill-mode-both duration-300"
 					style={{ animationDelay: `${150 + index * 100}ms` }}
 				>
 					<ThreadPrimitive.Suggestion prompt={suggestion.prompt} send asChild>
 						<Button
 							variant="ghost"
-							className="group h-auto w-full flex-col items-start justify-start gap-1.5 border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-base transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40 hover:scale-[1.01]"
+							className="group h-auto w-full flex-col items-start justify-start gap-1.5 border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-base transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40"
 							aria-label={suggestion.prompt}
 						>
 							<span className="flex items-center gap-2 font-barlow font-semibold text-base uppercase tracking-widest text-foreground/90 group-hover:text-lfc-gold transition-colors duration-200" suppressHydrationWarning>

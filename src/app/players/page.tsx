@@ -1,5 +1,6 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 export default function PlayersPage() {
-  redirect("/squad");
+  // Permanent (308): /players is a legacy URL that should hand its ranking to /squad.
+  permanentRedirect("/squad");
 }

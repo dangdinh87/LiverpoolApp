@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, vi } from "vitest";
 import { scrapeArticle } from "../article-extractor";
 
 vi.mock("../../supabase-service", () => ({

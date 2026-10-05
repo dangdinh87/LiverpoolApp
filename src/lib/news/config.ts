@@ -1,20 +1,22 @@
 // Server-side feed configuration — contains URLs, not safe for client
 import "server-only";
-import type { FeedConfig, NewsSource, NewsLanguage } from "./types";
+import type { FeedConfig } from "./types";
 
 export const RSS_FEEDS: FeedConfig[] = [
   // English — LFC-specific feeds
   { url: "https://feeds.bbci.co.uk/sport/football/teams/liverpool/rss.xml", source: "bbc", language: "en" },
   { url: "https://www.theguardian.com/football/liverpool/rss", source: "guardian", language: "en" },
-  { url: "https://www.thisisanfield.com/feed", source: "tia", language: "en" },
+  { url: "https://www.thisisanfield.com/feed/", source: "tia", language: "en" },
   { url: "https://www.anfieldwatch.co.uk/feed", source: "anfield-watch", language: "en" },
   { url: "https://www.empireofthekop.com/feed/", source: "eotk", language: "en" },
-  // Sky's /rss/12040 feed is broad sports news, not Liverpool-specific.
-  { url: "https://www.skysports.com/rss/12040", source: "sky", language: "en", filter: "lfc" },
-  { url: "https://www.mirror.co.uk/all-about/liverpool-fc/rss.xml", source: "mirror", language: "en" },
-  { url: "https://www.independent.co.uk/topic/liverpool-fc/rss", source: "independent", language: "en" },
-  { url: "https://www.manchestereveningnews.co.uk/all-about/liverpool-fc/?service=rss", source: "men", language: "en" },
-  { url: "https://anfieldindex.com/feed", source: "anfieldindex", language: "en" },
+  // Sky: /rss/11669 is the football feed (/rss/12040 is broad sports, 0 Liverpool items).
+  { url: "https://www.skysports.com/rss/11669", source: "sky", language: "en", filter: "lfc" },
+  { url: "https://www.mirror.co.uk/all-about/liverpool-fc/?service=rss", source: "mirror", language: "en" },
+  // The Independent's topic RSS is empty (0 items); the football feed works with the LFC filter.
+  { url: "https://www.independent.co.uk/sport/football/rss", source: "independent", language: "en", filter: "lfc" },
+  // MEN's Liverpool topic feed carries ~2 items (3.6 KB) — not worth a request; old `men` rows still render.
+  // 300 items / ~650 KB: needs more than the default timeout.
+  { url: "https://anfieldindex.com/feed", source: "anfieldindex", language: "en", timeoutMs: 8_000 },
   { url: "https://www.liverpool.com/?service=rss", source: "liverpoolcom", language: "en" },
   // English — general feeds with keyword filter
   { url: "https://www.liverpoolecho.co.uk/all-about/liverpool-fc/?service=rss", source: "echo", language: "en" },
@@ -29,59 +31,20 @@ export const RSS_FEEDS: FeedConfig[] = [
   // Vietnamese — 5 new sources
   { url: "https://dantri.com.vn/rss/the-thao.rss", source: "dantri", language: "vi", filter: "lfc" },
   { url: "https://znews.vn/rss/the-thao.rss", source: "zingnews", language: "vi", filter: "lfc" },
-  { url: "https://vietnamnet.vn/rss/the-thao.rss", source: "vietnamnet", language: "vi", filter: "lfc" },
-  { url: "https://webthethao.vn/rss/rss.php", source: "webthethao", language: "vi", filter: "lfc" },
+  // ~1000 unsorted items (~900 KB), dates are modified-times: longer timeout, sorted + age-cut in the adapter.
+  { url: "https://vietnamnet.vn/rss/the-thao/bong-da-quoc-te.rss", source: "vietnamnet", language: "vi", filter: "lfc", timeoutMs: 10_000 },
   // Vietnamese — additional football feeds researched May 2026
   { url: "https://bongda24h.vn/RSS/172.rss", source: "bongda24h", language: "vi", filter: "lfc" },
   { url: "https://bongda24h.vn/RSS/187.rss", source: "bongda24h", language: "vi", filter: "lfc" },
-  { url: "https://thethao247.vn/ngoai-hang-anh-c8.rss", source: "thethao247", language: "vi", filter: "lfc" },
-  { url: "https://soha.vn/rss/the-thao/anh.rss", source: "soha", language: "vi", filter: "lfc" },
-];
-
-export const SOURCE_CONFIG: Record<
-  NewsSource,
-  { label: string; color: string; language: NewsLanguage }
-> = {
-  lfc: { label: "Liverpool FC", color: "bg-lfc-red text-white", language: "en" },
-  bbc: { label: "BBC Sport", color: "bg-[#BB1919] text-white", language: "en" },
-  guardian: { label: "The Guardian", color: "bg-[#052962] text-[#9DBFFF]", language: "en" },
-  echo: { label: "Liverpool Echo", color: "bg-purple-700 text-purple-100", language: "en" },
-  "anfield-watch": { label: "Anfield Watch", color: "bg-rose-700 text-rose-100", language: "en" },
-  eotk: { label: "Empire of the Kop", color: "bg-red-800 text-red-100", language: "en" },
-  sky: { label: "Sky Sports", color: "bg-sky-800 text-sky-100", language: "en" },
-  mirror: { label: "Daily Mirror", color: "bg-red-700 text-red-100", language: "en" },
-  independent: { label: "The Independent", color: "bg-zinc-700 text-zinc-100", language: "en" },
-  men: { label: "MEN", color: "bg-blue-700 text-blue-100", language: "en" },
-  anfieldindex: { label: "Anfield Index", color: "bg-amber-700 text-amber-100", language: "en" },
-  liverpoolcom: { label: "Liverpool.com", color: "bg-indigo-700 text-indigo-100", language: "en" },
-  tia: { label: "This Is Anfield", color: "bg-pink-700 text-pink-100", language: "en" },
-  espn: { label: "ESPN", color: "bg-rose-800 text-rose-100", language: "en" },
-  bongda: { label: "Bóng Đá", color: "bg-emerald-700 text-emerald-100", language: "vi" },
-  "24h": { label: "24h", color: "bg-orange-700 text-orange-100", language: "vi" },
-  bongdaplus: { label: "Bóng Đá+", color: "bg-sky-700 text-sky-100", language: "vi" },
-  vnexpress: { label: "VnExpress", color: "bg-blue-800 text-blue-100", language: "vi" },
-  tuoitre: { label: "Tuổi Trẻ", color: "bg-teal-700 text-teal-100", language: "vi" },
-  thanhnien: { label: "Thanh Niên", color: "bg-amber-800 text-amber-100", language: "vi" },
-  dantri: { label: "Dân Trí", color: "bg-cyan-700 text-cyan-100", language: "vi" },
-  zingnews: { label: "ZNews", color: "bg-violet-700 text-violet-100", language: "vi" },
-  vietnamnet: { label: "VietNamNet", color: "bg-lime-700 text-lime-100", language: "vi" },
-  webthethao: { label: "Webthethao", color: "bg-pink-700 text-pink-100", language: "vi" },
-  vietnamvn: { label: "Vietnam.vn", color: "bg-red-700 text-red-100", language: "vi" },
-  bongda24h: { label: "Bóng Đá 24h", color: "bg-green-700 text-green-100", language: "vi" },
-  thethao247: { label: "Thể Thao 247", color: "bg-red-800 text-red-100", language: "vi" },
-  soha: { label: "Soha", color: "bg-orange-800 text-orange-100", language: "vi" },
-  goal: { label: "GOAL", color: "bg-[#00234B] text-white", language: "en" },
-};
-
-// Vietnam.vn scraper config (no RSS, scrape sports category)
-export const VIETNAMVN_URLS = [
-  "https://www.vietnam.vn/category/the-thao",
+  // soha's section is dormant (months-old items): tight age cutoff.
+  { url: "https://soha.vn/rss/the-thao/anh.rss", source: "soha", language: "vi", filter: "lfc", maxAgeDays: 7 },
 ];
 
 // Bongdaplus scraper config
+// Tag pages list Liverpool stories only; the section pages (ngoai-hang-anh, c1) were ~95% other clubs.
 export const BONGDAPLUS_URLS = [
-  "https://bongdaplus.vn/ngoai-hang-anh",
-  "https://bongdaplus.vn/champions-league-cup-c1",
+  "https://bongdaplus.vn/liverpool-tags",
+  "https://bongdaplus.vn/tin-chuyen-nhuong-liverpool",
 ];
 
 /** Single source of truth for LFC keyword matching + relevance scoring */
@@ -92,8 +55,10 @@ export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
   { term: "lfc", weight: 3 },
   { term: "the kop", weight: 2.5 },
   { term: "lữ đoàn đỏ", weight: 2.5 },
-  // Manager — full name only
-  { term: "andoni iraola", weight: 2.5 },
+  // Head coach (Andoni Iraola) and sporting director — surname alone is distinctive
+  { term: "iraola", weight: 2.5 },
+  { term: "julian ward", weight: 2 },
+  { term: "the reds", weight: 2 },
   // Star players
   { term: "van dijk", weight: 2.5 },
   { term: "virgil", weight: 2 },
@@ -111,10 +76,12 @@ export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
   { term: "leoni", weight: 2 },
   // Core squad — unique names only
   { term: "alisson", weight: 1.5 },
-  { term: "gakpo", weight: 1.5 },
-  { term: "mac allister", weight: 1.5 },
-  { term: "gravenberch", weight: 1.5 },
-  { term: "szoboszlai", weight: 1.5 },
+  { term: "gakpo", weight: 2.5 },
+  { term: "mac allister", weight: 2.5 },
+  { term: "gravenberch", weight: 2.5 },
+  { term: "szoboszlai", weight: 2.5 },
+  { term: "konaté", weight: 2.5 },
+  { term: "konate", weight: 2.5 },
   { term: "elliott", weight: 1.5 },
   { term: "endo", weight: 1.5 },
   { term: "ngumoha", weight: 1.5 },

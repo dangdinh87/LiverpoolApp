@@ -1,5 +1,8 @@
+// "avatar" is only a placeholder when it is a path segment or a filename start
+// (/avatar/x.png, /avatar.png, /avatar-default.png, gravatar). soha serves real
+// article photos as `sohacdn.com/.../avatar1590...jpg`, which a substring test rejected.
 const BAD_IMAGE_PATTERN =
-  /(avatar|blank|default-image|icon|loading|logo|pixel|placeholder|sprite|tracking|transparent)/i;
+  /(blank|default-image|icon|loading|logo|pixel|placeholder|sprite|tracking|transparent|gravatar|\/avatar(?:[\/._-]|$))/i;
 const IMAGE_META_KEYS = new Set([
   "image",
   "og:image",

@@ -46,8 +46,8 @@ export function GoalsByMonthChart({ data, labels, monthLabels }: Props) {
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="3 3" stroke="#2A2A2A" />
-        <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+        <XAxis dataKey="name" tick={{ fill: "#A0A0A0", fontSize: 12 }} axisLine={false} tickLine={false} />
+        <YAxis tick={{ fill: "#A0A0A0", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
         <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"

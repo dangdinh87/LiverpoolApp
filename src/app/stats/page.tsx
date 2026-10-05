@@ -1,21 +1,29 @@
 import { getTranslations } from "next-intl/server";
 import { getTopScorers, getTopAssists, getFixtures, getStandings, computeSeasonStats } from "@/lib/football";
-import { StatChart } from "@/components/stats/stat-chart";
 import { SeasonOverview } from "@/components/stats/season-overview";
-import { GoalsByMonthChart } from "@/components/stats/goals-by-month-chart";
-import { HomeAwayChart } from "@/components/stats/home-away-chart";
+import {
+  LazyGoalsByMonthChart,
+  LazyHomeAwayChart,
+  LazySeasonComparison,
+  LazyStatChart,
+} from "@/components/stats/lazy-charts";
 import { FormTimeline } from "@/components/stats/form-timeline";
 import { CompetitionBreakdown } from "@/components/stats/competition-breakdown";
 import { RecordsMilestones } from "@/components/stats/records-milestones";
-import { SeasonSelector } from "@/components/stats/season-selector";
-import { SeasonComparison } from "@/components/stats/season-comparison";
+import { ChipBar } from "@/components/fixtures/chip-bar";
+import { PageHero } from "@/components/ui/page-hero";
+import { SectionHeader } from "@/components/ui/section-header";
+import { EmptyState } from "@/components/ui/empty-state";
+import { BarChart3 } from "lucide-react";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   formatSeasonLabel,
+  getCurrentSeasonLabel,
   getCurrentSeasonYear,
+  getSelectableSeasons,
+  isSelectableSeason,
 } from "@/lib/football/current-season";
-import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
 export async function generateMetadata() {
   const t = await getTranslations("Stats.metadata");
@@ -32,7 +40,10 @@ const CURRENT_SEASON = getCurrentSeasonYear();
 export default async function StatsPage({ searchParams }: { searchParams: Promise<{ season?: string }> }) {
   const t = await getTranslations("Stats");
   const params = await searchParams;
-  const selectedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
+  // Only seasons the picker offers: an arbitrary ?season= would spend the
+  // 10 req/min Football-Data.org quota on data nobody can navigate to.
+  const requestedSeason = params.season ? parseInt(params.season, 10) : CURRENT_SEASON;
+  const selectedSeason = isSelectableSeason(requestedSeason) ? requestedSeason : CURRENT_SEASON;
   const isCurrentSeason = selectedSeason === CURRENT_SEASON;
   const seasonLabel = `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`;
 
@@ -47,10 +58,11 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   // Compute all derived stats — pure function, zero API calls
   const seasonStats = computeSeasonStats(fixtures, standings);
 
-  // Fetch comparison seasons for season comparison chart (FDO free tier: 2022-2025)
-  const comparisonSeasons = [2024, 2023, 2022].filter((s) => s !== selectedSeason);
+  // Comparison chart: the seasons before the selected one (finished seasons are
+  // cached for 30 days, so this costs no API quota after the first render).
+  const comparisonSeasons = [selectedSeason - 1, selectedSeason - 2];
   const compSeasonData = await Promise.all(
-    comparisonSeasons.slice(0, 2).map(async (s) => {
+    comparisonSeasons.map(async (s) => {
       try {
         const [fx, st] = await Promise.all([
           getFixtures(s),
@@ -75,49 +87,42 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   // Liverpool-only scorers for the table
   const lfcScorers = scorers.filter((s) => s.statistics[0]?.team?.id === 40);
 
+  const seasonItems = getSelectableSeasons().map((y) => ({
+    key: String(y),
+    label: formatSeasonLabel(y),
+    href: y === CURRENT_SEASON ? "/stats" : `/stats?season=${y}`,
+  }));
+  const hasData = seasonStats.overview.played > 0;
+  const chartSubtitle = t("charts.legend", { season: getCurrentSeasonLabel() });
+
   return (
     <div className="min-h-screen">
       <JsonLd data={buildBreadcrumbJsonLd([
         { name: "Home", url: getCanonical("/") },
         { name: "Stats", url: getCanonical("/stats") },
       ])} />
-      {/* ─── Hero ─── */}
-      <div className="relative h-[40vh] min-h-[320px] flex items-end">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/assets/lfc/fans/fans-anfield.webp')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-stadium-bg/80 to-transparent" />
-        {/* Stacks on narrow screens: the season picker refuses to shrink, so
-            side-by-side with the oversized title overflowed the viewport. */}
-        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="font-barlow text-lfc-red uppercase tracking-widest text-sm font-semibold mb-2">
-              {`${t("hero.seasonLabel")} ${seasonLabel}`}
-            </p>
-            <h1 className="font-bebas text-7xl md:text-8xl text-white tracking-wider leading-none">
-              {t("hero.title")}
-            </h1>
-          </div>
-          <SeasonSelector />
-        </div>
-      </div>
+      <PageHero
+        eyebrow={`${t("hero.seasonLabel")} ${seasonLabel}`}
+        title={t("hero.title")}
+        description={t("hero.description")}
+        image="/assets/lfc/fans/fans-anfield.webp"
+        actions={<ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonPicker")} />}
+      />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
-
-        {/* ─── Empty state for seasons with no data ─── */}
-        {seasonStats.overview.played === 0 && fixtures.length === 0 && (
-          <div className="bg-stadium-surface border border-stadium-border p-8 text-center mb-12">
-            <p className="font-bebas text-2xl text-stadium-muted tracking-wider mb-2">{t("noData.title")}</p>
-            <p className="font-inter text-sm text-stadium-muted">{t("noData.description")}</p>
-          </div>
+      <div className="page-container space-y-10 pb-16 pt-6 sm:space-y-14 sm:pt-10">
+        {!hasData && fixtures.length === 0 && (
+          <EmptyState
+            icon={<BarChart3 className="size-9" aria-hidden />}
+            title={t("noData.title")}
+            description={t("noData.description")}
+            actionHref="/fixtures"
+            actionLabel={t("noData.action")}
+          />
         )}
 
-        {/* ─── Section 1: Season Overview ─── */}
-        {seasonStats.overview.played > 0 && (
-          <section className="mb-12">
-            <SectionHeader title={t("overview.title")} subtitle={`${t("overview.allCompsLabel")} · ${seasonLabel}`} />
+        {hasData && (
+          <section>
+            <SectionHeader title={t("overview.title")} eyebrow={`${t("overview.allCompsLabel")} · ${seasonLabel}`} />
             <SeasonOverview
               stats={seasonStats.overview}
               streak={seasonStats.records.currentStreak}
@@ -140,62 +145,55 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           </section>
         )}
 
-        {/* ─── Section 2: Top Scorers & Assists ─── */}
         {scorers.length > 0 && (
-          <section className="mb-12">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ChartCard title={t("charts.scorers")} subtitle={t("charts.legend", { season: getCurrentSeasonLabel() })}>
-                <StatChart scorers={scorers} type="goals" limit={10} />
+          <section className="defer-render">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+              <ChartCard title={t("charts.scorers")} subtitle={chartSubtitle}>
+                <LazyStatChart scorers={scorers} type="goals" limit={10} />
               </ChartCard>
               {assists.length > 0 && (
-                <ChartCard title={t("charts.assists")} subtitle={t("charts.legend", { season: getCurrentSeasonLabel() })}>
-                  <StatChart scorers={assists} type="assists" limit={10} />
+                <ChartCard title={t("charts.assists")} subtitle={chartSubtitle}>
+                  <LazyStatChart scorers={assists} type="assists" limit={10} />
                 </ChartCard>
               )}
             </div>
 
-            {/* LFC Scorers Table */}
             {lfcScorers.length > 0 && (
-              <div className="mt-6 bg-stadium-surface border border-stadium-border overflow-hidden">
-                <div className="px-6 py-4 border-b border-stadium-border">
-                  <h2 className="font-bebas text-2xl text-white tracking-wider">{t("table.title")}</h2>
-                </div>
-                <div className="divide-y divide-stadium-border/50">
+              <div className="surface mt-4 overflow-hidden sm:mt-6">
+                <h2 className="border-b border-[var(--line)] px-4 py-3 font-bebas text-2xl text-white sm:px-6">{t("table.title")}</h2>
+                <ul className="divide-y divide-[var(--line)]">
                   {lfcScorers.map((s, i) => {
                     const stat = s.statistics[0];
                     return (
-                      <div key={s.player.id} className="flex items-center gap-4 px-6 py-3">
-                        <span className="font-bebas text-xl text-stadium-muted w-6">{i + 1}</span>
-                        <span className="font-inter text-sm text-white font-medium flex-1">{s.player.name}</span>
-                        <div className="flex gap-6 text-center">
-                          <div>
-                            <p className="font-bebas text-xl text-lfc-red">{stat?.goals?.total ?? 0}</p>
-                            <p className="font-barlow text-xs text-stadium-muted uppercase">{t("table.goalsShort")}</p>
-                          </div>
-                          <div>
-                            <p className="font-bebas text-xl text-white">{stat?.goals?.assists ?? 0}</p>
-                            <p className="font-barlow text-xs text-stadium-muted uppercase">{t("table.assistsShort")}</p>
-                          </div>
-                          <div>
-                            <p className="font-bebas text-xl text-white">{stat?.games?.appearences ?? 0}</p>
-                            <p className="font-barlow text-xs text-stadium-muted uppercase">{t("table.appsShort")}</p>
-                          </div>
-                        </div>
-                      </div>
+                      <li key={s.player.id} className="flex min-h-14 items-center gap-3 px-4 py-2 sm:gap-4 sm:px-6">
+                        <span className="w-5 font-bebas text-xl text-stadium-muted">{i + 1}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">{s.player.name}</span>
+                        <dl className="flex gap-5 text-center sm:gap-8">
+                          {[
+                            { v: stat?.goals?.total ?? 0, l: t("table.goalsShort"), hl: true },
+                            { v: stat?.goals?.assists ?? 0, l: t("table.assistsShort") },
+                            { v: stat?.games?.appearences ?? 0, l: t("table.appsShort") },
+                          ].map(({ v, l, hl }) => (
+                            <div key={l}>
+                              <dd className={`font-bebas text-xl leading-none tabular-nums ${hl ? "text-brand" : "text-white"}`}>{v}</dd>
+                              <dt className="mt-0.5 font-barlow text-xs uppercase text-stadium-muted">{l}</dt>
+                            </div>
+                          ))}
+                        </dl>
+                      </li>
                     );
                   })}
-                </div>
+                </ul>
               </div>
             )}
           </section>
         )}
 
-        {/* ─── Section 3: Performance Charts ─── */}
         {seasonStats.monthly.length > 0 && (
-          <section className="mb-12">
-            <SectionHeader title={t("charts.goalsByMonth")} subtitle={t("charts.goalsByMonthSub")} />
-            <ChartCard title={t("charts.goalsByMonth")} subtitle={t("charts.goalsByMonthSub")} hideHeader>
-              <GoalsByMonthChart
+          <section className="defer-render">
+            <SectionHeader title={t("charts.goalsByMonth")} eyebrow={t("charts.goalsByMonthSub")} />
+            <ChartCard>
+              <LazyGoalsByMonthChart
                 data={seasonStats.monthly}
                 labels={{ scored: t("charts.scored"), conceded: t("charts.conceded") }}
                 monthLabels={[
@@ -207,9 +205,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               />
             </ChartCard>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-2">
               <ChartCard title={t("charts.homeAway")} subtitle={t("charts.homeAwaySub")}>
-                <HomeAwayChart
+                <LazyHomeAwayChart
                   home={seasonStats.overview.homeRecord}
                   away={seasonStats.overview.awayRecord}
                   labels={{
@@ -226,58 +224,47 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
               <ChartCard title={t("charts.formTimeline")} subtitle={t("charts.formTimelineSub")}>
                 <FormTimeline
                   entries={seasonStats.formTimeline}
-                  legendLabels={{
-                    win: t("charts.win"),
-                    draw: t("charts.draw"),
-                    loss: t("charts.loss"),
-                  }}
+                  legendLabels={{ win: t("charts.win"), draw: t("charts.draw"), loss: t("charts.loss") }}
                 />
               </ChartCard>
             </div>
           </section>
         )}
 
-        {/* ─── Section 4: Competition Breakdown ─── */}
         {seasonStats.competitions.length > 0 && (
-          <section className="mb-12">
-            <SectionHeader title={t("competitions.title")} subtitle={`${t("overview.allCompsLabel")} · ${seasonLabel}`} />
+          <section className="defer-render">
+            <SectionHeader title={t("competitions.title")} eyebrow={`${t("overview.allCompsLabel")} · ${seasonLabel}`} />
             <CompetitionBreakdown
               competitions={seasonStats.competitions}
+              labels={{ winRate: t("competitions.winRate"), gf: t("competitions.gf"), ga: t("competitions.ga") }}
+            />
+          </section>
+        )}
+
+        {hasData && (
+          <section className="defer-render">
+            <SectionHeader title={t("records.title")} eyebrow={t("records.subtitle")} />
+            <RecordsMilestones
+              records={seasonStats.records}
               labels={{
-                winRate: t("competitions.winRate"),
-                gf: t("competitions.gf"),
-                ga: t("competitions.ga"),
+                biggestWin: t("records.biggestWin"),
+                biggestLoss: t("records.biggestLoss"),
+                highestScoring: t("records.highestScoring"),
+                winStreak: t("records.winStreak"),
+                unbeatenStreak: t("records.unbeatenStreak"),
+                comebacks: t("records.comebacks"),
+                scoringFirst: t("records.scoringFirst"),
+                matches: t("records.matches"),
+                times: t("records.times"),
               }}
             />
           </section>
         )}
 
-        {/* ─── Section 5: Records & Milestones ─── */}
-        {seasonStats.overview.played > 0 && (
-        <section className="mb-12">
-          <SectionHeader title={t("records.title")} subtitle={t("records.subtitle")} />
-          <RecordsMilestones
-            records={seasonStats.records}
-            labels={{
-              biggestWin: t("records.biggestWin"),
-              biggestLoss: t("records.biggestLoss"),
-              highestScoring: t("records.highestScoring"),
-              winStreak: t("records.winStreak"),
-              unbeatenStreak: t("records.unbeatenStreak"),
-              comebacks: t("records.comebacks"),
-              scoringFirst: t("records.scoringFirst"),
-              matches: t("records.matches"),
-              times: t("records.times"),
-            }}
-          />
-        </section>
-        )}
-
-        {/* ─── Section 6: Season Comparison ─── */}
         {seasonComparisonList.length >= 2 && (
-          <section className="mb-12">
-            <SectionHeader title={t("comparison.title")} subtitle={t("comparison.subtitle")} />
-            <SeasonComparison
+          <section className="defer-render">
+            <SectionHeader title={t("comparison.title")} eyebrow={t("comparison.subtitle")} />
+            <LazySeasonComparison
               seasons={seasonComparisonList}
               labels={{
                 wins: t("overview.wins"),
@@ -291,48 +278,23 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
             />
           </section>
         )}
-
       </div>
     </div>
   );
 }
 
-// ─── Shared UI helpers (inline, YAGNI) ──────────────────────────────────────────
+// ─── Layout helper ───────────────────────────────────────────────────────────
 
-function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
+function ChartCard({ title, subtitle, children }: { title?: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5 flex items-center gap-3">
-      <div className="w-1 h-8 bg-lfc-red rounded-full" />
-      <div>
-        <h2 className="font-bebas text-2xl sm:text-3xl text-white tracking-wider leading-none">{title}</h2>
-        <p className="font-barlow text-[10px] sm:text-xs text-stadium-muted uppercase tracking-[0.15em] mt-0.5">{subtitle}</p>
-      </div>
-    </div>
-  );
-}
-
-function ChartCard({
-  title,
-  subtitle,
-  children,
-  hideHeader,
-}: {
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-  hideHeader?: boolean;
-}) {
-  return (
-    <div className="bg-stadium-surface border border-stadium-border overflow-hidden">
-      {!hideHeader && (
-        <div className="px-6 pt-5 pb-0">
-          <h3 className="font-bebas text-xl sm:text-2xl text-white tracking-wider mb-0.5">{title}</h3>
-          <p className="font-inter text-[11px] text-stadium-muted mb-4">{subtitle}</p>
+    <div className="surface overflow-hidden">
+      {title && (
+        <div className="px-4 pt-4 sm:px-6 sm:pt-5">
+          <h3 className="font-bebas text-2xl text-white">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-xs text-stadium-muted">{subtitle}</p>}
         </div>
       )}
-      <div className="px-4 sm:px-6 pb-5 pt-2">
-        {children}
-      </div>
+      <div className="px-2 pb-4 pt-3 sm:px-6 sm:pb-5">{children}</div>
     </div>
   );
 }

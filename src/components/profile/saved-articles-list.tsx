@@ -130,7 +130,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
 
                 {/* Title */}
                 <Link href={getArticleUrl(article.article_url)}>
-                  <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2 group-hover:text-lfc-red transition-colors">
+                  <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2 group-hover:text-white transition-colors">
                     {article.article_title}
                   </p>
                 </Link>
@@ -145,7 +145,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                   <button
                     onClick={() => setConfirmTarget(article)}
                     disabled={isPending}
-                    className="flex items-center gap-1 text-amber-400 font-inter text-xs hover:text-white transition-colors cursor-pointer"
+                    className="inline-flex min-h-10 items-center gap-1 text-amber-400 font-inter text-xs hover:text-white transition-colors cursor-pointer"
                     aria-label={t("unsave")}
                   >
                     <Bookmark size={12} className="fill-amber-400" />

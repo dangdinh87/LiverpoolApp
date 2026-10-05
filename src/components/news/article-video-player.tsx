@@ -11,11 +11,14 @@ export function ArticleVideoPlayer({
   poster,
   sourceUrl,
   sourceName,
+  fallbackLabel,
 }: {
   src: string;
   poster?: string;
   sourceUrl?: string;
   sourceName?: string;
+  /** Localised "can't play, open on {source}" line (this renders in its own React root, so no i18n context). */
+  fallbackLabel: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
@@ -63,13 +66,12 @@ export function ArticleVideoPlayer({
       <figure className="article-video-placeholder">
         <a href={sourceUrl || src} target="_blank" rel="noopener noreferrer">
           {poster && (
-            <img src={poster} alt="Video thumbnail" loading="lazy" />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={poster} alt="" loading="lazy" referrerPolicy="no-referrer" />
           )}
           <span className="video-play-overlay" />
         </a>
-        <figcaption>
-          Video không thể phát — nhấn để xem trên {sourceName || "nguồn gốc"}
-        </figcaption>
+        <figcaption>{sourceName ? `${fallbackLabel} (${sourceName})` : fallbackLabel}</figcaption>
       </figure>
     );
   }
@@ -82,6 +84,7 @@ export function ArticleVideoPlayer({
         playsInline
         preload="metadata"
         poster={poster}
+        aria-label={sourceName}
         className="article-video"
         src={!isHLS ? src : undefined}
       />

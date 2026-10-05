@@ -58,6 +58,18 @@ function tripBreaker(cooldownMs: number): void {
 }
 
 /**
+ * postgrest-js retries failed GETs up to 3 times with 1s/2s/4s backoff and
+ * skips that only for errors named `AbortError`. A `TimeoutError`, a
+ * transport `TypeError` or a plain `Error` from the open breaker were all
+ * retried, so every Supabase step of a render cost timeout + 7s while the
+ * database was down — the "~7s fixed cold cost" seen on `/` and `/gallery`.
+ * Surfacing every give-up as an AbortError ends the request at once.
+ */
+function asAbortError(message: string): DOMException {
+  return new DOMException(message, "AbortError");
+}
+
+/**
  * Build a `fetch` that aborts after `timeoutMs` and short-circuits while the
  * breaker is open.
  *
@@ -70,7 +82,7 @@ export function createSupabaseFetch(
 ): typeof fetch {
   return async (input, init) => {
     if (isSupabaseBreakerOpen()) {
-      throw new Error(
+      throw asAbortError(
         "Supabase unavailable: skipping request while the connection breaker is open",
       );
     }
@@ -84,10 +96,13 @@ export function createSupabaseFetch(
     try {
       response = await fetch(input, { ...init, signal });
     } catch (err) {
-      // Only a timeout or transport failure indicates the origin is down. A
-      // caller aborting its own request says nothing about Supabase's health.
-      if (!init?.signal?.aborted) tripBreaker(cooldownMs);
-      throw err;
+      // A caller aborting its own request says nothing about Supabase's health.
+      if (init?.signal?.aborted) throw err;
+      // Only a timeout or transport failure indicates the origin is down.
+      tripBreaker(cooldownMs);
+      throw asAbortError(
+        `Supabase request failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
 
     if (isOriginFailure(response.status)) {

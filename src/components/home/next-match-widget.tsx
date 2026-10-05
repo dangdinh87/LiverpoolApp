@@ -1,248 +1,207 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslations, useLocale } from "next-intl";
+import { CalendarDays } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
-import {
-  OverviewCardHeader,
-  OverviewDivider,
-} from "./overview-card-shared";
-import { getCurrentSeasonYear } from "@/lib/football/current-season";
-import { formatMatchDate, isSameMatchDay } from "@/lib/format-match-date";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { useNowAfterMount } from "@/hooks/use-now-after-mount";
+import { cn } from "@/lib/utils";
 
-// Mock fixture for dev/fallback when no real upcoming match
-function createMockFixture(): Fixture {
-  const kickoff = new Date();
-  kickoff.setDate(kickoff.getDate() + 3);
-  kickoff.setHours(20, 0, 0, 0);
-  return {
-    fixture: {
-      id: 0,
-      date: kickoff.toISOString(),
-      venue: { id: null, name: "Anfield", city: "Liverpool" },
-      status: { long: "Not Started", short: "NS", elapsed: null },
-    },
-    league: {
-      id: 39,
-      name: "Premier League",
-      country: "England",
-      logo: "https://media.api-sports.io/football/leagues/39.png",
-      season: getCurrentSeasonYear(),
-      round: "Regular Season - 30",
-    },
-    teams: {
-      home: { id: 40, name: "Liverpool", logo: "/assets/lfc/crest.webp", winner: null },
-      away: { id: 50, name: "Manchester City", logo: "https://media.api-sports.io/football/teams/50.png", winner: null },
-    },
-    goals: { home: null, away: null },
-    score: {
-      halftime: { home: null, away: null },
-      fulltime: { home: null, away: null },
-      extratime: { home: null, away: null },
-      penalty: { home: null, away: null },
-    },
+const LFC_TEAM_ID = 40;
+const LFC_CREST = "/assets/lfc/crest.webp";
+const LIVE_STATUSES = new Set(["1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
+const POLL_MS = 60_000;
+
+const crest = (team: { id: number; logo: string }) => (team.id === LFC_TEAM_ID ? LFC_CREST : team.logo);
+
+/** The card chrome shared by the real card and the "no match" card: translucent over the hero photo. */
+const CARD = "surface relative w-full bg-black/60 backdrop-blur-md border-[var(--line-strong)]";
+
+/**
+ * When no upcoming fixture is known (off-season, or the data source is down)
+ * say so. This used to render an invented "Liverpool vs Manchester City" three
+ * days out with a live countdown, which read as a real fixture.
+ */
+export function NextMatchWidget({ fixture }: { fixture: Fixture | null }) {
+  if (!fixture) return <NoUpcomingMatch />;
+  return <UpcomingMatch initial={fixture} />;
+}
+
+function NoUpcomingMatch() {
+  const t = useTranslations("NextMatch");
+  const h = useTranslations("Home.match");
+  return (
+    <div className={cn(CARD, "p-5")}>
+      <p className="section-label text-brand">{t("title")}</p>
+      <p className="mt-3 font-bebas text-3xl leading-none text-white">{t("noMatch")}</p>
+      <p className="mt-2 text-sm text-stadium-muted">{h("noMatchHint")}</p>
+      <Link
+        href="/fixtures"
+        className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark sm:w-auto"
+      >
+        <CalendarDays className="size-4" aria-hidden />
+        {t("viewAllFixtures")}
+      </Link>
+    </div>
+  );
+}
+
+function CountdownUnit({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex min-w-0 flex-1 items-baseline justify-center gap-1">
+      <span className="font-bebas text-3xl leading-none tabular-nums text-white">{value}</span>
+      <span className="font-barlow text-xs uppercase tracking-wider text-stadium-muted">{label}</span>
+    </div>
+  );
+}
+
+function Countdown({ target }: { target: number }) {
+  const h = useTranslations("Home.match");
+  // null until mounted: server and first client render both show dashes.
+  const now = useNowAfterMount(1_000);
+  const diff = now === null ? null : Math.max(0, target - now);
+  const part = (ms: number | null, size: number, mod?: number) => {
+    if (ms === null) return "--";
+    const n = Math.floor(ms / size);
+    return String(mod ? n % mod : n).padStart(2, "0");
   };
+  return (
+    // Below ~390px the label sits above the digits: label + four units were
+    // 350px wide in a 256px card at 320px and pushed the whole page sideways.
+    <div className="flex flex-col gap-1 border-t border-[var(--line)] pt-3 min-[390px]:flex-row min-[390px]:items-center min-[390px]:gap-2">
+      <span className="shrink-0 font-barlow text-xs font-semibold uppercase tracking-[0.14em] text-stadium-muted">
+        {h("kickoffIn")}
+      </span>
+      <div className="flex min-h-9 w-full min-w-0 items-center min-[390px]:flex-1" role="timer" aria-live="off">
+        <CountdownUnit value={part(diff, 86_400_000)} label={h("days")} />
+        <CountdownUnit value={part(diff, 3_600_000, 24)} label={h("hours")} />
+        <CountdownUnit value={part(diff, 60_000, 60)} label={h("minutes")} />
+        <CountdownUnit value={part(diff, 1_000, 60)} label={h("seconds")} />
+      </div>
+    </div>
+  );
 }
 
-interface NextMatchWidgetProps {
-  fixture: Fixture | null;
+function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+      <span className="relative size-14 sm:size-16">
+        <Image
+          src={crest(team)}
+          alt=""
+          fill
+          sizes="64px"
+          className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+        />
+      </span>
+      <span className="text-sm font-semibold leading-tight text-white text-balance line-clamp-2">{team.name}</span>
+    </div>
+  );
 }
 
-function useCountdown(targetDate: string) {
-  /**
-   * Starts empty so the server render and the first client render agree.
-   *
-   * Seeding this from `Date.now()` meant the server emitted one seconds value
-   * and the browser hydrated with a later one, so the text almost never matched
-   * and React discarded the server HTML for this tree (hydration error #418).
-   * The real countdown lands on the tick immediately after mount.
-   */
-  const [timeLeft, setTimeLeft] = useState<ReturnType<typeof calcTimeLeft>>(null);
+function UpcomingMatch({ initial }: { initial: Fixture }) {
+  const t = useTranslations("NextMatch");
+  const h = useTranslations("Home.match");
+  const locale = useLocale();
+  // undefined = no poll result yet; null = poll says the match is over.
+  const [polled, setPolled] = useState<Fixture | null | undefined>(undefined);
+  const fixture = polled === undefined ? initial : (polled ?? initial);
+  const isLive = polled !== null && LIVE_STATUSES.has(fixture.fixture.status.short);
 
   useEffect(() => {
-    // Setting state straight away is the point, as in useNowAfterMount: the
-    // first paint must match the server's, and the real countdown can only be
-    // read once we are on the client.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTimeLeft(calcTimeLeft(targetDate));
-    const id = setInterval(() => setTimeLeft(calcTimeLeft(targetDate)), 1_000);
-    return () => clearInterval(id);
-  }, [targetDate]);
+    if (!LIVE_STATUSES.has(initial.fixture.status.short)) return;
+    let stopped = false;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/live-fixture");
+        if (!res.ok || stopped) return;
+        const { fixture: next } = (await res.json()) as { fixture: Fixture | null };
+        if (!stopped) setPolled(next);
+      } catch {
+        /* keep showing the last known score */
+      }
+    };
+    const id = setInterval(poll, POLL_MS);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+    };
+  }, [initial]);
 
-  return timeLeft;
-}
-
-function calcTimeLeft(targetDate: string) {
-  const diff = new Date(targetDate).getTime() - Date.now();
-  if (diff <= 0) return null;
-  const days = Math.floor(diff / 86_400_000);
-  const hours = Math.floor((diff % 86_400_000) / 3_600_000);
-  const mins = Math.floor((diff % 3_600_000) / 60_000);
-  const secs = Math.floor((diff % 60_000) / 1_000);
-  return { days, hours, mins, secs };
-}
-
-export function NextMatchWidget({ fixture }: NextMatchWidgetProps) {
-  const t = useTranslations("NextMatch");
-  const locale = useLocale();
-  // Use mock data when no real fixture available
-  const isMock = !fixture;
-  const displayFixture = fixture ?? createMockFixture();
-  const countdown = useCountdown(displayFixture.fixture.date);
-
-  const { teams, league, fixture: f } = displayFixture;
+  const { teams, league, fixture: f, goals } = fixture;
   const date = new Date(f.date);
-  const isLive = ["1H", "HT", "2H", "ET", "P", "BT", "LIVE"].includes(f.status.short);
-  const elapsed = f.status.elapsed;
   const isHT = f.status.short === "HT";
-  // Reading the clock during render would let the server and the browser
-  // disagree across a midnight boundary; decide it after mount instead.
-  const now = useNowAfterMount(60_000);
-  const isToday = now !== null && isSameMatchDay(date, new Date(now));
-  const hasDetailPage = displayFixture.fixture.id > 0;
-  const roundName = league.round.includes(" - ")
-    ? league.round.split(" - ").at(-1) ?? league.round
-    : league.round;
+  const roundName = league.round.includes(" - ") ? (league.round.split(" - ").at(-1) ?? league.round) : league.round;
+  const hasDetailPage = f.id > 0;
+  const detailHref = hasDetailPage ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
-    <div className="flex flex-col gap-3 p-4 h-full">
-      <OverviewCardHeader
-        title={t("title")}
-        action={
-          isMock ? (
-            <span className="font-barlow text-[10px] font-semibold text-stadium-muted/60 uppercase tracking-wider">
-              Preview
+    <div className={cn(CARD, "p-4 sm:p-5", isLive && "border-lfc-gold/60")}>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        {isLive ? (
+          <p className="flex items-center gap-2 font-barlow text-sm font-bold uppercase tracking-[0.14em] text-lfc-gold">
+            <span aria-hidden className="relative flex size-2.5">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-lfc-gold opacity-75" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-lfc-gold" />
             </span>
-          ) : isLive ? (
-            <span className="flex items-center gap-1.5 text-xs font-barlow font-semibold text-green-400 uppercase tracking-wider">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              {t("live")}
+            {t("live")}
+            {isHT ? " · HT" : f.status.elapsed != null ? ` · ${f.status.elapsed}'` : ""}
+          </p>
+        ) : (
+          <p className="section-label text-brand">{t("title")}</p>
+        )}
+        <p className="flex min-w-0 items-center gap-2 text-xs text-stadium-muted">
+          {league.logo && (
+            <span className="relative size-4 shrink-0">
+              <Image src={league.logo} alt="" fill sizes="16px" className="object-contain" />
             </span>
-          ) : isToday ? (
-            <span className="border border-lfc-red/40 bg-lfc-red/10 px-2 py-1 font-barlow text-[10px] font-semibold text-lfc-red uppercase tracking-wider">
-              {t("today")}
-            </span>
-          ) : null
-        }
-      />
-
-      <div className="flex items-center justify-between gap-2 flex-1 min-h-0">
-        {/* Home team */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <div className="relative w-12 h-12">
-            <Image
-              src={teams.home.logo}
-              alt={teams.home.name}
-              fill
-              sizes="48px"
-              className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
-            />
-          </div>
-          <span className="font-inter text-[11px] text-white text-center font-semibold leading-tight">
-            {teams.home.name}
-          </span>
-        </div>
-
-        {/* Center: live score OR VS/countdown */}
-        <div className="flex flex-col items-center gap-1 px-2">
-          {isLive ? (
-            <>
-              <span className="font-bebas text-3xl text-white leading-none">
-                {displayFixture.goals.home ?? 0} - {displayFixture.goals.away ?? 0}
-              </span>
-              <span className={`font-barlow text-xs font-semibold uppercase ${isHT ? "text-lfc-gold" : "text-lfc-red"}`}>
-                {isHT ? "HT" : elapsed != null ? `${elapsed}'` : t("live")}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="font-bebas text-[2rem] text-stadium-muted/60 leading-none">VS</span>
-              {countdown ? (
-                <div className="flex items-center gap-1.5 text-center">
-                  {countdown.days > 0 && (
-                    <div className="flex flex-col items-center">
-                      <span className="font-bebas text-base text-lfc-red leading-none">{countdown.days}</span>
-                      <span className="font-barlow text-[9px] text-stadium-muted uppercase">d</span>
-                    </div>
-                  )}
-                  <div className="flex flex-col items-center">
-                    <span className="font-bebas text-base text-lfc-red leading-none">{String(countdown.hours).padStart(2, "0")}</span>
-                    <span className="font-barlow text-[9px] text-stadium-muted uppercase">h</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="font-bebas text-base text-lfc-red leading-none">{String(countdown.mins).padStart(2, "0")}</span>
-                    <span className="font-barlow text-[9px] text-stadium-muted uppercase">m</span>
-                  </div>
-                  {countdown.days === 0 && countdown.hours === 0 && (
-                    <div className="flex flex-col items-center">
-                      <span className="font-bebas text-base text-lfc-gold leading-none animate-pulse">{String(countdown.secs).padStart(2, "0")}</span>
-                      <span className="font-barlow text-[9px] text-stadium-muted uppercase">s</span>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-            </>
           )}
-        </div>
-
-        {/* Away team */}
-        <div className="flex flex-col items-center gap-2 flex-1">
-          <div className="relative w-12 h-12">
-            <Image
-              src={teams.away.logo}
-              alt={teams.away.name}
-              fill
-              sizes="48px"
-              className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
-            />
-          </div>
-          <span className="font-inter text-[11px] text-white text-center font-semibold leading-tight">
-            {teams.away.name}
+          <span className="truncate">
+            {league.name} · {roundName}
           </span>
-        </div>
+        </p>
       </div>
 
-      {/* Footer: competition + round + date */}
-      <div className="mt-auto">
-        <OverviewDivider />
-        <div className="pt-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="relative w-4 h-4 shrink-0">
-              <Image
-                src={league.logo}
-                alt={league.name}
-                fill
-                sizes="16px"
-                className="object-contain"
-              />
-            </div>
-            <span className="font-inter text-[11px] text-stadium-muted truncate">
-              {league.name} · {roundName}
+      <div className="flex items-center gap-2">
+        <TeamBlock team={teams.home} />
+        <div className="flex w-28 shrink-0 flex-col items-center gap-1 text-center sm:w-36">
+          {isLive ? (
+            <span className="font-bebas text-5xl leading-none tabular-nums text-white">
+              {goals.home ?? 0}
+              <span className="px-1 text-stadium-muted">-</span>
+              {goals.away ?? 0}
             </span>
-          </div>
-          <span className="font-inter text-[11px] text-stadium-muted text-right shrink-0">
-            {formatMatchDate(date, locale)}
-          </span>
+          ) : (
+            <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date)}</span>
+          )}
+          <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale)}</span>
+          {!isLive && <span className="text-xs text-stadium-muted">{h("vnTime")}</span>}
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          {hasDetailPage ? (
-            <Link
-              href={`/fixtures/${displayFixture.fixture.id}`}
-              className="inline-flex items-center justify-center border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-lfc-red/20"
-            >
-              {t("viewMatch")}
-            </Link>
-          ) : null}
-          <Link
-            href="/season?tab=fixtures"
-            className="inline-flex items-center justify-center border border-stadium-border bg-stadium-surface2 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
-          >
-            {t("viewAllFixtures")}
-          </Link>
+        <TeamBlock team={teams.away} />
+      </div>
+
+      {!isLive && (
+        <div className="mt-4">
+          <Countdown target={date.getTime()} />
         </div>
+      )}
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <Link
+          href={detailHref}
+          className="inline-flex min-h-11 flex-1 items-center justify-center bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark"
+        >
+          {t("viewMatch")}
+        </Link>
+        <Link
+          href="/fixtures"
+          className="inline-flex min-h-11 items-center justify-center border border-[var(--line-strong)] px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
+        >
+          {t("viewAllFixtures")}
+        </Link>
       </div>
     </div>
   );

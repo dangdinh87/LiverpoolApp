@@ -109,3 +109,35 @@ describe("deduplicateArticles", () => {
     expect(deduplicateArticles([])).toEqual([]);
   });
 });
+
+describe("Vietnamese titles", () => {
+  it("keeps Vietnamese letters when tokenizing", () => {
+    const tokens = tokenize("Liên đoàn bóng đá");
+    expect(tokens.has("liên")).toBe(true);
+    expect(tokens.has("đoàn")).toBe(true);
+    expect(tokens.has("lin")).toBe(false);
+  });
+
+  it("normalizes decomposed diacritics (NFD) to the same tokens as NFC", () => {
+    const nfc = tokenize("Liên đoàn Liverpool");
+    const nfd = tokenize("Liên đoàn Liverpool".normalize("NFD"));
+    expect([...nfd].sort()).toEqual([...nfc].sort());
+  });
+
+  it("does not collapse distinct short Vietnamese stories", () => {
+    const mk = (title: string, link: string) => ({
+      title,
+      link,
+      pubDate: "",
+      contentSnippet: "",
+      source: "bongda" as const,
+      language: "vi" as const,
+    });
+    const out = deduplicateArticles([
+      mk("Liên đoàn phạt Liverpool", "https://bongda.com.vn/a"),
+      mk("Liên minh mới của Chelsea", "https://bongda.com.vn/b"),
+      mk("Liên đoàn phạt Liverpool", "https://bongda.com.vn/c"),
+    ]);
+    expect(out.map((a) => a.link)).toEqual(["https://bongda.com.vn/a", "https://bongda.com.vn/b"]);
+  });
+});

@@ -15,6 +15,9 @@
   /* Liverpool color tokens (available as Tailwind classes) */
   --color-lfc-red: #c8102e;
   --color-lfc-red-dark: #a00e24;
+  /* Brand red as TEXT: #c8102e is only 3:1 on the dark surfaces (fails WCAG AA).
+     This tint is 5.8:1 on surface, 6.5:1 on bg. Keep #c8102e for fills/borders. */
+  --color-lfc-red-text: #ff5c75;
   --color-lfc-gold: #f6eb61;
   --color-stadium-bg: #0d0d0d;
   --color-stadium-surface: #1a1a1a;
@@ -438,4 +441,253 @@
   font-size: 1.125rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   Design system v2 — "Matchday"
+   One spacing/shape/motion language for every page. Prefer these over
+   per-page one-offs so the site reads as a single product.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  /* Motion: one curve, three speeds. Anything slower than --dur-slow is decoration. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+
+  /* Layered surfaces (elevation by lightness, not by heavy shadow) */
+  --surface-1: #141414;
+  --surface-2: #1a1a1a;
+  --surface-3: #222222;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+
+  /* Fixed header height — pages offset hero content with this. It equals the
+     real header height at each breakpoint (the header never changes height on
+     scroll, so there is no layout shift). --navbar-h is the legacy alias. */
+  --header-h: 3.5rem;
+  --navbar-h: var(--header-h);
+}
+@media (min-width: 1024px) {
+  :root {
+    --header-h: 4rem;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 1rem);
+  /* No sideways scroll from a stray wide child, ever. */
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth route changes without JS: browsers with cross-document view
+   transitions cross-fade between pages; others navigate as before. */
+@view-transition {
+  navigation: auto;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-out);
+}
+
+/* The header is the same element on every page: give it its own transition
+   group so it stays put instead of cross-fading with the page body. */
+.site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(site-header) {
+  animation-duration: 0s;
+}
+
+/* Thin top progress bar shown while a client navigation is in flight. */
+.nav-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 90;
+  height: 2px;
+  pointer-events: none;
+  transform-origin: left;
+  background: var(--color-lfc-red);
+  box-shadow: 0 0 8px rgba(200, 16, 46, 0.7);
+}
+.nav-progress[data-state="running"] {
+  animation: nav-progress-run 8s cubic-bezier(0.1, 0.6, 0.2, 1) forwards;
+}
+.nav-progress[data-state="done"] {
+  transform: scaleX(1);
+  animation: nav-progress-done 320ms var(--ease-out) forwards;
+}
+@keyframes nav-progress-run {
+  from { transform: scaleX(0.02); opacity: 1; }
+  to { transform: scaleX(0.92); opacity: 1; }
+}
+@keyframes nav-progress-done {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Keyboard focus is always visible, never on mouse click. */
+:focus-visible {
+  outline: 2px solid var(--color-lfc-red-text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: rgba(200, 16, 46, 0.45);
+  color: #fff;
+}
+
+/* Respect users who ask for less motion: stop decorative loops and
+   collapse transitions to instant. Essential state changes still happen. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+@layer utilities {
+  /* Page frame: same gutters and max width everywhere. */
+  .page-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 640px) {
+    .page-container {
+      padding-inline: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .page-container {
+      padding-inline: 2rem;
+    }
+  }
+
+  /* Card surface with a hairline border; interactive variant lifts on hover
+     without moving layout (border/background only — no transform). */
+  .surface {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+  .surface-interactive {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      border-color var(--dur-base) var(--ease-out);
+  }
+  .surface-interactive:hover {
+    background: var(--surface-3);
+    border-color: var(--line-strong);
+  }
+
+  /* Brand-red text that passes contrast. */
+  .text-brand {
+    color: var(--color-lfc-red-text);
+  }
+
+  /* Skip rendering of off-screen sections until they near the viewport. */
+  .defer-render {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 480px;
+  }
+
+  /* Reveal-on-mount, CSS only (no JS, no hydration cost). */
+  .reveal {
+    animation: reveal var(--dur-slow) var(--ease-out) both;
+  }
+  .reveal-delay-1 { animation-delay: 60ms; }
+  .reveal-delay-2 { animation-delay: 120ms; }
+  .reveal-delay-3 { animation-delay: 180ms; }
+
+  /* Horizontal scroller that hides its scrollbar but stays scrollable. */
+  .scroll-x {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-x::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fixed floating controls keep clear of the iPhone home indicator. */
+  .safe-bottom {
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+  .safe-right {
+    right: max(1.25rem, env(safe-area-inset-right));
+  }
+
+  /* Minimum comfortable touch target without changing visual size. The
+     12px halo takes a 16px icon or a 20px text link to a 40-44px hit area
+     (8px only reached 32-36px). */
+  .tap-target {
+    position: relative;
+  }
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    inset: -0.75rem;
+  }
+}
+
+/* /chat is a full-screen app that sits on top of the site chrome. Without this
+   the header and footer stay in the tab order (focus vanishes behind the
+   overlay) and the page behind can still scroll on touch devices. */
+html:has(.chat-shell) {
+  overflow: hidden;
+}
+body:has(.chat-shell) .site-header,
+body:has(.chat-shell) > footer {
+  visibility: hidden;
+}
+
+/* Footer news-source marquee (see news-source-marquee.tsx). */
+.news-marquee-track {
+  animation: news-marquee 90s linear infinite;
+}
+.news-marquee:hover .news-marquee-track,
+.news-marquee:focus-within .news-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes news-marquee {
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-marquee {
+    overflow-x: auto;
+  }
+  .news-marquee-track {
+    animation: none !important;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

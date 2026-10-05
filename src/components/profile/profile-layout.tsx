@@ -2,16 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  User,
-  Heart,
-  Bookmark,
-  Flame,
-  LogOut,
-  Settings,
-} from "lucide-react";
-import { useTranslations } from "next-intl";
+import { User, Heart, Bookmark, Flame, LogOut, Settings } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 import { ProfileForm } from "./profile-form";
@@ -33,8 +25,10 @@ interface ProfileLayoutProps {
   currentHeroBg?: string | null;
 }
 
+/** Settings-style profile: identity header, three tabs, one card per tab. */
 export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmin, currentHeroBg }: ProfileLayoutProps) {
   const t = useTranslations("Profile");
+  const locale = useLocale();
   const [activeTab, setActiveTab] = useState<TabId>("profile");
   const [streak, setStreak] = useState(0);
 
@@ -45,178 +39,113 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
       .catch(() => {});
   }, []);
 
-  const memberSince = user.createdAt
-    ? formatMonthYear(new Date(user.createdAt), "vi")
-    : null;
+  const memberSince = user.createdAt ? formatMonthYear(new Date(user.createdAt), locale === "vi" ? "vi" : "en") : null;
 
   const tabs: { id: TabId; label: string; icon: React.ReactNode; count?: number }[] = [
-    { id: "profile", label: t("title"), icon: <Settings size={16} /> },
-    { id: "articles", label: t("savedArticles"), icon: <Bookmark size={16} />, count: savedArticles.length },
-    { id: "players", label: t("favouritePlayers"), icon: <Heart size={16} />, count: favourites.length },
+    { id: "profile", label: t("title"), icon: <Settings size={16} aria-hidden /> },
+    { id: "articles", label: t("savedArticles"), icon: <Bookmark size={16} aria-hidden />, count: savedArticles.length },
+    { id: "players", label: t("favouritePlayers"), icon: <Heart size={16} aria-hidden />, count: favourites.length },
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile layout: sidebar + content */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left sidebar */}
-          <aside className="lg:w-64 shrink-0">
-            {/* User card */}
-            <div className="bg-stadium-surface border border-stadium-border p-5 mb-4">
-              <div className="flex flex-col items-center text-center">
-                {/* Avatar */}
-                <div className="relative w-20 h-20 rounded-full overflow-hidden ring-2 ring-lfc-red/40 mb-3">
-                  {profile?.avatar_url ? (
-                    <Image
-                      src={profile.avatar_url}
-                      alt={profile.username ?? "Avatar"}
-                      fill
-                      className="object-cover"
-                      sizes="80px"
-                      unoptimized
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-stadium-surface2 flex items-center justify-center">
-                      <User size={28} className="text-stadium-muted" />
-                    </div>
-                  )}
-                </div>
-                <h1 className="font-bebas text-2xl text-white tracking-wider leading-none">
-                  {profile?.username ?? "Red Member"}
-                </h1>
-                <p className="font-inter text-[11px] text-stadium-muted mt-0.5 truncate max-w-full">
-                  {user.email}
-                </p>
-                {memberSince && (
-                  <p className="font-inter text-[10px] text-stadium-muted/60 mt-1">
-                    {t("memberSince", { date: memberSince })}
-                  </p>
-                )}
-
-                {/* Streak badge */}
-                <div
-                  className="flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-stadium-bg border border-stadium-border rounded-full"
-                  title={t("streakLabel")}
-                >
-                  <Flame size={14} className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
-                  <span className={cn(
-                    "font-inter text-xs leading-none",
-                    streak > 0 ? "text-orange-400" : "text-stadium-muted"
-                  )}>
-                    {t("streakCount", { count: streak })}
-                  </span>
-                </div>
+    <div className="pt-[calc(var(--header-h)+1.5rem)] pb-20 sm:pt-[calc(var(--header-h)+2.5rem)]">
+      <div className="page-container max-w-4xl">
+        {/* Identity */}
+        <header className="surface flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
+          <div className="relative size-16 shrink-0 overflow-hidden rounded-full ring-2 ring-lfc-red/40 sm:size-20">
+            {profile?.avatar_url ? (
+              <Image src={profile.avatar_url} alt="" fill className="object-cover" sizes="80px" unoptimized />
+            ) : (
+              <div className="flex size-full items-center justify-center bg-[var(--surface-3)]">
+                <User size={28} aria-hidden className="text-stadium-muted" />
               </div>
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-bebas text-4xl leading-none text-white">{profile?.username ?? "Red Member"}</h1>
+            <p className="mt-1 truncate text-sm text-stadium-muted">{user.email}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stadium-muted">
+              {memberSince && <span>{t("memberSince", { date: memberSince })}</span>}
+              <span className="inline-flex items-center gap-1.5" title={t("streakLabel")}>
+                <Flame size={14} aria-hidden className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
+                <span className={streak > 0 ? "text-orange-400" : undefined}>{t("streakCount", { count: streak })}</span>
+              </span>
             </div>
+          </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white sm:w-auto"
+            >
+              <LogOut size={16} aria-hidden />
+              {t("signOut")}
+            </button>
+          </form>
+        </header>
 
-            {/* Navigation tabs */}
-            <nav className="bg-stadium-surface border border-stadium-border overflow-hidden">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] transition-colors cursor-pointer",
-                    activeTab === tab.id
-                      ? "bg-lfc-red/10 text-white border-l-2 border-lfc-red"
-                      : "text-stadium-muted hover:bg-stadium-surface2 hover:text-white border-l-2 border-transparent"
-                  )}
-                >
-                  {tab.icon}
-                  <span className="flex-1 text-left">{tab.label}</span>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className="font-inter text-[10px] bg-stadium-bg px-1.5 py-0.5 rounded-full text-stadium-muted">
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              ))}
+        {/* Tabs */}
+        <div role="tablist" aria-label={t("title")} className="scroll-x mt-4 flex gap-1 border-b border-[var(--line)]">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              id={`profile-tab-${tab.id}`}
+              role="tab"
+              type="button"
+              aria-selected={activeTab === tab.id}
+              aria-controls={`profile-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors",
+                activeTab === tab.id ? "border-lfc-red text-white" : "border-transparent text-stadium-muted hover:text-white",
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.count !== undefined && tab.count > 0 && <span className="font-inter text-xs text-stadium-muted">{tab.count}</span>}
+            </button>
+          ))}
+        </div>
 
-              {/* Logout */}
-              <form action={logout} className="border-t border-stadium-border">
-                <button
-                  type="submit"
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] text-stadium-muted hover:text-white hover:bg-stadium-surface2 transition-colors cursor-pointer border-l-2 border-transparent"
-                >
-                  <LogOut size={16} />
-                  {t("signOut")}
-                </button>
-              </form>
-            </nav>
-          </aside>
-
-          {/* Right content */}
-          <main className="flex-1 min-w-0">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                transition={{ duration: 0.15 }}
-              >
-                {activeTab === "profile" && (
-                  <div className="space-y-4">
-                    <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-                      <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
-                        <Settings size={16} className="text-lfc-red" />
-                        {t("title")}
-                      </h2>
-                      <div className="flex flex-col sm:flex-row gap-6">
-                        <div className="flex flex-col items-center shrink-0">
-                          <AvatarUpload
-                            currentUrl={profile?.avatar_url ?? null}
-                            username={profile?.username ?? null}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <ProfileForm profile={profile ?? null} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Homepage background selector (admin only) */}
-                    {isAdmin && (
-                      <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-                        <CoverSelector currentCoverUrl={currentHeroBg ?? null} />
-                      </div>
-                    )}
+        <div role="tabpanel" id={`profile-panel-${activeTab}`} aria-labelledby={`profile-tab-${activeTab}`} className="mt-4 space-y-4">
+          {activeTab === "profile" && (
+            <>
+              <section className="surface p-4 sm:p-6">
+                <div className="flex flex-col gap-6 sm:flex-row">
+                  <div className="flex shrink-0 justify-center sm:justify-start">
+                    <AvatarUpload currentUrl={profile?.avatar_url ?? null} username={profile?.username ?? null} />
                   </div>
-                )}
-
-                {activeTab === "articles" && (
-                  <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-                    <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
-                      <Bookmark size={16} className="text-lfc-red" />
-                      {t("savedArticles")}
-                      {savedArticles.length > 0 && (
-                        <span className="font-inter text-sm text-stadium-muted font-normal">
-                          ({savedArticles.length})
-                        </span>
-                      )}
-                    </h2>
-                    <SavedArticlesList articles={savedArticles} />
+                  <div className="min-w-0 flex-1">
+                    <ProfileForm profile={profile ?? null} />
                   </div>
-                )}
+                </div>
+              </section>
+              {isAdmin && (
+                <section className="surface p-4 sm:p-6">
+                  <CoverSelector currentCoverUrl={currentHeroBg ?? null} />
+                </section>
+              )}
+            </>
+          )}
 
-                {activeTab === "players" && (
-                  <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-                    <h2 className="font-bebas text-xl text-white tracking-wider mb-5 flex items-center gap-2">
-                      <Heart size={16} className="text-lfc-red" />
-                      {t("favouritePlayers")}
-                      {favourites.length > 0 && (
-                        <span className="font-inter text-sm text-stadium-muted font-normal">
-                          ({favourites.length})
-                        </span>
-                      )}
-                    </h2>
-                    <FavouriteList favourites={favourites} />
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </main>
+          {activeTab === "articles" && (
+            <section className="surface p-4 sm:p-6">
+              <h2 className="mb-4 font-bebas text-2xl text-white">
+                {t("savedArticles")}
+                {savedArticles.length > 0 && <span className="ml-2 font-inter text-sm font-normal text-stadium-muted">({savedArticles.length})</span>}
+              </h2>
+              <SavedArticlesList articles={savedArticles} />
+            </section>
+          )}
+
+          {activeTab === "players" && (
+            <section className="surface p-4 sm:p-6">
+              <h2 className="mb-4 font-bebas text-2xl text-white">
+                {t("favouritePlayers")}
+                {favourites.length > 0 && <span className="ml-2 font-inter text-sm font-normal text-stadium-muted">({favourites.length})</span>}
+              </h2>
+              <FavouriteList favourites={favourites} />
+            </section>
+          )}
         </div>
       </div>
     </div>

@@ -3,9 +3,16 @@ import { getTranslations } from "next-intl/server";
 import { makePageMeta, buildBreadcrumbJsonLd, buildImageGalleryJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { GalleryPage as GalleryClient } from "@/components/gallery/gallery-page";
-import { listGalleryImagesFromDB, getGalleryCategoryCounts } from "@/lib/gallery/queries";
+import { unstable_cache } from "next/cache";
+import {
+  listGalleryImagesFromDB,
+  getGalleryCategoryCounts,
+  GALLERY_CACHE_TAG,
+} from "@/lib/gallery/queries";
 import { isAdminEmail } from "@/lib/constants";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import galleryFallback from "@/data/gallery.json";
+import { PageHero } from "@/components/ui/page-hero";
 
 /**
  * Images rendered on the first page.
@@ -16,7 +23,22 @@ import galleryFallback from "@/data/gallery.json";
  * overrun a serverless function's budget. Both paths now use one page size.
  */
 const GALLERY_PAGE_SIZE = 50;
-import { createServerSupabaseClient } from "@/lib/supabase-server";
+
+/**
+ * First page + category counts, cached across requests (the route itself is
+ * dynamic, so its `revalidate` export alone never cached anything). Failures
+ * throw and are therefore not cached; the page falls back to gallery.json.
+ * Admin uploads/deletes revalidate the tag.
+ */
+const getCachedGalleryFirstPage = unstable_cache(
+  async () =>
+    Promise.all([
+      listGalleryImagesFromDB({ limit: GALLERY_PAGE_SIZE, offset: 0 }),
+      getGalleryCategoryCounts(),
+    ]),
+  ["gallery-first-page-v1"],
+  { revalidate: 1800, tags: [GALLERY_CACHE_TAG] },
+);
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Gallery.metadata");
@@ -68,10 +90,7 @@ export default async function GalleryRoute() {
   const isAdminPromise = resolveIsAdmin();
 
   try {
-    const [{ images: dbImages, total }, counts] = await Promise.all([
-      listGalleryImagesFromDB({ limit: GALLERY_PAGE_SIZE, offset: 0 }),
-      getGalleryCategoryCounts(),
-    ]);
+    const [{ images: dbImages, total }, counts] = await getCachedGalleryFirstPage();
     totalImages = total;
     categoryCounts = counts;
     if (dbImages.length > 0) {
@@ -95,9 +114,10 @@ export default async function GalleryRoute() {
   }
 
   const isAdmin = await isAdminPromise;
+  const t = await getTranslations("Gallery.hero");
 
   return (
-    <div className="min-h-screen bg-stadium-bg text-white pt-20">
+    <div className="bg-stadium-bg text-white">
       <JsonLd data={[
         buildBreadcrumbJsonLd([
           { name: "Home", url: getCanonical("/") },
@@ -112,7 +132,8 @@ export default async function GalleryRoute() {
           }))
         ),
       ]} />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <PageHero eyebrow={t("label")} title={t("title")} description={t("subtitle")} />
+      <div className="page-container pt-6 pb-16 sm:pt-8">
         <GalleryClient
           images={images}
           isAdmin={isAdmin}

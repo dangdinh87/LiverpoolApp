@@ -1,9 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // Mock NEXT_PUBLIC_SITE_URL before importing seo module
 vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.liverpoolfcvn.blog");
 
 const {
+  DEFAULT_OG_IMAGE,
   getCanonical,
   getHreflangAlternates,
   makePageMeta,
@@ -213,5 +214,17 @@ describe("buildFaqJsonLd", () => {
     expect(result.mainEntity).toHaveLength(2);
     expect(result.mainEntity[0]["@type"]).toBe("Question");
     expect(result.mainEntity[0].acceptedAnswer.text).toBe("1892");
+  });
+});
+
+describe("makePageMeta share image", () => {
+  // A page-level openGraph object replaces the root one, so the default image
+  // must be set here or the page has no social preview at all.
+  it("falls back to the generated 1200×630 card", () => {
+    const meta = makePageMeta("Title", "Desc", { path: "/squad" });
+    const og = meta.openGraph as Record<string, unknown>;
+    expect(og.images).toEqual([DEFAULT_OG_IMAGE]);
+    expect(og.url).toBe(getCanonical("/squad"));
+    expect((meta.twitter as Record<string, unknown>).images).toEqual([DEFAULT_OG_IMAGE.url]);
   });
 });

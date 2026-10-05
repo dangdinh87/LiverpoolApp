@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { syncPipeline } from "@/lib/news/sync";
 import { withCronAuth } from "@/lib/cron";
 
@@ -11,14 +11,17 @@ export const GET = withCronAuth(async (req) => {
     const deep = req.nextUrl.searchParams.get("deep") === "1";
     const result = await syncPipeline({
       fetchLimit: deep ? 300 : undefined,
-      enrichThumbnails: deep,
+      // Every run (not just ?deep=1): a small og:image / cached-hero repair for rows without a thumbnail.
+      enrichThumbnails: true,
+      enrichLimit: deep ? 30 : 10,
       metaFetches: deep ? 30 : 0,
       preScrapeContent: deep,
     });
 
-    // Invalidate ISR cache so next visitor gets fresh data. The unstable_cache
-    // data layer (tag "news") refreshes on its own 5-min revalidate window.
+    // Invalidate the cached news lists (tag "news") and both pages, so fresh
+    // articles show on the next visit instead of after the 5-min window.
     if (result.upserted > 0) {
+      revalidateTag("news", "max");
       revalidatePath("/");
       revalidatePath("/news");
     }

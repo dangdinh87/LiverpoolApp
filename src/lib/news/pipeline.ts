@@ -1,16 +1,23 @@
 import type { NewsArticle } from "./types";
-import type { FeedAdapter } from "./adapters/base";
-import { deduplicateArticles } from "./dedup";
+import type { FeedAdapter, SourceFetchStatus } from "./adapters/base";
+import { worseStatus } from "./adapters/base";
+import { deduplicateArticles, type ExistingArticleRef } from "./dedup";
 import { enrichArticleMeta } from "./enrichers/og-meta";
 import { categorizeArticle } from "./categories";
 import { scoreArticle } from "./relevance";
 import { compareDatesDesc } from "./date";
+import { canonicalizeArticleUrl } from "./url";
 
 export interface SourceStats {
   fetched: number;
   parsed: number;
   failed: number;
-  thin: number;
+  /** Items kept after dedup + relevance (what the source actually contributed). */
+  kept?: number;
+  /** ok | http_error | timeout | parse_error | error — adapters swallow errors, so this is the only trace. */
+  status?: SourceFetchStatus["state"];
+  httpStatus?: number;
+  error?: string;
 }
 
 export interface PipelineResult {
@@ -20,19 +27,32 @@ export interface PipelineResult {
 
 export interface PipelineOptions {
   metaFetches?: number;
+  /** Rows stored in the last 48h: same story under another URL is not re-inserted. */
+  existing?: ExistingArticleRef[];
 }
 
 function addSourceStats(
   stats: Record<string, SourceStats>,
   source: string,
-  next: SourceStats
+  next: SourceStats,
+  fetchStatus?: SourceFetchStatus
 ) {
-  const current = stats[source] ?? { fetched: 0, parsed: 0, failed: 0, thin: 0 };
+  const current = stats[source] ?? { fetched: 0, parsed: 0, failed: 0 };
+  const merged = worseStatus(
+    current.status ? { state: current.status, httpStatus: current.httpStatus, error: current.error } : undefined,
+    fetchStatus ?? (next.failed ? { state: "error" } : undefined)
+  );
   stats[source] = {
     fetched: current.fetched + next.fetched,
     parsed: current.parsed + next.parsed,
     failed: current.failed + next.failed,
-    thin: current.thin + next.thin,
+    ...(merged
+      ? {
+          status: merged.state,
+          ...(merged.httpStatus !== undefined ? { httpStatus: merged.httpStatus } : {}),
+          ...(merged.error ? { error: merged.error } : {}),
+        }
+      : {}),
   };
 }
 
@@ -54,16 +74,19 @@ export async function fetchAllNews(
     const source = adapters[i].name;
     if (r.status === "fulfilled") {
       const articles = r.value;
-      const thin = articles.filter((a) => (a.wordCount ?? 0) < 50).length;
-      addSourceStats(stats, source, {
-        fetched: articles.length,
-        parsed: articles.length,
-        failed: 0,
-        thin,
-      });
-      all.push(...articles);
+      addSourceStats(
+        stats,
+        source,
+        { fetched: articles.length, parsed: articles.length, failed: 0 },
+        adapters[i].status ?? { state: "ok" }
+      );
+      for (const a of articles) {
+        // ONE canonical URL form (see url.ts) before anything keys on it.
+        all.push({ ...a, link: a.link === "#" ? a.link : canonicalizeArticleUrl(a.link) });
+      }
     } else {
-      addSourceStats(stats, source, { fetched: 0, parsed: 0, failed: 1, thin: 0 });
+      const message = r.reason instanceof Error ? r.reason.message : String(r.reason);
+      addSourceStats(stats, source, { fetched: 0, parsed: 0, failed: 1 }, { state: "error", error: message.slice(0, 160) });
       console.error(`[pipeline] ${source} failed:`, r.reason);
     }
   }
@@ -71,7 +94,7 @@ export async function fetchAllNews(
   if (all.length === 0) return { articles: [], stats };
 
   // Dedup (URL + Jaccard title similarity)
-  const unique = deduplicateArticles(all);
+  const unique = deduplicateArticles(all, options.existing);
 
   // Categorize + score, filter out irrelevant articles (score -1)
   for (const a of unique) {
@@ -89,6 +112,11 @@ export async function fetchAllNews(
   });
 
   const sliced = relevant.slice(0, limit);
+  // Per-source contribution after dedup + relevance + cap.
+  for (const a of sliced) {
+    const st = stats[a.source];
+    if (st) st.kept = (st.kept ?? 0) + 1;
+  }
 
   // Enrich articles missing thumbnails/dates with OG meta only when requested.
   // Sync uses RSS metadata only for speed; deep/manual paths can opt in.

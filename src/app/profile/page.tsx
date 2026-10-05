@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import { LogIn } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { EmptyState } from "@/components/ui/empty-state";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isAdminEmail } from "@/lib/constants";
 import { getSiteSetting } from "@/lib/gallery/queries";
@@ -16,7 +19,25 @@ export default async function ProfilePage() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) redirect("/auth/login?redirect=/profile");
+  // Middleware already bounces signed-out visitors to the login page; this is the
+  // fallback if it ever lets one through: a clear prompt instead of a redirect.
+  if (!user) {
+    const t = await getTranslations("Profile.signedOut");
+    return (
+      <div className="page-container pt-[calc(var(--header-h)+2rem)] pb-16">
+        <EmptyState
+          icon={<LogIn className="size-10" aria-hidden />}
+          title={t("title")}
+          description={t("description")}
+          actionHref="/auth/login?redirect=/profile"
+          actionLabel={t("action")}
+        />
+        <p className="mt-4 text-center text-sm text-stadium-muted">
+          <Link href="/" className="inline-flex min-h-11 items-center underline-offset-4 hover:underline">{t("home")}</Link>
+        </p>
+      </div>
+    );
+  }
 
   const [{ data: profile }, { data: favourites }, { data: savedArticles }] = await Promise.all([
     supabase

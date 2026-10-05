@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { toggleFavouritePlayer } from "@/app/actions/profile";
 import {
@@ -17,6 +16,10 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+
+// 40x40 hit area, colour-only transitions, a quick press scale (transform only).
+const HEART_BASE =
+  "z-10 inline-flex size-10 cursor-pointer items-center justify-center transition-[background-color,color,border-color,transform] duration-[var(--dur-base)] ease-[var(--ease-out)] active:scale-90";
 
 interface FavouriteHeartProps {
   playerId: number;
@@ -49,18 +52,19 @@ export function FavouriteHeart({
       <button
         type="button"
         className={cn(
-          "z-10 transition-all cursor-pointer",
+          HEART_BASE,
           variant === "overlay"
-            ? "absolute top-2 right-2 p-1.5 bg-black/60 backdrop-blur-sm border border-white/10 text-stadium-muted hover:text-white hover:scale-110"
-            : "inline-flex items-center justify-center h-7 w-7 border border-white/10 bg-white/5 text-stadium-muted hover:text-lfc-red hover:border-lfc-red/40"
+            ? "absolute top-1 right-1 bg-black/55 text-white/80 hover:text-white"
+            : "relative border border-white/10 bg-white/5 text-stadium-muted hover:text-white hover:border-white/30"
         )}
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           router.push("/auth/login");
         }}
+        aria-label={t("favourite")}
       >
-        <Heart size={14} />
+        <Heart size={18} aria-hidden />
       </button>
     );
   }
@@ -116,36 +120,26 @@ export function FavouriteHeart({
         </AlertDialogContent>
       </AlertDialog>
 
-      <motion.button
+      <button
+        type="button"
         onClick={handleClick}
         disabled={isPending}
-        whileTap={{ scale: 0.85 }}
         className={cn(
-          "z-10 border transition-all",
-          variant === "overlay"
-            ? "absolute top-2 right-2 p-1.5 backdrop-blur-sm"
-            : "inline-flex items-center justify-center h-7 w-7 bg-transparent",
+          HEART_BASE,
+          "disabled:opacity-60",
+          variant === "overlay" ? "absolute top-1 right-1" : "relative",
           isFavourited
-            ? "bg-lfc-red/20 border-lfc-red/40 text-lfc-red hover:bg-lfc-red/30"
+            ? "bg-lfc-red/25 text-white hover:bg-lfc-red/35"
             : variant === "overlay"
-              ? "bg-black/60 border-white/10 text-stadium-muted hover:text-white hover:border-white/30"
-              : "border-white/10 text-stadium-muted hover:text-lfc-red hover:border-lfc-red/40 hover:bg-lfc-red/5"
+              ? "bg-black/55 text-white/80 hover:text-white"
+              : "border border-white/10 text-stadium-muted hover:text-white hover:border-white/30"
         )}
         title={isFavourited ? t("removeFav") : t("favourite")}
+        aria-label={isFavourited ? t("removeFav") : t("favourite")}
+        aria-pressed={isFavourited}
       >
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={isFavourited ? "filled" : "empty"}
-            initial={{ scale: 0.3, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.3, opacity: 0 }}
-            transition={{ duration: 0.12 }}
-            className="block"
-          >
-            <Heart size={14} className={cn(isFavourited && "fill-lfc-red")} />
-          </motion.span>
-        </AnimatePresence>
-      </motion.button>
+        <Heart size={18} aria-hidden className={cn(isFavourited && "fill-lfc-red text-lfc-red")} />
+      </button>
     </>
   );
 }

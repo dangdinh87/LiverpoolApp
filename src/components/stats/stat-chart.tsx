@@ -12,6 +12,9 @@ import {
 } from "recharts";
 import type { TopScorer } from "@/lib/types/football";
 
+/** --color-lfc-red-text: the brand red that passes AA on the dark card (#C8102E is 3:1). */
+const RED_TEXT = "#ff5c75";
+
 interface BarChartEntry {
   name: string;
   fullName: string;
@@ -64,7 +67,7 @@ function ChartTooltip({
   return (
     <div className="bg-stadium-bg border border-stadium-border px-3 py-2 shadow-lg">
       <p className="font-inter text-xs text-white font-semibold">{entry.fullName}</p>
-      <p className={`font-bebas text-2xl ${entry.isLiverpool ? "text-lfc-red" : "text-stadium-muted"}`}>
+      <p className={`font-bebas text-2xl ${entry.isLiverpool ? "text-lfc-red-text" : "text-stadium-muted"}`}>
         {payload[0].value}
       </p>
     </div>
@@ -81,7 +84,7 @@ function ValueLabel(props: { x?: number; y?: number; width?: number; value?: num
       x={x + width / 2}
       y={y - 6}
       textAnchor="middle"
-      fill={entry.isLiverpool ? "#C8102E" : "#6B7280"}
+      fill={entry.isLiverpool ? RED_TEXT : "#A0A0A0"}
       fontSize={12}
       fontFamily="var(--font-bebas)"
       fontWeight={700}
@@ -109,8 +112,8 @@ export function StatChart({ scorers, type, limit = 10 }: StatChartProps) {
                 x={x}
                 y={y + 14}
                 textAnchor="middle"
-                fill={entry?.isLiverpool ? "#C8102E" : "#4B5563"}
-                fontSize={entry?.isLiverpool ? 11 : 10}
+                fill={entry?.isLiverpool ? RED_TEXT : "#A0A0A0"}
+                fontSize={12}
                 fontFamily="var(--font-inter)"
                 fontWeight={entry?.isLiverpool ? 600 : 400}
               >
@@ -122,7 +125,7 @@ export function StatChart({ scorers, type, limit = 10 }: StatChartProps) {
           tickLine={false}
         />
         <YAxis
-          tick={{ fill: "#4B5563", fontSize: 10, fontFamily: "var(--font-inter)" }}
+          tick={{ fill: "#A0A0A0", fontSize: 12, fontFamily: "var(--font-inter)" }}
           axisLine={false}
           tickLine={false}
         />

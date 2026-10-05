@@ -1,18 +1,36 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Mirrors PageHero + sticky chip bar + month group of match cards. */
 export default function FixturesLoading() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Skeleton className="h-12 w-40 mb-8" />
-        <div className="flex gap-2 mb-8">
-          {[3, 4, 5].map((i) => <Skeleton key={i} className="h-9 w-28 rounded-full" />)}
+    <div className="min-h-screen" aria-busy="true">
+      <div className="border-b border-[var(--line)]">
+        <div className="page-container pb-6 pt-[calc(var(--header-h)+1.5rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
+          <Skeleton className="mb-3 h-3.5 w-28" />
+          <Skeleton className="h-12 w-64 sm:h-16" />
+          <Skeleton className="mt-4 h-4 w-48" />
         </div>
-        <div className="flex flex-col gap-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-none" />
+      </div>
+      <div className="page-container pb-16 pt-4 sm:pt-6">
+        <div className="-mx-4 space-y-2 border-b border-[var(--line)] px-4 py-2.5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+          <div className="flex gap-2 overflow-hidden">
+            <Skeleton className="h-10 w-24 shrink-0" />
+            <Skeleton className="h-10 w-36 shrink-0" />
+            <Skeleton className="h-10 w-40 shrink-0" />
+            <Skeleton className="h-10 w-32 shrink-0" />
+          </div>
+        </div>
+        <Skeleton className="mt-4 h-4 w-64" />
+        <Skeleton className="mt-4 h-5 w-32" />
+        <ul className="mt-3 space-y-3">
+          {Array.from({ length: 5 }, (_, i) => (
+            <li key={i}><Skeleton className="h-[8.75rem] w-full sm:h-[9.5rem]" /></li>
           ))}
-        </div>
+        </ul>
       </div>
     </div>
   );

@@ -1,125 +1,89 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Standing } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
-import { OverviewCardHeader } from "./overview-card-shared";
+import { WidgetHeader } from "./overview-card-shared";
 
 const LFC_TEAM_ID = 40;
+/** Rows kept above and below Liverpool so the position always has context. */
+const NEIGHBOURS = 2;
 
-interface StandingsPreviewProps {
-  standings: Standing[];
+/** Liverpool's row ±2 neighbours, clamped to the table; top 5 when Liverpool is absent. */
+export function pickStandingsWindow(standings: Standing[]): Standing[] {
+  const total = NEIGHBOURS * 2 + 1;
+  const idx = standings.findIndex((s) => s.team.id === LFC_TEAM_ID);
+  if (idx === -1) return standings.slice(0, total);
+  const start = Math.max(0, Math.min(idx - NEIGHBOURS, standings.length - total));
+  return standings.slice(start, start + total);
 }
 
-function StandingRow({
-  s,
-  isHighlight,
-  href,
-}: {
-  s: Standing;
-  isHighlight: boolean;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-2.5 px-2.5 py-2 border-l-2 transition-colors",
-        isHighlight ? "bg-lfc-red/15 border-l-lfc-red" : "border-l-transparent hover:bg-stadium-surface2/80"
-      )}
-    >
-      <span
-        className={cn(
-          "font-bebas text-base w-5 text-center shrink-0",
-          isHighlight ? "text-lfc-red" : "text-stadium-muted"
-        )}
-      >
-        {s.rank}
-      </span>
-      <div className="relative w-5 h-5 shrink-0">
-        <Image
-          src={s.team.logo}
-          alt={s.team.name}
-          fill
-          sizes="20px"
-          className="object-contain"
-        />
-      </div>
-      <span
-        className={cn(
-          "font-inter text-xs flex-1 truncate",
-          isHighlight ? "text-white font-semibold" : "text-white/90"
-        )}
-      >
-        {s.team.name}
-      </span>
-      <span
-        className={cn(
-          "font-bebas text-base tabular-nums shrink-0",
-          isHighlight ? "text-lfc-red" : "text-white"
-        )}
-      >
-        {s.points}
-      </span>
-    </Link>
-  );
-}
+/** League table excerpt. Server-rendered; the Liverpool row is always in view. */
+export async function StandingsPreview({ standings }: { standings: Standing[] }) {
+  const t = await getTranslations("Bento");
+  const h = await getTranslations("Home.standings");
+  const st = await getTranslations("Standings");
 
-export function StandingsPreview({ standings }: StandingsPreviewProps) {
-  const t = useTranslations("Bento");
-  const top5 = standings.slice(0, 5);
-  const lfcStanding = standings.find((s) => s.team.id === LFC_TEAM_ID) ?? null;
-  const lfcInTop5 = top5.some((s) => s.team.id === LFC_TEAM_ID);
-
-  return (
-    <div className="flex flex-col h-full p-4 gap-3">
-      <OverviewCardHeader
-        title={t("premierLeague")}
-        action={
-          <Link
-            href="/standings"
-            className="font-barlow text-[10px] text-lfc-red hover:underline uppercase tracking-wider font-semibold"
-          >
-            {t("fullTable")}
-          </Link>
-        }
+  if (standings.length === 0) {
+    return (
+      <EmptyState
+        tone="error"
+        title={h("emptyTitle")}
+        description={h("emptyDescription")}
+        actionHref="/standings"
+        actionLabel={h("emptyAction")}
+        className="py-8 sm:py-10"
       />
+    );
+  }
 
-      <div className="flex-1 flex flex-col gap-0.5 min-h-0 overflow-hidden">
-        {top5.map((s) => (
-          <StandingRow
-            key={s.team.id}
-            s={s}
-            isHighlight={s.team.id === LFC_TEAM_ID}
-            href="/season?tab=standings"
-          />
-        ))}
+  const rows = pickStandingsWindow(standings);
 
-        {lfcStanding && !lfcInTop5 && (
-          <div className="border-t border-stadium-border/60 my-2 pt-2">
-            <p className="font-barlow text-[10px] text-lfc-red/90 uppercase tracking-wider font-semibold mb-1.5 px-2.5">
-              {t("currentPosition")}
-            </p>
-            <StandingRow s={lfcStanding} isHighlight href="/season?tab=standings" />
-          </div>
-        )}
+  return (
+    <section aria-label={t("premierLeague")} className="surface p-4">
+      <WidgetHeader title={t("premierLeague")} href="/standings" linkLabel={t("fullTable")} />
+      <div className="mb-1 flex items-center gap-3 px-2 font-barlow text-xs uppercase tracking-wider text-stadium-muted">
+        <span className="w-6 text-center">{st("rank")}</span>
+        <span className="flex-1">{st("club")}</span>
+        <span className="w-7 text-center">{st("played")}</span>
+        <span className="w-8 text-center">{st("gd")}</span>
+        <span className="w-8 text-center">{st("pts")}</span>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <Link
-          href="/season?tab=standings"
-          className="inline-flex items-center justify-center border border-lfc-red/40 bg-lfc-red/10 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-white transition-colors hover:bg-lfc-red/20"
-        >
-          {t("fullTable")}
-        </Link>
-        <Link
-          href="/season?tab=fixtures"
-          className="inline-flex items-center justify-center border border-stadium-border bg-stadium-surface2 px-2.5 py-1.5 font-barlow text-[10px] font-semibold uppercase tracking-wider text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
-        >
-          {t("viewFixtures")}
-        </Link>
-      </div>
-    </div>
+      <ol>
+        {rows.map((s) => {
+          const me = s.team.id === LFC_TEAM_ID;
+          return (
+            <li key={s.team.id}>
+              <Link
+                href="/standings"
+                aria-current={me ? "true" : undefined}
+                className={cn(
+                  "flex min-h-11 items-center gap-3 border-l-2 px-2 transition-colors",
+                  me ? "border-l-lfc-red bg-lfc-red/15" : "border-l-transparent hover:bg-[var(--surface-3)]",
+                )}
+              >
+                <span className={cn("w-6 text-center font-bebas text-lg leading-none", me ? "text-white" : "text-stadium-muted")}>
+                  {s.rank}
+                </span>
+                <span className="flex min-w-0 flex-1 items-center gap-2.5">
+                  <span className="relative size-6 shrink-0">
+                    <Image src={s.team.logo} alt="" fill sizes="24px" className="object-contain" />
+                  </span>
+                  <span className={cn("truncate text-sm", me ? "font-semibold text-white" : "text-white/90")}>
+                    {s.team.name}
+                  </span>
+                </span>
+                <span className="w-7 text-center text-sm tabular-nums text-stadium-muted">{s.all.played}</span>
+                <span className="w-8 text-center text-sm tabular-nums text-stadium-muted">
+                  {s.goalsDiff > 0 ? `+${s.goalsDiff}` : s.goalsDiff}
+                </span>
+                <span className="w-8 text-center font-bebas text-xl leading-none tabular-nums text-white">{s.points}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }

@@ -1,945 +1,336 @@
 "use client";
 
-import { useState, useMemo, useTransition } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import {
-  Newspaper, Clock, CheckCheck, Search, X,
-  SlidersHorizontal, TrendingUp, ArrowDownWideNarrow,
-  Globe, Flag, Earth,
-  Layers, Target, CircleDollarSign, HeartPulse, Users, BarChart3, MessageSquareQuote,
-  Loader2, Flame, LayoutGrid, LayoutList, Rows3,
-  type LucideIcon,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Loader2, Newspaper, Search, SearchX, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
-import {
-  SOURCE_CONFIG,
-  CATEGORY_CONFIG,
-  formatRelativeDate,
-  getArticleUrl,
-  type NewsSource,
-  type ArticleCategory,
-} from "@/lib/news-config";
+import { SOURCE_CONFIG, type ArticleCategory, type NewsSource } from "@/lib/news-config";
 import { getReadArticles } from "@/lib/news/read-history";
-import {
-  Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
 import { loadMoreNews } from "@/app/news/actions";
+import { EmptyState } from "@/components/ui/empty-state";
+import { NewsCard, NewsCardSkeleton } from "./news-card";
+import { cleanTitle, isHttpUrl } from "./news-text";
 
-// hero(1) + grid(6) + compact(n) — keep compact divisible by 3 for clean grid rows
-// 13 - 7 = 6 (2 rows × 3), each +12 increment: 18, 30, 42... always %3 === 0
-const INITIAL_COUNT = 13;
-const LOAD_MORE_COUNT = 12;
-const NEWS_FRESH_HOURS = 48;
-const MIN_VISIBLE_ARTICLES = 8;
+/** Cards revealed per step, after the lead story. */
+const PAGE_SIZE = 12;
+/** Articles fetched from the server per "load more" once the loaded set is used up. */
+const SERVER_PAGE_SIZE = 24;
 
-/* ── Filter types ── */
+type LangFilter = "all" | "vi" | "en";
+type CategoryFilter = "all" | Exclude<ArticleCategory, "general">;
 
-type FeedFilter = "all" | "local" | "global";
-type SortMode = "trending" | "newest";
-type CategoryFilter = "all" | ArticleCategory;
-
-type ViewMode = "default" | "compact" | "expanded";
-
-const STORAGE_KEY = "lfc-news-filter-v2";
-const VIEW_MODE_KEY = "lfc-news-view";
-
-function getSavedFilter(locale: "en" | "vi"): FeedFilter {
-  const defaultFilter: FeedFilter = locale === "en" ? "global" : "local";
-  if (typeof window === "undefined") return defaultFilter;
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved === "all" || saved === "local" || saved === "global") return saved;
-  return defaultFilter;
-}
-
-function getSavedViewMode(): ViewMode {
-  if (typeof window === "undefined") return "default";
-  const saved = localStorage.getItem(VIEW_MODE_KEY);
-  if (saved === "default" || saved === "compact" || saved === "expanded") return saved;
-  return "default";
-}
-
-/** Hot threshold — articles with engagement >= this show fire badge */
-const HOT_THRESHOLD = 3;
-
-/* ── Filter config ── */
-
-const SORT_OPTIONS: { value: SortMode; icon: LucideIcon; labelKey: string }[] = [
-  { value: "trending", icon: TrendingUp, labelKey: "sortTrending" },
-  { value: "newest", icon: ArrowDownWideNarrow, labelKey: "sortLatest" },
+const LANGS: { value: LangFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "all" },
+  { value: "vi", labelKey: "chipVietnamese" },
+  { value: "en", labelKey: "chipInternational" },
 ];
 
-const LANG_OPTIONS: { value: FeedFilter; icon: LucideIcon; labelKey: string }[] = [
-  { value: "all", icon: Globe, labelKey: "langAll" },
-  { value: "local", icon: Flag, labelKey: "langLocal" },
-  { value: "global", icon: Earth, labelKey: "langGlobal" },
+const CATEGORIES: { value: CategoryFilter; labelKey: string }[] = [
+  { value: "all", labelKey: "catAll" },
+  { value: "team-news", labelKey: "catTeamNews" },
+  { value: "transfer", labelKey: "catTransfer" },
+  { value: "match-report", labelKey: "catMatch" },
+  { value: "injury", labelKey: "catInjury" },
+  { value: "analysis", labelKey: "catAnalysis" },
+  { value: "opinion", labelKey: "catOpinion" },
 ];
 
-const CATEGORY_OPTIONS: { value: CategoryFilter; icon: LucideIcon; labelKey: string }[] = [
-  { value: "all", icon: Layers, labelKey: "catAll" },
-  { value: "team-news", icon: Users, labelKey: "catTeamNews" },
-  { value: "transfer", icon: CircleDollarSign, labelKey: "catTransfer" },
-  { value: "match-report", icon: Target, labelKey: "catMatch" },
-  { value: "injury", icon: HeartPulse, labelKey: "catInjury" },
-  { value: "analysis", icon: BarChart3, labelKey: "catAnalysis" },
-  { value: "opinion", icon: MessageSquareQuote, labelKey: "catOpinion" },
-];
-
-/* ── Sub-components ── */
-
-function Badge({ source }: { source: NewsSource }) {
-  const cfg = SOURCE_CONFIG[source];
-  if (!cfg) return null;
-  return (
-    <span className={`inline-flex items-center font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 ${cfg.color}`}>
-      {cfg.label}
-    </span>
-  );
-}
-
-const CATEGORY_LABEL_KEY: Record<string, string> = {
-  "match-report": "catMatch",
-  transfer: "catTransfer",
-  injury: "catInjury",
-  "team-news": "catTeamNews",
-  analysis: "catAnalysis",
-  opinion: "catOpinion",
-};
-
-function CategoryBadge({ category }: { category?: ArticleCategory }) {
-  const t = useTranslations("News.feed");
-  if (!category || category === "general") return null;
-  const cfg = CATEGORY_CONFIG[category];
-  if (!cfg) return null;
-  const labelKey = CATEGORY_LABEL_KEY[category];
-  return (
-    <span className={`font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 ${cfg.color}`}>
-      {labelKey ? t(labelKey) : cfg.label}
-    </span>
-  );
-}
-
-function HotBadge({ engagement }: { engagement?: { total: number } }) {
-  const t = useTranslations("News.feed");
-  if (!engagement || engagement.total < HOT_THRESHOLD) return null;
-  return (
-    <span className="inline-flex items-center gap-1 font-barlow font-bold text-[11px] uppercase tracking-wider px-1.5 py-0.5 bg-lfc-red/20 text-lfc-red">
-      <Flame className="w-3 h-3" />
-      {t("hot")}
-    </span>
-  );
-}
-
-function EngagementBar({ engagement, maxEngagement }: { engagement?: { total: number }; maxEngagement: number }) {
-  if (!engagement || engagement.total === 0 || maxEngagement === 0) return null;
-  const pct = Math.min((engagement.total / maxEngagement) * 100, 100);
-  return (
-    <div className="w-full h-0.5 bg-stadium-surface2 overflow-hidden mt-2">
-      <div
-        style={{ width: `${pct}%` }}
-        className="h-full bg-linear-to-r from-lfc-red to-lfc-gold transition-all duration-500"
-      />
-    </div>
-  );
-}
-
-function HeroCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
-  const t = useTranslations("News.feed");
-  return (
-    <Link
-      href={getArticleUrl(article.link)}
-      className={`group block relative overflow-hidden cursor-pointer ${isRead ? "opacity-50" : ""}`}
-    >
-      <div className="relative aspect-16/10 sm:aspect-21/9 w-full overflow-hidden">
-        {article.thumbnail ? (
-          <Image
-            src={article.thumbnail}
-            alt={article.title}
-            fill
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-            sizes="(max-width: 768px) 100vw, 896px"
-            priority
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-lfc-red/20 to-stadium-bg flex items-center justify-center">
-            <Newspaper className="w-12 h-12 text-stadium-muted" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent transition-opacity duration-300 group-hover:opacity-90" />
-        {isRead && (
-          <div className="absolute top-3 left-3 z-10 inline-flex items-center gap-1 px-2 py-1 bg-black/70 backdrop-blur-sm">
-            <CheckCheck className="w-3.5 h-3.5 text-green-400" />
-            <span className="font-barlow text-[10px] uppercase tracking-wider text-green-400">{t("read")}</span>
-          </div>
-        )}
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <Badge source={article.source} />
-          <CategoryBadge category={article.category} />
-          <HotBadge engagement={engData} />
-          {formatRelativeDate(article.pubDate, article.language) && (
-            <span className="font-inter text-xs text-white/50 flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatRelativeDate(article.pubDate, article.language)}
-            </span>
-          )}
-        </div>
-        <h2 className="font-inter text-xl sm:text-2xl font-bold text-white leading-snug line-clamp-2 transition-colors duration-300 group-hover:text-lfc-gold">
-          {article.title}
-        </h2>
-        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
-      </div>
-    </Link>
-  );
-}
-
-function GridCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
-  const t = useTranslations("News.feed");
-  return (
-    <Link
-      href={getArticleUrl(article.link)}
-      className={`group block bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${isRead ? "opacity-50" : ""}`}
-    >
-      <div className="relative aspect-video w-full overflow-hidden">
-        {article.thumbnail ? (
-          <Image
-            src={article.thumbnail}
-            alt={article.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            loading="lazy"
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-lfc-red/15 to-stadium-surface flex items-center justify-center">
-            <Newspaper className="w-6 h-6 text-stadium-muted" />
-          </div>
-        )}
-        {isRead && (
-          <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm">
-            <CheckCheck className="w-3 h-3 text-green-400" />
-            <span className="font-barlow text-[9px] uppercase tracking-wider text-green-400">{t("read")}</span>
-          </div>
-        )}
-      </div>
-      <div className="p-4 flex flex-col">
-        <div className="flex items-center gap-2 mb-2 flex-wrap min-h-[20px]">
-          <Badge source={article.source} />
-          <CategoryBadge category={article.category} />
-          <HotBadge engagement={engData} />
-        </div>
-        <h3 className="font-inter text-sm font-semibold text-white leading-snug line-clamp-3 min-h-[3.6em]">
-          {article.title}
-        </h3>
-        {formatRelativeDate(article.pubDate, article.language) && (
-          <span className="font-inter text-[11px] text-stadium-muted mt-2 block">
-            {formatRelativeDate(article.pubDate, article.language)}
-          </span>
-        )}
-        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
-      </div>
-    </Link>
-  );
-}
-
-function ExpandedCard({ article, isRead, engData, maxEngagement }: { article: NewsArticle; isRead: boolean; engData?: { total: number }; maxEngagement: number }) {
-  const t = useTranslations("News.feed");
-  return (
-    <Link
-      href={getArticleUrl(article.link)}
-      className={`group block bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)] ${isRead ? "opacity-50" : ""}`}
-    >
-      {article.thumbnail && (
-        <div className="relative aspect-video w-full overflow-hidden">
-          <Image
-            src={article.thumbnail}
-            alt={article.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            loading="lazy"
-            unoptimized
-          />
-          {isRead && (
-            <div className="absolute top-2 left-2 z-10 inline-flex items-center gap-1 px-1.5 py-0.5 bg-black/70 backdrop-blur-sm">
-              <CheckCheck className="w-3 h-3 text-green-400" />
-              <span className="font-barlow text-[9px] uppercase tracking-wider text-green-400">{t("read")}</span>
-            </div>
-          )}
-        </div>
-      )}
-      <div className="p-5 flex flex-col gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge source={article.source} />
-          <CategoryBadge category={article.category} />
-          <HotBadge engagement={engData} />
-          {formatRelativeDate(article.pubDate, article.language) && (
-            <span className="font-inter text-[11px] text-stadium-muted flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              {formatRelativeDate(article.pubDate, article.language)}
-            </span>
-          )}
-        </div>
-        <h3 className="font-inter text-base font-semibold text-white leading-snug">
-          {article.title}
-        </h3>
-        {article.contentSnippet && (
-          <p className="font-inter text-sm text-white/60 line-clamp-2 leading-relaxed">
-            {article.contentSnippet}
-          </p>
-        )}
-        <EngagementBar engagement={engData} maxEngagement={maxEngagement} />
-      </div>
-    </Link>
-  );
-}
-
-function ListCard({ article, isRead, engData }: { article: NewsArticle; isRead: boolean; engData?: { total: number } }) {
-  return (
-    <Link
-      href={getArticleUrl(article.link)}
-      className={`group flex items-center gap-3 py-3 px-3 border-b border-stadium-border/30 cursor-pointer transition-colors hover:bg-stadium-surface/60 ${isRead ? "opacity-50" : ""}`}
-    >
-      {/* Thumbnail */}
-      <div className="relative w-20 h-14 sm:w-24 sm:h-16 shrink-0 overflow-hidden bg-stadium-surface2">
-        {article.thumbnail ? (
-          <Image
-            src={article.thumbnail}
-            alt=""
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-            sizes="96px"
-            loading="lazy"
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Newspaper className="w-4 h-4 text-stadium-muted" />
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <Badge source={article.source} />
-          <HotBadge engagement={engData} />
-        </div>
-        <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2">
-          {article.title}
-        </p>
-      </div>
-      {formatRelativeDate(article.pubDate, article.language) && (
-        <span className="font-inter text-[11px] text-stadium-muted shrink-0 hidden sm:block">
-          {formatRelativeDate(article.pubDate, article.language)}
-        </span>
-      )}
-    </Link>
-  );
-}
-
-function CompactCard({ article, isRead }: { article: NewsArticle; isRead: boolean }) {
-  const t = useTranslations("News.feed");
-  return (
-    <Link
-      href={getArticleUrl(article.link)}
-      className={`group flex gap-3 p-3 bg-stadium-surface/80 border border-stadium-border/50 overflow-hidden cursor-pointer transition-all duration-300 hover:border-lfc-red/25 hover:bg-stadium-surface ${isRead ? "opacity-50" : ""}`}
-    >
-      <div className="relative w-32 h-24 shrink-0 overflow-hidden">
-        {article.thumbnail ? (
-          <Image
-            src={article.thumbnail}
-            alt={article.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-            sizes="128px"
-            loading="lazy"
-            unoptimized
-          />
-        ) : (
-          <div className="absolute inset-0 bg-linear-to-br from-lfc-red/15 to-stadium-surface flex items-center justify-center">
-            <Newspaper className="w-5 h-5 text-stadium-muted" />
-          </div>
-        )}
-        {isRead && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <CheckCheck className="w-4 h-4 text-green-400" />
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col justify-center gap-1.5 flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Badge source={article.source} />
-          <CategoryBadge category={article.category} />
-          {isRead && (
-            <span className="inline-flex items-center gap-1 font-barlow text-[9px] uppercase tracking-wider text-green-400">
-              <CheckCheck className="w-3 h-3" /> {t("read")}
-            </span>
-          )}
-        </div>
-        <p className="font-inter text-sm text-white font-medium leading-snug line-clamp-2">
-          {article.title}
-        </p>
-        {formatRelativeDate(article.pubDate, article.language) && (
-          <span className="font-inter text-[11px] text-stadium-muted">
-            {formatRelativeDate(article.pubDate, article.language)}
-          </span>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-
-/* ── Filter Sheet (slides in from right) ── */
-
-function FilterSheet({
-  sortMode, setSortMode,
-  langFilter, setLangFilter,
-  sourceFilter, setSourceFilter,
-  availableSources,
-  category, setCategory,
-  activeCount,
-}: {
-  sortMode: SortMode;
-  setSortMode: (v: SortMode) => void;
-  langFilter: FeedFilter;
-  setLangFilter: (v: FeedFilter) => void;
-  sourceFilter: "all" | NewsSource;
-  setSourceFilter: (v: "all" | NewsSource) => void;
-  availableSources: NewsSource[];
-  category: CategoryFilter;
-  setCategory: (v: CategoryFilter) => void;
-  activeCount: number;
-}) {
-  const t = useTranslations("News.feed");
-
-  const chipClass = (active: boolean) =>
-    `inline-flex items-center gap-1.5 px-3 py-2 text-xs font-barlow uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap ${
-      active
-        ? "bg-lfc-red text-white"
-        : "bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40"
-    }`;
-
-  return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <button className="relative flex items-center gap-1.5 px-4 py-2 bg-stadium-surface border border-stadium-border/60 text-stadium-muted hover:text-white hover:border-lfc-red/40 transition-colors cursor-pointer shrink-0">
-          <SlidersHorizontal className="w-3.5 h-3.5" />
-          <span className="font-barlow text-sm font-bold uppercase tracking-wider">
-            {t("filterBtn")}
-          </span>
-          {activeCount > 0 && (
-            <span className="w-4 h-4 bg-lfc-red text-white text-[9px] font-bold flex items-center justify-center">
-              {activeCount}
-            </span>
-          )}
-        </button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-80 bg-stadium-bg border-l border-stadium-border p-0">
-        <SheetHeader className="px-5 pt-5 pb-4 border-b border-stadium-border/50">
-          <SheetTitle className="font-bebas text-2xl text-white tracking-wider">
-            {t("filtersTitle")}
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="px-5 py-5 space-y-6 overflow-y-auto">
-          {/* Sort */}
-          <div>
-            <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("sortLabel")}
-            </p>
-            <div className="flex gap-2">
-              {SORT_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
-                <button
-                  key={value}
-                  onClick={() => setSortMode(value)}
-                  className={chipClass(sortMode === value)}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {t(labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Language */}
-          <div>
-            <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("sourceLabel")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {LANG_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
-                <button
-                  key={value}
-                  onClick={() => setLangFilter(value)}
-                  className={chipClass(langFilter === value)}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {t(labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* News Source */}
-          {availableSources.length > 1 && (
-            <div>
-              <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-                {t("newsSourceLabel")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setSourceFilter("all")}
-                  className={chipClass(sourceFilter === "all")}
-                >
-                  {t("newsSourceAll")}
-                </button>
-                {availableSources.map((src) => (
-                  <button
-                    key={src}
-                    onClick={() => setSourceFilter(src)}
-                    className={chipClass(sourceFilter === src)}
-                  >
-                    {SOURCE_CONFIG[src]?.label ?? src}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Category */}
-          <div>
-            <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-widest mb-3">
-              {t("categoryLabel")}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map(({ value, icon: Icon, labelKey }) => (
-                <button
-                  key={value}
-                  onClick={() => setCategory(value)}
-                  className={chipClass(category === value)}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {t(labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Reset */}
-          {activeCount > 0 && (
-            <button
-              onClick={() => {
-                setSortMode("newest");
-                setLangFilter("all");
-                setSourceFilter("all");
-                setCategory("all");
-              }}
-              className="w-full font-barlow text-xs uppercase tracking-wider text-stadium-muted hover:text-white py-2.5 border-t border-stadium-border/40 pt-4 cursor-pointer transition-colors"
-            >
-              {t("resetFilters")}
-            </button>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-/* ── Main Component ── */
+/** Language chips fill red; category chips fill white, so two active chips never read as one choice. */
+const chipClass = (active: boolean, tone: "lang" | "category" = "lang") =>
+  `inline-flex min-h-10 shrink-0 items-center whitespace-nowrap border px-3.5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors cursor-pointer ${
+    active
+      ? tone === "lang"
+        ? "border-lfc-red bg-lfc-red text-white"
+        : "border-white bg-white text-stadium-bg"
+      : "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white"
+  }`;
 
 interface NewsFeedProps {
   localArticles: NewsArticle[];
   globalArticles: NewsArticle[];
   locale: "en" | "vi";
+  /** Render-time clock from the server: keeps server and client dates identical. */
   nowMs: number;
-  engagement?: Record<string, { likes: number; comments: number; total: number }>;
+  /** Preselected source, from `/news?source=…`. */
+  initialSource?: NewsSource;
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale, nowMs, engagement = {} }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles, locale, nowMs, initialSource }: NewsFeedProps) {
   const t = useTranslations("News.feed");
-  const [langFilter, setLangFilter] = useState<FeedFilter>(() => getSavedFilter(locale));
-  const [sortMode, setSortMode] = useState<SortMode>("newest");
+  const [lang, setLang] = useState<LangFilter>(locale === "en" ? "en" : "vi");
   const [category, setCategory] = useState<CategoryFilter>("all");
-  const [sourceFilter, setSourceFilter] = useState<"all" | NewsSource>("all");
+  const [source, setSource] = useState<"all" | NewsSource>(initialSource && SOURCE_CONFIG[initialSource] ? initialSource : "all");
   const [search, setSearch] = useState("");
-  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
-  const [readSet] = useState<Set<string>>(getReadArticles);
-  const [viewMode, setViewMode] = useState<ViewMode>(getSavedViewMode);
-  // Server-side load-more state
-  const [extraArticles, setExtraArticles] = useState<NewsArticle[]>([]);
+  const [searchOpen, setSearchOpen] = useState(source !== "all");
+  const [visible, setVisible] = useState(PAGE_SIZE + 1);
+  const [readSet, setReadSet] = useState<Set<string>>(() => new Set());
+  const [extra, setExtra] = useState<NewsArticle[]>([]);
   const [serverHasMore, setServerHasMore] = useState(true);
-  const [isPending, startTransition] = useTransition();
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  // Max engagement for heat bar scaling
-  const maxEngagement = useMemo(() => {
-    const values = Object.values(engagement).map((e) => e.total);
-    return Math.max(...values, 1);
-  }, [engagement]);
+  useEffect(() => {
+    // Read history lives in localStorage, so it can only be read after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReadSet(getReadArticles());
+  }, []);
 
-  const handleLangFilter = (f: FeedFilter) => {
-    setLangFilter(f);
-    setSourceFilter("all");
-    setVisibleCount(INITIAL_COUNT);
-    localStorage.setItem(STORAGE_KEY, f);
-  };
+  useEffect(() => {
+    if (searchOpen) searchRef.current?.focus();
+  }, [searchOpen]);
 
-  const handleSortMode = (s: SortMode) => {
-    setSortMode(s);
-    setVisibleCount(INITIAL_COUNT);
-  };
+  const loaded = useMemo(() => {
+    const seen = new Set<string>();
+    return [...localArticles, ...globalArticles, ...extra]
+      .filter((a) => (seen.has(a.link) ? false : (seen.add(a.link), true)))
+      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+  }, [localArticles, globalArticles, extra]);
 
-  const handleCategory = (c: CategoryFilter) => {
-    setCategory(c);
-    setVisibleCount(INITIAL_COUNT);
-  };
-
-  const handleSourceFilter = (s: "all" | NewsSource) => {
-    setSourceFilter(s);
-    setVisibleCount(INITIAL_COUNT);
-  };
-
-  // Only count filters not visible as chips (sort + category + source)
-  const activeFilterCount =
-    (sortMode !== "newest" ? 1 : 0) +
-    (category !== "all" ? 1 : 0) +
-    (sourceFilter !== "all" ? 1 : 0);
-
-  // Merge initial + server-loaded extra articles
-  const allLocal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language === "vi");
-    return [...localArticles, ...extra];
-  }, [localArticles, extraArticles]);
-
-  const allGlobal = useMemo(() => {
-    const extra = extraArticles.filter((a) => a.language === "en");
-    return [...globalArticles, ...extra];
-  }, [globalArticles, extraArticles]);
-
-  // Pipeline: lang → source → category → sort → search
-  const langFiltered = useMemo(
-    () => langFilter === "local" ? allLocal
-      : langFilter === "global" ? allGlobal
-      : [...allLocal, ...allGlobal],
-    [langFilter, allLocal, allGlobal]
-  );
+  const byLang = useMemo(() => (lang === "all" ? loaded : loaded.filter((a) => a.language === lang)), [loaded, lang]);
 
   const availableSources = useMemo(() => {
-    const sourceSet = new Set(langFiltered.map(a => a.source));
-    return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter(s => sourceSet.has(s));
-  }, [langFiltered]);
-
-  const sourceFiltered = useMemo(
-    () => sourceFilter === "all" ? langFiltered : langFiltered.filter(a => a.source === sourceFilter),
-    [langFiltered, sourceFilter]
-  );
-
-  const catFiltered = useMemo(
-    () => category === "all" ? sourceFiltered : sourceFiltered.filter((a) => a.category === category),
-    [sourceFiltered, category]
-  );
-
-  const sorted = useMemo(
-    () => [...catFiltered].sort((a, b) => {
-      if (sortMode === "trending") {
-        // Use real engagement data if available, fallback to static relevanceScore
-        const aEng = engagement[a.link]?.total ?? 0;
-        const bEng = engagement[b.link]?.total ?? 0;
-        const engDiff = bEng - aEng;
-        if (engDiff !== 0) return engDiff;
-        const scoreDiff = (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0);
-        if (scoreDiff !== 0) return scoreDiff;
-      }
-      return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime();
-    }),
-    [catFiltered, sortMode, engagement]
-  );
+    const present = new Set(byLang.map((a) => a.source));
+    return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter((s) => present.has(s));
+  }, [byLang]);
 
   const articles = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const searched = !q ? sorted : sorted.filter((a) =>
-      a.title.toLowerCase().includes(q) ||
-      a.contentSnippet?.toLowerCase().includes(q)
-    );
-    const cutoffMs = nowMs - NEWS_FRESH_HOURS * 3600 * 1000;
-    const fresh = searched.filter(
-      (a) => new Date(a.pubDate).getTime() >= cutoffMs
-    );
-    // Keep feed fresh first, but avoid looking "empty" when fresh pool is small.
-    if (fresh.length === 0) return searched;
-    if (fresh.length >= MIN_VISIBLE_ARTICLES) return fresh;
-    const older = searched.filter(
-      (a) => new Date(a.pubDate).getTime() < cutoffMs
-    );
-    return [...fresh, ...older.slice(0, MIN_VISIBLE_ARTICLES - fresh.length)];
-  }, [sorted, search, nowMs]);
+    return byLang.filter((a) => {
+      if (source !== "all" && a.source !== source) return false;
+      if (category !== "all" && a.category !== category) return false;
+      if (!q) return true;
+      return cleanTitle(a.title).toLowerCase().includes(q) || a.contentSnippet?.toLowerCase().includes(q);
+    });
+  }, [byLang, source, category, search]);
+
+  const filtersActive = category !== "all" || source !== "all" || search.trim() !== "";
+  const shown = articles.slice(0, visible);
+  // Top story: the newest of the first few that has a picture (a big grey tile is a poor lead).
+  const leadAt = Math.max(0, shown.slice(0, 6).findIndex((a) => isHttpUrl(a.thumbnail ?? a.heroImage)));
+  const lead = shown[leadAt];
+  const rest = shown.filter((_, i) => i !== leadAt);
+  const hasMore = visible < articles.length || serverHasMore;
+
+  function resetPaging() {
+    setVisible(PAGE_SIZE + 1);
+  }
+
+  function resetFilters() {
+    setCategory("all");
+    setSource("all");
+    setSearch("");
+    resetPaging();
+  }
+
+  function loadMore() {
+    setLoadFailed(false);
+    if (visible < articles.length) {
+      setVisible((v) => v + PAGE_SIZE);
+      return;
+    }
+    const requestLanguage = lang === "all" ? undefined : lang;
+    const offset = loaded.filter((a) => !requestLanguage || a.language === requestLanguage).length;
+    startTransition(async () => {
+      try {
+        const { articles: more, hasMore: stillMore } = await loadMoreNews(offset, SERVER_PAGE_SIZE, requestLanguage);
+        setExtra((prev) => [...prev, ...more]);
+        setServerHasMore(stillMore);
+        setVisible((v) => v + PAGE_SIZE);
+      } catch {
+        setLoadFailed(true);
+      }
+    });
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Toolbar: lang chips + search + filter — all one row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Segmented control — sliding red background via layoutId */}
-        <div className="flex items-stretch border border-stadium-border/60 overflow-hidden shrink-0 bg-stadium-surface">
-          {([
-            { value: "all" as FeedFilter, labelKey: "all" },
-            { value: "local" as FeedFilter, labelKey: "chipVietnamese", flag: "\u{1F1FB}\u{1F1F3}" },
-            { value: "global" as FeedFilter, labelKey: "chipInternational", flag: "\u{1F30D}" },
-          ]).map(({ value, labelKey, flag }, i, arr) => (
-            <motion.button
-              key={value}
-              onClick={() => handleLangFilter(value)}
-              whileTap={{ scale: 0.96 }}
-              className={`relative px-4 py-2 text-sm font-barlow font-bold uppercase tracking-wider cursor-pointer overflow-hidden transition-colors duration-150 ${
-                i < arr.length - 1 ? "border-r border-stadium-border/60" : ""
-              } ${langFilter === value ? "text-white" : "text-stadium-muted hover:text-white"}`}
-            >
-              {langFilter === value && (
-                <motion.div
-                  layoutId="lang-filter-bg"
-                  className="absolute inset-0 bg-lfc-red"
-                  transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                />
-              )}
-              <span className="relative z-10 flex items-center gap-1.5">
-                {flag && <span>{flag}</span>}
-                {t(labelKey)}
-              </span>
-            </motion.button>
-          ))}
-        </div>
-
-        <div className="relative flex-1 min-w-[140px]">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stadium-muted pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setVisibleCount(INITIAL_COUNT); }}
-            placeholder={t("searchPlaceholder")}
-            className="w-full bg-stadium-surface border border-stadium-border/60 pl-8 pr-7 py-2 text-sm font-inter text-white placeholder:text-stadium-muted/50 focus:outline-none focus:border-lfc-red/50 transition-colors"
-          />
-          {search && (
+    <>
+      {/* Filter bar: one slim sticky row on phones (chips scroll sideways) */}
+      <div className="sticky top-[var(--header-h)] z-30 border-b border-[var(--line)] bg-stadium-bg/90 backdrop-blur-md">
+        <div className="page-container">
+          <div className="flex items-center gap-2 py-2">
+            <div role="group" aria-label={t("filtersLabel")} className="scroll-x flex min-w-0 flex-1 items-center gap-2">
+              {LANGS.map(({ value, labelKey }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={lang === value}
+                  onClick={() => {
+                    setLang(value);
+                    setSource("all");
+                    resetPaging();
+                  }}
+                  className={chipClass(lang === value)}
+                >
+                  {t(labelKey)}
+                </button>
+              ))}
+              <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-[var(--line-strong)]" />
+              {CATEGORIES.map(({ value, labelKey }) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={category === value}
+                  onClick={() => {
+                    setCategory(value);
+                    resetPaging();
+                  }}
+                  className={chipClass(category === value, "category")}
+                >
+                  {t(labelKey)}
+                </button>
+              ))}
+            </div>
             <button
-              onClick={() => setSearch("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-stadium-muted hover:text-white transition-colors cursor-pointer"
+              type="button"
+              aria-label={t("searchLabel")}
+              aria-expanded={searchOpen}
+              onClick={() => setSearchOpen((o) => !o)}
+              className={`inline-flex size-10 shrink-0 items-center justify-center border transition-colors cursor-pointer ${
+                searchOpen || search
+                  ? "border-white/40 text-white"
+                  : "border-[var(--line-strong)] text-stadium-muted hover:text-white"
+              }`}
             >
-              <X className="w-3 h-3" />
+              <Search className="size-4" aria-hidden />
             </button>
+          </div>
+
+          {searchOpen && (
+            <div className="flex flex-col gap-2 pb-3 sm:flex-row">
+              <div className="relative min-w-0 flex-1">
+                <label htmlFor="news-search" className="sr-only">
+                  {t("searchLabel")}
+                </label>
+                <input
+                  id="news-search"
+                  ref={searchRef}
+                  type="search"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    resetPaging();
+                  }}
+                  placeholder={t("searchPlaceholder")}
+                  className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-3 pr-10 text-[15px] text-white placeholder:text-stadium-muted focus:border-white/50 focus:outline-none"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    aria-label={t("clearSearch")}
+                    onClick={() => {
+                      setSearch("");
+                      searchRef.current?.focus();
+                    }}
+                    className="absolute right-0 top-0 inline-flex size-11 items-center justify-center text-stadium-muted hover:text-white cursor-pointer"
+                  >
+                    <X className="size-4" aria-hidden />
+                  </button>
+                )}
+              </div>
+              {availableSources.length > 1 && (
+                <div>
+                  <label htmlFor="news-source" className="sr-only">
+                    {t("newsSourceLabel")}
+                  </label>
+                  <select
+                    id="news-source"
+                    value={source}
+                    onChange={(e) => {
+                      setSource(e.target.value as "all" | NewsSource);
+                      resetPaging();
+                    }}
+                    className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] px-3 text-[15px] text-white focus:border-white/50 focus:outline-none sm:w-52"
+                  >
+                    <option value="all">{t("newsSourceLabel")}: {t("newsSourceAll")}</option>
+                    {availableSources.map((s) => (
+                      <option key={s} value={s}>
+                        {SOURCE_CONFIG[s].label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
           )}
         </div>
-
-        {/* View mode toggle */}
-        <div className="flex items-stretch border border-stadium-border/60 overflow-hidden shrink-0 bg-stadium-surface">
-          {([
-            { value: "default" as ViewMode, icon: LayoutGrid, label: "" },
-            { value: "compact" as ViewMode, icon: LayoutList, label: "" },
-            { value: "expanded" as ViewMode, icon: Rows3, label: "" },
-          ]).map(({ value, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => {
-                setViewMode(value);
-                localStorage.setItem(VIEW_MODE_KEY, value);
-              }}
-              className={`px-2.5 py-2 transition-colors cursor-pointer ${
-                viewMode === value ? "bg-lfc-red text-white" : "text-stadium-muted hover:text-white"
-              }`}
-              title={value}
-            >
-              <Icon className="w-3.5 h-3.5" />
-            </button>
-          ))}
-        </div>
-
-        <FilterSheet
-          sortMode={sortMode}
-          setSortMode={handleSortMode}
-          langFilter={langFilter}
-          setLangFilter={handleLangFilter}
-          sourceFilter={sourceFilter}
-          setSourceFilter={handleSourceFilter}
-          availableSources={availableSources}
-          category={category}
-          setCategory={handleCategory}
-          activeCount={activeFilterCount}
-        />
       </div>
 
-      {/* Active filters summary */}
-      {(activeFilterCount > 0 || search) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {search && (
-            <span className="font-inter text-xs text-stadium-muted">
-              {articles.length} {t("resultsFor")} &ldquo;{search}&rdquo;
-            </span>
-          )}
-          {sourceFilter !== "all" && (
-            <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {SOURCE_CONFIG[sourceFilter]?.label ?? sourceFilter}
-              <button onClick={() => handleSourceFilter("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
-            </span>
-          )}
-          {category !== "all" && (
-            <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {CATEGORY_OPTIONS.find((o) => o.value === category)?.labelKey && t(CATEGORY_OPTIONS.find((o) => o.value === category)!.labelKey)}
-              <button onClick={() => handleCategory("all")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
-            </span>
-          )}
-          {sortMode !== "newest" && (
-            <span className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 bg-stadium-surface border border-stadium-border/60 text-white/70">
-              {SORT_OPTIONS.find((o) => o.value === sortMode)?.labelKey && t(SORT_OPTIONS.find((o) => o.value === sortMode)!.labelKey)}
-              <button onClick={() => handleSortMode("newest")} className="ml-0.5 hover:text-white cursor-pointer"><X className="w-3 h-3" /></button>
-            </span>
-          )}
-          {/* Reset all */}
-          <button
-            onClick={() => {
-              setSearch("");
-              handleSortMode("newest");
-              handleCategory("all");
-              handleSourceFilter("all");
-            }}
-            className="inline-flex items-center gap-1 font-barlow text-[10px] uppercase tracking-wider px-2 py-1 text-lfc-red hover:text-white transition-colors cursor-pointer"
-          >
-            <X className="w-3 h-3" />
-            {t("resetFilters")}
-          </button>
-        </div>
-      )}
+      <div className="page-container pt-4 sm:pt-6 pb-12">
+        <h2 className="sr-only">{t("latest")}</h2>
 
-      {/* Feed */}
-      {articles.length === 0 ? (
-        <div className="text-center py-20">
-          <Newspaper className="w-12 h-12 text-stadium-muted mx-auto mb-4" />
-          <p className="font-bebas text-3xl text-stadium-muted mb-2">
-            {t("noArticles")}
-          </p>
-          <p className="font-inter text-stadium-muted text-sm">
-            {t("noArticlesDesc")}
-          </p>
+        {/* Count + reset, announced politely when filters change the list */}
+        <div aria-live="polite" className="flex min-h-6 items-center justify-between gap-3 pb-3 text-sm text-stadium-muted">
+          {filtersActive ? (
+            <>
+              <span>{t("resultsCount", { count: articles.length })}</span>
+              <button type="button" onClick={resetFilters} className="inline-flex min-h-10 items-center gap-1.5 font-barlow font-semibold uppercase tracking-[0.1em] text-brand hover:text-white cursor-pointer">
+                <X className="size-3.5" aria-hidden />
+                {t("resetFilters")}
+              </button>
+            </>
+          ) : null}
         </div>
-      ) : (
-        <>
-          {(() => {
-            const visible = articles.slice(0, visibleCount);
-            // Only consider serverHasMore when no client-side filters are active
-            // (server load-more doesn't apply category/source/search filters)
-            const hasClientFilters = category !== "all" || sourceFilter !== "all" || search.trim() !== "";
-            const hasMore = visibleCount < articles.length || (!hasClientFilters && serverHasMore);
 
-            const loadMoreBtn = hasMore && (
-              <div className="text-center pt-4">
+        {loaded.length === 0 ? (
+          <EmptyState
+            tone="error"
+            icon={<Newspaper className="size-10" aria-hidden />}
+            title={t("unavailableTitle")}
+            description={t("unavailableDesc")}
+            actionHref="/news"
+            actionLabel={t("retry")}
+          />
+        ) : articles.length === 0 ? (
+          <div className="surface flex flex-col items-center px-6 py-12 text-center sm:py-16">
+            <SearchX className="mb-4 size-10 text-stadium-muted" aria-hidden />
+            <p className="font-bebas text-2xl text-white sm:text-3xl">{t("noArticles")}</p>
+            <p className="mt-2 max-w-md text-sm text-stadium-muted">{t("noArticlesDesc")}</p>
+            {filtersActive && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="mt-6 inline-flex min-h-11 items-center justify-center bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark cursor-pointer"
+              >
+                {t("resetFilters")}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4 sm:space-y-5">
+            {lead && <NewsCard article={lead} nowMs={nowMs} variant="lead" priority isRead={readSet.has(lead.link)} />}
+
+            {(rest.length > 0 || pending) && (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                {rest.map((a) => (
+                  <NewsCard key={a.link} article={a} nowMs={nowMs} isRead={readSet.has(a.link)} />
+                ))}
+                {pending && Array.from({ length: 6 }, (_, i) => <NewsCardSkeleton key={`sk-${i}`} />)}
+              </div>
+            )}
+
+            {loadFailed && (
+              <p role="alert" className="text-center text-sm text-stadium-muted">
+                {t("loadMoreError")}
+              </p>
+            )}
+
+            {hasMore && (
+              <div className="flex justify-center pt-2">
                 <button
-                  onClick={() => {
-                    if (visibleCount < articles.length) {
-                      setVisibleCount((prev) =>
-                        Math.min(prev + LOAD_MORE_COUNT, articles.length)
-                      );
-                    } else if (serverHasMore) {
-                      const requestLanguage: "en" | "vi" | undefined =
-                        langFilter === "local"
-                          ? "vi"
-                          : langFilter === "global"
-                            ? "en"
-                            : undefined;
-                      const currentTotal = requestLanguage
-                        ? [...localArticles, ...globalArticles, ...extraArticles].filter(
-                          (a) => a.language === requestLanguage
-                        ).length
-                        : localArticles.length + globalArticles.length + extraArticles.length;
-                      startTransition(async () => {
-                        const { articles: newArticles, hasMore: more } =
-                          await loadMoreNews(currentTotal, LOAD_MORE_COUNT, requestLanguage);
-                        setExtraArticles((prev) => [...prev, ...newArticles]);
-                        setServerHasMore(more);
-                        setVisibleCount((prev) => prev + newArticles.length);
-                      });
-                    }
-                  }}
-                  disabled={isPending}
-                  className="font-barlow text-sm uppercase tracking-wider text-white border border-stadium-border/60 px-6 py-2.5 hover:border-lfc-red hover:text-lfc-red transition-colors cursor-pointer disabled:opacity-50"
+                  type="button"
+                  onClick={loadMore}
+                  disabled={pending}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 border border-[var(--line-strong)] px-8 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/50 disabled:opacity-60 sm:w-auto cursor-pointer"
                 >
-                  {isPending ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      {t("loading")}
-                    </span>
-                  ) : (
-                    t("loadMore")
-                  )}
+                  {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                  {pending ? t("loading") : t("loadMore")}
                 </button>
               </div>
-            );
-
-            // Compact view: flat list with thumbnails
-            if (viewMode === "compact") {
-              return (
-                <>
-                  <div className="bg-stadium-surface/50 border border-stadium-border/30 divide-y divide-stadium-border/20">
-                    {visible.map((article) => (
-                      <ListCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} />
-                    ))}
-                  </div>
-                  {loadMoreBtn}
-                </>
-              );
-            }
-
-            // Expanded view: all cards with full content
-            if (viewMode === "expanded") {
-              return (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {visible.map((article) => (
-                      <ExpandedCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} maxEngagement={maxEngagement} />
-                    ))}
-                  </div>
-                  {loadMoreBtn}
-                </>
-              );
-            }
-
-            // Default view: hero + grid + compact
-            const hero = visible[0];
-            const grid = visible.slice(1, 7);
-            const compact = visible.slice(7);
-
-            return (
-              <>
-                {hero && (
-                  <HeroCard article={hero} isRead={readSet.has(hero.link)} engData={engagement[hero.link]} maxEngagement={maxEngagement} />
-                )}
-
-                {grid.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {grid.map((article) => (
-                      <GridCard key={article.link} article={article} isRead={readSet.has(article.link)} engData={engagement[article.link]} maxEngagement={maxEngagement} />
-                    ))}
-                  </div>
-                )}
-
-                {compact.length > 0 && (
-                  <div className="space-y-3">
-                    <p className="font-barlow text-xs text-stadium-muted uppercase tracking-widest font-semibold">
-                      {t("moreStories")}
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {compact.map((article) => (
-                        <CompactCard key={article.link} article={article} isRead={readSet.has(article.link)} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {loadMoreBtn}
-              </>
-            );
-          })()}
-        </>
-      )}
-    </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

@@ -2,8 +2,12 @@ import "server-only";
 import { cache } from "react";
 import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
-import { getEnv, hasEnv } from "@/lib/env";
+import { getEnv } from "@/lib/env";
 import { getServiceClient } from "./supabase-service";
+import { describeDigestWindow } from "./digest-window";
+import { analyzeArticleRelevance } from "./relevance";
+import { buildCurrentFactsBlock } from "@/lib/prompts/current-facts";
+import type { NewsArticle } from "./types";
 
 const SEO_ARTICLE_SECTION_CATEGORY = "__seo_article__";
 
@@ -102,9 +106,9 @@ const CATEGORY_VI_MAP: Record<string, string> = {
 // is ordered by prose quality rather than by throughput limits.
 // Verified live 2026-09-09.
 const DIGEST_MODELS = [
-  "claude-sonnet-5",   // best long-form Vietnamese prose
-  "deepseek-v4-pro",   // fast, clean diacritics
-  "deepseek-v4-flash", // cheap last resort
+  "deepseek-v4-flash", // default everywhere in the app: cheap, fast, clean diacritics
+  "deepseek-v4-pro",   // step up if flash fails or returns bad JSON
+  "claude-sonnet-5",   // last resort (slowest; long runs can exceed the 60s cron limit)
 ] as const;
 
 const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
@@ -172,11 +176,6 @@ Quy tắc nội dung:
 - seoArticle dài 600-900 từ, có sapo, 3-5 H2, chèn focusKeyword tự nhiên trong title/sapo/ít nhất 1 H2
 - Không copy nguyên văn bài nguồn; chỉ tổng hợp, diễn giải lại và giữ attribution qua articleUrls ở sections
 - Trả về CHỈ JSON hợp lệ — không markdown, không giải thích thêm`;
-
-function shouldTryNextGroqModel(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return /429|rate limit|tokens per|does not exist|do not have access|model|overloaded|timeout|503|502|504|500/i.test(msg);
-}
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -326,43 +325,138 @@ export async function upsertDigestRecord(
   return fallbackData;
 }
 
+/** Article fields the digest prompt needs. */
+export interface DigestSourceArticle {
+  url: string;
+  title: string;
+  snippet: string | null;
+  source: string;
+  language: string;
+  category: string;
+  relevance?: number | null;
+}
+
+const DIGEST_ARTICLE_LIMIT = 25;
+
 // Fetch the top relevant active articles within the last `windowHours`.
 // Matches on either publish time or sync time so freshly-synced items count.
 async function fetchDigestArticles(
   supabase: ReturnType<typeof getServiceClient>,
   windowHours: number
-) {
+): Promise<DigestSourceArticle[]> {
   const since = new Date(Date.now() - windowHours * 3600 * 1000).toISOString();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("articles")
     .select("url, title, snippet, source, language, category, relevance")
     .eq("is_active", true)
     .or(`published_at.gte.${since},fetched_at.gte.${since}`)
     .order("relevance", { ascending: false })
-    .limit(25);
-  return data ?? [];
+    .limit(DIGEST_ARTICLE_LIMIT + 15);
+  // An error is not "no news": surface it instead of widening the window on a dead DB.
+  if (error) throw new Error(`digest article query failed: ${error.message}`);
+  // Stored relevance can pre-date rule changes (women's team, city stories): re-check, then cap.
+  return (data ?? [])
+    .filter((row) =>
+      analyzeArticleRelevance({
+        title: row.title,
+        link: row.url,
+        pubDate: "",
+        contentSnippet: row.snippet ?? "",
+        source: row.source as NewsArticle["source"],
+        language: row.language as NewsArticle["language"],
+      }).isRelevant
+    )
+    .slice(0, DIGEST_ARTICLE_LIMIT);
 }
 
-export async function generateDailyDigest(): Promise<DigestResult> {
-  const supabase = getServiceClient();
+type ParsedDigest = {
+  title: string;
+  summary: string;
+  sections: DigestSection[];
+  seoArticle?: DigestSeoArticle;
+};
 
-  // Query top 25 most relevant articles. Prefer the last 24h, but widen the
-  // window progressively if a quiet news day (or a sync hiccup) leaves too few
-  // — this prevents the digest cron from failing and leaving date gaps, the way
-  // it did when the is_active=null bug starved this query for ~8 days.
-  const WINDOWS_HOURS = [24, 72, 24 * 7];
-  const MIN_ARTICLES = 3;
-  let articles: NonNullable<Awaited<ReturnType<typeof fetchDigestArticles>>> = [];
-  for (const hours of WINDOWS_HOURS) {
-    articles = await fetchDigestArticles(supabase, hours);
-    if (articles.length >= MIN_ARTICLES) break;
+/**
+ * LLM JSON → object. Models wrap JSON in fences or prose, leave trailing commas, and put
+ * raw newlines inside long strings (a 700-word article): each of those is repaired here
+ * instead of failing the whole day's digest.
+ */
+export function parseDigestJson(text: string): ParsedDigest {
+  const stripped = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start === -1 || end <= start) throw new Error("no JSON object in model output");
+  const body = stripped.slice(start, end + 1);
+
+  const attempts = [body, repairJson(body)];
+  let lastError: unknown;
+  for (const candidate of attempts) {
+    try {
+      return validateParsedDigest(JSON.parse(candidate));
+    } catch (err) {
+      lastError = err;
+    }
   }
+  throw new Error(`digest JSON unparseable: ${lastError instanceof Error ? lastError.message : lastError}`);
+}
 
-  if (!articles || articles.length === 0) {
-    throw new Error("No recent articles found for digest");
+/** Escape raw control characters inside string literals and drop trailing commas. */
+function repairJson(body: string): string {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (const ch of body) {
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        out += ch;
+      } else if (ch === "\\") {
+        escaped = true;
+        out += ch;
+      } else if (ch === '"') {
+        inString = false;
+        out += ch;
+      } else if (ch === "\n") out += "\\n";
+      else if (ch === "\r") out += "\\r";
+      else if (ch === "\t") out += "\\t";
+      else out += ch;
+    } else {
+      if (ch === '"') inString = true;
+      out += ch;
+    }
   }
+  return out.replace(/,\s*([}\]])/g, "$1");
+}
 
-  // Build prompt input
+function validateParsedDigest(value: unknown): ParsedDigest {
+  const v = value as Partial<ParsedDigest> | null;
+  if (!v || typeof v.title !== "string" || !v.title || typeof v.summary !== "string" || !v.summary || !Array.isArray(v.sections)) {
+    throw new Error("Invalid digest structure from AI");
+  }
+  return v as ParsedDigest;
+}
+
+// Per-attempt caps inside the 60s route budget (maxDuration): flash is normally ~15-25s.
+const DIGEST_DEADLINE_MS = 55_000;
+const DIGEST_ATTEMPT_CAP_MS: Record<(typeof DIGEST_MODELS)[number], number> = {
+  "deepseek-v4-flash": 42_000,
+  "deepseek-v4-pro": 30_000,
+  "claude-sonnet-5": 40_000,
+};
+const MIN_ATTEMPT_MS = 8_000;
+
+/**
+ * Prompt + model fallback + parse for a given article list. No database access:
+ * the unit under test for dry-runs ("does the prompt return parseable JSON in time?").
+ */
+export async function generateDigestFromArticles(
+  articles: DigestSourceArticle[],
+  options: { windowHours?: number; now?: Date; startedAt?: number; deadlineMs?: number; attemptCapMs?: number } = {}
+): Promise<DigestResult> {
+  const windowHours = options.windowHours ?? 24;
+  const startedAt = options.startedAt ?? Date.now();
+  const now = options.now ?? new Date();
+
   const articleList = articles
     .map(
       (a, i) =>
@@ -371,66 +465,39 @@ export async function generateDailyDigest(): Promise<DigestResult> {
     .join("\n\n");
 
   const siteUrl = getEnv("NEXT_PUBLIC_SITE_URL") ?? "https://www.liverpoolfcvn.blog";
-  const today = formatDigestDateVi();
+  const today = formatDigestDateVi(now);
 
-  const prompt = `Today is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: Liverpool FC Việt Nam (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last 24 hours:\n\n${articleList}`;
+  // Current facts (head coach, season, squad) come first and override the model's memory:
+  // without them the model "knew" a previous head coach and contradicted the articles.
+  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: Liverpool FC Việt Nam (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
 
-  // Call Groq with model fallback chain
   const apiKey = getEnv("VIETAPI_KEY");
   if (!apiKey) throw new Error("VIETAPI_KEY not configured");
-  let result: Awaited<ReturnType<typeof generateText>>;
-  let usedModel: string = DIGEST_MODELS[0];
 
-  for (const [index, modelId] of DIGEST_MODELS.entries()) {
-    try {
-      result = await generateText({
-        model: vietapi(modelId),
-        system: DIGEST_SYSTEM_PROMPT,
-        prompt,
-        maxOutputTokens: 6000,
-      });
-      usedModel = modelId;
-      break;
-    } catch (err) {
-      if (index < DIGEST_MODELS.length - 1 && shouldTryNextGroqModel(err)) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(`[digest] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
-        continue;
-      }
-      throw err;
-    }
-  }
-  // result is guaranteed assigned because the loop either breaks or throws
-  result = result!;
+  // ONE request for summary + sections + a 600-900 word SEO article took 84s on
+  // deepseek-v4-flash (measured Oct 2026, ~55 tok/s) — longer than the route's 60s, so
+  // the cron was killed before saving and the digest stopped for weeks. Two requests run
+  // in parallel (core digest / SEO article); wall time is the slower one, ~35-45s.
+  const [core, seo] = await Promise.all([
+    runDigestModelChain<ParsedDigest>({
+      prompt, system: `${DIGEST_SYSTEM_PROMPT}\n\n${CORE_ONLY_SUFFIX}`, startedAt, options,
+      parse: (text) => parseDigestJson(text),
+    }),
+    runDigestModelChain<{ seoArticle: DigestSeoArticle }>({
+      prompt, system: `${DIGEST_SYSTEM_PROMPT}\n\n${SEO_ONLY_SUFFIX}`, startedAt, options,
+      parse: (text) => parseSeoOnlyJson(text),
+    }).catch((err) => {
+      // The SEO article is derivable from the sections (normalizeSeoArticle fallback): do not lose the digest.
+      console.warn(`[digest] SEO article generation failed, using section fallback: ${err instanceof Error ? err.message : err}`);
+      return null;
+    }),
+  ]);
 
-  // Parse JSON response
-  let parsed: {
-    title: string;
-    summary: string;
-    sections: DigestSection[];
-    seoArticle?: DigestSeoArticle;
-  };
-  try {
-    const jsonStr = result.text
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/```\s*$/, "")
-      .trim();
-    parsed = JSON.parse(jsonStr);
-  } catch {
-    throw new Error(
-      `Failed to parse digest JSON: ${result.text.slice(0, 200)}`
-    );
-  }
-
-  if (!parsed.title || !parsed.summary || !Array.isArray(parsed.sections)) {
-    throw new Error("Invalid digest structure from AI");
-  }
-
+  const parsed = core.value;
   // Ensure categoryVi is populated
   for (const section of parsed.sections) {
     if (!section.categoryVi && section.category) {
-      section.categoryVi =
-        CATEGORY_VI_MAP[section.category] || section.category;
+      section.categoryVi = CATEGORY_VI_MAP[section.category] || section.category;
     }
   }
 
@@ -438,58 +505,115 @@ export async function generateDailyDigest(): Promise<DigestResult> {
     title: parsed.title,
     summary: parsed.summary,
     sections: parsed.sections,
-    seoArticle: normalizeSeoArticle(parsed.seoArticle, parsed, siteUrl),
+    seoArticle: normalizeSeoArticle(seo?.value.seoArticle ?? parsed.seoArticle, parsed, siteUrl),
     articleCount: articles.length,
-    tokensUsed: result.usage?.totalTokens ?? 0,
-    model: usedModel,
+    tokensUsed: core.tokens + (seo?.tokens ?? 0),
+    model: core.model,
   };
 }
 
-// Timestamp-based lock: auto-expires after 30s to prevent stuck state
-let digestLockUntil = 0;
+const CORE_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON gồm "title", "summary", "sections". KHÔNG có trường "seoArticle".`;
+const SEO_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON dạng {"seoArticle": {...}} theo cấu trúc seoArticle ở trên. KHÔNG có "title", "summary", "sections". Bài dài 500-700 từ.`;
 
+function parseSeoOnlyJson(text: string): { seoArticle: DigestSeoArticle } {
+  const stripped = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
+  const start = stripped.indexOf("{");
+  const end = stripped.lastIndexOf("}");
+  if (start === -1 || end <= start) throw new Error("no JSON object in model output");
+  const body = stripped.slice(start, end + 1);
+  for (const candidate of [body, repairJson(body)]) {
+    try {
+      const v = JSON.parse(candidate);
+      const article = v?.seoArticle ?? v;
+      if (isDigestSeoArticle(article)) return { seoArticle: article };
+    } catch { /* try the repaired form */ }
+  }
+  throw new Error("seoArticle JSON unparseable or incomplete");
+}
+
+/** Model fallback chain for one request; any failure (provider, timeout, truncation, bad JSON) moves on. */
+async function runDigestModelChain<T>(args: {
+  prompt: string;
+  system: string;
+  startedAt: number;
+  options: { deadlineMs?: number; attemptCapMs?: number };
+  parse: (text: string) => T;
+}): Promise<{ value: T; model: string; tokens: number }> {
+  const failures: string[] = [];
+  for (const modelId of DIGEST_MODELS) {
+    const remaining = (args.options.deadlineMs ?? DIGEST_DEADLINE_MS) - (Date.now() - args.startedAt);
+    const attemptMs = Math.min(remaining, args.options.attemptCapMs ?? DIGEST_ATTEMPT_CAP_MS[modelId]);
+    if (attemptMs < MIN_ATTEMPT_MS) {
+      failures.push(`${modelId}: skipped, ${Math.max(0, Math.round(remaining / 1000))}s left`);
+      continue;
+    }
+    const t0 = Date.now();
+    try {
+      const result = await generateText({
+        model: vietapi(modelId),
+        system: args.system,
+        prompt: args.prompt,
+        maxOutputTokens: 6000,
+        abortSignal: AbortSignal.timeout(attemptMs),
+      });
+      if (process.env.DIGEST_DEBUG) console.warn(`[digest] ${modelId} ok in ${Date.now() - t0}ms, out=${result.usage?.outputTokens}`);
+      if (result.finishReason === "length") throw new Error("output truncated (finishReason=length)");
+      return { value: args.parse(result.text), model: modelId, tokens: result.usage?.totalTokens ?? 0 };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      failures.push(`${modelId}: ${msg.slice(0, 160)}`);
+      console.warn(`[digest] ${modelId} failed, trying next: ${msg.slice(0, 160)}`);
+    }
+  }
+  throw new Error(`All digest models failed — ${failures.join(" | ")}`);
+}
+
+export async function generateDailyDigest(): Promise<DigestResult> {
+  const startedAt = Date.now();
+  const supabase = getServiceClient();
+
+  // Query top 25 most relevant articles. Prefer the last 24h, but widen the
+  // window progressively if a quiet news day (or a sync hiccup) leaves too few
+  // — this prevents the digest cron from failing and leaving date gaps, the way
+  // it did when the is_active=null bug starved this query for ~8 days.
+  const WINDOWS_HOURS = [24, 72, 24 * 7];
+  const MIN_ARTICLES = 3;
+  let articles: DigestSourceArticle[] = [];
+  let windowHours: number = WINDOWS_HOURS[0];
+  for (const hours of WINDOWS_HOURS) {
+    windowHours = hours;
+    articles = await fetchDigestArticles(supabase, hours);
+    if (articles.length >= MIN_ARTICLES) break;
+  }
+
+  if (articles.length === 0) {
+    throw new Error("No recent articles found for digest");
+  }
+
+  return generateDigestFromArticles(articles, { windowHours, startedAt });
+}
+
+/**
+ * Most recent digest, read-only.
+ *
+ * This used to generate a missing digest inline. That put a multi-query LLM job
+ * (raced against a 15s timeout that never cancelled it) on the render path of
+ * `/` and `/news`: every cache miss before the daily run, or during a database
+ * outage, cost the visitor ~15–25s. Generation now happens only in
+ * `/api/news/digest/generate` (daily Vercel cron + hourly retry from the news
+ * sync workflow); pages show the latest digest that exists.
+ */
 export async function getLatestDigest(): Promise<DigestRecord | null> {
   const supabase = getServiceClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("news_digests")
     .select("*")
     .order("digest_date", { ascending: false })
     .limit(1)
     .maybeSingle();
-
-  // Auto-generate only for a missing Vietnam-date digest or to backfill SEO payload.
-  // Do not regenerate every few hours: the digest article is a canonical daily page.
-  const today = getDigestDateKey();
-  const now = Date.now();
-  const seoArticle = data ? getSeoArticleFromDigest(data) : null;
-  const needsGenerate = !data || data.digest_date !== today || !seoArticle;
-  const isLocked = now < digestLockUntil;
-
-  if (needsGenerate && hasEnv("VIETAPI_KEY") && !isLocked) {
-    digestLockUntil = now + 30_000; // Lock for 30s max
-    try {
-      console.log("[digest] Auto-generating (date=%s, today=%s, hasSeo=%s)...", data?.digest_date, today, !!seoArticle);
-      const digest = await Promise.race([
-        generateDailyDigest(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("Digest timeout 15s")), 15000)
-        ),
-      ]);
-      const freshDigest = await upsertDigestRecord(data, today, digest);
-      console.log("[digest] Auto-generated OK, sections:", digest.sections.length);
-      digestLockUntil = 0;
-      return freshDigest ?? data;
-    } catch (err) {
-      console.warn("[digest] Auto-generation failed:", err instanceof Error ? err.message : err);
-      digestLockUntil = 0; // Release lock on error so next request can retry
-      return data;
-    }
-  }
-
-  if (needsGenerate && isLocked) {
-    console.log("[digest] Skipped — locked until", new Date(digestLockUntil).toISOString());
-  }
-
+  // Throw rather than return null: callers cache the result for 30 min, and a
+  // thrown error is not cached — a null would hide the digest after one bad read.
+  if (error) throw error;
   return data;
 }
 

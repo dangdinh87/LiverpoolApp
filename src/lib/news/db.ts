@@ -2,13 +2,15 @@ import "server-only";
 import { cache } from "react";
 import { getServiceClient } from "./supabase-service";
 import { analyzeArticleRelevance } from "./relevance";
+import { articleUrlVariants } from "./url";
+import { looksLikeJunkContent } from "./content-quality";
+import { cleanArticleContent } from "./article-clean";
 import type { ArticleContent, NewsArticle } from "./types";
 
 const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
-const MIN_NEWS_RESULTS = 16; // Backfill to avoid sparse feeds when fresh pool is limited
 const PREFERRED_LANGUAGE_SHARE = 0.8; // Vietnamese locale should read VI-first, not 50/50.
 
 // DB row → NewsArticle mapping
@@ -61,6 +63,19 @@ function onlyRelevantArticles(rows: ArticleRow[]): NewsArticle[] {
  * Important: this function must never crawl or sync. News ingestion is owned by
  * the external crawler / explicit cron, so user-facing pages stay side-effect free.
  */
+/**
+ * For `unstable_cache` wrappers: getNewsFromDB swallows database errors and
+ * returns [], and caching that [] blanked the news on `/` and `/news` for the
+ * whole revalidate window after any blip (seen right after the database was
+ * resumed). Throwing on an empty result keeps it out of the cache; callers
+ * `.catch(() => [])`. A genuinely empty feed is just re-queried, which is cheap.
+ */
+export async function requireNonEmptyNews(articles: Promise<NewsArticle[]>): Promise<NewsArticle[]> {
+  const list = await articles;
+  if (list.length === 0) throw new Error("[news/db] no articles (database error or empty) — not caching");
+  return list;
+}
+
 export const getNewsFromDB = cache(
   async (
     limit = 30,
@@ -99,41 +114,12 @@ export const getNewsFromDB = cache(
         if (localRes.error) console.error("[news/db] Local error:", localRes.error.message);
         if (globalRes.error) console.error("[news/db] Global error:", globalRes.error.message);
 
-        let local = onlyRelevantArticles((localRes.data ?? []) as ArticleRow[]);
-        let global = onlyRelevantArticles((globalRes.data ?? []) as ArticleRow[]);
-        let combined = [...local, ...global].slice(0, limit);
-
-        // Backfill older posts when fresh pool is sparse.
-        if (combined.length < Math.min(limit, MIN_NEWS_RESULTS)) {
-          const [localFallback, globalFallback] = await Promise.all([
-            supabase
-              .from("articles")
-              .select(ARTICLE_COLUMNS)
-              .eq("is_active", true)
-              .not("published_at", "is", null)
-              .eq("language", preferLang)
-              .order("published_at", { ascending: false, nullsFirst: false })
-              .order("relevance", { ascending: false, nullsFirst: false })
-              .limit(localLimit),
-            supabase
-              .from("articles")
-              .select(ARTICLE_COLUMNS)
-              .eq("is_active", true)
-              .not("published_at", "is", null)
-              .neq("language", preferLang)
-              .order("published_at", { ascending: false, nullsFirst: false })
-              .order("relevance", { ascending: false, nullsFirst: false })
-              .limit(globalLimit),
-          ]);
-
-          local = onlyRelevantArticles((localFallback.data ?? []) as ArticleRow[]);
-          global = onlyRelevantArticles((globalFallback.data ?? []) as ArticleRow[]);
-          const byUrl = new Map<string, NewsArticle>();
-          for (const article of [...combined, ...local, ...global]) {
-            if (!byUrl.has(article.link)) byUrl.set(article.link, article);
-          }
-          combined = Array.from(byUrl.values()).slice(0, limit);
-        }
+        // (A "backfill" pass used to re-run these exact queries when the pool was
+        // sparse. Same filters, order and limit return the same rows, so it only
+        // doubled the database round-trips — removed.)
+        const local = onlyRelevantArticles((localRes.data ?? []) as ArticleRow[]);
+        const global = onlyRelevantArticles((globalRes.data ?? []) as ArticleRow[]);
+        const combined = [...local, ...global].slice(0, limit);
 
         return combined;
       }
@@ -165,39 +151,10 @@ export const getNewsFromDB = cache(
       if (enRes.error) console.error("[news/db] EN error:", enRes.error.message);
       if (viRes.error) console.error("[news/db] VI error:", viRes.error.message);
 
-      let enArticles = onlyRelevantArticles((enRes.data ?? []) as ArticleRow[]);
-      let viArticles = onlyRelevantArticles((viRes.data ?? []) as ArticleRow[]);
-      let combined = [...enArticles, ...viArticles].slice(0, limit);
-
-      // Backfill from older posts when fresh pool is sparse.
-      if (combined.length < Math.min(limit, MIN_NEWS_RESULTS)) {
-        const [enFallback, viFallback] = await Promise.all([
-          supabase
-            .from("articles")
-            .select(ARTICLE_COLUMNS)
-            .eq("is_active", true)
-            .not("published_at", "is", null)
-            .eq("language", "en")
-            .order("published_at", { ascending: false, nullsFirst: false })
-            .limit(perLang),
-          supabase
-            .from("articles")
-            .select(ARTICLE_COLUMNS)
-            .eq("is_active", true)
-            .not("published_at", "is", null)
-            .eq("language", "vi")
-            .order("published_at", { ascending: false, nullsFirst: false })
-            .limit(perLang),
-        ]);
-
-        enArticles = onlyRelevantArticles((enFallback.data ?? []) as ArticleRow[]);
-        viArticles = onlyRelevantArticles((viFallback.data ?? []) as ArticleRow[]);
-        const byUrl = new Map<string, NewsArticle>();
-        for (const article of [...combined, ...enArticles, ...viArticles]) {
-          if (!byUrl.has(article.link)) byUrl.set(article.link, article);
-        }
-        combined = Array.from(byUrl.values()).slice(0, limit);
-      }
+      // No backfill pass: see the note in the preferLang branch above.
+      const enArticles = onlyRelevantArticles((enRes.data ?? []) as ArticleRow[]);
+      const viArticles = onlyRelevantArticles((viRes.data ?? []) as ArticleRow[]);
+      const combined = [...enArticles, ...viArticles].slice(0, limit);
 
       return combined;
     } catch (err) {
@@ -207,6 +164,22 @@ export const getNewsFromDB = cache(
   }
 );
 
+/** One stored article (title, snippet, images) by URL, for pages whose body can't be shown. */
+export const getArticleByUrl = cache(async (url: string): Promise<NewsArticle | null> => {
+  try {
+    const supabase = getServiceClient();
+    const { data } = await supabase
+      .from("articles")
+      .select(ARTICLE_COLUMNS)
+      .in("url", articleUrlVariants(url))
+      .limit(1)
+      .maybeSingle();
+    return data ? rowToArticle(data as ArticleRow) : null;
+  } catch {
+    return null;
+  }
+});
+
 export const getArticleContentFromDB = cache(
   async (url: string): Promise<ArticleContent | null> => {
     try {
@@ -214,7 +187,9 @@ export const getArticleContentFromDB = cache(
       const { data } = await supabase
         .from("articles")
         .select("content_en, content_scraped_at")
-        .eq("url", url)
+        .in("url", articleUrlVariants(url))
+        .order("content_scraped_at", { ascending: false, nullsFirst: false })
+        .limit(1)
         .maybeSingle();
 
       if (!data?.content_en || !data.content_scraped_at) {
@@ -226,7 +201,8 @@ export const getArticleContentFromDB = cache(
         return null;
       }
 
-      return data.content_en as ArticleContent;
+      const content = data.content_en as ArticleContent;
+      return looksLikeJunkContent(content) ? null : cleanArticleContent(content);
     } catch {
       return null;
     }
@@ -278,7 +254,8 @@ export async function getNewsPaginated(
       .from("articles")
       .select(ARTICLE_COLUMNS)
       .eq("is_active", true)
-      .order("published_at", { ascending: false })
+      // Postgres sorts NULL first on DESC: undated rows must come LAST, not top the list.
+      .order("published_at", { ascending: false, nullsFirst: false })
       .range(offset, offset + limit); // fetch limit+1 to check hasMore
 
     if (language) query = query.eq("language", language);
@@ -308,13 +285,21 @@ export async function getArticleTitlesByUrls(
   if (!urls.length) return {};
   try {
     const supabase = getServiceClient();
+    // Rows may be stored in a legacy spelling (trailing slash, feed tracking
+    // params); answer under the URL the caller asked about.
+    const requestedByVariant = new Map<string, string>();
+    for (const requested of urls) {
+      for (const variant of articleUrlVariants(requested)) {
+        if (!requestedByVariant.has(variant)) requestedByVariant.set(variant, requested);
+      }
+    }
     const { data } = await supabase
       .from("articles")
       .select("url, title")
-      .in("url", urls);
+      .in("url", [...requestedByVariant.keys()]);
     const map: Record<string, string> = {};
     for (const row of data ?? []) {
-      map[row.url] = row.title;
+      map[requestedByVariant.get(row.url) ?? row.url] = row.title;
     }
     return map;
   } catch {

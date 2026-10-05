@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { isKnownNewsSourceUrl } from "@/lib/news-config";
+import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
 
 // GET /api/news/comments?url=... — list comments for an article
 export async function GET(req: NextRequest) {
@@ -14,12 +16,13 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from("article_comments")
     .select("id, user_id, content, author_name, author_avatar, parent_id, reply_to_name, created_at, updated_at")
-    .eq("article_url", articleUrl)
+    .in("article_url", articleUrlVariants(articleUrl))
     .order("created_at", { ascending: true })
     .limit(200);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[comments]", error.message);
+    return NextResponse.json({ error: "Comments are unavailable right now" }, { status: 500 });
   }
 
   const comments = (data ?? []).map((c) => ({
@@ -37,12 +40,12 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ comments });
 }
 
-// Derive display name: username > full email > "Fan"
-function getDisplayName(username: string | null, email: string | null): string {
-  if (username) return username;
-  if (email) return email;
-  return "Fan";
+// Display name is public: never fall back to the email address.
+function getDisplayName(username: string | null): string {
+  return username?.trim() || "Fan";
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // POST /api/news/comments — create a comment
 export async function POST(req: NextRequest) {
@@ -59,11 +62,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { url, content, parentId, replyToName } = body;
+  const body = await req.json().catch(() => null);
+  const { url, content, parentId, replyToName } = body ?? {};
 
-  if (!url || !content) {
+  if (typeof url !== "string" || typeof content !== "string") {
     return NextResponse.json({ error: "Missing url or content" }, { status: 400 });
+  }
+  if (!isKnownNewsSourceUrl(url)) {
+    return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
+  }
+  if (parentId != null && (typeof parentId !== "string" || !UUID_RE.test(parentId))) {
+    return NextResponse.json({ error: "Invalid parentId" }, { status: 400 });
+  }
+  if (replyToName != null && (typeof replyToName !== "string" || replyToName.length > 60)) {
+    return NextResponse.json({ error: "Invalid replyToName" }, { status: 400 });
   }
 
   const trimmed = content.trim();
@@ -71,21 +83,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Content must be 1-1000 characters" }, { status: 400 });
   }
 
-  // Get profile for author info (fallback to email)
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("username, avatar_url")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const authorName = getDisplayName(profile?.username ?? null, user.email ?? null);
+  const authorName = getDisplayName(profile?.username ?? null);
   const authorAvatar = profile?.avatar_url ?? null;
 
   const { data, error } = await supabase
     .from("article_comments")
     .insert({
       user_id: user.id,
-      article_url: url,
+      article_url: canonicalizeArticleUrl(url),
       content: trimmed,
       author_name: authorName,
       author_avatar: authorAvatar,
@@ -96,7 +107,8 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[comments]", error.message);
+    return NextResponse.json({ error: "Comments are unavailable right now" }, { status: 500 });
   }
 
   return NextResponse.json({
@@ -136,7 +148,8 @@ export async function DELETE(req: NextRequest) {
     .eq("user_id", user.id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[comments]", error.message);
+    return NextResponse.json({ error: "Comments are unavailable right now" }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

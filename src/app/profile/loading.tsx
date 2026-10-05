@@ -1,43 +1,36 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/** Mirrors the profile page: identity header, tab bar, settings card. */
 export default function ProfileLoading() {
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Left sidebar skeleton */}
-          <aside className="lg:w-64 shrink-0">
-            <div className="bg-stadium-surface border border-stadium-border p-5 mb-4">
-              <div className="flex flex-col items-center">
-                <Skeleton className="w-20 h-20 rounded-full mb-3" />
-                <Skeleton className="h-7 w-32 mb-1" />
-                <Skeleton className="h-3 w-40" />
-                <Skeleton className="h-7 w-28 rounded-full mt-3" />
-              </div>
+    <div role="status" aria-busy="true" className="pt-[calc(var(--header-h)+1.5rem)] pb-20 sm:pt-[calc(var(--header-h)+2.5rem)]">
+      <div className="page-container max-w-4xl">
+        <div className="surface flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
+          <Skeleton className="size-16 shrink-0 rounded-full sm:size-20" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-4 w-56" />
+            <Skeleton className="h-3 w-44" />
+          </div>
+          <Skeleton className="h-11 w-full sm:w-32" />
+        </div>
+        <div className="mt-4 flex h-12 items-center gap-6 border-b border-[var(--line)]">
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} className="h-3 w-24" />
+          ))}
+        </div>
+        <div className="surface mt-4 p-4 sm:p-6">
+          <div className="flex flex-col gap-6 sm:flex-row">
+            <Skeleton className="mx-auto size-24 shrink-0 rounded-full sm:mx-0" />
+            <div className="flex-1 space-y-4">
+              <Skeleton className="h-11 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-11 w-36" />
             </div>
-            <div className="bg-stadium-surface border border-stadium-border overflow-hidden">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full rounded-none" />
-              ))}
-            </div>
-          </aside>
-
-          {/* Right content skeleton */}
-          <main className="flex-1">
-            <div className="bg-stadium-surface border border-stadium-border p-5 sm:p-6">
-              <Skeleton className="h-6 w-40 mb-5" />
-              <div className="flex flex-col sm:flex-row gap-6">
-                <Skeleton className="w-24 h-24 rounded-full shrink-0 self-center sm:self-start" />
-                <div className="flex-1 space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-20 w-full" />
-                  <Skeleton className="h-10 w-28" />
-                </div>
-              </div>
-            </div>
-          </main>
+          </div>
         </div>
       </div>
+      <span className="sr-only">Loading…</span>
     </div>
   );
 }

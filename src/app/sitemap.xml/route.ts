@@ -30,6 +30,7 @@ export async function GET() {
     { path: "/gallery", changefreq: "weekly", priority: "0.7" },
     { path: "/history", changefreq: "monthly", priority: "0.6" },
     { path: "/about", changefreq: "monthly", priority: "0.4" },
+    { path: "/legal", changefreq: "yearly", priority: "0.2" },
   ];
 
   // ─── Player routes ────────────────────────────────────────────────────────
@@ -62,7 +63,7 @@ export async function GET() {
   // ─── Build URL helper with hreflang ───────────────────────────────────────
   function urlEntry(
     path: string,
-    lastmod: string,
+    lastmod: string | null,
     changefreq: string,
     priority: string,
   ): string {
@@ -70,7 +71,10 @@ export async function GET() {
     return [
       `  <url>`,
       `    <loc>${escapeXml(loc)}</loc>`,
-      `    <lastmod>${lastmod}</lastmod>`,
+      // Only real modification dates: Google ignores lastmod once it proves
+      // unreliable, and "today on every request" (static pages) or a future
+      // kickoff date (fixtures) both are.
+      ...(lastmod ? [`    <lastmod>${lastmod}</lastmod>`] : []),
       `    <changefreq>${changefreq}</changefreq>`,
       `    <priority>${priority}</priority>`,
       `    <xhtml:link rel="alternate" hreflang="vi" href="${escapeXml(loc)}" />`,
@@ -85,12 +89,12 @@ export async function GET() {
 
   // Static pages
   for (const r of staticRoutes) {
-    urls.push(urlEntry(r.path, today, r.changefreq, r.priority));
+    urls.push(urlEntry(r.path, null, r.changefreq, r.priority));
   }
 
   // Player pages
   for (const p of players) {
-    urls.push(urlEntry(`/player/${p.slug}`, today, "weekly", "0.6"));
+    urls.push(urlEntry(`/player/${p.slug}`, null, "weekly", "0.6"));
   }
 
   // News article pages (last 90 days) — strip query params to avoid robots.txt /*?* conflict
@@ -108,7 +112,7 @@ export async function GET() {
 
   // Fixture detail pages
   for (const f of fixtureUrls) {
-    urls.push(urlEntry(`/fixtures/${f.id}`, f.date, "weekly", "0.5"));
+    urls.push(urlEntry(`/fixtures/${f.id}`, f.date <= today ? f.date : null, "weekly", "0.5"));
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

@@ -3,11 +3,13 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { type NextRequest } from 'next/server';
 import { vietapi } from '@/lib/ai/vietapi';
 import { streamText } from 'ai';
-import { DEFAULT_CHAT_AI_MODEL } from '@/config/constants';
+import { ALLOWED_CHAT_MODELS, DEFAULT_CHAT_AI_MODEL } from '@/config/constants';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { webSearch, type WebSearchResult } from '@/lib/tools/web-search';
 import { classifyIntent } from '@/lib/chat/intent-classifier';
 import { buildFallbackChain, isRateLimitError } from '@/lib/chat/model-fallback';
 import { BRO_AI_SYSTEM_PROMPT } from '@/lib/prompts/bro-ai-system';
+import { buildCurrentFactsBlock } from '@/lib/prompts/current-facts';
 
 export const maxDuration = 60;
 
@@ -23,28 +25,45 @@ function getMessageContent(msg: Record<string, unknown>): string {
   return '';
 }
 
-// Normalize messages from assistant-ui format to OpenAI format
-type ChatRole = 'system' | 'user' | 'assistant';
+// Cost guards: the request body is fully client-controlled.
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_MESSAGE_CHARS = 4000;
+const MAX_OUTPUT_TOKENS = 2000;
+const CHAT_REQUESTS_PER_HOUR = 40;
+
+// Normalize messages from assistant-ui format to OpenAI format. Only user and
+// assistant turns are accepted — a client-sent `system` message would override
+// the BRO AI prompt — and history is trimmed to the most recent turns.
+type ChatRole = 'user' | 'assistant';
 function normalizeMessages(
-  messages: Record<string, unknown>[],
+  messages: unknown,
 ): { role: ChatRole; content: string }[] {
+  if (!Array.isArray(messages)) return [];
   return messages
+    .filter(
+      (msg): msg is Record<string, unknown> =>
+        !!msg && typeof msg === 'object' &&
+        ((msg as Record<string, unknown>).role === 'user' ||
+          (msg as Record<string, unknown>).role === 'assistant'),
+    )
     .map((msg) => ({
       role: msg.role as ChatRole,
-      content: getMessageContent(msg),
+      content: getMessageContent(msg).slice(0, MAX_MESSAGE_CHARS),
     }))
-    .filter((msg) => msg.content.length > 0);
+    .filter((msg) => msg.content.length > 0)
+    .slice(-MAX_HISTORY_MESSAGES);
 }
 
 // Build system prompt with numbered sources for citation references
 function buildSystemPrompt(searchResult: WebSearchResult | null): string {
-  if (!searchResult) return BRO_AI_SYSTEM_PROMPT;
+  const base = `${BRO_AI_SYSTEM_PROMPT}\n\n${buildCurrentFactsBlock()}`;
+  if (!searchResult) return base;
 
   const numberedSources = searchResult.sources
     .map((s, i) => `[${i + 1}] ${s.title || new URL(s.url).hostname}`)
     .join('\n');
 
-  return `${BRO_AI_SYSTEM_PROMPT}
+  return `${base}
 
 ## Web Search Results for: "${searchResult.query}"
 
@@ -104,11 +123,23 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Per-user, per-instance limit. Not a hard global quota on serverless, but it
+    // stops a single client from looping requests against one warm instance.
+    if (!checkRateLimit(`chat:${user.id}`, CHAT_REQUESTS_PER_HOUR, 3_600_000).allowed) {
+      return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+        status: 429,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
     const { model, conversationId } = body;
-    const rawMessages = body.messages || [];
-    const messages = normalizeMessages(rawMessages);
-    const selectedModel = model || DEFAULT_CHAT_AI_MODEL;
+    const messages = normalizeMessages(body.messages);
+    // Never pass a client-chosen model id straight to the paid provider.
+    const selectedModel =
+      typeof model === 'string' && ALLOWED_CHAT_MODELS.includes(model)
+        ? model
+        : DEFAULT_CHAT_AI_MODEL;
 
     console.log(
       `[Chat API] User=${user.id} model=${selectedModel} msgs=${messages.length} conv=${conversationId || 'new'}`,
@@ -120,7 +151,7 @@ export async function POST(req: NextRequest) {
 
     // Create conversation if new
     if (isNewConversation && messages.length > 0) {
-      conversationTitle = messages[0].content;
+      conversationTitle = messages[0].content.slice(0, 100);
       const { data: convData, error: convError } = await supabase
         .from('conversations')
         .insert({
@@ -222,37 +253,65 @@ export async function POST(req: NextRequest) {
 
             // Stream with model fallback on rate limit
             const fallbackChain = buildFallbackChain(selectedModel);
-            let usedModel = selectedModel;
+            let usedModel: string | null = null;
 
+            // Provider failures (rate limit, model_not_found, 5xx) arrive as
+            // `error` parts of fullStream — textStream does not throw them — so
+            // reading textStream ended with an empty reply and never reached
+            // the next model. Fall back on any error that occurs before the
+            // first token; after that, keep what the user already saw.
             for (const tryModel of fallbackChain) {
+              let streamError: unknown = null;
+              let emitted = false;
+              const result = streamText({
+                model: vietapi(tryModel),
+                system: buildSystemPrompt(searchResult),
+                messages,
+                maxOutputTokens: MAX_OUTPUT_TOKENS,
+                // One retry per model: the fallback chain is the real retry, and
+                // the default (2 retries with backoff) per model could run three
+                // failing models past the 60s function limit.
+                maxRetries: 1,
+                // Errors are handled below via fullStream; skip the SDK's default dump.
+                onError: () => {},
+              });
+
               try {
-                const result = streamText({
-                  model: vietapi(tryModel),
-                  system: buildSystemPrompt(searchResult),
-                  messages,
-                });
-
-                for await (const textPart of result.textStream) {
-                  fullAssistantContent += textPart;
-                  writer.write({
-                    type: 'text-delta',
-                    id: messageId,
-                    delta: textPart,
-                  });
+                for await (const part of result.fullStream) {
+                  if (part.type === 'text-delta') {
+                    emitted = true;
+                    fullAssistantContent += part.text;
+                    writer.write({ type: 'text-delta', id: messageId, delta: part.text });
+                  } else if (part.type === 'error') {
+                    streamError = part.error;
+                    break;
+                  }
                 }
-
-                usedModel = tryModel;
-                break; // Success — exit fallback loop
               } catch (error) {
-                if (isRateLimitError(error)) {
-                  console.warn(`[Chat API] Rate limited on ${tryModel}, trying next...`);
-                  continue;
-                }
-                throw error; // Non-rate-limit error — bubble up
+                streamError = error;
               }
+
+              if (!streamError) {
+                usedModel = tryModel;
+                break;
+              }
+              const reason = streamError instanceof Error ? streamError.message : String(streamError);
+              if (emitted) {
+                console.error(`[Chat API] ${tryModel} failed mid-answer: ${reason.slice(0, 200)}`);
+                usedModel = tryModel;
+                break;
+              }
+              console.warn(
+                `[Chat API] ${tryModel} failed${isRateLimitError(streamError) ? ' (rate limit)' : ''}, trying next: ${reason.slice(0, 200)}`,
+              );
             }
 
-            if (usedModel !== selectedModel) {
+            if (!usedModel) {
+              // Every model failed before answering: say so instead of a blank bubble.
+              const apology =
+                'Xin lỗi, LiverBird AI đang quá tải — bạn thử lại sau ít phút nhé. / Sorry, LiverBird AI is overloaded right now — please try again in a few minutes.';
+              writer.write({ type: 'text-delta', id: messageId, delta: apology });
+            } else if (usedModel !== selectedModel) {
               console.log(`[Chat API] Fell back from ${selectedModel} → ${usedModel}`);
             }
 

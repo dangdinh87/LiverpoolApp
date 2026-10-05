@@ -2,17 +2,14 @@ import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { H2HRecord } from "@/lib/football";
 import { formatDayMonthYear } from "@/lib/format-match-date";
+import { RESULT_BADGE } from "@/lib/result-style";
 
 interface H2HSectionProps {
   h2h: H2HRecord;
   opponentName: string;
 }
 
-const RESULT_COLORS = {
-  W: "bg-green-500 text-white",
-  D: "bg-amber-500 text-white",
-  L: "bg-red-500 text-white",
-} as const;
+const RESULT_COLORS = RESULT_BADGE;
 
 export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
   const t = useTranslations("Match.h2h");
@@ -25,18 +22,15 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
   const winRate = total > 0 ? Math.round((h2h.liverpoolWins / total) * 100) : 0;
 
   return (
-    <div className="bg-stadium-surface border border-stadium-border overflow-hidden">
+    <div className="surface overflow-hidden">
       {/* Header */}
       <div className="px-5 sm:px-6 py-4 border-b border-stadium-border/50">
-        <h3 className="font-bebas text-2xl sm:text-3xl text-white tracking-wider">
-          {t("title")}
-        </h3>
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex items-center gap-3">
           <span className="font-barlow text-xs text-stadium-muted uppercase tracking-wider">
             {t("subtitle", { count: h2h.totalMatches })}
           </span>
           <span className="w-1 h-1 rounded-full bg-stadium-border" />
-          <span className="font-inter text-[11px] text-stadium-muted/70">
+          <span className="font-inter text-xs text-stadium-muted">
             {h2h.fromYear === h2h.toYear
               ? h2h.fromYear.toString()
               : t("dataRange", { from: h2h.fromYear, to: h2h.toYear })}
@@ -48,7 +42,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
         {/* W/D/L bar — bigger */}
         <div className="space-y-3">
           <div className="flex justify-between items-baseline">
-            <span className="font-bebas text-lg sm:text-xl text-lfc-red tracking-wider">Liverpool</span>
+            <span className="font-bebas text-lg sm:text-xl text-brand tracking-wider">Liverpool</span>
             <span className="font-bebas text-lg sm:text-xl text-white/60 tracking-wider text-right">{opponentName}</span>
           </div>
           <div className="flex h-3 overflow-hidden gap-0.5 rounded-sm">
@@ -59,7 +53,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
             <div className="bg-white/15 transition-all duration-700" style={{ width: `${oppPct}%` }} />
           </div>
           <div className="flex justify-between">
-            <span className="font-bebas text-2xl sm:text-3xl text-lfc-red leading-none">{h2h.liverpoolWins}W</span>
+            <span className="font-bebas text-2xl sm:text-3xl text-brand leading-none">{h2h.liverpoolWins}W</span>
             <span className="font-bebas text-2xl sm:text-3xl text-lfc-gold leading-none">{h2h.draws}D</span>
             <span className="font-bebas text-2xl sm:text-3xl text-white/50 leading-none">{h2h.opponentWins}L</span>
           </div>
@@ -67,7 +61,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
 
         {/* Stats grid — 4 cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <StatCard label={t("goalsFor")} value={h2h.liverpoolGoals} accent="text-lfc-red" />
+          <StatCard label={t("goalsFor")} value={h2h.liverpoolGoals} accent="text-brand" />
           <StatCard label={t("goalsAgainst")} value={h2h.opponentGoals} accent="text-white/60" />
           <StatCard label={t("avgGoals")} value={h2h.avgGoalsPerMatch} accent="text-lfc-gold" />
           <StatCard label={t("winRate")} value={`${winRate}%`} accent={winRate >= 50 ? "text-green-400" : "text-amber-400"} />
@@ -108,7 +102,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
                       <p className="font-inter text-sm text-white font-medium truncate">
                         {m.homeTeam} <span className="text-lfc-gold font-bebas text-base mx-1">{m.score}</span> {m.awayTeam}
                       </p>
-                      <p className="font-inter text-[11px] text-stadium-muted mt-0.5">
+                      <p className="font-inter text-xs text-stadium-muted mt-0.5">
                         {dateStr} · {m.competition}
                       </p>
                     </div>
@@ -126,7 +120,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
 function StatCard({ label, value, accent }: { label: string; value: string | number; accent: string }) {
   return (
     <div className="bg-stadium-bg/50 border border-stadium-border/30 p-3 text-center">
-      <p className="font-barlow text-[10px] text-stadium-muted uppercase tracking-wider mb-1.5">
+      <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider mb-1.5">
         {label}
       </p>
       <p className={cn("font-bebas text-3xl leading-none", accent)}>{value}</p>

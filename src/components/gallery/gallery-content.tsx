@@ -1,33 +1,14 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
-import {
-  ZoomIn,
-  Download,
-  Trash2,
-  Home,
-  Loader2,
-  LayoutGrid,
-  List,
-  Search,
-  X,
-} from "lucide-react";
-import { motion } from "framer-motion";
-import Lightbox from "yet-another-react-lightbox";
-import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import "yet-another-react-lightbox/styles.css";
+import { Trash2, Home, Loader2, Search, X, ImageOff } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { GALLERY_CATEGORIES } from "@/lib/constants";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -41,8 +22,41 @@ import {
 import { useToast } from "@/stores/toast-store";
 import { cn } from "@/lib/utils";
 
+// The lightbox (and its CSS) is only needed once someone opens a photo.
+const GalleryLightbox = dynamic(() => import("./gallery-lightbox"), { ssr: false });
+
 type Category = "all" | (typeof GALLERY_CATEGORIES)[number];
-type ViewMode = "card" | "list";
+
+/**
+ * Smaller rendition for grid thumbnails (lightbox + download keep `src`).
+ * Wikimedia: reuse the `/thumb/.../{w}px-` pattern with a standard width.
+ * Cloudinary: width-limited, auto quality/format. Anything else is untouched.
+ */
+function thumbSrc(src: string, width: number): string {
+  try {
+    const u = new URL(src);
+    if (u.hostname === "upload.wikimedia.org") {
+      if (/\.svg$/i.test(u.pathname)) return src;
+      const thumb = u.pathname.match(/^(.*\/thumb\/.+\/)(\d+)px-([^/]+)$/);
+      if (thumb) {
+        return Number(thumb[2]) <= width ? src : `${u.origin}${thumb[1]}${width}px-${thumb[3]}`;
+      }
+      const orig = u.pathname.match(/^\/wikipedia\/(commons|en)\/([0-9a-f]\/[0-9a-f]{2})\/([^/]+)$/);
+      if (orig) {
+        return `${u.origin}/wikipedia/${orig[1]}/thumb/${orig[2]}/${orig[3]}/${width}px-${orig[3]}`;
+      }
+      return src;
+    }
+    if (u.hostname === "res.cloudinary.com" && u.pathname.includes("/upload/")) {
+      const [head, tail] = src.split("/upload/");
+      if (/^(w_|c_|q_|f_)/.test(tail)) return src;
+      return `${head}/upload/w_600,c_limit,q_auto,f_auto/${tail}`;
+    }
+  } catch {
+    // relative or malformed URL — use as-is
+  }
+  return src;
+}
 
 interface GalleryImage {
   id: string;
@@ -74,6 +88,20 @@ interface GalleryContentProps {
 
 const ALL_CATEGORIES: Category[] = ["all", ...GALLERY_CATEGORIES];
 
+/** Same grid classes for photos and skeletons so nothing moves when data arrives. */
+const GRID = "grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4";
+const TILE = "relative aspect-[4/3] overflow-hidden";
+
+function SkeletonTiles({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <Skeleton key={i} className={cn(TILE, "w-full")} />
+      ))}
+    </>
+  );
+}
+
 export function GalleryContent({
   images,
   isAdmin,
@@ -90,7 +118,6 @@ export function GalleryContent({
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [category, setCategory] = useState<Category>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("card");
   const [search, setSearch] = useState("");
   const [failedSrcs, setFailedSrcs] = useState<Set<string>>(new Set());
   const [homepageSet, setHomepageSet] = useState<string | null>(null);
@@ -99,7 +126,6 @@ export function GalleryContent({
   const [hasMore, setHasMore] = useState(images.length < totalImages);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Toast + confirm dialog
   const { show: showToast } = useToast();
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
@@ -144,21 +170,19 @@ export function GalleryContent({
     return result;
   }, [images, category, failedSrcs]);
 
-  // Badge counts: use categoryCounts (from server) as stable source of truth
-  const dbCount = useCallback(
-    (cat: Category) => {
-      if (categoryCounts) {
-        if (cat === "all") {
-          // Sum all category counts for stable "all" total
-          return Object.values(categoryCounts).reduce((a, b) => a + b, 0);
-        }
-        return categoryCounts[cat] ?? 0;
-      }
-      const valid = images.filter((img) => !failedSrcs.has(img.src));
-      if (cat === "all") return valid.length;
-      return valid.filter((img) => img.category === cat).length;
+  const slides = useMemo(
+    () => filtered.map((img) => ({ src: img.src, alt: img.alt, download: img.src })),
+    [filtered],
+  );
+
+  /** Category count from the server; `null` (hidden) when we do not know it. */
+  const countFor = useCallback(
+    (cat: Category): number | null => {
+      if (!categoryCounts || Object.keys(categoryCounts).length === 0) return null;
+      const n = cat === "all" ? Object.values(categoryCounts).reduce((a, b) => a + b, 0) : categoryCounts[cat];
+      return typeof n === "number" && n > 0 ? n : null;
     },
-    [categoryCounts, images, failedSrcs],
+    [categoryCounts],
   );
 
   const handleLoadMore = useCallback(async () => {
@@ -172,19 +196,22 @@ export function GalleryContent({
     }
   }, [onLoadMore, loading, category]);
 
-  const handleCategoryChange = useCallback(async (cat: Category) => {
-    setCategory(cat);
-    setHasMore(true);
-    setSearch("");
-    if (onCategoryChange) {
-      setCategoryLoading(true);
-      try {
-        await onCategoryChange(cat);
-      } finally {
-        setCategoryLoading(false);
+  const handleCategoryChange = useCallback(
+    async (cat: Category) => {
+      setCategory(cat);
+      setHasMore(true);
+      setSearch("");
+      if (onCategoryChange) {
+        setCategoryLoading(true);
+        try {
+          await onCategoryChange(cat);
+        } finally {
+          setCategoryLoading(false);
+        }
       }
-    }
-  }, [onCategoryChange]);
+    },
+    [onCategoryChange],
+  );
 
   const categoryLabels: Record<string, string> = {
     all: t("categories.all"),
@@ -197,10 +224,8 @@ export function GalleryContent({
     history: t("categories.history"),
   };
 
-  // Actions with confirm + toast
   const handleDelete = useCallback(
-    (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
+    (id: string) => {
       setConfirmDialog({
         open: true,
         title: t("admin.delete"),
@@ -212,12 +237,11 @@ export function GalleryContent({
         },
       });
     },
-    [onDelete, t],
+    [onDelete, showToast, t],
   );
 
   const handleSetHomepage = useCallback(
-    async (e: React.MouseEvent, id: string) => {
-      e.stopPropagation();
+    (id: string) => {
       setConfirmDialog({
         open: true,
         title: t("admin.setHomepage"),
@@ -234,355 +258,184 @@ export function GalleryContent({
         },
       });
     },
-    [onSetHomepage, t],
+    [onSetHomepage, showToast, t],
   );
 
+  const showGrid = !categoryLoading;
+
   return (
-    <TooltipProvider delayDuration={300}>
-      {/* Confirm dialog */}
-      <AlertDialog
-        open={confirmDialog.open}
-        onOpenChange={(v) => setConfirmDialog((prev) => ({ ...prev, open: v }))}
-      >
+    <>
+      {/* Admin confirm dialog (only ever opened by admin controls) */}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(v) => setConfirmDialog((prev) => ({ ...prev, open: v }))}>
         <AlertDialogContent className="bg-stadium-surface border-stadium-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider">
-              {confirmDialog.title}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-stadium-muted font-inter">
-              {confirmDialog.description}
-            </AlertDialogDescription>
+            <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider">{confirmDialog.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-stadium-muted font-inter">{confirmDialog.description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-stadium-surface2 border-stadium-border text-white hover:bg-stadium-surface hover:text-white cursor-pointer">
               {t("admin.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDialog.onConfirm}
-              className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer"
-            >
+            <AlertDialogAction onClick={confirmDialog.onConfirm} className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer">
               {t("admin.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Toolbar */}
-      <div className="flex flex-col gap-4 mb-6">
-        {/* Row 1: categories + view toggle */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {ALL_CATEGORIES.map((cat) => {
-              const isActive = category === cat;
-              return (
-                <motion.button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  whileTap={{ scale: 0.96 }}
-                  className={cn(
-                    "relative inline-flex items-center gap-1.5 font-barlow text-xs uppercase tracking-wider px-3 py-1.5 whitespace-nowrap border overflow-hidden cursor-pointer transition-colors",
-                    isActive
-                      ? "border-lfc-red text-white"
-                      : "border-stadium-border text-stadium-muted hover:border-lfc-red/40 hover:text-white",
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="gallery-tab-bg"
-                      className="absolute inset-0 bg-lfc-red"
-                      transition={{ type: "spring", stiffness: 180, damping: 14 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1.5">
-                    {categoryLabels[cat]}
-                    <span className="opacity-60 font-inter">{dbCount(cat)}</span>
-                  </span>
-                </motion.button>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center gap-0.5 border border-stadium-border p-0.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewMode("card")}
-                  className={cn(
-                    "h-7 w-7",
-                    viewMode === "card"
-                      ? "bg-lfc-red text-white hover:bg-lfc-red/90 hover:text-white"
-                      : "text-stadium-muted hover:text-white hover:bg-stadium-surface",
-                  )}
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("viewMode.card")}</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setViewMode("list")}
-                  className={cn(
-                    "h-7 w-7",
-                    viewMode === "list"
-                      ? "bg-lfc-red text-white hover:bg-lfc-red/90 hover:text-white"
-                      : "text-stadium-muted hover:text-white hover:bg-stadium-surface",
-                  )}
-                >
-                  <List className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t("viewMode.list")}</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Row 2: search */}
-        <div className="relative max-w-xs">
+      {/* Toolbar: search + category chips */}
+      <div className="mb-6 flex flex-col gap-3">
+        <div className="relative w-full sm:max-w-sm">
           <Search
+            aria-hidden
             className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none",
-              isSearching ? "text-lfc-red animate-pulse" : "text-stadium-muted",
+              "pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2",
+              isSearching ? "animate-pulse text-brand" : "text-stadium-muted",
             )}
           />
-          <Input
-            type="text"
+          <input
+            type="search"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder={t("search.placeholder")}
-            className="h-9 pl-9 pr-8 bg-stadium-surface border-stadium-border text-white text-xs font-inter placeholder:text-stadium-muted/60 focus-visible:ring-lfc-red/30 focus-visible:border-lfc-red/50"
+            aria-label={t("search.placeholder")}
+            className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-10 pr-10 text-[15px] text-white placeholder:text-stadium-muted focus-visible:border-lfc-red focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {search && (
             <button
+              type="button"
               onClick={() => handleSearchChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-stadium-muted hover:text-white cursor-pointer"
+              aria-label={t("search.clear")}
+              className="absolute right-0 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center text-stadium-muted hover:text-white"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="size-4" aria-hidden />
             </button>
           )}
         </div>
-      </div>
 
-      {/* Loading skeleton */}
-      {categoryLoading && (
-        <div className="columns-2 sm:columns-3 md:columns-4 gap-1.5 space-y-1.5">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="break-inside-avoid bg-stadium-surface animate-pulse"
-              style={{ aspectRatio: `1 / ${[0.75, 1.0, 0.66, 0.85][i % 4]}` }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* === CARD VIEW (Masonry) === */}
-      {!categoryLoading && viewMode === "card" && (
-        <div className="columns-2 sm:columns-3 md:columns-4 gap-1.5 space-y-1.5">
-          {filtered.map((img, i) => {
-            const aspectRatio =
-              img.width && img.height
-                ? img.height / img.width
-                : [0.75, 1.0, 0.66][i % 3];
-
+        <div role="group" aria-label={t("hero.label")} className="scroll-x -mx-4 flex gap-2 px-4 sm:mx-0 sm:px-0">
+          {ALL_CATEGORIES.map((cat) => {
+            const isActive = category === cat;
+            const count = countFor(cat);
             return (
-              <div
-                key={img.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => { setIndex(i); setOpen(true); }}
-                onKeyDown={(e) => { if (e.key === "Enter") { setIndex(i); setOpen(true); } }}
-                className="relative overflow-hidden cursor-zoom-in group break-inside-avoid block w-full"
-                style={{ aspectRatio: `1 / ${aspectRatio}` }}
+              <button
+                key={cat}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => handleCategoryChange(cat)}
+                className={cn(
+                  "inline-flex min-h-10 shrink-0 items-center gap-2 border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] whitespace-nowrap transition-colors",
+                  isActive
+                    ? "border-lfc-red bg-lfc-red text-white"
+                    : "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white",
+                )}
               >
-                <div className="absolute inset-0 bg-stadium-surface animate-pulse" />
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={400}
-                  height={Math.round(400 * aspectRatio)}
-                  className="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
-                  loading="lazy"
-                  unoptimized
-                  onError={() => handleImageError(img.src)}
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <ZoomIn className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
-                </div>
-
-                {/* Download */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <a
-                      href={img.src}
-                      download={`${img.id}.jpg`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute top-2 right-2 p-1.5 bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 z-10"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                    </a>
-                  </TooltipTrigger>
-                  <TooltipContent side="left">{t("admin.download")}</TooltipContent>
-                </Tooltip>
-
-                {/* Admin: Delete */}
-                {isAdmin && onDelete && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={(e) => handleDelete(e, img.id)}
-                        className="absolute top-2 left-2 p-1.5 bg-red-600/80 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10 cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{t("admin.delete")}</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {/* Admin: Set homepage bg */}
-                {isAdmin && onSetHomepage && img.isHomepageEligible && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={(e) => handleSetHomepage(e, img.id)}
-                        className={cn(
-                          "absolute bottom-8 right-2 p-1.5 text-black opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer",
-                          homepageSet === img.id ? "bg-green-400" : "bg-lfc-gold/80 hover:bg-lfc-gold",
-                        )}
-                      >
-                        <Home className="w-3.5 h-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">{t("admin.setHomepage")}</TooltipContent>
-                  </Tooltip>
-                )}
-
-                <p className="absolute bottom-0 inset-x-0 px-2 py-1.5 bg-linear-to-t from-black/80 to-transparent text-white text-[9px] font-barlow uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity truncate">
-                  {img.alt}
-                </p>
-              </div>
+                {categoryLabels[cat]}
+                {count !== null && <span className={cn("font-inter text-xs", isActive ? "text-white" : "text-stadium-muted")}>{count}</span>}
+              </button>
             );
           })}
         </div>
-      )}
+      </div>
 
-      {/* === LIST VIEW === */}
-      {!categoryLoading && viewMode === "list" && (
-        <div className="flex flex-col gap-2">
-          {filtered.map((img, i) => (
-            <div
-              key={img.id}
-              className="flex items-center gap-4 bg-stadium-surface border border-stadium-border hover:border-stadium-muted/50 transition-colors group"
-            >
-              <button
-                onClick={() => { setIndex(i); setOpen(true); }}
-                className="relative shrink-0 w-24 h-16 sm:w-32 sm:h-20 overflow-hidden cursor-zoom-in"
-              >
-                <div className="absolute inset-0 bg-stadium-surface2 animate-pulse" />
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={128}
-                  height={80}
-                  className="relative w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                  unoptimized
-                  onError={() => handleImageError(img.src)}
-                />
-              </button>
-
-              <div className="flex-1 min-w-0 py-2">
-                <p className="text-white text-xs sm:text-sm font-inter truncate">{img.alt}</p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
-                  <Badge variant="outline" className="text-[9px] font-barlow font-bold uppercase tracking-wider text-lfc-red border-lfc-red/30 px-1.5 py-0">
-                    {categoryLabels[img.category] || img.category}
-                  </Badge>
-                  {img.width && img.height && (
-                    <span className="text-[10px] font-barlow text-stadium-muted">
-                      {img.width} x {img.height}px
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-0.5 pr-3 shrink-0">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-stadium-muted hover:text-white hover:bg-stadium-surface2">
-                      <a href={img.src} download={`${img.id}.jpg`}>
-                        <Download className="w-3.5 h-3.5" />
-                      </a>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("admin.download")}</TooltipContent>
-                </Tooltip>
-
-                {isAdmin && onSetHomepage && img.isHomepageEligible && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleSetHomepage(e, img.id)}
-                        className={cn(
-                          "h-8 w-8",
-                          homepageSet === img.id ? "text-green-400" : "text-lfc-gold/60 hover:text-lfc-gold hover:bg-stadium-surface2",
-                        )}
-                      >
-                        <Home className="w-3.5 h-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("admin.setHomepage")}</TooltipContent>
-                  </Tooltip>
-                )}
-
-                {isAdmin && onDelete && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => handleDelete(e, img.id)}
-                        className="h-8 w-8 text-stadium-muted hover:text-red-500 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("admin.delete")}</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            </div>
-          ))}
+      {/* Loading (category switch) */}
+      {categoryLoading && (
+        <div role="status" aria-label={t("loadMore.loading")} className={GRID}>
+          <SkeletonTiles count={8} />
         </div>
       )}
 
-      {/* Load More */}
-      {hasMore && onLoadMore && (
-        <div className="flex justify-center mt-10">
+      {/* Grid: every tile has a fixed aspect box, so images arriving never move anything */}
+      {showGrid && filtered.length > 0 && (
+        <ul className={GRID}>
+          {filtered.map((img, i) => (
+            <li key={img.id} className={cn(TILE, "surface group")}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIndex(i);
+                  setOpen(true);
+                }}
+                aria-label={img.alt}
+                className="absolute inset-0 block size-full cursor-zoom-in"
+              >
+                <Image
+                  src={thumbSrc(img.src, 500)}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px"
+                  className="object-cover opacity-90 transition-opacity duration-200 group-hover:opacity-100"
+                  loading={i < 4 ? "eager" : "lazy"}
+                  unoptimized
+                  onError={() => handleImageError(img.src)}
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-6 text-left font-barlow text-[11px] uppercase tracking-wider text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                >
+                  {img.alt}
+                </span>
+              </button>
+
+              {/* Admin-only controls: not rendered for everyone else */}
+              {isAdmin && onDelete && (
+                <button
+                  type="button"
+                  onClick={() => handleDelete(img.id)}
+                  aria-label={t("admin.delete")}
+                  title={t("admin.delete")}
+                  className="absolute left-1.5 top-1.5 inline-flex size-9 items-center justify-center bg-red-600/90 text-white hover:bg-red-600"
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </button>
+              )}
+              {isAdmin && onSetHomepage && img.isHomepageEligible && (
+                <button
+                  type="button"
+                  onClick={() => handleSetHomepage(img.id)}
+                  aria-label={t("admin.setHomepage")}
+                  title={t("admin.setHomepage")}
+                  className={cn(
+                    "absolute right-1.5 top-1.5 inline-flex size-9 items-center justify-center text-black",
+                    homepageSet === img.id ? "bg-green-400" : "bg-lfc-gold/90 hover:bg-lfc-gold",
+                  )}
+                >
+                  <Home className="size-4" aria-hidden />
+                </button>
+              )}
+            </li>
+          ))}
+          {loading && <SkeletonTiles count={8} />}
+        </ul>
+      )}
+
+      {/* Empty */}
+      {showGrid && filtered.length === 0 && (
+        <EmptyState
+          icon={<ImageOff className="size-10" aria-hidden />}
+          title={t("empty.title")}
+          description={search ? t("empty.searchHint") : t("empty.description")}
+        />
+      )}
+
+      {/* Load more */}
+      {showGrid && hasMore && onLoadMore && filtered.length > 0 && (
+        <div className="mt-8 flex justify-center">
           <Button
             variant="outline"
             onClick={handleLoadMore}
             disabled={loading}
-            className="bg-stadium-surface border-stadium-border text-white font-barlow font-bold uppercase tracking-[0.15em] text-xs hover:bg-stadium-surface2 hover:border-lfc-red/50 hover:text-white px-8 py-5"
+            className="h-11 border-[var(--line-strong)] bg-transparent px-8 font-barlow text-sm font-bold uppercase tracking-[0.14em] text-white hover:bg-[var(--surface-3)] hover:text-white"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <Loader2 className="size-4 animate-spin" aria-hidden />
                 {t("loadMore.loading")}
               </>
             ) : (
               <>
                 {t("loadMore.button")}
-                <span className="opacity-50 text-[10px] ml-2">
+                <span className="font-inter text-xs text-stadium-muted">
                   {filtered.length} / {totalImages}
                 </span>
               </>
@@ -591,16 +444,24 @@ export function GalleryContent({
         </div>
       )}
 
-      {/* Lightbox */}
-      <Lightbox
-        open={open}
-        close={() => setOpen(false)}
-        index={index}
-        slides={filtered.map((img) => ({ src: img.src }))}
-        plugins={[Zoom]}
-        styles={{ container: { backgroundColor: "rgba(0,0,0,0.97)" } }}
-        zoom={{ maxZoomPixelRatio: 4, scrollToZoom: true }}
-      />
-    </TooltipProvider>
+      {/* Lightbox: mounted on first open only */}
+      {open && (
+        <GalleryLightbox
+          open={open}
+          index={index}
+          slides={slides}
+          onClose={() => setOpen(false)}
+          onIndexChange={setIndex}
+          labels={{
+            previous: t("lightbox.previous"),
+            next: t("lightbox.next"),
+            close: t("lightbox.close"),
+            zoomIn: t("lightbox.zoomIn"),
+            zoomOut: t("lightbox.zoomOut"),
+            download: t("admin.download"),
+          }}
+        />
+      )}
+    </>
   );
 }

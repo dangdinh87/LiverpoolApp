@@ -60,7 +60,6 @@ RSS/Scraper Adapters (17+ nguồn)
 | `dantri` | Dân Trí | Lọc từ khóa `lfc` |
 | `zingnews` | ZNews | Lọc từ khóa `lfc` |
 | `vietnamnet` | VietNamNet | Lọc từ khóa `lfc` |
-| `webthethao` | Webthethao | Lọc từ khóa `lfc` |
 
 > Lưu ý: `thisisanfield.com` đã bị tắt do liên tục xảy ra vòng lặp redirect.
 
@@ -277,7 +276,7 @@ Tóm tắt tin tức tiếng Việt hàng ngày được tự động tạo bở
 Cron: hàng ngày lúc 00:00 UTC
   |
   v
-GET /api/news/digest/generate?key=CRON_SECRET
+GET /api/news/digest/generate  (Authorization: Bearer CRON_SECRET)
   |
   v
 generateDailyDigest()
@@ -432,7 +431,7 @@ Cấu hình theo GitHub Actions (sync) + `vercel.json` (cleanup, digest):
 | `/api/news/cleanup` | `0 3 * * *` (3 AM UTC) | mặc định | Soft-delete bài >30 ngày; hard-delete bài >60 ngày |
 | `/api/news/digest/generate` | `0 0 * * *` (nửa đêm UTC) | 60s | Tạo bản tóm tắt AI hàng ngày qua Groq |
 
-**Xác thực:** Tất cả route cron kiểm tra header `Authorization: Bearer <CRON_SECRET>` (Vercel gửi tự động) hoặc query param `?key=<CRON_SECRET>`.
+**Xác thực:** Tất cả route cron kiểm tra header `Authorization: Bearer <CRON_SECRET>` (Vercel gửi tự động), so sánh constant-time. Đã bỏ query param `?key=` vì URL bị ghi vào log.
 
 ---
 
