@@ -9,10 +9,8 @@
 export const dynamic = "force-dynamic";
 
 import { getAllPlayers } from "@/lib/squad-data";
-import { getArticleSitemapData } from "@/lib/news/db";
 import { getAllDigestDates } from "@/lib/news/digest";
 import { getFixtures } from "@/lib/football";
-import { encodeArticleSlug } from "@/lib/news-config";
 
 export async function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -37,17 +35,14 @@ export async function GET() {
   const players = getAllPlayers();
 
   // ─── Dynamic routes from DB (graceful fallback if DB unavailable) ─────────
-  let articles: { url: string; published_at: string }[] = [];
   let digests: { digest_date: string; generated_at: string }[] = [];
   let fixtureUrls: { id: number; date: string; label: string }[] = [];
 
   try {
-    const [articleData, digestData, fixtures] = await Promise.allSettled([
-      getArticleSitemapData(),
+    const [digestData, fixtures] = await Promise.allSettled([
       getAllDigestDates(),
       getFixtures(),
     ]);
-    if (articleData.status === "fulfilled") articles = articleData.value;
     if (digestData.status === "fulfilled") digests = digestData.value;
     if (fixtures.status === "fulfilled") {
       fixtureUrls = fixtures.value.map((f) => ({
@@ -97,13 +92,9 @@ export async function GET() {
     urls.push(urlEntry(`/player/${p.slug}`, null, "weekly", "0.6"));
   }
 
-  // News article pages (last 90 days) — strip query params to avoid robots.txt /*?* conflict
-  for (const a of articles) {
-    const cleanUrl = a.url.split("?")[0];
-    const slug = encodeArticleSlug(cleanUrl);
-    const lastmod = a.published_at.slice(0, 10);
-    urls.push(urlEntry(`/news/${slug}`, lastmod, "never", "0.5"));
-  }
+  // Scraped article pages (/news/<slug>) are excerpt-only mirrors of other
+  // publishers' stories and are noindex (see generateMetadata) — keep them out
+  // of the sitemap. Only our own digest pages below are listed.
 
   // Digest pages
   for (const d of digests) {

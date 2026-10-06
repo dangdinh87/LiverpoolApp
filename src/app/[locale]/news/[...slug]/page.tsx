@@ -127,6 +127,9 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Excerpt-only mirror of another publisher's story: readers can open it,
+    // but it must not compete with the original in search (thin/scraped content).
+    robots: { index: false, follow: true },
     alternates: getHreflangAlternates(articlePath),
     openGraph: {
       type: "article",
