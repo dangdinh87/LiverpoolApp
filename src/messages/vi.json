@@ -133,7 +133,7 @@
     },
     "tagline": "Đa nguồn tin",
     "title": "Tin mới nhất",
-    "heroDesc": "Tổng hợp tin tức Liverpool FC mới nhất từ các nguồn uy tín trong và ngoài nước.",
+    "heroDesc": "Tin Liverpool FC từ các nguồn uy tín trong và ngoài nước — đoạn trích ngắn ở đây, bài đầy đủ ở trang gốc.",
     "description": "Tin tức Liverpool FC từ 10 nguồn bao gồm LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield và hơn thế nữa",
     "summary": "{total} bài viết — {en} quốc tế, {vi} Việt Nam",
     "search": "Tìm kiếm tin tức...",
@@ -142,7 +142,7 @@
     "langLocal": "Việt Nam",
     "langGlobal": "Quốc tế",
     "viewAll": "Tất cả tin tức →",
-    "attribution": "Tin tức được tổng hợp từ {sources}. Tất cả bản quyền thuộc về chủ sở hữu tương ứng.",
+    "attribution": "Tiêu đề và đoạn trích ngắn từ {sources}. Đọc đầy đủ tại trang gốc. Tất cả bản quyền thuộc về chủ sở hữu tương ứng.",
     "categories": {
       "all": "Tất cả",
       "official": "Chính thức",
@@ -708,7 +708,7 @@
         "i18n": "Hỗ trợ song ngữ đầy đủ — Tiếng Anh & Tiếng Việt với tự động phát hiện ngôn ngữ"
       },
       "dataTitle": "Nguồn dữ liệu",
-      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS từ BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, và các trang Việt Nam (Bóng Đá, 24h). Nội dung được xử lý với Mozilla Readability.",
+      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS từ BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, và các trang Việt Nam (Bóng Đá, 24h). Mục tin tức chỉ hiển thị đoạn trích ngắn kèm liên kết tới bài gốc.",
       "techTitle": "Công nghệ",
       "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
     },
@@ -995,6 +995,7 @@
   },
   "Match": {
     "live": "TRỰC TIẾP",
+    "whereToWatch": "Xem trực tiếp tại Việt Nam: FPT Play",
     "win": "THẮNG",
     "draw": "HÒA",
     "loss": "THUA",

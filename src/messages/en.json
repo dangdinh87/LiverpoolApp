@@ -133,7 +133,7 @@
     },
     "tagline": "Multi-Source",
     "title": "Latest News",
-    "heroDesc": "All the latest Liverpool FC news aggregated from trusted sources worldwide.",
+    "heroDesc": "Liverpool FC headlines from trusted sources worldwide — a short excerpt here, the full story at the original publisher.",
     "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more",
     "summary": "{total} articles — {en} international, {vi} Vietnamese",
     "search": "Search news...",
@@ -142,7 +142,7 @@
     "langLocal": "Vietnamese",
     "langGlobal": "International",
     "viewAll": "All News →",
-    "attribution": "News aggregated from {sources}. All rights belong to their respective owners.",
+    "attribution": "Headlines and short excerpts from {sources}. Read the full story at the original publisher. All rights belong to their respective owners.",
     "categories": {
       "all": "All",
       "official": "Official",
@@ -708,7 +708,7 @@
         "i18n": "Full bilingual support — English & Vietnamese with automatic locale detection"
       },
       "dataTitle": "Data Sources",
-      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS feeds from BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, and Vietnamese outlets (Bóng Đá, 24h). Content enriched with Mozilla Readability.",
+      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS feeds from BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, and Vietnamese outlets (Bóng Đá, 24h). News shows only a short excerpt with a link to the original story.",
       "techTitle": "Tech Stack",
       "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
     },
@@ -995,6 +995,7 @@
   },
   "Match": {
     "live": "LIVE",
+    "whereToWatch": "Watch live in Vietnam: FPT Play",
     "win": "WIN",
     "draw": "DRAW",
     "loss": "LOSS",

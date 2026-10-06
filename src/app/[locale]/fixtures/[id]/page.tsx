@@ -290,6 +290,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
           <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted">
             <li>{dateStr}{!isFinished && !isLive ? ` · ${timeStr} GMT+7` : ""}</li>
+            {/* FPT Play holds the Premier League rights in Vietnam through 2030/31; no other competition is covered. */}
+            {!isFinished && league.name === "Premier League" && <li className="font-semibold text-white/80">{tMatch("whereToWatch")}</li>}
             {venue && (
               <li className="flex items-center gap-1.5"><MapPin size={12} aria-hidden />{venue}</li>
             )}
