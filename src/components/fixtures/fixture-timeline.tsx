@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@/i18n/navigation";
 import { CalendarX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -10,7 +10,8 @@ import { MatchCentreNav } from "./match-centre-nav";
 import { airsOnFptPlay } from "./where-to-watch";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Fixture } from "@/lib/types/football";
-import { formatMonthYear } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMonthYear, formatZoneOffset } from "@/lib/format-match-date";
+import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 
 // Normalize competition names (FDO/ESPN may use different names for the same comp).
 const COMP_ALIASES: Record<string, string> = {
@@ -52,19 +53,28 @@ interface FixtureTimelineProps {
   showArchiveLink?: boolean;
 }
 
+const subscribeToNothing = () => () => {};
+const readViewParam = () => new URLSearchParams(window.location.search).get("view");
+
 export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink = false }: FixtureTimelineProps) {
   const t = useTranslations("Fixtures.timeline");
   const locale = useLocale() === "vi" ? "vi" : "en";
 
   // Status-based (no clock) so server HTML and hydration agree.
   const hasUpcoming = fixtures.some((f) => !FINISHED.has(f.fixture.status.short));
-  const [view, setView] = useState<View>(initialView ?? (hasUpcoming ? "upcoming" : "results"));
+  const defaultView: View = initialView ?? (hasUpcoming ? "upcoming" : "results");
+  // A link like /fixtures?view=results is read from the URL on the client rather than
+  // on the server, so the page itself stays static (CDN-cached) and the whole list is
+  // in the HTML for search engines. The server snapshot is null, so hydration matches.
+  const urlView = useSyncExternalStore(subscribeToNothing, readViewParam, () => null);
+  const [picked, setPicked] = useState<View | null>(null);
+  const view: View = picked ?? (urlView === "results" && !initialView ? "results" : defaultView);
   const [comp, setComp] = useState("All");
 
   // Keep ?view= in the URL (shallow) so a refresh or shared link lands on the same list.
   const selectView = (next: "fixtures" | "results") => {
     const nextView: View = next === "fixtures" ? "upcoming" : "results";
-    setView(nextView);
+    setPicked(nextView);
     const url = new URL(window.location.href);
     if (nextView === "results") url.searchParams.set("view", "results");
     else url.searchParams.delete("view");
@@ -111,7 +121,9 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
     { key: "All", label: t("filter.all") },
     ...availableComps.map((c) => ({ key: c, label: COMP_SHORT[c] ?? c })),
   ];
-  const showFptHint = view === "upcoming" && upcoming.some((f) => airsOnFptPlay(f.league.name));
+  const viewerZone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
+  const zoneOffset = formatZoneOffset(new Date(fixtures[0]?.fixture.date ?? 0), viewerZone);
+  const showFptHint = view === "upcoming" && upcoming.some((f) => airsOnFptPlay(f.league.name, locale));
 
   return (
     <div>
@@ -129,7 +141,7 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
       )}
 
       <p className="mt-3 text-[13px] leading-snug text-stadium-muted">
-        {t("gmtHint")}
+        {t("gmtHint", { zone: zoneOffset })}
         {showFptHint && <> {t("plWatch")}</>}
       </p>
 

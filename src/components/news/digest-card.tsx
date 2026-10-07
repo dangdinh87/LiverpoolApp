@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { keepDatesTogether, leadSentences } from "@/components/news/news-text";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 interface DigestProps {
   date: string;
@@ -27,7 +27,7 @@ export function DigestCard({ date, title, summary, articleCount, generatedAt, as
   const lead = leadSentences(summary, 260);
   const meta = [
     articleCount > 0 ? t("articleCount", { count: articleCount }) : null,
-    generatedAt ? t("generatedAt", { time: formatMatchTime(new Date(generatedAt)) }) : null,
+    generatedAt ? t("generatedAt", { time: formatMatchTime(new Date(generatedAt), defaultTimeZoneForLocale(locale)) }) : null,
   ]
     .filter(Boolean)
     .join(" · ");

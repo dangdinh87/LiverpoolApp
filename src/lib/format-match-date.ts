@@ -63,9 +63,9 @@ export interface MatchDateParts {
  * across runtimes for numeric fields — it is only the *localised names* that
  * differ between ICU builds, and none are requested here.
  */
-export function getMatchDateParts(date: Date): MatchDateParts {
+export function getMatchDateParts(date: Date, timeZone: string = MATCH_TIME_ZONE): MatchDateParts {
   const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: MATCH_TIME_ZONE,
+    timeZone,
     weekday: "short",
     day: "2-digit",
     month: "2-digit",
@@ -96,8 +96,8 @@ export function getMatchDateParts(date: Date): MatchDateParts {
 const pad = (n: number) => n.toString().padStart(2, "0");
 
 /** `Thứ 7, 12/09 · 21:00` (vi) or `Sat, 12 Sep · 21:00` (en). */
-export function formatMatchDate(date: Date, locale: string): string {
-  const { day, month, weekday, hour, minute } = getMatchDateParts(date);
+export function formatMatchDate(date: Date, locale: string, timeZone?: string): string {
+  const { day, month, weekday, hour, minute } = getMatchDateParts(date, timeZone);
   const names = WEEKDAYS[locale] ?? WEEKDAYS.en;
   const time = `${pad(hour)}:${pad(minute)}`;
 
@@ -115,9 +115,10 @@ export function formatMatchDate(date: Date, locale: string): string {
 export function formatMatchDayMonth(
   date: Date,
   locale: string,
-  withYear = false
+  withYear = false,
+  timeZone?: string
 ): string {
-  const { day, month, year, weekday } = getMatchDateParts(date);
+  const { day, month, year, weekday } = getMatchDateParts(date, timeZone);
   const isVi = locale === "vi";
   const names = WEEKDAYS[isVi ? "vi" : "en"];
   const monthName = (isVi ? MONTHS_VI : MONTHS_EN)[month - 1];
@@ -127,36 +128,59 @@ export function formatMatchDayMonth(
 }
 
 /** `12 thg 9` (vi) or `12 Sep` (en) — the compact timestamp used on news cards. */
-export function formatDayMonth(date: Date, locale: string): string {
-  const { day, month } = getMatchDateParts(date);
+export function formatDayMonth(date: Date, locale: string, timeZone?: string): string {
+  const { day, month } = getMatchDateParts(date, timeZone);
   const monthName = (locale === "vi" ? MONTHS_VI : MONTHS_EN)[month - 1];
   return `${day} ${monthName}`;
 }
 
 /** `tháng 9 2026` (vi) or `September 2026` (en) — the "member since" shape. */
-export function formatMonthYear(date: Date, locale: string): string {
-  const { month, year } = getMatchDateParts(date);
+export function formatMonthYear(date: Date, locale: string, timeZone?: string): string {
+  const { month, year } = getMatchDateParts(date, timeZone);
   const name =
     locale === "vi" ? `tháng ${month}` : MONTHS_LONG_EN[month - 1];
   return `${name} ${year}`;
 }
 
 /** `12 thg 9 2026` (vi) or `12 Sep 2026` (en) — no weekday. */
-export function formatDayMonthYear(date: Date, locale: string): string {
-  const { day, month, year } = getMatchDateParts(date);
+export function formatDayMonthYear(date: Date, locale: string, timeZone?: string): string {
+  const { day, month, year } = getMatchDateParts(date, timeZone);
   const monthName = (locale === "vi" ? MONTHS_VI : MONTHS_EN)[month - 1];
   return `${day} ${monthName} ${year}`;
 }
 
-/** `21:00` in Vietnam time. */
-export function formatMatchTime(date: Date): string {
-  const { hour, minute } = getMatchDateParts(date);
+/** `21:00` in `timeZone` (Vietnam time when omitted). */
+export function formatMatchTime(date: Date, timeZone?: string): string {
+  const { hour, minute } = getMatchDateParts(date, timeZone);
   return `${pad(hour)}:${pad(minute)}`;
 }
 
 /** Whether two instants fall on the same calendar day in `MATCH_TIME_ZONE`. */
-export function isSameMatchDay(a: Date, b: Date): boolean {
-  const x = getMatchDateParts(a);
-  const y = getMatchDateParts(b);
+export function isSameMatchDay(a: Date, b: Date, timeZone?: string): boolean {
+  const x = getMatchDateParts(a, timeZone);
+  const y = getMatchDateParts(b, timeZone);
   return x.year === y.year && x.month === y.month && x.day === y.day;
+}
+
+/**
+ * The zone used for server-rendered HTML before the browser tells us the
+ * viewer's own: Vietnam for the Vietnamese locale, London (where the Premier
+ * League quotes its kick-offs) for everyone else. The client then swaps in the
+ * viewer's zone (see `useViewerTimeZone`), so the first paint is deterministic.
+ */
+export function defaultTimeZoneForLocale(locale: string): string {
+  return locale === "vi" ? "Asia/Ho_Chi_Minh" : "Europe/London";
+}
+
+/**
+ * Short UTC offset of `timeZone` at `date`, e.g. `GMT+7`, `GMT+5:30`, `GMT`.
+ * `shortOffset` yields the same numeric string in every ICU build.
+ */
+export function formatZoneOffset(date: Date, timeZone: string): string {
+  const name = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+    .formatToParts(date)
+    .find((p) => p.type === "timeZoneName")?.value;
+  // A zero offset is "GMT" in Node's ICU but "GMT+0" in Chrome's; the two must
+  // agree or the label hydrates with a text mismatch (React error #418).
+  return !name || /^GMT[+-]0(?::00)?$/.test(name) ? "GMT" : name;
 }

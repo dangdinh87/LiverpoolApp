@@ -18,16 +18,13 @@ export async function generateMetadata({ params }: LocaleParams) {
   return { title, description, ...makePageMeta(title, description, { path: "/fixtures" }) };
 }
 
-// Reads ?view= so a link from the table or stats tab can open the results list
-// directly. That makes the route dynamic; the fixtures themselves stay cached
-// by the data layer (fetch revalidate), so this costs a render, not an API call.
-export default async function FixturesPage({
-  params,
-  searchParams,
-}: LocaleParams & { searchParams: Promise<{ view?: string }> }) {
+// Static page: the ?view=results deep link is handled in FixtureTimeline on the
+// client, so nothing here reads the request and the route can be cached.
+export const revalidate = 1800;
+
+export default async function FixturesPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { view } = await searchParams;
   const t = await getTranslations("Fixtures");
   const fixtures = await getFixtures();
 
@@ -48,7 +45,6 @@ export default async function FixturesPage({
         {fixtures.length > 0 ? (
           <FixtureTimeline
             fixtures={fixtures}
-            initialView={view === "results" ? "results" : undefined}
             showArchiveLink
           />
         ) : (

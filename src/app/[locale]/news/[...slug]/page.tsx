@@ -5,7 +5,7 @@ import { scrapeArticle, getNewsFromDB, getArticleContentFromDB, getArticleByUrl 
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
 import {
@@ -41,13 +41,13 @@ export async function generateStaticParams() {
   return [];
 }
 
-/** Vietnam time, whatever the visitor's or the server's zone ("21:30 giờ VN · Thứ 3, 6 thg 10"). */
+/** Locale default zone (Vietnam for vi, UK for en), whatever the server's zone ("21:30 giờ VN · Thứ 3, 6 thg 10"). */
 function formatPublished(dateStr: string, locale: "vi" | "en", vnLabel: string): { iso: string; text: string } | null {
   const date = new Date(dateStr);
   if (Number.isNaN(date.getTime())) return null;
   return {
     iso: date.toISOString(),
-    text: `${formatMatchTime(date)} ${vnLabel} · ${formatMatchDayMonth(date, locale)}`,
+    text: `${formatMatchTime(date, defaultTimeZoneForLocale(locale))} ${vnLabel} · ${formatMatchDayMonth(date, locale, false, defaultTimeZoneForLocale(locale))}`,
   };
 }
 

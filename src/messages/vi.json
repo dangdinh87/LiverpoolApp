@@ -89,7 +89,7 @@
     },
     "match": {
       "kickoffIn": "Còn",
-      "vnTime": "Giờ Việt Nam",
+      "vnTime": "Giờ của bạn",
       "days": "ngày",
       "hours": "giờ",
       "minutes": "phút",
@@ -871,7 +871,7 @@
     "hero": {
       "season": "Mùa giải {season}",
       "title": "Lịch đấu & kết quả",
-      "subtitle": "{count} trận mùa này · giờ Việt Nam (GMT+7)"
+      "subtitle": "{count} trận mùa này · giờ của bạn"
     },
     "timeline": {
       "filter": {
@@ -890,7 +890,7 @@
       "noFixtures": "Chưa có trận sắp tới ở giải này.",
       "viewLabel": "Chế độ xem lịch",
       "filterLabel": "Lọc theo giải đấu",
-      "gmtHint": "Giờ đá tính theo giờ Việt Nam (GMT+7).",
+      "gmtHint": "Giờ đá hiển thị theo giờ của bạn ({zone}).",
       "emptyTitle": "Chưa có trận nào",
       "noResults": "Chưa có trận nào kết thúc ở giải này.",
       "archive": "Xem các mùa trước",
@@ -925,7 +925,7 @@
           "description": "Chưa có dữ liệu các lần gặp gần đây với đối thủ này."
         }
       },
-      "kickoffVn": "Giờ đá (GMT+7)",
+      "kickoffVn": "Giờ đá",
       "sectionsLabel": "Các phần của trận",
       "metaUpcoming": "{home} gặp {away}: giờ đá {time}, {date} (giờ Việt Nam, GMT+7). {competition}. Xem ở đâu, đội hình dự kiến và lịch sử đối đầu.",
       "metaFinished": "{home} {homeGoals}-{awayGoals} {away}. {competition}: diễn biến, thống kê và đội hình.",

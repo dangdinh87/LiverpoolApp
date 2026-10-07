@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { MapPin } from "lucide-react";
@@ -5,7 +7,8 @@ import { useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
+import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { MatchCountdown } from "./match-countdown";
 import { roundLabel } from "./round-label";
 import { displayTeamName } from "./team-name";
@@ -84,8 +87,10 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
 
   const date = new Date(f.date);
   const locale = t("locale_code") === "vi-VN" ? "vi" : "en";
-  const dateStr = formatMatchDayMonth(date, locale);
-  const timeStr = formatMatchTime(date);
+  const zone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
+  const dateStr = formatMatchDayMonth(date, locale, false, zone);
+  const timeStr = formatMatchTime(date, zone);
+  const zoneLabel = formatZoneOffset(date, zone);
   const extra = status === "AET" ? "AET" : status === "PEN" ? "PEN" : null;
   const pens =
     status === "PEN" && score.penalty.home !== null && score.penalty.away !== null
@@ -97,7 +102,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
   const homeName = displayTeamName(teams.home.name);
   const awayName = displayTeamName(teams.away.name);
   const aria = isUpcoming
-    ? `${homeName} – ${awayName}, ${dateStr} ${timeStr} GMT+7`
+    ? `${homeName} – ${awayName}, ${dateStr} ${timeStr} ${zoneLabel}`
     : `${homeName} ${goals.home ?? 0} – ${goals.away ?? 0} ${awayName}`;
 
   return (
@@ -169,7 +174,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
             ) : (
               <>
                 <p className="font-bebas text-3xl leading-none tracking-wide text-white tabular-nums sm:text-4xl">{timeStr}</p>
-                <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">GMT+7</p>
+                <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">{zoneLabel}</p>
               </>
             )}
           </div>

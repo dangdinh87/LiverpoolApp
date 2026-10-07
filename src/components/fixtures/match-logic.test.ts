@@ -78,8 +78,12 @@ describe("matchCentreHref", () => {
 
 describe("airsOnFptPlay", () => {
   it("is Premier League only", () => {
-    expect(airsOnFptPlay("Premier League")).toBe(true);
-    expect(airsOnFptPlay("UEFA Champions League")).toBe(false);
-    expect(airsOnFptPlay(undefined)).toBe(false);
+    expect(airsOnFptPlay("Premier League", "vi")).toBe(true);
+    expect(airsOnFptPlay("UEFA Champions League", "vi")).toBe(false);
+    expect(airsOnFptPlay(undefined, "vi")).toBe(false);
+  });
+
+  it("is hidden outside Vietnam until a per-country table exists", () => {
+    expect(airsOnFptPlay("Premier League", "en")).toBe(false);
   });
 });

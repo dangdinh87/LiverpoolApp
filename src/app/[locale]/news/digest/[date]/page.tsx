@@ -15,7 +15,7 @@ import { DigestItem, type DigestItemSource } from "@/components/news/digest-item
 import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
 import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 type Params = Promise<{ date: string; locale: string }>;
 
@@ -112,7 +112,7 @@ export default async function DigestPage({
   const intro = leadSentences(seoArticle?.excerpt || digest.summary, 230);
   const meta = [
     digest.article_count > 0 ? t("articleCount", { count: digest.article_count }) : null,
-    digest.generated_at ? t("generatedAt", { time: formatMatchTime(new Date(digest.generated_at)) }) : null,
+    digest.generated_at ? t("generatedAt", { time: formatMatchTime(new Date(digest.generated_at), defaultTimeZoneForLocale(uiLocale)) }) : null,
   ]
     .filter(Boolean)
     .join(" · ");

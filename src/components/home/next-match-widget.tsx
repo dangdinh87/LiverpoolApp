@@ -6,7 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { CalendarDays, Tv } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
+import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
@@ -147,6 +148,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
   const date = new Date(f.date);
   const isHT = f.status.short === "HT";
   const round = roundLabel(tRound, league.round);
+  const zone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
   const hasDetailPage = f.id > 0;
   const detailHref = hasDetailPage ? `/fixtures/${f.id}` : "/fixtures";
 
@@ -188,10 +190,10 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
               {goals.away ?? 0}
             </span>
           ) : (
-            <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date)}</span>
+            <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date, zone)}</span>
           )}
-          <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale)}</span>
-          {!isLive && <span className="text-xs text-stadium-muted">{h("vnTime")}</span>}
+          <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>
+          {!isLive && <span className="text-xs text-stadium-muted">{h("vnTime")} · {formatZoneOffset(date, zone)}</span>}
         </div>
         <TeamBlock team={teams.away} />
       </div>
@@ -202,7 +204,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         </div>
       )}
 
-      {airsOnFptPlay(league.name) && (
+      {airsOnFptPlay(league.name, locale) && (
         <p className="mt-3 flex items-center justify-center gap-2 text-[13px] leading-snug text-white/80">
           <Tv className="size-4 shrink-0 text-lfc-gold" aria-hidden />
           <span>{tMatch("whereToWatch")}</span>

@@ -35,7 +35,8 @@ import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical, makePageMeta } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
-import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { LocalMatchDay, LocalMatchTime, LocalZoneOffset } from "@/components/ui/local-time";
 
 export const revalidate = 300; // 5 minutes
 
@@ -67,8 +68,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     : t("metaUpcoming", {
         home,
         away,
-        time: formatMatchTime(date),
-        date: formatMatchDayMonth(date, locale === "vi" ? "vi" : "en", true),
+        time: formatMatchTime(date, defaultTimeZoneForLocale(locale)),
+        date: formatMatchDayMonth(date, locale === "vi" ? "vi" : "en", true, defaultTimeZoneForLocale(locale)),
         competition,
       });
   return {
@@ -125,8 +126,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const now = Date.now();
   const msToKickoff = date.getTime() - now;
   const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
-  const dateStr = formatMatchDayMonth(date, locale === "vi" ? "vi" : "en", true);
-  const timeStr = formatMatchTime(date);
+  const uiLocale: "vi" | "en" = locale === "vi" ? "vi" : "en";
 
   // Build stat label translation map
   const STAT_KEYS = [
@@ -206,7 +206,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const awayName = displayTeamName(teams.away.name);
   const round = roundLabel(tRound, league.round);
   // FPT Play holds the Premier League rights in Vietnam; no other competition is covered.
-  const showWatch = !isFinished && airsOnFptPlay(league.name);
+  const showWatch = !isFinished && airsOnFptPlay(league.name, locale);
   const sections = [
     ...(hasStarted
       ? [
@@ -310,8 +310,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   </>
                 ) : (
                   <>
-                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">{timeStr}</p>
-                    <p className="mt-1.5 font-barlow text-sm font-semibold uppercase tracking-wider text-stadium-muted">GMT+7</p>
+                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl"><LocalMatchTime iso={f.date} locale={uiLocale} /></p>
+                    <p className="mt-1.5 font-barlow text-sm font-semibold uppercase tracking-wider text-stadium-muted"><LocalZoneOffset iso={f.date} locale={uiLocale} /></p>
                   </>
                 )}
               </div>
@@ -329,11 +329,16 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               </div>
             </div>
 
-            {/* When, where, where to watch: one scannable list, in Vietnam time */}
+            {/* When, where, where to watch: one scannable list, in the viewer's own time zone */}
             <ul className="mt-5 space-y-2.5 border-t border-[var(--line)] pt-4 text-sm leading-snug text-white/90">
               <li className="flex items-start gap-2.5">
                 <CalendarDays aria-hidden className={infoIcon} />
-                <span>{dateStr}{!hasStarted ? ` · ${timeStr} (GMT+7)` : ""}</span>
+                <span>
+                  <LocalMatchDay iso={f.date} locale={uiLocale} withYear />
+                  {!hasStarted && (
+                    <> · <LocalMatchTime iso={f.date} locale={uiLocale} /> (<LocalZoneOffset iso={f.date} locale={uiLocale} />)</>
+                  )}
+                </span>
               </li>
               {venue && (
                 <li className="flex items-start gap-2.5"><MapPin aria-hidden className={infoIcon} />{venue}</li>

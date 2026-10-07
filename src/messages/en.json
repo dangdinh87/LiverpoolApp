@@ -76,7 +76,7 @@
     "tagline": "Liverpool fans in Vietnam · Kick-off times, results, quick news",
     "title": "Welcome to Anfield",
     "subtitle": "LFCVN — Liverpool FC Vietnam",
-    "description": "Kick-off times in Vietnam time, the latest results, the table and quick news on The Reds. A fan site, not an official one.",
+    "description": "Kick-off times in your local time, the latest results, the table and quick news on The Reds. A fan site, not an official one.",
     "badge": "Liverpool FC Vietnam Fan Community",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
@@ -89,7 +89,7 @@
     },
     "match": {
       "kickoffIn": "Kick-off in",
-      "vnTime": "Vietnam time",
+      "vnTime": "Your time",
       "days": "d",
       "hours": "h",
       "minutes": "m",
@@ -126,7 +126,7 @@
     },
     "metadata": {
       "title": "Liverpool fans in Vietnam: kick-off times, results, quick news",
-      "description": "Liverpool kick-off times in Vietnam time, results, the Premier League table, squad and quick news on The Reds. An independent fan site, not official."
+      "description": "Liverpool kick-off times in your local time, results, the Premier League table, squad and quick news on The Reds. An independent fan site, not official."
     }
   },
   "Bento": {
@@ -212,7 +212,7 @@
       "viewAll": "View all",
       "readOriginalOn": "Read the original on {source}",
       "excerptLabel": "Excerpt",
-      "vnTime": "Vietnam time"
+      "vnTime": "UK time"
     },
     "feed": {
       "all": "All",
@@ -314,7 +314,7 @@
       "backToNews": "Back to news roundup",
       "sourceArticle": "Original {n}",
       "generatedBy": "LiverpoolFCVN",
-      "generatedAt": "Posted at {time} Vietnam time",
+      "generatedAt": "Posted at {time} UK time",
       "refresh": "Sync",
       "syncing": "Syncing...",
       "navLabel": "Go to another day's digest",
@@ -766,7 +766,7 @@
       "features": {
         "squad": "The squad and a profile for each player.",
         "season": "Premier League and Champions League tables, plus season stats.",
-        "fixtures": "Kick-off times in Vietnam time and results: Premier League, Champions League, FA Cup, EFL Cup.",
+        "fixtures": "Kick-off times in your local time and results: Premier League, Champions League, FA Cup, EFL Cup.",
         "news": "Quick news: headline, short excerpt and a link to the original. A daily digest drafted by AI.",
         "history": "Club history, trophy cabinet, legends and Anfield.",
         "profile": "An optional account to save favourite players and articles.",
@@ -798,7 +798,7 @@
       "momoAlt": "MoMo QR - Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code"
     },
-    "tagline": "Kick-off times in Vietnam time, results, squad and quick news for Kop fans.",
+    "tagline": "Kick-off times in your local time, results, squad and quick news for Kop fans.",
     "news": {
       "title": "How news is handled",
       "body": "Quick news shows only the headline, a short excerpt and a link to the original story. To read the full piece, open it on the publisher's own site. LFCVN does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
@@ -866,12 +866,12 @@
   "Fixtures": {
     "metadata": {
       "title": "Liverpool fixtures & results",
-      "description": "Liverpool kick-off times in Vietnam time, results and rounds for the {season} season."
+      "description": "Liverpool kick-off times in your local time, results and rounds for the {season} season."
     },
     "hero": {
       "season": "{season} Season",
       "title": "Fixtures & results",
-      "subtitle": "{count} matches this season · Vietnam time (GMT+7)"
+      "subtitle": "{count} matches this season · your local time"
     },
     "timeline": {
       "filter": {
@@ -890,7 +890,7 @@
       "noFixtures": "No upcoming matches in this competition.",
       "viewLabel": "Fixtures view",
       "filterLabel": "Filter by competition",
-      "gmtHint": "Kick-off times are in Vietnam time (GMT+7).",
+      "gmtHint": "Kick-off times are shown in your local time ({zone}).",
       "emptyTitle": "No matches yet",
       "noResults": "No finished matches for this competition yet.",
       "archive": "Past seasons",
@@ -925,9 +925,9 @@
           "description": "We have no recent meetings with this opponent."
         }
       },
-      "kickoffVn": "Kick-off (GMT+7)",
+      "kickoffVn": "Kick-off",
       "sectionsLabel": "Match sections",
-      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (Vietnam time, GMT+7). {competition}. Where to watch, lineups and head to head.",
+      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Where to watch, lineups and head to head.",
       "metaFinished": "{home} {homeGoals}-{awayGoals} {away}. {competition}: match timeline, statistics and lineups.",
       "attendance": "{count} in attendance",
       "referee": "Referee: {name}"
