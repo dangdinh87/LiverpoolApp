@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { createServerClient } from "@supabase/ssr";
 import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
-import { routing } from "@/i18n/routing";
+import { routing, splitLocalePrefix } from "@/i18n/routing";
 
 const handleI18nRouting = createIntlMiddleware(routing);
 
@@ -13,12 +13,6 @@ const NOINDEX_PREFIXES = ["/auth", "/profile"];
 function addNoIndex(response: NextResponse): NextResponse {
   response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
-}
-
-function splitLocalePrefix(pathname: string): { path: string; prefix: string } {
-  return /^\/en(?=\/|$)/.test(pathname)
-    ? { path: pathname.slice(3) || "/", prefix: "/en" }
-    : { path: pathname, prefix: "" };
 }
 
 export async function middleware(request: NextRequest) {

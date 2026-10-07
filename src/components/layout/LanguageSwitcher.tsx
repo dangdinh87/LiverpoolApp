@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { splitLocalePrefix, withLocalePrefix } from "@/i18n/routing";
 
 const LOCALES = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -17,8 +18,8 @@ function setLocaleAndReload(code: string, current: string) {
   // The locale is part of the URL (/x Vietnamese, /en/x English), so reloading
   // the same URL would keep the old language.
   const { pathname, search, hash } = window.location;
-  const bare = pathname.replace(/^\/en(?=\/|$)/, "") || "/";
-  const target = code === "en" ? `/en${bare === "/" ? "" : bare}` : bare;
+  const bare = splitLocalePrefix(pathname).path;
+  const target = withLocalePrefix(bare, code);
   window.location.assign(target + search + hash);
 }
 

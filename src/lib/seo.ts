@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { BRAND } from "./brand";
+import { routing, withLocalePrefix } from "@/i18n/routing";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -31,6 +32,10 @@ const PUBLISHER = {
   },
 };
 
+/** OpenGraph wants a language_TERRITORY code, not a bare locale. */
+const OG_LOCALES: Record<string, string> = { en: "en_GB", vi: "vi_VN" };
+const ogLocale = (locale: string) => OG_LOCALES[locale] ?? OG_LOCALES[routing.defaultLocale];
+
 // ─── Canonical & Hreflang ───────────────────────────────────────────────────
 
 /** Build full canonical URL from a path (e.g. "/squad" → "https://...liverpoolfcvn.blog/squad") */
@@ -40,12 +45,14 @@ export function getCanonical(path: string): string {
   return `${SITE_URL}${normalized}`;
 }
 
-/** The locale prefix a path carries in its public URL. */
-function localizedPath(path: string, locale: string): string {
-  // Vietnamese is the default locale and keeps unprefixed URLs (localePrefix:
-  // "as-needed" in src/i18n/routing.ts); English lives under /en.
-  return locale === "en" ? `/en${path === "/" ? "" : path}` : path;
-}
+/**
+ * The public URL path for a locale.
+ *
+ * Which locale carries a prefix comes from the routing config; hard-coding it
+ * here is how every English page ended up claiming the Vietnamese URL as its
+ * canonical when the default locale moved.
+ */
+const localizedPath = withLocalePrefix;
 
 /**
  * Generate canonical + hreflang alternates for Next.js metadata.
@@ -59,16 +66,20 @@ function localizedPath(path: string, locale: string): string {
  * @param path   Unprefixed path, e.g. "/squad".
  * @param locale Locale the page is being rendered for; decides the canonical.
  */
-export function getHreflangAlternates(path: string, locale: string = "vi") {
-  const vi = getCanonical(path);
-  const en = getCanonical(localizedPath(path, "en"));
+export function getHreflangAlternates(
+  path: string,
+  locale: string = routing.defaultLocale,
+) {
+  const languages = Object.fromEntries(
+    routing.locales.map((l) => [l, getCanonical(localizedPath(path, l))]),
+  ) as Record<(typeof routing.locales)[number], string>;
+
   return {
-    canonical: locale === "en" ? en : vi,
+    canonical: getCanonical(localizedPath(path, locale)),
     languages: {
-      vi,
-      en,
-      // Vietnamese is the default locale, so it is what an unmatched visitor gets.
-      "x-default": vi,
+      ...languages,
+      // The default locale is what an unmatched visitor gets.
+      "x-default": getCanonical(localizedPath(path, routing.defaultLocale)),
     },
   };
 }
@@ -101,10 +112,12 @@ export function makePageMeta(
       description,
       type: options?.type ?? "website",
       siteName: SITE_NAME,
-      locale: options?.locale === "en" ? "en_GB" : "vi_VN",
-      alternateLocale: options?.locale === "en" ? "vi_VN" : "en_GB",
+      locale: ogLocale(options?.locale ?? routing.defaultLocale),
+      alternateLocale: routing.locales
+        .filter((l) => l !== (options?.locale ?? routing.defaultLocale))
+        .map(ogLocale),
       ...(options?.path && {
-        url: getCanonical(localizedPath(options.path, options?.locale ?? "vi")),
+        url: getCanonical(localizedPath(options.path, options?.locale ?? routing.defaultLocale)),
       }),
       images: options?.image ? [{ url: options.image }] : [DEFAULT_OG_IMAGE],
       ...(options?.publishedTime && {

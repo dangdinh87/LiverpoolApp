@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { GoogleAdsense } from "./google-adsense";
+import { LOCALE_PREFIX_PATTERN } from "@/i18n/routing";
 
 // Article pages (/news/<slug>, or /en/news/<slug>) reproduce someone else's
 // copyrighted text — running ads there is the single biggest factor in how
@@ -11,11 +12,13 @@ import { GoogleAdsense } from "./google-adsense";
 //
 // This renders above <NextIntlClientProvider> in the layout, so it uses the
 // raw next/navigation pathname (locale prefix included) rather than
-// next-intl's locale-aware one, which needs that provider. `en` is hardcoded
-// as the only prefixed locale per src/i18n/routing.ts (`localePrefix: 'as-needed'`,
-// vi is the default and stays unprefixed) — update this if that changes.
+// next-intl's locale-aware one, which needs that provider. The prefix part of
+// the pattern is built from the routing config, so flipping the default locale
+// cannot silently stop the gate matching.
 // Client-only so the pages themselves stay static/ISR.
-const SCRAPED_ARTICLE_PATH = /^\/(?:en\/)?news\/(?!digest(?:\/|$))/;
+const SCRAPED_ARTICLE_PATH = new RegExp(
+  `^\\/${LOCALE_PREFIX_PATTERN}news\\/(?!digest(?:\\/|$))`,
+);
 
 export function AdsenseGate() {
   const pathname = usePathname();

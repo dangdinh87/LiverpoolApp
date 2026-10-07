@@ -3,16 +3,24 @@
 // Last-resort boundary: replaces the root layout, so no providers, no
 // next-intl and no site chrome are available. Copy is inlined (vi/en).
 import "./globals.css";
+import { routing } from "@/i18n/routing";
 
 const COPY = {
   vi: { title: "Có lỗi xảy ra", body: "Trang gặp sự cố ngoài ý muốn. Bạn thử tải lại nhé.", retry: "Thử lại", home: "Về trang chủ" },
   en: { title: "Something went wrong", body: "The page hit an unexpected problem. Please try again.", retry: "Try again", home: "Back to home" },
 } as const;
 
+function isSupported(value: string | undefined): value is keyof typeof COPY {
+  return value !== undefined && value in COPY;
+}
+
 function pickLocale(): keyof typeof COPY {
-  if (typeof document === "undefined") return "vi";
+  // This renders outside the i18n provider (the root layout itself failed), so
+  // the cookie is the only signal available.
+  const fallback = routing.defaultLocale as keyof typeof COPY;
+  if (typeof document === "undefined") return fallback;
   const m = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=(\w+)/);
-  return m?.[1] === "en" ? "en" : "vi";
+  return isSupported(m?.[1]) ? m[1] : fallback;
 }
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
