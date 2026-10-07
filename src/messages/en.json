@@ -16,9 +16,9 @@
     "nav": {
       "home": "Home",
       "squad": "Squad",
-      "season": "Fixtures & Table",
+      "season": "Matches",
       "news": "News",
-      "history": "The Club",
+      "history": "History",
       "about": "About",
       "stats": "Stats",
       "login": "Login",
@@ -39,9 +39,18 @@
       "standings": "Standings",
       "fixtures": "Fixtures",
       "gallery": "Gallery",
-      "clubOverview": "Overview",
+      "clubOverview": "Club history",
       "clubGallery": "Gallery",
-      "matchSoon": "Soon"
+      "matchSoon": "Soon",
+      "tabs": {
+        "home": "Home",
+        "matches": "Matches",
+        "news": "News",
+        "squad": "Squad",
+        "more": "More"
+      },
+      "quick": "Quick navigation",
+      "legal": "Legal"
     },
     "labels": {
       "opponent": "Opponent",
@@ -64,10 +73,10 @@
     }
   },
   "Hero": {
-    "tagline": "Liverpool Football Club · Est. 1892",
+    "tagline": "Liverpool fans in Vietnam · Kick-off times, results, quick news",
     "title": "Welcome to Anfield",
     "subtitle": "LFCVN — Liverpool FC Vietnam",
-    "description": "Stay connected to The Reds — matches, squad, news, and the pursuit of glory.",
+    "description": "Kick-off times in Vietnam time, the latest results, the table and quick news on The Reds. A fan site, not an official one.",
     "badge": "Liverpool FC Vietnam Fan Community",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
@@ -85,29 +94,39 @@
       "hours": "h",
       "minutes": "m",
       "seconds": "s",
-      "noMatchHint": "Fixtures will appear here as soon as the next match is confirmed."
+      "noMatchHint": "As soon as the next match is confirmed, its kick-off time will show here.",
+      "started": "Match under way",
+      "allFixtures": "Fixtures"
     },
     "results": {
       "title": "Recent results",
-      "all": "All results",
+      "all": "See all",
       "win": "Win",
       "draw": "Draw",
       "loss": "Loss",
-      "empty": "No finished matches yet this season."
+      "empty": "No finished matches yet this season.",
+      "aria": "{result}, {opponent}, {venue}, score {score}"
     },
     "news": {
       "emptyTitle": "News is taking a breather",
-      "emptyDescription": "We could not load the latest headlines right now. Try the news page in a moment.",
+      "emptyDescription": "We could not load the latest headlines. Try again in a few minutes.",
       "emptyAction": "Open news",
-      "byCategory": "More by topic"
+      "byCategory": "More by topic",
+      "title": "Quick news",
+      "viewAll": "All news"
     },
     "standings": {
       "emptyTitle": "Table unavailable",
-      "emptyDescription": "The league table could not be loaded right now. It refreshes automatically.",
-      "emptyAction": "Open standings"
+      "emptyDescription": "The table could not be loaded. It will refresh on its own.",
+      "emptyAction": "Open the table",
+      "viewAll": "Full table"
     },
     "squad": {
       "viewAll": "Full squad"
+    },
+    "metadata": {
+      "title": "Liverpool fans in Vietnam: kick-off times, results, quick news",
+      "description": "Liverpool kick-off times in Vietnam time, results, the Premier League table, squad and quick news on The Reds. An independent fan site, not official."
     }
   },
   "Bento": {
@@ -128,12 +147,12 @@
   },
   "News": {
     "metadata": {
-      "title": "Latest News",
-      "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more"
+      "title": "Liverpool news roundup",
+      "description": "Liverpool headlines every day: a short excerpt and a link to the original story, plus the Liverpool Daily digest of the day."
     },
-    "tagline": "Multi-Source",
-    "title": "Latest News",
-    "heroDesc": "Liverpool headlines from trusted sources: short excerpts, full stories at the original.",
+    "tagline": "Quick Liverpool headlines",
+    "title": "News roundup",
+    "heroDesc": "Headlines, a short excerpt and a link to the original. A new Liverpool Daily every day.",
     "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more",
     "summary": "{total} articles — {en} international, {vi} Vietnamese",
     "search": "Search news...",
@@ -142,7 +161,7 @@
     "langLocal": "Vietnamese",
     "langGlobal": "International",
     "viewAll": "All News →",
-    "attribution": "Headlines and short excerpts from {sources}. Read the full story at the original publisher. All rights belong to their respective owners.",
+    "attribution": "We only post headlines, a short excerpt and a link to the original. Articles belong to the outlets named on each item. This is a fan site, not affiliated with Liverpool FC or those outlets.",
     "categories": {
       "all": "All",
       "official": "Official",
@@ -179,18 +198,21 @@
       "delete": "Delete comment"
     },
     "article": {
-      "backToNews": "Back to News",
-      "contentUnavailable": "Content Unavailable",
-      "contentUnavailableDesc": "This article couldn't be loaded for in-app reading. You can read it on the original site.",
+      "backToNews": "Back to news roundup",
+      "contentUnavailable": "Couldn't open this story",
+      "contentUnavailableDesc": "We couldn't load this story's text. You can still read it on the original site.",
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
-      "thinContentMsg": "This article is best viewed on the original site for the full reading experience.",
-      "excerptMsg": "This is an excerpt. Read the full article on the original site.",
-      "sourcedFrom": "Content sourced from <source>{sourceName}</source>. All rights belong to the original publisher.",
+      "thinContentMsg": "This one is best read on the original site.",
+      "excerptMsg": "This is only an excerpt. The rest is on the original site.",
+      "sourcedFrom": "Excerpt from <source>{sourceName}</source>. All rights belong to the original publisher.",
       "videoUnavailable": "This video cannot be played here. Tap to watch on the original site.",
-      "linkOutMsg": "The full story is only available on {source}. Open it there to keep reading.",
+      "linkOutMsg": "The full story is only on {source}. Open the original to keep reading.",
       "moreFrom": "More from {source}",
-      "viewAll": "View all"
+      "viewAll": "View all",
+      "readOriginalOn": "Read the original on {source}",
+      "excerptLabel": "Excerpt",
+      "vnTime": "Vietnam time"
     },
     "feed": {
       "all": "All",
@@ -198,21 +220,21 @@
       "global": "International",
       "viewImage": "View Image",
       "moreStories": "More Stories",
-      "loadMore": "Load More",
+      "loadMore": "Show more stories",
       "refreshNews": "Refresh",
       "refreshing": "Syncing...",
       "loading": "Loading...",
-      "noArticles": "No Articles Found",
-      "noArticlesDesc": "Try a different filter or check back later.",
+      "noArticles": "No matching stories",
+      "noArticlesDesc": "Try removing a filter or searching for something else.",
       "translateBadge": "AI Translation",
       "read": "Read",
       "filterBtn": "Filter",
-      "filtersTitle": "Filters",
+      "filtersTitle": "Filter news",
       "sortLabel": "Sort",
       "sourceLabel": "Source",
-      "categoryLabel": "Category",
-      "resetFilters": "Reset filters",
-      "searchPlaceholder": "Search...",
+      "categoryLabel": "Topic",
+      "resetFilters": "Clear filters",
+      "searchPlaceholder": "Search a player or team...",
       "resultsFor": "results for",
       "sortTrending": "Trending",
       "sortLatest": "Latest",
@@ -228,18 +250,23 @@
       "catInjury": "Injury",
       "catAnalysis": "Analysis",
       "catOpinion": "Opinion",
-      "newsSourceLabel": "News Source",
-      "newsSourceAll": "All",
+      "newsSourceLabel": "Source",
+      "newsSourceAll": "All sources",
       "hot": "Hot",
       "filtersLabel": "Filters",
       "searchLabel": "Search news",
       "clearSearch": "Clear search",
-      "latest": "Latest stories",
-      "resultsCount": "{count} results",
-      "unavailableTitle": "News is taking a breather",
-      "unavailableDesc": "We could not load the latest stories right now. Try again in a moment.",
+      "latest": "Latest news",
+      "resultsCount": "{count} stories",
+      "unavailableTitle": "Couldn't load the news",
+      "unavailableDesc": "We couldn't load new stories. Try again in a few minutes.",
       "retry": "Reload",
-      "loadMoreError": "Could not load more stories. Try again."
+      "loadMoreError": "Couldn't load more stories. Try again.",
+      "langGroupLabel": "Language of the news",
+      "langVi": "Vietnamese",
+      "langEn": "English",
+      "showResults": "Show {count} stories",
+      "close": "Close"
     },
     "sidebar": {
       "source": "Source",
@@ -247,14 +274,14 @@
       "minRead": "{n} min read"
     },
     "related": {
-      "title": "Related News"
+      "title": "Related news"
     },
     "translate": {
-      "aiDisclaimer": "Auto-translated by AI — may not be 100% accurate",
+      "aiDisclaimer": "Automatic translation into Vietnamese, may be inaccurate. Excerpt only.",
       "translating": "Translating...",
-      "showOriginal": "English",
-      "showTranslated": "Tiếng Việt",
-      "error": "Translation is unavailable right now. Please try again."
+      "showOriginal": "Show original",
+      "showTranslated": "Translate excerpt",
+      "error": "Couldn't translate right now. Try again later."
     },
     "actions": {
       "like": "Like",
@@ -274,7 +301,7 @@
     },
     "digest": {
       "badge": "Briefing",
-      "proBadge": "LFCVN Article",
+      "proBadge": "By LFCVN",
       "author": "LiverpoolFCVN",
       "by": "By {author}",
       "sourceFromSite": "References: {source}",
@@ -282,33 +309,41 @@
       "dismiss": "Dismiss",
       "expand": "Read article",
       "collapse": "Collapse",
-      "readFull": "Read full article",
-      "articleCount": "Compiled from {count} sources",
-      "backToNews": "Back to News",
-      "sourceArticle": "Source #{n}",
+      "readFull": "Read the digest",
+      "articleCount": "From {count} articles",
+      "backToNews": "Back to news roundup",
+      "sourceArticle": "Original {n}",
       "generatedBy": "LiverpoolFCVN",
-      "generatedAt": "Published {time}",
+      "generatedAt": "Posted at {time} Vietnam time",
       "refresh": "Sync",
       "syncing": "Syncing...",
-      "navLabel": "Other briefings",
+      "navLabel": "Go to another day's digest",
       "prevDay": "Previous day",
       "nextDay": "Next day",
       "notGeneratedTitle": "No briefing yet",
-      "notGeneratedDesc": "The daily briefing for this day has not been published. Check the latest one or browse the news.",
+      "notGeneratedDesc": "There is no digest for this day. Open the latest one or go back to the news roundup.",
       "openLatest": "Open the latest briefing",
       "unavailableTitle": "Briefings are unavailable",
-      "unavailableDesc": "We could not load the daily briefing right now. Try again in a moment."
+      "unavailableDesc": "We couldn't load the digest. Try again in a few minutes.",
+      "sourcesLabel": "Read the originals",
+      "opensNewTab": "(opens in a new tab)",
+      "latestHint": "This is the latest digest",
+      "oldestHint": "This is the first digest",
+      "aiNote": "This digest is written by AI from the linked articles, so it can miss or get details wrong. To be sure, open the original."
+    },
+    "breadcrumb": {
+      "home": "Home"
     }
   },
   "NextMatch": {
     "title": "Next Match",
     "live": "Live",
-    "noMatch": "No upcoming match",
+    "noMatch": "No match scheduled yet",
     "today": "Today",
     "home": "Home",
     "away": "Away",
     "round": "Round",
-    "viewMatch": "Match Detail",
+    "viewMatch": "View match details",
     "viewAllFixtures": "All Fixtures"
   },
   "LiveBanner": {
@@ -317,15 +352,15 @@
   },
   "Squad": {
     "metadata": {
-      "title": "Squad & Player Stats",
-      "description": "Liverpool FC first-team squad and player statistics for the {season} season."
+      "title": "Liverpool squad",
+      "description": "Liverpool FC first-team squad and player profiles for the {season} season."
     },
     "title": "The Squad",
     "season": "{season} Season",
     "players": "Players",
     "club": "Liverpool Football Club",
     "search": "Search players...",
-    "noPlayers": "No players matching \"{search}\"",
+    "noPlayers": "No player matches \"{search}\". Try another name or a shirt number.",
     "noPlayersFilter": "No players found for this filter.",
     "count": "{count} {n, plural, one {player} other {players}}",
     "tabs": {
@@ -351,18 +386,21 @@
       "injured": "Injured"
     },
     "searchLabel": "Search players by name or number",
-    "positionsLabel": "Filter by position",
+    "positionsLabel": "Jump to position",
     "noPlayersTitle": "No players found",
     "groups": {
       "goalkeeper": "Goalkeepers",
       "defender": "Defenders",
       "midfielder": "Midfielders",
       "forward": "Forwards"
+    },
+    "card": {
+      "age": "Age {age}"
     }
   },
   "PlayerDetail": {
     "back": "Player Stats",
-    "backSquad": "Back to Squad",
+    "backSquad": "Back to squad",
     "viewOnLfc": "View on liverpoolfc.com",
     "status": {
       "available": "Available",
@@ -440,14 +478,42 @@
       "defender": "Defender",
       "midfielder": "Midfielder",
       "forward": "Forward"
+    },
+    "nationalities": {
+      "american": "American",
+      "argentinian": "Argentine",
+      "belgian": "Belgian",
+      "brazilian": "Brazilian",
+      "colombian": "Colombian",
+      "czech": "Czech",
+      "dutch": "Dutch",
+      "egyptian": "Egyptian",
+      "english": "English",
+      "french": "French",
+      "georgian": "Georgian",
+      "german": "German",
+      "greek": "Greek",
+      "guinean": "Guinean",
+      "hungarian": "Hungarian",
+      "irish": "Irish",
+      "italian": "Italian",
+      "japanese": "Japanese",
+      "northernIrish": "Northern Irish",
+      "portuguese": "Portuguese",
+      "scottish": "Scottish",
+      "senegalese": "Senegalese",
+      "spanish": "Spanish",
+      "swedish": "Swedish",
+      "uruguayan": "Uruguayan",
+      "welsh": "Welsh"
     }
   },
   "Season": {
     "metadata": {
-      "title": "Fixtures & Table {season}",
-      "description": "Liverpool FC Premier League {season} — fixtures, results, standings, and statistics."
+      "title": "Fixtures & table by season",
+      "description": "Look back at Liverpool's fixtures, results and Premier League table season by season, latest {season}."
     },
-    "title": "Fixtures & Table",
+    "title": "Fixtures & table by season",
     "stats": {
       "goals": "LFC Goals",
       "assists": "LFC Assists",
@@ -484,25 +550,25 @@
     },
     "hero": {
       "eyebrow": "Premier League · {season}",
-      "description": "Every fixture, result and the league table for the season."
+      "description": "Fixtures, results and the table, season by season."
     },
     "tabsLabel": "Fixtures or table",
     "outage": {
       "title": "Season data is unavailable",
-      "description": "We could not load fixtures and standings right now. Please try again in a few minutes.",
-      "action": "Read the latest news"
+      "description": "We could not load fixtures and the table. Please try again in a few minutes.",
+      "action": "Read quick news"
     }
   },
   "Stats": {
     "metadata": {
       "title": "Statistics",
-      "description": "Liverpool FC season statistics {season} — overview, charts, records and more."
+      "description": "Liverpool stats for {season}: wins, draws, losses, goals, top scorers, form and records."
     },
     "hero": {
       "season": "Season {season} · All Competitions",
       "seasonLabel": "Season",
       "title": "Statistics",
-      "description": "Season record, scorers, form and club records."
+      "description": "Wins, draws, losses, goals, top scorers, form and records for Liverpool this season."
     },
     "overview": {
       "title": "Season Overview",
@@ -589,8 +655,8 @@
     },
     "noData": {
       "title": "No data for this season yet",
-      "description": "Match data for this season isn't available right now. Please check back later.",
-      "action": "View fixtures"
+      "description": "There is no match data for this season yet. Check back soon.",
+      "action": "See fixtures"
     },
     "seasonPicker": "Select season"
   },
@@ -687,57 +753,65 @@
   },
   "About": {
     "metadata": {
-      "title": "About | LFCVN",
-      "description": "Learn more about LFCVN — features, tech stack, and the creator behind this Liverpool FC community project."
+      "title": "About",
+      "description": "LFCVN is an unofficial Liverpool fan site in Vietnamese: kick-off times, results, squad and quick news. Where the data comes from, how AI is used, how to get in touch."
     },
     "label": "About",
-    "title": "Built from Passion",
-    "disclaimer": "LFCVN is an <status>unofficial & independent</status> project. Not endorsed by or affiliated with Liverpool Football Club, Fenway Sports Group, or the Premier League. All trademarks belong to their respective owners.",
+    "title": "A Liverpool fan site in Vietnamese",
+    "disclaimer": "LFCVN is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
     "whatIs": {
-      "title": "What is this site?",
-      "description": "LFCVN started with a simple idea: create a place where Vietnamese Liverpool fans can follow everything about the club they love — in their own language. Built by fans, for fans, LFCVN brings together match data, bilingual news, club history, and an AI assistant in one platform. You'll Never Walk Alone.",
-      "featuresTitle": "Features",
+      "title": "What is LFCVN?",
+      "description": "LFCVN is a blog by a Liverpool fan, written for fans in Vietnam. Open it and you see the next kick-off in Vietnam time, the latest results, the table, the squad and a few headlines worth reading — no need to dig around. You'll Never Walk Alone.",
+      "featuresTitle": "What's on the site",
       "features": {
-        "squad": "Full squad and player profiles with season stats and form",
-        "season": "Season dashboard with fixtures, PL & UCL standings, top scorers & assists charts",
-        "fixtures": "Match timeline across 4 competitions — Premier League, Champions League, FA Cup, EFL Cup",
-        "news": "News from 17+ sources in English & Vietnamese with smart categorisation and in-app reading",
-        "history": "Club heritage — Anfield stadium, trophy cabinet, historical timeline, legends & managers",
-        "profile": "Personal account with avatar, favourite players, and saved preferences",
-        "ai": "LiverBird AI — ask about match results, player stats, transfer rumours, club history & more",
-        "i18n": "Full bilingual support — English & Vietnamese with automatic locale detection"
+        "squad": "The squad and a profile for each player.",
+        "season": "Premier League and Champions League tables, plus season stats.",
+        "fixtures": "Kick-off times in Vietnam time and results: Premier League, Champions League, FA Cup, EFL Cup.",
+        "news": "Quick news: headline, short excerpt and a link to the original. A daily digest drafted by AI.",
+        "history": "Club history, trophy cabinet, legends and Anfield.",
+        "profile": "An optional account to save favourite players and articles.",
+        "ai": "LiverBird AI: ask questions about Liverpool, sign-in required. Answers are AI-generated and can be wrong.",
+        "i18n": "Available in Vietnamese and English."
       },
-      "dataTitle": "Data Sources",
-      "dataSources": "Fantasy Premier League API · Football-Data.org · ESPN · RSS feeds from BBC, Guardian, This Is Anfield, Liverpool Echo, Sky Sports, Anfield Watch, and Vietnamese outlets (Bóng Đá, 24h). News shows only a short excerpt with a link to the original story.",
+      "dataTitle": "Data sources",
+      "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English and Vietnamese outlets, always with a link to the original story.",
       "techTitle": "Tech Stack",
       "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
     },
     "creator": {
-      "title": "Creator",
-      "role": "Developer & Lifelong Red",
-      "bio": "A software engineer by trade, a Liverpool fan by heart. Built LFCVN as a passion project and decided to share it with the global LFC community."
+      "title": "Who makes this",
+      "role": "Developer, Liverpool fan",
+      "bio": "I'm a developer and a Liverpool fan. LFCVN is a spare-time project for the Vietnamese fan community."
     },
     "contact": {
-      "title": "Get in Touch",
-      "description": "Have a feature request, found a bug, need support, or want to collaborate? Feel free to reach out — all feedback is welcome.",
+      "title": "Contact",
+      "description": "Feedback, a bug, or a content correction? Just message me.",
       "email": "Email",
       "github": "GitHub",
       "githubUrl": "https://github.com/dangdinh87",
       "phone": "Phone"
     },
     "support": {
-      "title": "Support This Project",
-      "description": "Free forever. A small contribution helps cover API and hosting costs.",
-      "buyCoffee": "Buy Me a Coffee",
+      "title": "Support the site",
+      "description": "LFCVN is free. If it's useful to you, a coffee helps me cover hosting and API costs.",
+      "buyCoffee": "Buy me a coffee",
       "momoAlt": "MoMo QR - Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code"
     },
-    "tagline": "Built by fans, for fans — everything Liverpool, in your own language."
+    "tagline": "Kick-off times in Vietnam time, results, squad and quick news for Kop fans.",
+    "news": {
+      "title": "How news is handled",
+      "body": "Quick news shows only the headline, a short excerpt and a link to the original story. To read the full piece, open it on the publisher's own site. LFCVN does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
+    },
+    "ai": {
+      "title": "AI on LFCVN",
+      "body": "LiverBird AI (chat), translation of news excerpts and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
+    }
   },
   "Standings": {
     "metadata": {
       "title": "Standings",
-      "description": "Premier League standings {season} season."
+      "description": "Premier League table {season}: points, goal difference, form and where Liverpool stand."
     },
     "hero": {
       "season": "Premier League · {season}",
@@ -771,7 +845,7 @@
       "ecl": "Conference League",
       "rel": "Relegation",
       "r16": "Round of 16",
-      "playoff": "Playoff Round",
+      "playoff": "Play-off round",
       "elim": "Eliminated",
       "win": "Win",
       "draw": "Draw",
@@ -785,23 +859,23 @@
     "compLabel": "Competition",
     "outage": {
       "title": "The table is unavailable",
-      "description": "We could not load the standings right now. Please try again in a few minutes.",
-      "action": "Read the latest news"
+      "description": "We could not load the table. Please try again in a few minutes.",
+      "action": "Read quick news"
     }
   },
   "Fixtures": {
     "metadata": {
-      "title": "Fixtures & Results",
-      "description": "Liverpool FC fixtures and results for the {season} season."
+      "title": "Liverpool fixtures & results",
+      "description": "Liverpool kick-off times in Vietnam time, results and rounds for the {season} season."
     },
     "hero": {
       "season": "{season} Season",
-      "title": "Fixtures & Results",
-      "subtitle": "{count} matches · Liverpool FC"
+      "title": "Fixtures & results",
+      "subtitle": "{count} matches this season · Vietnam time (GMT+7)"
     },
     "timeline": {
       "filter": {
-        "all": "All Comps"
+        "all": "All competitions"
       },
       "tabs": {
         "upcoming": "Upcoming",
@@ -813,15 +887,17 @@
         "recent": "Recently Played",
         "results": "Results"
       },
-      "noFixtures": "No fixtures found for this competition.",
+      "noFixtures": "No upcoming matches in this competition.",
       "viewLabel": "Fixtures view",
       "filterLabel": "Filter by competition",
-      "gmtHint": "Kick-off times are shown in Vietnam time (GMT+7).",
-      "emptyTitle": "Nothing to show here",
-      "noResults": "No finished matches for this competition yet."
+      "gmtHint": "Kick-off times are in Vietnam time (GMT+7).",
+      "emptyTitle": "No matches yet",
+      "noResults": "No finished matches for this competition yet.",
+      "archive": "Past seasons",
+      "plWatch": "Premier League matches are shown live in Vietnam on FPT Play."
     },
     "detail": {
-      "back": "Fixtures & Table",
+      "back": "Back to fixtures",
       "matchTimeline": "Match Timeline",
       "statistics": "Statistics",
       "lineups": "Lineups",
@@ -829,9 +905,9 @@
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
       "coach": "Coach",
-      "noData": "Match details will be available after kickoff.",
+      "noData": "The timeline and statistics appear once the match starts.",
       "empty": {
-        "afterKickoff": "This will appear once the match kicks off.",
+        "afterKickoff": "Available once the match starts.",
         "events": {
           "title": "No match events yet",
           "description": "Goals, cards and substitutions are not available for this match."
@@ -848,18 +924,31 @@
           "title": "No head-to-head data",
           "description": "We have no recent meetings with this opponent."
         }
-      }
+      },
+      "kickoffVn": "Kick-off (GMT+7)",
+      "sectionsLabel": "Match sections",
+      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (Vietnam time, GMT+7). {competition}. Where to watch, lineups and head to head.",
+      "metaFinished": "{home} {homeGoals}-{awayGoals} {away}. {competition}: match timeline, statistics and lineups.",
+      "attendance": "{count} in attendance",
+      "referee": "Referee: {name}"
     },
     "outage": {
       "title": "Fixtures are taking a break",
       "description": "We could not load the match schedule right now. Please try again in a few minutes.",
-      "action": "Read the latest news"
+      "action": "Read quick news"
+    },
+    "nav": {
+      "label": "Match centre",
+      "fixtures": "Fixtures",
+      "results": "Results",
+      "standings": "Table",
+      "stats": "Stats"
     }
   },
   "Legal": {
     "metadata": {
       "title": "Legal",
-      "description": "Legal information, privacy policy, and terms of use."
+      "description": "LFCVN's privacy policy, terms of use and data sources. An unofficial Liverpool fan site."
     },
     "title": "Legal Information",
     "lastUpdated": "Last updated: {date}",
@@ -871,15 +960,15 @@
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties."
+        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News content is aggregated from 17+ RSS sources in English and Vietnamese. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
+        "content": "This site is provided as-is for informational and entertainment purposes only. LFCVN is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. Quick news shows only the headline, a short excerpt and a link to the original story; all rights in an article belong to the original publisher or author, and LFCVN does not republish full articles. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures, and squad data are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. News articles are aggregated from 17+ RSS feeds — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, and Webthethao. AI chat, article translation and the daily digest are powered by VietAPI; live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. Quick news takes headlines and short excerpts from the publishers' public RSS feeds, with a link to the original story — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h and Webthethao. AI chat, article translation and the daily digest are powered by VietAPI; the daily digest is drafted by AI and may contain mistakes. Live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
       }
     },
     "toc": "On this page"
@@ -887,7 +976,7 @@
   "Auth": {
     "login": {
       "title": "Welcome Back",
-      "subtitle": "Sign in to your account",
+      "subtitle": "Sign in to save favourite players and articles and use LiverBird AI.",
       "email": "Email Address",
       "password": "Password",
       "button": "Sign In",
@@ -903,7 +992,7 @@
     },
     "register": {
       "title": "Join the Reds",
-      "subtitle": "Create your fan account",
+      "subtitle": "A free account to save favourite players and articles.",
       "username": "Username",
       "email": "Email Address",
       "password": "Password",
@@ -915,7 +1004,8 @@
       "confirm": "Confirm Password",
       "confirmMismatch": "Passwords do not match",
       "passwordShort": "Password must be at least 6 characters",
-      "checkEmail": "Check your email to confirm your account."
+      "checkEmail": "Confirmation email sent. Open it (check spam too) and tap the link to finish signing up.",
+      "passwordHint": "At least 6 characters."
     },
     "errors": {
       "unavailable": "Sign-in is temporarily unavailable. Please try again in a few minutes.",
@@ -929,6 +1019,12 @@
       "passwordRequired": "Please enter your password.",
       "passwordShort": "Password must be at least 6 characters.",
       "unknown": "Something went wrong. Please try again."
+    },
+    "metadata": {
+      "loginTitle": "Sign in",
+      "loginDescription": "Sign in to LFCVN to save favourite players and articles and use LiverBird AI.",
+      "registerTitle": "Create account",
+      "registerDescription": "Create a free LFCVN account to save favourite players and articles."
     }
   },
   "Profile": {
@@ -991,7 +1087,12 @@
       "action": "Sign in",
       "home": "Back to home"
     },
-    "usernameTooShort": "Username needs at least {min} characters."
+    "usernameTooShort": "Username needs at least {min} characters.",
+    "metadata": {
+      "title": "My profile",
+      "description": "Manage your profile, favourite players and saved articles."
+    },
+    "defaultName": "Member"
   },
   "Match": {
     "live": "LIVE",
@@ -1022,7 +1123,10 @@
       "avgGoals": "Avg Goals/Match",
       "cleanSheets": "Clean Sheets",
       "winRate": "Win Rate",
-      "lastMeetings": "Recent Meetings"
+      "lastMeetings": "Recent Meetings",
+      "winLabel": "Wins",
+      "drawLabel": "Draws",
+      "lossLabel": "Losses"
     },
     "tabs": {
       "timeline": "Timeline",
@@ -1050,23 +1154,44 @@
       "Clearances": "Clearances",
       "Expected Goals": "Expected Goals"
     },
-    "nextMatch": "Next match",
-    "penShort": "Pens {score}"
+    "nextMatch": "Next",
+    "penShort": "Pens {score}",
+    "whereToWatchLabel": "Where to watch",
+    "resultShort": {
+      "W": "W",
+      "D": "D",
+      "L": "L"
+    },
+    "round": {
+      "matchday": "Matchday {n}",
+      "r32": "Round of 32",
+      "r16": "Round of 16",
+      "qf": "Quarter-final",
+      "sf": "Semi-final",
+      "final": "Final",
+      "third": "Third place",
+      "playoff": "Play-offs",
+      "leaguePhase": "League phase",
+      "group": "Group stage"
+    }
   },
   "Footer": {
     "about": "LFCVN — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
-    "quickLinks": "Quick Links",
+    "quickLinks": "Explore",
     "legal": "Legal",
     "contact": "Contact",
     "rights": "All rights reserved.",
-    "disclaimer": "LFCVN is a Liverpool FC page built for the Vietnamese Reds community.",
-    "newsSources": "Aggregated from trusted news sources worldwide",
+    "disclaimer": "Unofficial fan site, not affiliated with Liverpool FC or the Premier League. Names, badges and images belong to their owners.",
+    "newsSources": "News sources",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
       "privacy": "Privacy Policy",
       "terms": "Terms of Use",
       "about": "About"
-    }
+    },
+    "info": "Info",
+    "club": "The club",
+    "socialLabel": "Liverpool FC's official channels"
   },
   "Language": {
     "aria": {
@@ -1093,8 +1218,8 @@
     },
     "thread": {
       "welcome": "LiverBird AI",
-      "welcomeSubtitle": "Your AI companion for all things Liverpool FC",
-      "welcomeDescription": "Ask about match results, player stats, transfer rumours, club history, tactical analysis, and everything Red. Powered by AI, built for the Kop.",
+      "welcomeSubtitle": "An AI assistant for Liverpool FC",
+      "welcomeDescription": "Ask about results, player stats, transfer news, club history, tactics and anything Red. Answers are written by AI and can be wrong, so double-check anything important.",
       "scrollToBottom": "Scroll to bottom",
       "inputPlaceholder": "Ask about Liverpool FC...",
       "sendMessage": "Send message",
@@ -1129,13 +1254,24 @@
           "label": "this website?",
           "prompt": "What is this website? What can I do here?"
         }
-      }
+      },
+      "inputLabel": "Message input",
+      "aiNotice": "Answers are written by AI and can be wrong. Double-check anything important."
     },
     "prompts": {
       "nextMatch": "When is Liverpool's next match and who do they play?",
       "standings": "Where is Liverpool in the Premier League table right now?",
       "news": "What is the latest Liverpool news today?",
-      "squad": "Who is in the current Liverpool squad?"
+      "squad": "Who is in the current Liverpool squad?",
+      "nextMatchLabel": "Next match",
+      "standingsLabel": "League table",
+      "newsLabel": "Latest news",
+      "squadLabel": "Squad"
+    },
+    "conversationOptions": "Conversation options",
+    "sidebar": {
+      "open": "Open chat list",
+      "close": "Close chat list"
     }
   },
   "history": {
@@ -1170,7 +1306,7 @@
     "hero": {
       "label": "Photo Gallery",
       "title": "Gallery",
-      "subtitle": "Anfield, current squad, club legends and historic moments — the best of Liverpool FC in pictures."
+      "subtitle": "Anfield, the squad, club legends and historic moments."
     },
     "categories": {
       "all": "All",
