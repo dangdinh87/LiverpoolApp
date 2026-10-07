@@ -74,18 +74,18 @@ function ChartTooltip({
   );
 }
 
-// Custom label showing value on top of bar
-function ValueLabel(props: { x?: number; y?: number; width?: number; value?: number; index?: number; data?: BarChartEntry[] }) {
-  const { x = 0, y = 0, width = 0, value, index = 0, data = [] } = props;
+// Value printed at the end of each bar
+function ValueLabel(props: { x?: number; y?: number; width?: number; height?: number; value?: number; index?: number; data?: BarChartEntry[] }) {
+  const { x = 0, y = 0, width = 0, height = 0, value, index = 0, data = [] } = props;
   const entry = data[index];
   if (!entry) return null;
   return (
     <text
-      x={x + width / 2}
-      y={y - 6}
-      textAnchor="middle"
+      x={x + width + 6}
+      y={y + height / 2 + 5}
+      textAnchor="start"
       fill={entry.isLiverpool ? RED_TEXT : "#A0A0A0"}
-      fontSize={12}
+      fontSize={14}
       fontFamily="var(--font-bebas)"
       fontWeight={700}
     >
@@ -94,14 +94,28 @@ function ValueLabel(props: { x?: number; y?: number; width?: number; value?: num
   );
 }
 
+const ROW_PX = 30;
+
+/**
+ * Horizontal bars: a Liverpool player's surname is always readable (on a
+ * 360px-wide column chart the labels collided and Recharts silently dropped
+ * them), other clubs' players show only their rank. Counts are whole numbers.
+ */
 export function StatChart({ scorers, type, limit = 10 }: StatChartProps) {
   const data = buildChartData(scorers, type, limit);
+  const height = Math.max(120, data.length * ROW_PX + 16);
 
   return (
-    <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={data} margin={{ top: 24, right: 8, left: -20, bottom: 0 }}>
-        <XAxis
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 28, left: 0, bottom: 4 }} barCategoryGap={6}>
+        <XAxis type="number" hide allowDecimals={false} domain={[0, "dataMax"]} />
+        <YAxis
+          type="category"
           dataKey="name"
+          width={84}
+          interval={0}
+          axisLine={false}
+          tickLine={false}
           tick={(props: Record<string, unknown>) => {
             const x = Number(props.x ?? 0);
             const y = Number(props.y ?? 0);
@@ -109,11 +123,11 @@ export function StatChart({ scorers, type, limit = 10 }: StatChartProps) {
             const entry = data[payload?.index ?? 0];
             return (
               <text
-                x={x}
-                y={y + 14}
-                textAnchor="middle"
+                x={x - 4}
+                y={y + 4}
+                textAnchor="end"
                 fill={entry?.isLiverpool ? RED_TEXT : "#A0A0A0"}
-                fontSize={12}
+                fontSize={13}
                 fontFamily="var(--font-inter)"
                 fontWeight={entry?.isLiverpool ? 600 : 400}
               >
@@ -121,20 +135,10 @@ export function StatChart({ scorers, type, limit = 10 }: StatChartProps) {
               </text>
             );
           }}
-          axisLine={false}
-          tickLine={false}
-        />
-        <YAxis
-          tick={{ fill: "#A0A0A0", fontSize: 12, fontFamily: "var(--font-inter)" }}
-          axisLine={false}
-          tickLine={false}
         />
         <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(200,16,46,0.06)" }} />
-        <Bar dataKey="value" radius={[3, 3, 0, 0]} maxBarSize={36}>
-          <LabelList
-            dataKey="value"
-            content={<ValueLabel data={data} />}
-          />
+        <Bar dataKey="value" radius={[0, 3, 3, 0]} barSize={18}>
+          <LabelList dataKey="value" content={<ValueLabel data={data} />} />
           {data.map((entry, index) => (
             <Cell
               key={`cell-${index}`}

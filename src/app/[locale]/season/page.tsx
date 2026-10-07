@@ -9,8 +9,9 @@ import {
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { CloudOff } from "lucide-react";
-import { SeasonTabs } from "@/components/season/season-tabs";
 import { ChipBar } from "@/components/fixtures/chip-bar";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
+import { matchCentreHref, type MatchCentreTab } from "@/components/fixtures/match-centre-links";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
 import { makePageMeta } from "@/lib/seo";
@@ -25,53 +26,67 @@ import {
 const AVAILABLE_SEASONS = getSelectableSeasons();
 const seasonLabel = formatSeasonLabel;
 
-export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+type SeasonSearchParams = { tab?: string; season?: string; view?: string };
+
+/** The requested season if the archive offers it, else the current one. */
+function resolveSeason(seasonParam: string | undefined): number {
+  const current = getCurrentSeasonYear();
+  const n = Number(seasonParam);
+  return seasonParam && AVAILABLE_SEASONS.includes(n) ? n : current;
+}
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: LocaleParams & { searchParams: Promise<SeasonSearchParams> }): Promise<Metadata> {
   const { locale } = await params;
+  const { season: seasonParam } = await searchParams;
   const t = await getTranslations({ locale, namespace: "Season.metadata" });
-  const label = seasonLabel(getCurrentSeasonYear());
-  const title = t("title", { season: label });
-  const description = t("description", { season: label });
-  return { title, description, ...makePageMeta(title, description, { path: "/season" }) };
+  const selected = resolveSeason(seasonParam);
+  const isCurrent = selected === getCurrentSeasonYear();
+  const title = t("title");
+  const description = t("description", { season: seasonLabel(getCurrentSeasonYear()) });
+  // The current season is the same content as /fixtures; only past seasons are this page's own.
+  return {
+    title,
+    description,
+    ...makePageMeta(title, description, { path: isCurrent ? "/fixtures" : `/season?season=${selected}` }),
+  };
 }
 
 export const revalidate = 1800; // 30 minutes
 
+/**
+ * Season archive. Same four-tab "Trận đấu" hub as /fixtures, /standings and
+ * /stats, for any season the picker offers. The current season's tabs link to
+ * the canonical routes; a past season keeps its own state in the URL.
+ */
 export default async function SeasonPage({
   params,
   searchParams,
-}: LocaleParams & {
-  searchParams: Promise<{ tab?: string; season?: string }>;
-}) {
+}: LocaleParams & { searchParams: Promise<SeasonSearchParams> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const { tab, season: seasonParam } = await searchParams;
+  const { tab, season: seasonParam, view } = await searchParams;
   const t = await getTranslations("Season");
 
-  // Validate season param — fallback to current if invalid
   const currentYear = getCurrentSeasonYear();
-  const selectedSeason = seasonParam
-    ? AVAILABLE_SEASONS.includes(Number(seasonParam))
-      ? Number(seasonParam)
-      : currentYear
-    : currentYear;
-
-  // Only pass season to API if not the current season (avoids unnecessary param)
-  const apiSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
+  const selectedSeason = resolveSeason(seasonParam);
+  const archiveSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
 
   // UCL standings only available for current season on FDO free tier
   const [fixtures, standings, uclStandings] = await Promise.all([
-    getFixtures(apiSeason),
-    getStandings(apiSeason),
-    apiSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
+    getFixtures(archiveSeason),
+    getStandings(archiveSeason),
+    archiveSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
   ]);
 
-  const seasonItems = AVAILABLE_SEASONS.map((y) => {
-    const qs = new URLSearchParams();
-    if (y !== currentYear) qs.set("season", String(y));
-    if (tab === "standings") qs.set("tab", "standings");
-    const query = qs.toString();
-    return { key: String(y), label: seasonLabel(y), href: query ? `/season?${query}` : "/season" };
-  });
+  const active: MatchCentreTab = tab === "standings" ? "standings" : view === "results" ? "results" : "fixtures";
+  const seasonItems = AVAILABLE_SEASONS.map((y) => ({
+    key: String(y),
+    label: seasonLabel(y),
+    href: y === currentYear ? matchCentreHref(active) : matchCentreHref(active, y),
+  }));
 
   return (
     <div className="min-h-screen">
@@ -84,22 +99,30 @@ export default async function SeasonPage({
       />
       <div className="page-container pb-16">
         {fixtures.length === 0 && standings.length === 0 ? (
-          <EmptyState
-            className="mt-6"
-            tone="error"
-            icon={<CloudOff className="size-9" aria-hidden />}
-            title={t("outage.title")}
-            description={t("outage.description")}
-            actionHref="/news"
-            actionLabel={t("outage.action")}
-          />
+          <>
+            <MatchCentreNav active={active} season={archiveSeason} />
+            <EmptyState
+              className="mt-6"
+              tone="error"
+              icon={<CloudOff className="size-9" aria-hidden />}
+              title={t("outage.title")}
+              description={t("outage.description")}
+              actionHref="/news"
+              actionLabel={t("outage.action")}
+            />
+          </>
+        ) : active === "standings" ? (
+          <>
+            <MatchCentreNav active="standings" season={archiveSeason} />
+            <div className="pt-4">
+              <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />
+            </div>
+          </>
         ) : (
-          <SeasonTabs
-            fixturesPanel={<FixtureTimeline fixtures={fixtures} sticky={false} />}
-            standingsPanel={<StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />}
-            defaultTab={tab}
-            matchCount={fixtures.length}
-            teamCount={standings.length}
+          <FixtureTimeline
+            fixtures={fixtures}
+            season={archiveSeason}
+            initialView={active === "results" ? "results" : undefined}
           />
         )}
       </div>

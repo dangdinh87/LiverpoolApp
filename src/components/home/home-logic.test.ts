@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Standing } from "@/lib/types/football";
-import { cleanSnippet, cleanTitle, selectHomeNews } from "./news-utils";
-import { pickStandingsWindow } from "./standings-preview";
+import { cleanTitle, selectHomeNews } from "./news-utils";
+import { pickStandingsWindow } from "./standings-window";
 
 const art = (n: number, language: "vi" | "en", hoursAgo = n): NewsArticle => ({
   title: `t${n}`,
@@ -19,11 +19,6 @@ const table = (n: number, lfcRank: number): Standing[] =>
 describe("news-utils", () => {
   it("decodes entities and strips tags in titles", () => {
     expect(cleanTitle("Salah&#8217;s <b>goal</b> &amp; more&nbsp;now")).toBe("Salah’s goal & more now");
-  });
-  it("drops boilerplate and headline-echo snippets", () => {
-    expect(cleanSnippet("The post Salah scores appeared first on Anfield Index and more text here.", "x")).toBeNull();
-    expect(cleanSnippet("short", "x")).toBeNull();
-    expect(cleanSnippet("A genuinely useful summary of the match that is long enough.", "x")).toMatch(/useful/);
   });
   it("prefers the viewer language when fresh", () => {
     const list = [art(1, "en"), art(2, "vi"), art(3, "vi"), art(4, "vi"), art(5, "en")];

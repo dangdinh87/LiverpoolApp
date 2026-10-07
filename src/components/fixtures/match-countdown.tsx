@@ -7,8 +7,11 @@ import { useNowAfterMount } from "@/hooks/use-now-after-mount";
  * Countdown for the next match only (one timer on the whole page). Renders a
  * fixed-width placeholder until mount so server HTML and hydration agree and
  * the badge does not shift layout.
+ *
+ * `showLabel` adds the "Trận tới" prefix (right for the one next match in a
+ * list); without it only the time left shows, for any upcoming match.
  */
-export function MatchCountdown({ kickOff }: { kickOff: string }) {
+export function MatchCountdown({ kickOff, showLabel = true }: { kickOff: string; showLabel?: boolean }) {
   const t = useTranslations("Match");
   const now = useNowAfterMount(60_000);
   const diff = now === null ? null : new Date(kickOff).getTime() - now;
@@ -26,10 +29,12 @@ export function MatchCountdown({ kickOff }: { kickOff: string }) {
     else text = t("countdown.inMins", { n: mins });
   }
 
+  if (!showLabel && !text) return null;
+
   return (
     <span className="inline-flex min-h-6 items-center border border-lfc-gold/40 bg-lfc-gold/10 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-lfc-gold tabular-nums">
-      {t("nextMatch")}
-      {text && <span className="ml-1.5 text-white">{text}</span>}
+      {showLabel && t("nextMatch")}
+      {text && <span className={showLabel ? "ml-1.5 text-white" : "text-white"}>{text}</span>}
     </span>
   );
 }

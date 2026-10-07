@@ -8,11 +8,13 @@ import type { FormEntry } from "@/lib/football/season-stats";
 interface Props {
   entries: FormEntry[];
   legendLabels?: { win: string; draw: string; loss: string };
+  /** Single-letter markers in the viewer's language (T/H/B in Vietnamese). */
+  letters?: Record<"W" | "D" | "L", string>;
 }
 
 const RESULT_COLORS: Record<string, string> = RESULT_BADGE;
 
-export function FormTimeline({ entries, legendLabels }: Props) {
+export function FormTimeline({ entries, legendLabels, letters }: Props) {
   if (entries.length === 0) return null;
 
   return (
@@ -26,9 +28,9 @@ export function FormTimeline({ entries, legendLabels }: Props) {
                   "size-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-[filter] duration-[var(--dur-base)] hover:brightness-110",
                   RESULT_COLORS[entry.result] ?? "bg-gray-500 text-white"
                 )}
-                aria-label={`${entry.result} ${entry.score} vs ${entry.opponent}`}
+                aria-label={`${legendLabels?.[({ W: "win", D: "draw", L: "loss" } as const)[entry.result]] ?? entry.result}: ${entry.score} vs ${entry.opponent}`}
               >
-                {entry.result}
+                {letters?.[entry.result] ?? entry.result}
               </button>
             </TooltipTrigger>
             <TooltipContent className="bg-stadium-surface border-stadium-border">

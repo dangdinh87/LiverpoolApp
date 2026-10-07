@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { brandTagline } from "@/lib/brand";
 import type { ReactNode } from "react";
 
 const DEFAULT_HERO_BG = "/assets/lfc/stadium/bg_5.jpg";
@@ -11,13 +12,16 @@ interface HeroProps {
 }
 
 /**
- * Compact home hero: stadium photo (the LCP image), the anthem as the one h1,
- * and the next-match card. Server-rendered with CSS-only reveals, so the text
+ * Compact home hero: stadium photo (the LCP image), the club motto as the one h1
+ * (the tagline above it says what the site is), and the next-match card. Server-rendered with CSS-only reveals, so the text
  * is in the first HTML and visible without waiting for hydration.
  */
 export async function Hero({ backgroundUrl, children }: HeroProps) {
   const t = await getTranslations("Hero");
+  const locale = await getLocale();
   const heroImage = backgroundUrl || DEFAULT_HERO_BG;
+  // "Fan Liverpool Việt Nam · Giờ đá, kết quả, tin nhanh": on a phone only the name fits one line.
+  const [tagName, ...tagRest] = brandTagline(locale).split(" · ");
 
   return (
     <header className="relative isolate overflow-hidden border-b border-[var(--line)]">
@@ -38,7 +42,10 @@ export async function Hero({ backgroundUrl, children }: HeroProps) {
       <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+2.5rem)]">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-center lg:gap-12">
           <div className="reveal min-w-0 lg:col-span-7">
-            <p className="section-label text-lfc-gold">{t("tagline")}</p>
+            <p className="section-label text-lfc-gold">
+              {tagName}
+              {tagRest.length > 0 && <span className="hidden sm:inline"> · {tagRest.join(" · ")}</span>}
+            </p>
             <h1 className="mt-2 font-bebas text-[3.25rem] leading-[0.9] text-white sm:text-7xl lg:text-8xl">
               You&rsquo;ll Never <span className="text-brand">Walk Alone</span>
             </h1>

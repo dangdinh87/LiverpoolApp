@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import type { H2HRecord } from "@/lib/football";
 import { formatDayMonthYear } from "@/lib/format-match-date";
 import { RESULT_BADGE } from "@/lib/result-style";
+import { displayTeamName } from "./team-name";
 
 interface H2HSectionProps {
   h2h: H2HRecord;
@@ -13,6 +14,7 @@ const RESULT_COLORS = RESULT_BADGE;
 
 export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
   const t = useTranslations("Match.h2h");
+  const tShort = useTranslations("Match.resultShort");
   const locale = useLocale();
   const dateLoc = locale === "vi" ? "vi-VN" : "en-GB";
   const total = h2h.liverpoolWins + h2h.draws + h2h.opponentWins;
@@ -53,9 +55,9 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
             <div className="bg-white/15 transition-all duration-700" style={{ width: `${oppPct}%` }} />
           </div>
           <div className="flex justify-between">
-            <span className="font-bebas text-2xl sm:text-3xl text-brand leading-none">{h2h.liverpoolWins}W</span>
-            <span className="font-bebas text-2xl sm:text-3xl text-lfc-gold leading-none">{h2h.draws}D</span>
-            <span className="font-bebas text-2xl sm:text-3xl text-white/50 leading-none">{h2h.opponentWins}L</span>
+            <ResultTally value={h2h.liverpoolWins} label={t("winLabel")} tone="text-brand" />
+            <ResultTally value={h2h.draws} label={t("drawLabel")} tone="text-lfc-gold" align="center" />
+            <ResultTally value={h2h.opponentWins} label={t("lossLabel")} tone="text-white/60" align="right" />
           </div>
         </div>
 
@@ -96,11 +98,11 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
                         RESULT_COLORS[m.result],
                       )}
                     >
-                      {m.result}
+                      {tShort(m.result)}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="font-inter text-sm text-white font-medium truncate">
-                        {m.homeTeam} <span className="text-lfc-gold font-bebas text-base mx-1">{m.score}</span> {m.awayTeam}
+                        {displayTeamName(m.homeTeam)} <span className="text-lfc-gold font-bebas text-base mx-1">{m.score}</span> {displayTeamName(m.awayTeam)}
                       </p>
                       <p className="font-inter text-xs text-stadium-muted mt-0.5">
                         {dateStr} · {m.competition}
@@ -113,6 +115,25 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ResultTally({
+  value,
+  label,
+  tone,
+  align = "left",
+}: {
+  value: number;
+  label: string;
+  tone: string;
+  align?: "left" | "center" | "right";
+}) {
+  return (
+    <div className={cn("flex flex-col gap-1", align === "center" && "items-center", align === "right" && "items-end")}>
+      <span className={cn("font-bebas text-3xl leading-none sm:text-4xl", tone)}>{value}</span>
+      <span className="font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">{label}</span>
     </div>
   );
 }

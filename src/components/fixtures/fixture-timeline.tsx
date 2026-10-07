@@ -1,13 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { CalendarX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
 import { ChipBar } from "./chip-bar";
+import { MatchCentreNav } from "./match-centre-nav";
+import { airsOnFptPlay } from "./where-to-watch";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Fixture } from "@/lib/types/football";
-import { cn } from "@/lib/utils";
 import { formatMonthYear } from "@/lib/format-match-date";
 
 // Normalize competition names (FDO/ESPN may use different names for the same comp).
@@ -42,18 +44,32 @@ type View = "upcoming" | "results";
 
 interface FixtureTimelineProps {
   fixtures: Fixture[];
-  /** Stick the filters under the header (turn off when another sticky bar already sits there). */
-  sticky?: boolean;
+  /** Which list opens first (from ?view=); defaults to upcoming, or results when nothing is left to play. */
+  initialView?: View;
+  /** Archive season year; omit for the current season. */
+  season?: number;
+  /** Footer link to the season archive (only the /fixtures page needs it). */
+  showArchiveLink?: boolean;
 }
 
-export function FixtureTimeline({ fixtures, sticky = true }: FixtureTimelineProps) {
+export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink = false }: FixtureTimelineProps) {
   const t = useTranslations("Fixtures.timeline");
   const locale = useLocale() === "vi" ? "vi" : "en";
 
   // Status-based (no clock) so server HTML and hydration agree.
   const hasUpcoming = fixtures.some((f) => !FINISHED.has(f.fixture.status.short));
-  const [view, setView] = useState<View>(hasUpcoming ? "upcoming" : "results");
+  const [view, setView] = useState<View>(initialView ?? (hasUpcoming ? "upcoming" : "results"));
   const [comp, setComp] = useState("All");
+
+  // Keep ?view= in the URL (shallow) so a refresh or shared link lands on the same list.
+  const selectView = (next: "fixtures" | "results") => {
+    const nextView: View = next === "fixtures" ? "upcoming" : "results";
+    setView(nextView);
+    const url = new URL(window.location.href);
+    if (nextView === "results") url.searchParams.set("view", "results");
+    else url.searchParams.delete("view");
+    window.history.replaceState(window.history.state, "", url.toString());
+  };
 
   const availableComps = useMemo(() => {
     const set = new Set(fixtures.map((f) => normalizeComp(f.league.name)));
@@ -95,26 +111,27 @@ export function FixtureTimeline({ fixtures, sticky = true }: FixtureTimelineProp
     { key: "All", label: t("filter.all") },
     ...availableComps.map((c) => ({ key: c, label: COMP_SHORT[c] ?? c })),
   ];
-  const viewItems = [
-    { key: "upcoming", label: t("tabs.upcoming"), count: upcoming.length },
-    { key: "results", label: t("tabs.results"), count: results.length },
-  ];
+  const showFptHint = view === "upcoming" && upcoming.some((f) => airsOnFptPlay(f.league.name));
 
   return (
     <div>
-      <div
-        className={cn(
-          "space-y-2 border-b border-[var(--line)] py-2.5",
-          sticky && "sticky top-[var(--header-h)] z-30 -mx-4 bg-stadium-bg/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
-        )}
-      >
-        <ChipBar items={viewItems} active={view} onSelect={(k) => setView(k as View)} ariaLabel={t("viewLabel")} />
-        {availableComps.length > 1 && (
-          <ChipBar items={compItems} active={comp} onSelect={setComp} ariaLabel={t("filterLabel")} />
-        )}
-      </div>
+      <MatchCentreNav
+        active={view === "upcoming" ? "fixtures" : "results"}
+        season={season}
+        counts={{ fixtures: upcoming.length, results: results.length }}
+        onSelectView={selectView}
+      />
 
-      <p className="mt-4 text-xs text-stadium-muted">{t("gmtHint")}</p>
+      {availableComps.length > 1 && (
+        <div className="pt-3">
+          <ChipBar items={compItems} active={comp} onSelect={setComp} ariaLabel={t("filterLabel")} />
+        </div>
+      )}
+
+      <p className="mt-3 text-[13px] leading-snug text-stadium-muted">
+        {t("gmtHint")}
+        {showFptHint && <> {t("plWatch")}</>}
+      </p>
 
       {groups.length === 0 ? (
         <EmptyState
@@ -140,6 +157,14 @@ export function FixtureTimeline({ fixtures, sticky = true }: FixtureTimelineProp
             </section>
           ))}
         </div>
+      )}
+
+      {showArchiveLink && (
+        <p className="mt-8 text-center text-sm">
+          <Link href="/season" className="inline-flex min-h-11 items-center text-stadium-muted underline-offset-4 transition-colors hover:text-white hover:underline">
+            {t("archive")}
+          </Link>
+        </p>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
@@ -7,6 +7,8 @@ import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { MatchCountdown } from "./match-countdown";
+import { roundLabel } from "./round-label";
+import { displayTeamName } from "./team-name";
 
 export const LFC_TEAM_ID = 40;
 const FINISHED = ["FT", "AET", "PEN"];
@@ -56,7 +58,7 @@ function TeamSide({
           isLfc ? "text-white" : "text-white/80",
         )}
       >
-        {team.name}
+        {displayTeamName(team.name)}
       </span>
     </div>
   );
@@ -70,6 +72,7 @@ interface MatchCardProps {
 
 export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
   const t = useTranslations("Match");
+  const tRound = useTranslations("Match.round");
   const { fixture: f, league, teams, goals, score } = fixture;
   const status = f.status.short;
   const isFinished = FINISHED.includes(status);
@@ -90,9 +93,12 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
       : null;
   const resultWord = result === "W" ? t("win") : result === "D" ? t("draw") : t("loss");
 
+  const round = roundLabel(tRound, league.round);
+  const homeName = displayTeamName(teams.home.name);
+  const awayName = displayTeamName(teams.away.name);
   const aria = isUpcoming
-    ? `${teams.home.name} – ${teams.away.name}, ${dateStr} ${timeStr}`
-    : `${teams.home.name} ${goals.home ?? 0} – ${goals.away ?? 0} ${teams.away.name}`;
+    ? `${homeName} – ${awayName}, ${dateStr} ${timeStr} GMT+7`
+    : `${homeName} ${goals.home ?? 0} – ${goals.away ?? 0} ${awayName}`;
 
   return (
     <Link
@@ -115,7 +121,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
             {comp && <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", comp.dot)} />}
             <span className="truncate">
               <span className="text-white/90">{comp?.short ?? league.name}</span>
-              {league.round && <span> · {league.round}</span>}
+              {round && <span> · {round}</span>}
             </span>
           </p>
 

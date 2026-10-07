@@ -2,6 +2,7 @@ import { Trophy, TrendingUp, Shield, Target, RotateCcw, Zap } from "lucide-react
 import { cn } from "@/lib/utils";
 import type { SeasonRecords } from "@/lib/football/season-stats";
 import type { LucideIcon } from "lucide-react";
+import { displayTeamName } from "@/components/fixtures/team-name";
 
 interface Props {
   records: SeasonRecords;
@@ -18,6 +19,13 @@ interface RecordItem {
 }
 
 
+/** "vs Newcastle United FC" + "A" -> "vs Newcastle United (Sân khách)": no club suffix, no bare H/A. */
+function matchContext(d: { opponent: string; venue: string }, labels: Record<string, string>): string {
+  const name = displayTeamName(d.opponent.replace(/^vs\s+/i, ""));
+  const venue = d.venue === "H" ? labels.home : labels.away;
+  return `vs ${name}${venue ? ` (${venue})` : ""}`;
+}
+
 export function RecordsMilestones({ records, labels }: Props) {
   const items: RecordItem[] = [];
 
@@ -26,7 +34,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: Trophy,
       label: labels.biggestWin,
       value: records.biggestWin.display.score,
-      context: `${records.biggestWin.display.opponent} (${records.biggestWin.display.venue})`,
+      context: matchContext(records.biggestWin.display, labels),
       color: "text-brand",
       iconBg: "bg-lfc-red/10",
     });
@@ -82,7 +90,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: Zap,
       label: labels.highestScoring,
       value: records.highestScoring.display.score,
-      context: `${records.highestScoring.display.opponent} (${records.highestScoring.display.venue})`,
+      context: matchContext(records.highestScoring.display, labels),
       color: "text-brand",
       iconBg: "bg-lfc-red/10",
     });
@@ -93,7 +101,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: Shield,
       label: labels.biggestLoss,
       value: records.biggestLoss.display.score,
-      context: `${records.biggestLoss.display.opponent} (${records.biggestLoss.display.venue})`,
+      context: matchContext(records.biggestLoss.display, labels),
       color: "text-red-400",
       iconBg: "bg-red-500/10",
     });

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { Standing } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/empty-state";
+import { compactTeamName, displayTeamName } from "@/components/fixtures/team-name";
 
 const LFC_ID = 40;
 
@@ -116,8 +117,8 @@ export function StandingsTable({ standings, competition = "pl" }: StandingsTable
                       </span>
                       <span className={cn("min-w-0 truncate", isLfc ? "font-bold text-white" : "text-white/85")} title={s.team.name}>
                         {/* Compact name on phones ("Man City" instead of "Manchester …"), full name from sm */}
-                        <span className="sm:hidden">{s.team.shortName ?? s.team.name}</span>
-                        <span className="hidden sm:inline">{s.team.name}</span>
+                        <span className="sm:hidden">{compactTeamName(s.team)}</span>
+                        <span className="hidden sm:inline">{displayTeamName(s.team.name)}</span>
                       </span>
                     </div>
                   </td>

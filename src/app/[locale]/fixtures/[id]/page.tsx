@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, Users, CircleDot, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
+import { ArrowLeft, CalendarDays, MapPin, Users, CircleDot, ListOrdered, BarChart3, Shirt, Swords, Tv } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
@@ -15,6 +15,10 @@ import {
 } from "@/lib/football";
 import { getCurrentSeasonYear } from "@/lib/football/current-season";
 import { H2HSection } from "@/components/fixtures/h2h-section";
+import { MatchCountdown } from "@/components/fixtures/match-countdown";
+import { roundLabel } from "@/components/fixtures/round-label";
+import { displayTeamName } from "@/components/fixtures/team-name";
+import { airsOnFptPlay } from "@/components/fixtures/where-to-watch";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -46,11 +50,27 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+  const { id, locale } = await params;
   const match = await getFixtureById(Number(id));
   if (!match) return { title: "Match", robots: { index: false } };
-  const title = `${match.teams.home.name} vs ${match.teams.away.name}`;
-  const description = `${match.league.name} — ${match.league.round}`;
+  const t = await getTranslations({ locale, namespace: "Fixtures.detail" });
+  const tRound = await getTranslations({ locale, namespace: "Match.round" });
+  const home = displayTeamName(match.teams.home.name);
+  const away = displayTeamName(match.teams.away.name);
+  const title = `${home} vs ${away}`;
+  const round = roundLabel(tRound, match.league.round);
+  const competition = [match.league.name, round].filter(Boolean).join(" · ");
+  const date = new Date(match.fixture.date);
+  const finished = ["FT", "AET", "PEN"].includes(match.fixture.status.short);
+  const description = finished
+    ? t("metaFinished", { home, away, homeGoals: match.goals.home ?? 0, awayGoals: match.goals.away ?? 0, competition })
+    : t("metaUpcoming", {
+        home,
+        away,
+        time: formatMatchTime(date),
+        date: formatMatchDayMonth(date, locale === "vi" ? "vi" : "en", true),
+        competition,
+      });
   return {
     title,
     description,
@@ -63,11 +83,12 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   setRequestLocale(locale);
   const fixtureId = Number(id);
 
-  const [match, tDetail, tMatch, tCard] = await Promise.all([
+  const [match, tDetail, tMatch, tCard, tRound] = await Promise.all([
     getFixtureById(fixtureId),
     getTranslations("Fixtures.detail"),
     getTranslations("Match"),
     getTranslations("Fixtures.detail.empty"),
+    getTranslations("Match.round"),
   ]);
   if (!match) notFound();
 
@@ -180,7 +201,24 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     result === "W" ? "border-green-500/40 bg-green-500/10 text-green-400"
     : result === "D" ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
     : "border-red-500/40 bg-red-500/10 text-red-400";
-  const pendingNote = isFinished || isLive ? null : tCard("afterKickoff");
+  const hasStarted = isFinished || isLive;
+  const homeName = displayTeamName(teams.home.name);
+  const awayName = displayTeamName(teams.away.name);
+  const round = roundLabel(tRound, league.round);
+  // FPT Play holds the Premier League rights in Vietnam; no other competition is covered.
+  const showWatch = !isFinished && airsOnFptPlay(league.name);
+  const sections = [
+    ...(hasStarted
+      ? [
+          { id: "timeline", label: tMatch("tabs.timeline") },
+          { id: "stats", label: tMatch("tabs.stats") },
+        ]
+      : []),
+    { id: "lineups", label: tMatch("tabs.lineups") },
+    { id: "h2h", label: tMatch("tabs.h2h") },
+  ];
+  const sectionClass = "mt-10 scroll-mt-[calc(var(--header-h)+3.5rem)]";
+  const infoIcon = "mt-0.5 size-4 shrink-0 text-stadium-muted";
 
   return (
     <div className="min-h-screen pb-16 pt-[calc(var(--header-h)+1rem)] sm:pt-[calc(var(--header-h)+1.5rem)]">
@@ -203,192 +241,230 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           status: f.status.short,
         }),
       ]} />
-      <div className="page-container max-w-3xl">
-        <Link
-          href="/season"
-          className="group mb-4 inline-flex min-h-10 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
-        >
-          <ArrowLeft size={16} aria-hidden className="transition-transform group-hover:-translate-x-1" />
-          {tDetail("back")}
-        </Link>
+      {/* .page-container sets its own max-width, so the reading column is capped by an inner box. */}
+      <div className="page-container">
+        <div className="mx-auto max-w-3xl">
+          <Link
+            href="/fixtures"
+            className="group mb-4 inline-flex min-h-11 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
+          >
+            <ArrowLeft size={16} aria-hidden className="transition-transform group-hover:-translate-x-1" />
+            {tDetail("back")}
+          </Link>
 
-        {/* ─── Score header ─── */}
-        <section className="surface reveal relative overflow-hidden p-4 sm:p-6">
-          {isFinished && result !== "NS" && (
-            <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", result === "W" ? "bg-green-500" : result === "D" ? "bg-amber-400" : "bg-red-500")} />
-          )}
-          {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
-
-          <div className="mb-4 flex min-h-6 items-center justify-between gap-3">
-            <p className="min-w-0 truncate font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted">
-              <span className="text-white/90">{league.name}</span>
-              {league.round && <span> · {league.round}</span>}
-            </p>
+          {/* ─── Score header ─── */}
+          <section className="surface reveal relative overflow-hidden p-4 sm:p-6">
             {isFinished && result !== "NS" && (
-              <span className={cn("inline-flex shrink-0 items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider", resultTone)}>
-                {resultWord}
-                {(f.status.short === "AET" || f.status.short === "PEN") && (
-                  <span className="text-white/70">· {f.status.short}</span>
-                )}
-              </span>
+              <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", result === "W" ? "bg-green-500" : result === "D" ? "bg-amber-400" : "bg-red-500")} />
             )}
-            {isLive && (
-              <span className="inline-flex shrink-0 items-center gap-1.5 border border-lfc-red/50 bg-lfc-red/15 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white">
-                <span aria-hidden className="size-1.5 rounded-full bg-lfc-red animate-pulse" />
-                {tMatch("live")}{f.status.elapsed ? ` ${f.status.elapsed}'` : ""}
-              </span>
-            )}
-          </div>
+            {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
 
-          <h1 className="sr-only">{teams.home.name} vs {teams.away.name}</h1>
-          <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)] sm:gap-4">
-            {/* Home */}
-            <div className="flex min-w-0 flex-col items-center text-center sm:items-end sm:text-right">
-              <div className="relative size-12 sm:size-16">
-                <Image src={teamLogo(teams.home.id, teams.home.logo)} alt="" fill sizes="64px" className="object-contain" priority />
-              </div>
-              <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", homeIsLfc ? "text-white" : "text-white/80")}>
-                {teams.home.name}
+            <div className="mb-4 flex min-h-6 items-center justify-between gap-3">
+              <p className="min-w-0 truncate font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted">
+                <span className="text-white/90">{league.name}</span>
+                {round && <span> · {round}</span>}
               </p>
-              {homeLineup && <p className="font-barlow text-xs text-stadium-muted">{homeLineup.formation}</p>}
-              {isFinished && <ScorerList goals={homeGoals} align="home" />}
-            </div>
-
-            {/* Score / time */}
-            <div className="pt-1 text-center sm:pt-3">
-              {isFinished || isLive ? (
-                <>
-                  <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
-                    {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
-                  </p>
-                  {isFinished && hasHt && (
-                    <p className="mt-1.5 text-xs text-stadium-muted">{tMatch("halftimeShort")} {htHome} – {htAway}</p>
+              {isFinished && result !== "NS" && (
+                <span className={cn("inline-flex shrink-0 items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider", resultTone)}>
+                  {resultWord}
+                  {(f.status.short === "AET" || f.status.short === "PEN") && (
+                    <span className="text-white/70">· {f.status.short}</span>
                   )}
-                  {f.status.short === "AET" && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("aet")}</p>}
-                  {pens && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("penShort", { score: pens })}</p>}
-                </>
-              ) : (
-                <>
-                  <p className="font-bebas text-4xl leading-none tracking-wide text-white tabular-nums sm:text-5xl">{timeStr}</p>
-                  <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">GMT+7</p>
-                </>
-              )}
-            </div>
-
-            {/* Away */}
-            <div className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-left">
-              <div className="relative size-12 sm:size-16">
-                <Image src={teamLogo(teams.away.id, teams.away.logo)} alt="" fill sizes="64px" className="object-contain" priority />
-              </div>
-              <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", teams.away.id === LFC_ID ? "text-white" : "text-white/80")}>
-                {teams.away.name}
-              </p>
-              {awayLineup && <p className="font-barlow text-xs text-stadium-muted">{awayLineup.formation}</p>}
-              {isFinished && <ScorerList goals={awayGoals} align="away" />}
-            </div>
-          </div>
-
-          <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted">
-            <li>{dateStr}{!isFinished && !isLive ? ` · ${timeStr} GMT+7` : ""}</li>
-            {/* FPT Play holds the Premier League rights in Vietnam through 2030/31; no other competition is covered. */}
-            {!isFinished && league.name === "Premier League" && <li className="font-semibold text-white/80">{tMatch("whereToWatch")}</li>}
-            {venue && (
-              <li className="flex items-center gap-1.5"><MapPin size={12} aria-hidden />{venue}</li>
-            )}
-            {attendance && attendance > 0 && (
-              <li className="flex items-center gap-1.5"><Users size={12} aria-hidden />{attendance.toLocaleString(loc)}</li>
-            )}
-            {referee && (
-              <li className="flex items-center gap-1.5 text-white/80"><CircleDot size={12} aria-hidden className="text-lfc-gold" />{referee}</li>
-            )}
-          </ul>
-        </section>
-
-        {/* ─── Events ─── */}
-        <section className="mt-10">
-          <SectionHeader title={tDetail("matchTimeline")} />
-          {hasEvents ? (
-            <ul className="surface px-4 sm:px-5">
-              {resolvedEvents.map((event, i) => (
-                <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              className="py-8 sm:py-10"
-              icon={<ListOrdered className="size-7" aria-hidden />}
-              title={tCard("events.title")}
-              description={pendingNote ?? tCard("events.description")}
-            />
-          )}
-        </section>
-
-        {/* ─── Statistics ─── */}
-        <section className="mt-10">
-          <SectionHeader title={tDetail("statistics")} />
-          {homeStats && awayStats ? (
-            <div className="surface p-4 sm:p-5">
-              <div className="mb-4 flex items-center justify-between gap-3 text-sm font-semibold text-white">
-                <span className="min-w-0 truncate">{teams.home.name}</span>
-                <span className="min-w-0 truncate text-right">{teams.away.name}</span>
-              </div>
-              <StatsComparison home={homeStats} away={awayStats} statLabels={statLabels} homeIsLfc={homeIsLfc} />
-            </div>
-          ) : (
-            <EmptyState
-              className="py-8 sm:py-10"
-              icon={<BarChart3 className="size-7" aria-hidden />}
-              title={tCard("stats.title")}
-              description={pendingNote ?? tCard("stats.description")}
-            />
-          )}
-        </section>
-
-        {/* ─── Lineups ─── */}
-        <section className="mt-10">
-          <SectionHeader title={tDetail("lineups")} />
-          {hasLineups ? (
-            <div className="space-y-4">
-              {homeLineup && awayLineup && <FormationPitch homeLineup={homeLineup} awayLineup={awayLineup} />}
-              <div className="surface p-4 sm:p-5">
-                <span className={cn(
-                  "mb-4 inline-block border px-2 py-0.5 font-barlow text-xs font-semibold uppercase tracking-wider",
-                  isConfirmed
-                    ? "border-green-500/30 bg-green-500/10 text-green-400"
-                    : "border-lfc-gold/30 bg-lfc-gold/10 text-lfc-gold",
-                )}>
-                  {lineupLabel}
                 </span>
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                  {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-                  {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+              )}
+              {isLive && (
+                <span className="inline-flex shrink-0 items-center gap-1.5 border border-lfc-red/50 bg-lfc-red/15 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white">
+                  <span aria-hidden className="size-1.5 rounded-full bg-lfc-red animate-pulse" />
+                  {tMatch("live")}{f.status.elapsed ? ` ${f.status.elapsed}'` : ""}
+                </span>
+              )}
+              {!hasStarted && <MatchCountdown kickOff={f.date} showLabel={false} />}
+            </div>
+
+            <h1 className="sr-only">{homeName} vs {awayName}</h1>
+            <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)] sm:gap-4">
+              {/* Home */}
+              <div className="flex min-w-0 flex-col items-center text-center sm:items-end sm:text-right">
+                <div className="relative size-12 sm:size-16">
+                  <Image src={teamLogo(teams.home.id, teams.home.logo)} alt="" fill sizes="64px" className="object-contain" priority />
+                </div>
+                <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", homeIsLfc ? "text-white" : "text-white/80")}>
+                  {homeName}
+                </p>
+                {homeLineup && <p className="font-barlow text-xs text-stadium-muted">{homeLineup.formation}</p>}
+                {isFinished && <ScorerList goals={homeGoals} align="home" />}
+              </div>
+
+              {/* Score / time */}
+              <div className="pt-1 text-center sm:pt-3">
+                {hasStarted ? (
+                  <>
+                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
+                      {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
+                    </p>
+                    {isFinished && hasHt && (
+                      <p className="mt-1.5 text-xs text-stadium-muted">{tMatch("halftimeShort")} {htHome} – {htAway}</p>
+                    )}
+                    {f.status.short === "AET" && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("aet")}</p>}
+                    {pens && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("penShort", { score: pens })}</p>}
+                  </>
+                ) : (
+                  <>
+                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">{timeStr}</p>
+                    <p className="mt-1.5 font-barlow text-sm font-semibold uppercase tracking-wider text-stadium-muted">GMT+7</p>
+                  </>
+                )}
+              </div>
+
+              {/* Away */}
+              <div className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-left">
+                <div className="relative size-12 sm:size-16">
+                  <Image src={teamLogo(teams.away.id, teams.away.logo)} alt="" fill sizes="64px" className="object-contain" priority />
+                </div>
+                <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", teams.away.id === LFC_ID ? "text-white" : "text-white/80")}>
+                  {awayName}
+                </p>
+                {awayLineup && <p className="font-barlow text-xs text-stadium-muted">{awayLineup.formation}</p>}
+                {isFinished && <ScorerList goals={awayGoals} align="away" />}
+              </div>
+            </div>
+
+            {/* When, where, where to watch: one scannable list, in Vietnam time */}
+            <ul className="mt-5 space-y-2.5 border-t border-[var(--line)] pt-4 text-sm leading-snug text-white/90">
+              <li className="flex items-start gap-2.5">
+                <CalendarDays aria-hidden className={infoIcon} />
+                <span>{dateStr}{!hasStarted ? ` · ${timeStr} (GMT+7)` : ""}</span>
+              </li>
+              {venue && (
+                <li className="flex items-start gap-2.5"><MapPin aria-hidden className={infoIcon} />{venue}</li>
+              )}
+              {showWatch && (
+                <li className="flex items-start gap-2.5 font-semibold text-white">
+                  <Tv aria-hidden className={cn(infoIcon, "text-lfc-gold")} />
+                  {tMatch("whereToWatch")}
+                </li>
+              )}
+              {attendance && attendance > 0 && (
+                <li className="flex items-start gap-2.5"><Users aria-hidden className={infoIcon} />{tDetail("attendance", { count: attendance.toLocaleString(loc) })}</li>
+              )}
+              {referee && (
+                <li className="flex items-start gap-2.5"><CircleDot aria-hidden className={cn(infoIcon, "text-lfc-gold")} />{tDetail("referee", { name: referee })}</li>
+              )}
+            </ul>
+          </section>
+
+          {/* ─── Jump chips (phones): a finished match has four long sections ─── */}
+          {sections.length > 2 && (
+            <nav
+              aria-label={tDetail("sectionsLabel")}
+              className="sticky top-[var(--header-h)] z-30 -mx-4 mt-4 border-b border-[var(--line)] bg-stadium-bg/95 px-4 backdrop-blur md:hidden"
+            >
+              <div className="scroll-x flex">
+                {sections.map((sec) => (
+                  <a
+                    key={sec.id}
+                    href={`#${sec.id}`}
+                    className="inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap px-3 font-barlow text-[15px] font-semibold uppercase tracking-[0.08em] text-stadium-muted transition-colors hover:text-white"
+                  >
+                    {sec.label}
+                  </a>
+                ))}
+              </div>
+            </nav>
+          )}
+
+          {!hasStarted && <p className="mt-6 text-sm text-stadium-muted">{tDetail("noData")}</p>}
+
+          {/* ─── Events ─── */}
+          {hasStarted && (
+            <section id="timeline" className={sectionClass}>
+              <SectionHeader title={tDetail("matchTimeline")} />
+              {hasEvents ? (
+                <ul className="surface px-4 sm:px-5">
+                  {resolvedEvents.map((event, i) => (
+                    <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
+                  ))}
+                </ul>
+              ) : (
+                <EmptyState
+                  className="py-8 sm:py-10"
+                  icon={<ListOrdered className="size-7" aria-hidden />}
+                  title={tCard("events.title")}
+                  description={tCard("events.description")}
+                />
+              )}
+            </section>
+          )}
+
+          {/* ─── Statistics ─── */}
+          {hasStarted && (
+            <section id="stats" className={sectionClass}>
+              <SectionHeader title={tDetail("statistics")} />
+              {homeStats && awayStats ? (
+                <div className="surface p-4 sm:p-5">
+                  <div className="mb-4 flex items-center justify-between gap-3 text-sm font-semibold text-white">
+                    <span className="min-w-0 truncate">{homeName}</span>
+                    <span className="min-w-0 truncate text-right">{awayName}</span>
+                  </div>
+                  <StatsComparison home={homeStats} away={awayStats} statLabels={statLabels} homeIsLfc={homeIsLfc} />
+                </div>
+              ) : (
+                <EmptyState
+                  className="py-8 sm:py-10"
+                  icon={<BarChart3 className="size-7" aria-hidden />}
+                  title={tCard("stats.title")}
+                  description={tCard("stats.description")}
+                />
+              )}
+            </section>
+          )}
+
+          {/* ─── Lineups ─── */}
+          <section id="lineups" className={sectionClass}>
+            <SectionHeader title={tDetail("lineups")} />
+            {hasLineups ? (
+              <div className="space-y-4">
+                {homeLineup && awayLineup && <FormationPitch homeLineup={homeLineup} awayLineup={awayLineup} />}
+                <div className="surface p-4 sm:p-5">
+                  <span className={cn(
+                    "mb-4 inline-block border px-2 py-0.5 font-barlow text-xs font-semibold uppercase tracking-wider",
+                    isConfirmed
+                      ? "border-green-500/30 bg-green-500/10 text-green-400"
+                      : "border-lfc-gold/30 bg-lfc-gold/10 text-lfc-gold",
+                  )}>
+                    {lineupLabel}
+                  </span>
+                  <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                    {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <EmptyState
-              className="py-8 sm:py-10"
-              icon={<Shirt className="size-7" aria-hidden />}
-              title={tCard("lineups.title")}
-              description={tCard("lineups.description")}
-            />
-          )}
-        </section>
+            ) : (
+              <EmptyState
+                className="py-8 sm:py-10"
+                icon={<Shirt className="size-7" aria-hidden />}
+                title={tCard("lineups.title")}
+                description={tCard("lineups.description")}
+              />
+            )}
+          </section>
 
-        {/* ─── Head to head ─── */}
-        <section className="mt-10">
-          <SectionHeader title={tMatch("h2h.title")} />
-          {h2h ? (
-            <H2HSection h2h={h2h} opponentName={opponentName} />
-          ) : (
-            <EmptyState
-              className="py-8 sm:py-10"
-              icon={<Swords className="size-7" aria-hidden />}
-              title={tCard("h2h.title")}
-              description={tCard("h2h.description")}
-            />
-          )}
-        </section>
+          {/* ─── Head to head ─── */}
+          <section id="h2h" className={sectionClass}>
+            <SectionHeader title={tMatch("h2h.title")} />
+            {h2h ? (
+              <H2HSection h2h={h2h} opponentName={displayTeamName(opponentName)} />
+            ) : (
+              <EmptyState
+                className="py-8 sm:py-10"
+                icon={<Swords className="size-7" aria-hidden />}
+                title={tCard("h2h.title")}
+                description={tCard("h2h.description")}
+              />
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

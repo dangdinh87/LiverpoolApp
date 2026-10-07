@@ -53,7 +53,7 @@ function PlayerDot({
       >
         {number}
       </div>
-      <span className="font-inter text-[11px] sm:text-xs text-white text-center leading-tight line-clamp-1 max-w-full">
+      <span className="font-inter text-xs text-white text-center leading-tight line-clamp-1 max-w-full">
         {short}
       </span>
     </div>

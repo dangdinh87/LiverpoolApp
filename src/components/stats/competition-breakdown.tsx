@@ -10,13 +10,21 @@ const COMP_LOGOS: Record<string, string> = {
   "Carabao Cup": "/assets/lfc/carabao-cup.png",
 };
 
+/** Card titles: the provider's formal names do not fit a half-width card on a phone. */
+const COMP_SHORT: Record<string, string> = {
+  "UEFA Champions League": "Champions League",
+  "Carabao Cup": "Carabao Cup",
+};
+
 interface Props {
   competitions: CompetitionStats[];
   labels: { winRate: string; gf: string; ga: string };
+  /** Single-letter W/D/L markers in the viewer's language. */
+  letters: Record<"W" | "D" | "L", string>;
 }
 
 
-export function CompetitionBreakdown({ competitions, labels }: Props) {
+export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
   if (competitions.length === 0) return null;
 
   return (
@@ -40,14 +48,14 @@ export function CompetitionBreakdown({ competitions, labels }: Props) {
               ) : (
                 <Trophy size={16} className="text-stadium-muted" aria-hidden />
               )}
-              <span className="font-inter text-xs sm:text-sm font-semibold text-white truncate">{comp.name}</span>
+              <span className="font-inter text-xs sm:text-sm font-semibold text-white truncate">{COMP_SHORT[comp.name] ?? comp.name}</span>
             </div>
 
             {/* W/D/L */}
-            <div className="flex gap-2 text-xs font-bebas tracking-wider mb-2">
-              <span className="text-green-400">{comp.wins}W</span>
-              <span className="text-amber-400">{comp.draws}D</span>
-              <span className="text-red-400">{comp.losses}L</span>
+            <div className="mb-2 flex gap-2 font-bebas text-sm tracking-wider">
+              <span className="text-green-400">{comp.wins}{letters.W}</span>
+              <span className="text-amber-400">{comp.draws}{letters.D}</span>
+              <span className="text-red-400">{comp.losses}{letters.L}</span>
             </div>
 
             {/* Win rate bar */}
@@ -57,7 +65,7 @@ export function CompetitionBreakdown({ competitions, labels }: Props) {
             </div>
 
             {/* Goals */}
-            <div className="font-inter text-xs text-stadium-muted">
+            <div className="font-inter text-[13px] text-stadium-muted">
               {comp.goalsFor} {labels.gf} · {comp.goalsAgainst} {labels.ga}
             </div>
           </div>

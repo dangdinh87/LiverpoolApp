@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { CalendarDays } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { CalendarDays, Tv } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
 import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { useNowAfterMount } from "@/hooks/use-now-after-mount";
+import { roundLabel } from "@/components/fixtures/round-label";
+import { displayTeamName } from "@/components/fixtures/team-name";
+import { airsOnFptPlay } from "@/components/fixtures/where-to-watch";
 import { cn } from "@/lib/utils";
 
 const LFC_TEAM_ID = 40;
@@ -63,6 +66,13 @@ function Countdown({ target }: { target: number }) {
   // null until mounted: server and first client render both show dashes.
   const now = useNowAfterMount(1_000);
   const diff = now === null ? null : Math.max(0, target - now);
+  if (diff === 0) {
+    return (
+      <p className="flex min-h-9 items-center justify-center border-t border-[var(--line)] pt-3 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-lfc-gold">
+        {h("started")}
+      </p>
+    );
+  }
   const part = (ms: number | null, size: number, mod?: number) => {
     if (ms === null) return "--";
     const n = Math.floor(ms / size);
@@ -97,7 +107,7 @@ function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
           className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
         />
       </span>
-      <span className="text-sm font-semibold leading-tight text-white text-balance line-clamp-2">{team.name}</span>
+      <span className="text-sm font-semibold leading-tight text-white text-balance line-clamp-2">{displayTeamName(team.name)}</span>
     </div>
   );
 }
@@ -105,6 +115,8 @@ function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
 function UpcomingMatch({ initial }: { initial: Fixture }) {
   const t = useTranslations("NextMatch");
   const h = useTranslations("Home.match");
+  const tRound = useTranslations("Match.round");
+  const tMatch = useTranslations("Match");
   const locale = useLocale();
   // undefined = no poll result yet; null = poll says the match is over.
   const [polled, setPolled] = useState<Fixture | null | undefined>(undefined);
@@ -134,13 +146,13 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
   const { teams, league, fixture: f, goals } = fixture;
   const date = new Date(f.date);
   const isHT = f.status.short === "HT";
-  const roundName = league.round.includes(" - ") ? (league.round.split(" - ").at(-1) ?? league.round) : league.round;
+  const round = roundLabel(tRound, league.round);
   const hasDetailPage = f.id > 0;
   const detailHref = hasDetailPage ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
     <div className={cn(CARD, "p-4 sm:p-5", isLive && "border-lfc-gold/60")}>
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col items-start gap-1 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between min-[390px]:gap-3">
         {isLive ? (
           <p className="flex items-center gap-2 font-barlow text-sm font-bold uppercase tracking-[0.14em] text-lfc-gold">
             <span aria-hidden className="relative flex size-2.5">
@@ -160,7 +172,8 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
             </span>
           )}
           <span className="truncate">
-            {league.name} · {roundName}
+            {league.name}
+            {round && ` · ${round}`}
           </span>
         </p>
       </div>
@@ -189,18 +202,25 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         </div>
       )}
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+      {airsOnFptPlay(league.name) && (
+        <p className="mt-3 flex items-center justify-center gap-2 text-[13px] leading-snug text-white/80">
+          <Tv className="size-4 shrink-0 text-lfc-gold" aria-hidden />
+          <span>{tMatch("whereToWatch")}</span>
+        </p>
+      )}
+
+      <div className="mt-4 flex gap-2">
         <Link
           href={detailHref}
-          className="inline-flex min-h-11 flex-1 items-center justify-center bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark"
+          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
         >
           {t("viewMatch")}
         </Link>
         <Link
           href="/fixtures"
-          className="inline-flex min-h-11 items-center justify-center border border-[var(--line-strong)] px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
         >
-          {t("viewAllFixtures")}
+          {h("allFixtures")}
         </Link>
       </div>
     </div>

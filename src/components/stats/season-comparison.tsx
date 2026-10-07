@@ -18,9 +18,11 @@ interface SeasonComparisonProps {
     played: string;
     winRate: string;
   };
+  /** Single-letter W/D/L markers in the viewer's language. */
+  letters: Record<"W" | "D" | "L", string>;
 }
 
-export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
+export function SeasonComparison({ seasons, labels, letters }: SeasonComparisonProps) {
   if (seasons.length < 2) return null;
 
   // W/D/L comparison data
@@ -57,9 +59,9 @@ export function SeasonComparison({ seasons, labels }: SeasonComparisonProps) {
               {labels.played}
             </p>
             <div className="flex justify-center gap-3 mt-2">
-              <span className="font-bebas text-sm text-green-400">{s.overview.wins}W</span>
-              <span className="font-bebas text-sm text-amber-400">{s.overview.draws}D</span>
-              <span className="font-bebas text-sm text-red-400">{s.overview.losses}L</span>
+              <span className="font-bebas text-sm text-green-400">{s.overview.wins}{letters.W}</span>
+              <span className="font-bebas text-sm text-amber-400">{s.overview.draws}{letters.D}</span>
+              <span className="font-bebas text-sm text-red-400">{s.overview.losses}{letters.L}</span>
             </div>
             <p className="font-bebas text-lg text-lfc-red-text mt-1">
               {s.overview.winRate.toFixed(0)}%

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
+import { BRAND, brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
 import { getFixtures, getStandings } from "@/lib/football";
@@ -10,7 +11,7 @@ import { getSiteSetting, SITE_SETTINGS_CACHE_TAG } from "@/lib/gallery/queries";
 import { Hero } from "@/components/home/hero";
 import { NextMatchWidget } from "@/components/home/next-match-widget";
 import { FormWidget, pickRecentResults } from "@/components/home/form-widget";
-import { NewsSection, NewsByCategory } from "@/components/home/news-section";
+import { NewsSection } from "@/components/home/news-section";
 import { selectHomeNews } from "@/components/home/news-utils";
 import { StandingsPreview } from "@/components/home/standings-preview";
 import { SquadCarousel } from "@/components/home/squad-carousel";
@@ -33,10 +34,9 @@ function getOptimizedHeroUrl(url: string): string {
   );
 }
 
-const HOME_TITLE = "Liverpool FC Việt Nam — Tin tức, Lịch thi đấu, Đội hình | YNWA";
-const HOME_DESCRIPTION =
-  "Trang fan Liverpool FC Việt Nam — Tin tức mới nhất, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh, thống kê và lịch sử CLB Liverpool.";
-const HOME_NEWS_LIMIT = 18;
+/** "Tin nhanh" shows this many headlines; the query takes a few extra so the language mix can still fill it. */
+const HOME_NEWS_SHOWN = 5;
+const HOME_NEWS_LIMIT = 12;
 
 const getCachedHomeFixtures = unstable_cache(
   async () => getFixtures(),
@@ -52,7 +52,7 @@ const getCachedHomeStandings = unstable_cache(
 
 const getCachedHomeNews = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true })),
-  ["home-news-vi-first-v2"],
+  ["home-news-vi-first-v3"],
   { revalidate: 300, tags: ["news"] },
 );
 
@@ -78,17 +78,18 @@ const getCachedHomeHeroSetting = unstable_cache(
   { revalidate: 300, tags: [SITE_SETTINGS_CACHE_TAG] },
 );
 
-export const metadata: Metadata = {
-  title: HOME_TITLE,
-  description: HOME_DESCRIPTION,
-  applicationName: "Liverpool FC Việt Nam",
-  category: "sports",
-  ...makePageMeta(
-    HOME_TITLE,
-    HOME_DESCRIPTION,
-    { path: "/" },
-  ),
-};
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const title = brandTitle(locale);
+  const description = brandDescription(locale);
+  return {
+    // The brand title already carries the site name, so it must not get the "| name" template suffix.
+    title: { absolute: title },
+    description,
+    category: "sports",
+    ...makePageMeta(title, description, { path: "/" }),
+  };
+}
 
 // Revalidate every 5 minutes — balances freshness vs performance
 export const revalidate = 300;
@@ -99,8 +100,10 @@ function getSettledValue<T>(result: PromiseSettledResult<T>, fallback: T): T {
   return fallback;
 }
 
-function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>) {
+function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>, locale: string) {
   const canonical = getCanonical("/");
+  const homeTitle = brandTitle(locale);
+  const homeDescription = brandDescription(locale);
   const newsItems = articles.slice(0, 6).map((article, index) => ({
     "@type": "ListItem",
     position: index + 1,
@@ -114,13 +117,13 @@ function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>) {
     {
       "@context": "https://schema.org",
       "@type": "WebPage",
-      name: HOME_TITLE,
-      description: HOME_DESCRIPTION,
+      name: homeTitle,
+      description: homeDescription,
       url: canonical,
       inLanguage: ["vi", "en"],
       isPartOf: {
         "@type": "WebSite",
-        name: "Liverpool FC Việt Nam",
+        name: BRAND.name,
         url: canonical,
       },
       about: {
@@ -192,23 +195,21 @@ export default async function HomePage({ params }: LocaleParams) {
       .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
 
   const uiLocale: "vi" | "en" = locale === "en" ? "en" : "vi";
-  const topNews = selectHomeNews(allNews, uiLocale, 5);
-  const shown = new Set(topNews.map((a) => a.link));
-  const moreNews = allNews.filter((a) => !shown.has(a.link));
+  const topNews = selectHomeNews(allNews, uiLocale, HOME_NEWS_SHOWN);
   const squadTeaser = getSquadPlayers()
     .sort((a, b) => a.shirtNumber - b.shirtNumber)
     .slice(0, 12);
 
   return (
     <>
-      <JsonLd data={buildHomeJsonLd(allNews)} />
+      <JsonLd data={buildHomeJsonLd(allNews, locale)} />
       <Hero backgroundUrl={heroBackgroundUrl}>
         <NextMatchWidget fixture={nextMatch} />
       </Hero>
       <div className="page-container py-6 sm:py-10 lg:py-12">
         {/* grid-cols-1 = minmax(0,1fr): an implicit auto track grew to the widest nowrap row of the table preview (326px in a 256px card at 320px). */}
         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-8 lg:gap-y-6">
-          {/* Mobile order: results, news, table. On desktop news spans two rows beside both widgets. */}
+          {/* Mobile order: results, quick news, table. On desktop news spans two rows beside both widgets. */}
           <div className="lg:col-span-4 lg:col-start-9 lg:row-start-1">
             <FormWidget results={pickRecentResults(fixtures)} />
           </div>
@@ -219,9 +220,8 @@ export default async function HomePage({ params }: LocaleParams) {
             <StandingsPreview standings={standings} />
           </div>
         </div>
-        <div className="mt-10 space-y-10 sm:mt-14 sm:space-y-14">
+        <div className="mt-10 sm:mt-14">
           <SquadCarousel players={squadTeaser} />
-          <NewsByCategory articles={moreNews} locale={uiLocale} />
         </div>
       </div>
     </>

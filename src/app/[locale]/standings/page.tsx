@@ -1,8 +1,9 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { getStandings } from "@/lib/football";
+import { getStandings, getUclStandings } from "@/lib/football";
 import { PageHero } from "@/components/ui/page-hero";
-import { StandingsTable } from "@/components/standings/standings-table";
+import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
@@ -21,7 +22,8 @@ export default async function StandingsPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Standings");
-  const standings = await getStandings();
+  // The Champions League table is a second tab when the data source has it (it is empty off-season).
+  const [standings, uclStandings] = await Promise.all([getStandings(), getUclStandings()]);
 
   // Find Liverpool's position for the header
   const lfcStanding = standings.find((s) => s.team.id === 40);
@@ -47,8 +49,11 @@ export default async function StandingsPage({ params }: LocaleParams) {
         image="/assets/lfc/stadium/anfield-corner-flag.webp"
       />
 
-      <div className="page-container pb-16 pt-4 sm:pt-6">
-        <StandingsTable standings={standings} />
+      <div className="page-container pb-16">
+        <MatchCentreNav active="standings" />
+        <div className="pt-4 sm:pt-6">
+          <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />
+        </div>
       </div>
     </div>
   );

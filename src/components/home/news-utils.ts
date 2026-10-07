@@ -39,23 +39,6 @@ export function cleanTitle(title: string): string {
   return decodeEntities(title.replace(/<[^>]*>/g, " "));
 }
 
-const BOILERPLATE = /(the post .* appeared first on|appeared first on|read more|continue reading|click here|\[…\]|\[…\]|^\s*the post\b)/i;
-
-/**
- * Snippet worth showing, or null. RSS feeds often put "The post X appeared first
- * on Y" or a bare "Read more" in the description; those are replaced by the
- * caller with the category label.
- */
-export function cleanSnippet(snippet: string | undefined, title: string): string | null {
-  if (!snippet) return null;
-  const text = decodeEntities(snippet.replace(/<[^>]*>/g, " "));
-  if (text.length < 40) return null;
-  if (BOILERPLATE.test(text)) return null;
-  // Snippet that merely repeats the headline adds nothing.
-  if (text.toLowerCase().startsWith(cleanTitle(title).toLowerCase().slice(0, 40))) return null;
-  return text;
-}
-
 const TARGET_COUNT = 6;
 const MIN_VISIBLE = 4;
 const FRESH_HOURS = 48;

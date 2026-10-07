@@ -1,24 +1,14 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/ui/empty-state";
+import { compactTeamName } from "@/components/fixtures/team-name";
 import type { Standing } from "@/lib/types/football";
+import { pickStandingsWindow } from "./standings-window";
 import { cn } from "@/lib/utils";
 import { WidgetHeader } from "./overview-card-shared";
 
 const LFC_TEAM_ID = 40;
-/** Rows kept above and below Liverpool so the position always has context. */
-const NEIGHBOURS = 2;
-
-/** Liverpool's row ±2 neighbours, clamped to the table; top 5 when Liverpool is absent. */
-export function pickStandingsWindow(standings: Standing[]): Standing[] {
-  const total = NEIGHBOURS * 2 + 1;
-  const idx = standings.findIndex((s) => s.team.id === LFC_TEAM_ID);
-  if (idx === -1) return standings.slice(0, total);
-  const start = Math.max(0, Math.min(idx - NEIGHBOURS, standings.length - total));
-  return standings.slice(start, start + total);
-}
-
 /** League table excerpt. Server-rendered; the Liverpool row is always in view. */
 export async function StandingsPreview({ standings }: { standings: Standing[] }) {
   const t = await getTranslations("Bento");
@@ -42,7 +32,7 @@ export async function StandingsPreview({ standings }: { standings: Standing[] })
 
   return (
     <section aria-label={t("premierLeague")} className="surface p-4">
-      <WidgetHeader title={t("premierLeague")} href="/standings" linkLabel={t("fullTable")} />
+      <WidgetHeader title={t("premierLeague")} href="/standings" linkLabel={h("viewAll")} />
       <div className="mb-1 flex items-center gap-3 px-2 font-barlow text-xs uppercase tracking-wider text-stadium-muted">
         <span className="w-6 text-center">{st("rank")}</span>
         <span className="flex-1">{st("club")}</span>
@@ -71,7 +61,7 @@ export async function StandingsPreview({ standings }: { standings: Standing[] })
                     <Image src={s.team.logo} alt="" fill sizes="24px" className="object-contain" />
                   </span>
                   <span className={cn("truncate text-sm", me ? "font-semibold text-white" : "text-white/90")}>
-                    {s.team.name}
+                    {compactTeamName(s.team)}
                   </span>
                 </span>
                 <span className="w-7 text-center text-sm tabular-nums text-stadium-muted">{s.all.played}</span>

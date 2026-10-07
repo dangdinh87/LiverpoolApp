@@ -1,9 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { getMatchResult, type Fixture, type MatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { RESULT_BADGE } from "@/lib/result-style";
+import { displayTeamName } from "@/components/fixtures/team-name";
 import { WidgetHeader } from "./overview-card-shared";
 
 const LFC_TEAM_ID = 40;
@@ -23,14 +24,16 @@ export function pickRecentResults(fixtures: Fixture[], count = 5): Fixture[] {
     .reverse();
 }
 
-/** Recent results strip: opponent crest, score and a W/D/L marker per match. */
+/** Recent results strip: opponent crest, score and a T/H/B (W/D/L) marker per match. */
 export async function FormWidget({ results }: { results: Fixture[] }) {
   const t = await getTranslations("Home.results");
-  const label: Record<string, string> = { W: t("win"), D: t("draw"), L: t("loss") };
+  const tMatch = await getTranslations("Match");
+  const tNext = await getTranslations("NextMatch");
+  const word: Record<string, string> = { W: t("win"), D: t("draw"), L: t("loss") };
 
   return (
     <section aria-label={t("title")} className="surface reveal p-4">
-      <WidgetHeader title={t("title")} href="/fixtures" linkLabel={t("all")} />
+      <WidgetHeader title={t("title")} href="/fixtures?view=results" linkLabel={t("all")} />
       {results.length === 0 ? (
         <p className="py-6 text-center text-sm text-stadium-muted">{t("empty")}</p>
       ) : (
@@ -43,7 +46,7 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
             const content = (
               <>
                 <span className={cn("flex h-6 w-6 items-center justify-center font-bebas text-base leading-none", RESULT_STYLE[result])}>
-                  {result}
+                  {tMatch(`resultShort.${result}`)}
                 </span>
                 <span className="relative size-7">
                   <Image src={opponent.logo} alt="" fill sizes="28px" className="object-contain" />
@@ -53,7 +56,12 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
             );
             const cls =
               "surface-interactive flex min-h-[5.5rem] flex-col items-center justify-center gap-2 px-1 py-2";
-            const aria = `${label[result]} ${isHome ? "vs" : "@"} ${opponent.name} ${score}`;
+            const aria = t("aria", {
+              result: word[result],
+              opponent: displayTeamName(opponent.name),
+              venue: isHome ? tNext("home") : tNext("away"),
+              score,
+            });
             return (
               <li key={f.fixture.id} className="min-w-0">
                 {f.fixture.id > 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +24,7 @@ interface ChipBarProps {
 }
 
 /**
- * Horizontally scrollable filter chips: 40px+ hit area, no wrapping, the
+ * Horizontally scrollable filter chips: 44px hit area, no wrapping, the
  * active chip is scrolled into view. Shared by fixtures, standings, stats
  * (season picker) and squad (position tabs).
  */
@@ -42,7 +42,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
 
   const chipClass = (isActive: boolean) =>
     cn(
-      "inline-flex min-h-10 shrink-0 items-center gap-2 border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] whitespace-nowrap",
+      "inline-flex min-h-11 shrink-0 items-center gap-2 border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] whitespace-nowrap",
       "transition-colors duration-[var(--dur-base)] ease-[var(--ease-out)]",
       isActive
         ? "border-lfc-red bg-lfc-red text-white"
