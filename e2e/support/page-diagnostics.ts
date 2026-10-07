@@ -19,6 +19,9 @@ const IGNORED = [
   // Vercel Analytics/Speed Insights are injected by the platform at the edge and
   // 404 on any non-Vercel host, including a local production server.
   /\/_vercel\/(insights|speed-insights)\//i,
+  // Report-only CSP complaints raised by Google's ad frames. The directive is
+  // not enforced and the frame is not ours; nothing in this repo can stop it.
+  /report-only Content Security Policy/i,
 ];
 
 function ignored(text: string): boolean {

@@ -73,11 +73,11 @@
     }
   },
   "Hero": {
-    "tagline": "Fan Liverpool Việt Nam · Giờ đá, kết quả, tin nhanh",
+    "tagline": "Fan Liverpool khắp thế giới · Giờ đá theo giờ của bạn",
     "title": "Chào mừng đến với Anfield",
-    "subtitle": "LFCVN — Liverpool FC Việt Nam",
-    "description": "Giờ đá theo giờ Việt Nam, kết quả mới nhất, bảng xếp hạng và tin nhanh về The Reds. Trang do fan làm, không phải trang chính thức.",
-    "badge": "Cộng đồng CĐV Liverpool Việt Nam",
+    "subtitle": "Reds Abroad — theo The Reds từ bất cứ đâu",
+    "description": "Giờ đá theo múi giờ của bạn, kết quả mới nhất, bảng xếp hạng và tin nhanh về The Reds. Trang do fan làm, không phải trang chính thức.",
+    "badge": "Dành cho fan Liverpool xa Anfield",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng"
@@ -125,8 +125,8 @@
       "viewAll": "Xem cả đội"
     },
     "metadata": {
-      "title": "Fan Liverpool Việt Nam: giờ đá, kết quả, tin nhanh",
-      "description": "Giờ đá của Liverpool theo giờ Việt Nam, kết quả, bảng xếp hạng Ngoại hạng Anh, đội hình và tin nhanh về The Reds. Trang fan độc lập, không phải trang chính thức."
+      "title": "Giờ đá Liverpool theo múi giờ của bạn, kết quả, tin nhanh",
+      "description": "Giờ đá của Liverpool quy đổi theo múi giờ của bạn, kết quả, bảng xếp hạng Ngoại hạng Anh, đội hình và tin nhanh về The Reds. Trang fan không chính thức."
     }
   },
   "Bento": {
@@ -301,7 +301,7 @@
     },
     "digest": {
       "badge": "Bản tin",
-      "proBadge": "Bài của LFCVN",
+      "proBadge": "Bài của {brand}",
       "author": "LiverpoolFCVN",
       "by": "Bởi {author}",
       "sourceFromSite": "Nguồn tham khảo: {source}",
@@ -754,24 +754,24 @@
   "About": {
     "metadata": {
       "title": "Giới thiệu",
-      "description": "LFCVN là trang fan Liverpool không chính thức, viết bằng tiếng Việt: giờ đá, kết quả, đội hình, tin nhanh. Dữ liệu lấy từ đâu, AI dùng thế nào, liên hệ ra sao."
+      "description": "Reds Abroad là trang fan Liverpool không chính thức: giờ đá theo múi giờ của bạn, kết quả, đội hình và tin nhanh. Dữ liệu lấy từ đâu, và trang này không phải cái gì."
     },
     "label": "Giới thiệu",
-    "title": "Trang fan Liverpool, viết bằng tiếng Việt",
-    "disclaimer": "LFCVN là trang fan <status>độc lập, không chính thức</status>. Trang không liên kết với, không được tài trợ hay xác nhận bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các tờ báo được dẫn link. Tên, logo và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
+    "title": "Trang fan Liverpool cho người hâm mộ xa nhà",
+    "disclaimer": "{brand} là trang fan <status>độc lập, không chính thức</status>. Trang không liên kết với, không được tài trợ hay xác nhận bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các tờ báo được dẫn link. Tên, logo và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
-      "title": "LFCVN là gì?",
-      "description": "LFCVN là blog của một fan Liverpool, viết cho fan Việt Nam. Mình làm trang này để mở ra là thấy ngay trận tới đá lúc mấy giờ (giờ Việt Nam), kết quả mới nhất, bảng xếp hạng, đội hình và vài tin đáng đọc — khỏi phải lục nhiều nơi. You'll Never Walk Alone.",
+      "title": "{brand} là gì?",
+      "description": "Reds Abroad là blog của một fan Liverpool, viết cho người hâm mộ theo dõi CLB từ nước khác. Mở ra là thấy ngay trận tới đá lúc mấy giờ theo giờ của bạn, kết quả gần nhất và đội đang đứng đâu trên bảng.",
       "featuresTitle": "Trong trang có gì",
       "features": {
         "squad": "Đội hình và hồ sơ từng cầu thủ.",
         "season": "Bảng xếp hạng Ngoại hạng Anh, Champions League và thống kê mùa giải.",
-        "fixtures": "Giờ đá theo giờ Việt Nam và kết quả: Ngoại hạng Anh, Champions League, FA Cup, EFL Cup.",
+        "fixtures": "Giờ đá theo múi giờ của bạn và kết quả: Ngoại hạng Anh, Champions League, FA Cup, EFL Cup.",
         "news": "Tin nhanh: tiêu đề, đoạn trích ngắn và link sang bài gốc. Bản tin tổng hợp mỗi ngày do AI soạn nháp.",
         "history": "Lịch sử CLB, tủ danh hiệu, huyền thoại và sân Anfield.",
         "profile": "Tài khoản (không bắt buộc) để lưu cầu thủ yêu thích và bài viết.",
         "ai": "LiverBird AI: hỏi đáp về Liverpool, cần đăng nhập. Câu trả lời do AI tạo, có thể sai.",
-        "i18n": "Có tiếng Việt và tiếng Anh."
+        "i18n": "Có tiếng Anh và tiếng Việt."
       },
       "dataTitle": "Nguồn dữ liệu",
       "dataSources": "Lịch đấu, kết quả, bảng xếp hạng: football-data.org và ESPN. Thống kê cầu thủ: Fantasy Premier League (API công khai). Đội hình và hồ sơ cầu thủ: liverpoolfc.com. Tiêu đề tin: RSS công khai của các báo Anh và Việt Nam, luôn kèm link bài gốc.",
@@ -781,7 +781,7 @@
     "creator": {
       "title": "Người làm trang",
       "role": "Lập trình viên, fan Liverpool",
-      "bio": "Mình là lập trình viên và là fan Liverpool. LFCVN là dự án làm lúc rảnh, cho cộng đồng fan Việt Nam."
+      "bio": "Mình là lập trình viên và là fan Liverpool. Reds Abroad là dự án làm lúc rảnh, cho những Kopite theo CLB từ một múi giờ khác."
     },
     "contact": {
       "title": "Liên hệ",
@@ -793,7 +793,7 @@
     },
     "support": {
       "title": "Ủng hộ trang",
-      "description": "LFCVN miễn phí. Nếu thấy hữu ích, bạn có thể góp một ly cà phê để mình trả tiền máy chủ và API.",
+      "description": "{brand} miễn phí. Nếu thấy hữu ích, bạn có thể góp một ly cà phê để mình trả tiền máy chủ và API.",
       "buyCoffee": "Mời mình ly cà phê",
       "momoAlt": "QR MoMo - Nguyễn Đăng Định",
       "momoTitle": "Mã QR MoMo"
@@ -801,10 +801,10 @@
     "tagline": "Giờ đá theo giờ Việt Nam, kết quả, đội hình và tin nhanh cho fan The Kop.",
     "news": {
       "title": "Tin tức được xử lý thế nào",
-      "body": "Mục tin nhanh chỉ hiện tiêu đề, một đoạn trích ngắn và link sang bài gốc. Muốn đọc đầy đủ, bạn mở bài trên trang của báo đó. LFCVN không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
+      "body": "Mục tin nhanh chỉ hiện tiêu đề, một đoạn trích ngắn và link sang bài gốc. Muốn đọc đầy đủ, bạn mở bài trên trang của báo đó. {brand} không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
     },
     "ai": {
-      "title": "AI trên LFCVN",
+      "title": "AI trên {brand}",
       "body": "LiverBird AI (chat), bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
     }
   },
@@ -894,7 +894,7 @@
       "emptyTitle": "Chưa có trận nào",
       "noResults": "Chưa có trận nào kết thúc ở giải này.",
       "archive": "Xem các mùa trước",
-      "plWatch": "Trận Ngoại hạng Anh xem trực tiếp tại Việt Nam trên FPT Play."
+      "plWatch": "Xem ở đâu tuỳ quốc gia của bạn; trang trận hiện nhà đài khi biết."
     },
     "detail": {
       "back": "Quay lại lịch đấu",
@@ -948,7 +948,7 @@
   "Legal": {
     "metadata": {
       "title": "Pháp lý",
-      "description": "Chính sách bảo mật, điều khoản sử dụng và nguồn dữ liệu của LFCVN, trang fan Liverpool không chính thức."
+      "description": "Chính sách bảo mật, điều khoản sử dụng và nguồn dữ liệu của {brand}, trang fan Liverpool không chính thức."
     },
     "title": "Thông tin pháp lý",
     "lastUpdated": "Cập nhật lần cuối: {date}",
@@ -960,11 +960,11 @@
     "sections": {
       "privacy": {
         "title": "Chính sách bảo mật",
-        "content": "LFCVN là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Lịch sử trò chuyện AI được lưu để duy trì cuộc hội thoại nhưng không chia sẻ ra bên ngoài. Hình ảnh gallery được lưu trữ trên Cloudinary. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba. Trang có hiển thị quảng cáo của Google AdSense; Google và các đối tác có thể dùng cookie để phân phát quảng cáo, và bạn có thể tắt quảng cáo cá nhân hóa trong Cài đặt quảng cáo của Google."
+        "content": "{brand} là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Lịch sử trò chuyện AI được lưu để duy trì cuộc hội thoại nhưng không chia sẻ ra bên ngoài. Hình ảnh gallery được lưu trữ trên Cloudinary. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba. Trang có hiển thị quảng cáo của Google AdSense; Google và các đối tác có thể dùng cookie để phân phát quảng cáo, và bạn có thể tắt quảng cáo cá nhân hóa trong Cài đặt quảng cáo của Google."
       },
       "terms": {
         "title": "Điều khoản sử dụng",
-        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. LFCVN là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin nhanh chỉ hiển thị tiêu đề, đoạn trích ngắn và liên kết tới bài gốc; mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc, và LFCVN không đăng lại toàn văn. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi VietAPI, kèm Groq cho tìm kiếm web. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
+        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. {brand} là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin nhanh chỉ hiển thị tiêu đề, đoạn trích ngắn và liên kết tới bài gốc; mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc, và {brand} không đăng lại toàn văn. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi VietAPI, kèm Groq cho tìm kiếm web. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
       },
       "sources": {
         "title": "Nguồn dữ liệu",
@@ -1022,9 +1022,9 @@
     },
     "metadata": {
       "loginTitle": "Đăng nhập",
-      "loginDescription": "Đăng nhập LFCVN để lưu cầu thủ yêu thích, bài viết đã lưu và dùng LiverBird AI.",
+      "loginDescription": "Đăng nhập {brand} để lưu cầu thủ yêu thích, bài viết đã lưu và dùng LiverBird AI.",
       "registerTitle": "Tạo tài khoản",
-      "registerDescription": "Tạo tài khoản LFCVN miễn phí để lưu cầu thủ yêu thích và bài viết."
+      "registerDescription": "Tạo tài khoản {brand} miễn phí để lưu cầu thủ yêu thích và bài viết."
     }
   },
   "Profile": {
@@ -1096,7 +1096,7 @@
   },
   "Match": {
     "live": "TRỰC TIẾP",
-    "whereToWatch": "Xem trực tiếp tại Việt Nam: FPT Play",
+    "whereToWatch": "Xem trực tiếp ở {country}: {service}",
     "win": "THẮNG",
     "draw": "HÒA",
     "loss": "THUA",
@@ -1176,7 +1176,7 @@
     }
   },
   "Footer": {
-    "about": "LFCVN — tất cả về Liverpool FC. Đội hình, lịch thi đấu, bảng xếp hạng, tin tức và lịch sử — tất cả ở một nơi.",
+    "about": "{brand} — tất cả về Liverpool FC. Đội hình, lịch thi đấu, bảng xếp hạng, tin tức và lịch sử — tất cả ở một nơi.",
     "quickLinks": "Khám phá",
     "legal": "Pháp lý",
     "contact": "Liên hệ",

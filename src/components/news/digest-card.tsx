@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { keepDatesTogether, leadSentences } from "@/components/news/news-text";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { BRAND } from "@/lib/brand";
 
 interface DigestProps {
   date: string;
@@ -35,7 +36,7 @@ export function DigestCard({ date, title, summary, articleCount, generatedAt, as
   return (
     <section className="surface relative border-l-4 border-l-lfc-red p-4 sm:p-6">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <SiteArticleBadge label={t("proBadge")} compact />
+        <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} compact />
         <span className="text-[13px] text-stadium-muted">{dateText}</span>
       </div>
       <Heading className="mt-3 text-balance font-bebas text-[30px] leading-[1.05] text-white sm:text-4xl">{keepDatesTogether(title)}</Heading>

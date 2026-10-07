@@ -7,6 +7,7 @@ import { MomoModal } from "./momo-modal";
 import { PageHero } from "@/components/ui/page-hero";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { BRAND } from "@/lib/brand";
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params;
@@ -53,13 +54,13 @@ export default async function AboutPage({ params }: LocaleParams) {
           {/* Story + disclaimer */}
           <section aria-labelledby="about-story" className="space-y-6">
             <h2 id="about-story" className="font-bebas text-3xl text-white sm:text-4xl">
-              {t("whatIs.title")}
+              {t("whatIs.title", { brand: BRAND.name })}
             </h2>
             <p className="max-w-[65ch] text-base leading-[1.7] text-white/85 sm:text-[17px]">{t("whatIs.description")}</p>
             <div className="surface flex items-start gap-4 border-l-2 border-l-lfc-red p-4 sm:p-5">
               <Heart size={24} aria-hidden className="mt-0.5 shrink-0 text-lfc-red" />
               <p className="text-[15px] leading-relaxed text-stadium-muted">
-                {t.rich("disclaimer", { status: (chunks) => <strong className="text-white">{chunks}</strong> })}
+                {t.rich("disclaimer", { brand: BRAND.name, status: (chunks) => <strong className="text-white">{chunks}</strong> })}
               </p>
             </div>
           </section>
@@ -86,10 +87,10 @@ export default async function AboutPage({ params }: LocaleParams) {
               <h2 id="about-news" className="font-bebas text-3xl text-white sm:text-4xl">
                 {t("news.title")}
               </h2>
-              <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("news.body")}</p>
+              <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("news.body", { brand: BRAND.name })}</p>
             </div>
             <div>
-              <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t("ai.title")}</h2>
+              <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t("ai.title", { brand: BRAND.name })}</h2>
               <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("ai.body")}</p>
             </div>
             <div>
@@ -138,7 +139,7 @@ export default async function AboutPage({ params }: LocaleParams) {
             <h2 id="about-support" className="font-bebas text-3xl text-white">
               {t("support.title")}
             </h2>
-            <p className="max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("support.description")}</p>
+            <p className="max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("support.description", { brand: BRAND.name })}</p>
             <div className="flex flex-wrap gap-3">
               <a
                 href="https://buymeacoffee.com/deannguyen872k"

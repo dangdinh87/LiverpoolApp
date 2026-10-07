@@ -3,12 +3,13 @@ import type { LocaleParams } from "@/i18n/routing";
 import { PageHero } from "@/components/ui/page-hero";
 import { makePageMeta } from "@/lib/seo";
 import { toParagraphs } from "./paragraphs";
+import { BRAND } from "@/lib/brand";
 
 export async function generateMetadata({ params }: LocaleParams) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Legal.metadata" });
   const title = t("title");
-  const description = t("description");
+  const description = t("description", { brand: BRAND.name });
   return {
     title,
     description,
@@ -60,7 +61,7 @@ export default async function LegalPage({ params }: LocaleParams) {
                 <section key={key} id={key} className="scroll-mt-[calc(var(--header-h)+1rem)]">
                   <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t(`sections.${key}.title`)}</h2>
                   <div className="mt-4 space-y-4 text-base leading-[1.7] text-stadium-muted">
-                    {toParagraphs(t(`sections.${key}.content`)).map((p, i) => (
+                    {toParagraphs(t(`sections.${key}.content`, { brand: BRAND.name })).map((p, i) => (
                       <p key={i}>{p}</p>
                     ))}
                   </div>

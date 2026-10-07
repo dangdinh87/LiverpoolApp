@@ -86,7 +86,7 @@ export function Footer() {
               </Link>
               <p className="mt-2 max-w-sm font-inter text-sm leading-relaxed text-stadium-muted">{brandTagline(locale)}</p>
               <p className="mt-4 max-w-sm border-l-2 border-lfc-red pl-3 font-inter text-sm leading-relaxed text-white/85">
-                {t("disclaimer")}
+                {t("disclaimer", { brand: BRAND.name })}
               </p>
             </div>
 

@@ -16,6 +16,7 @@ import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
 import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { BRAND } from "@/lib/brand";
 
 type Params = Promise<{ date: string; locale: string }>;
 
@@ -151,7 +152,7 @@ export default async function DigestPage({
 
         <header className="reveal mt-2">
           <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <SiteArticleBadge label={t("proBadge")} />
+            <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} />
             <span className="text-sm text-stadium-muted">{formatMatchDayMonth(digestDate, uiLocale, true)}</span>
           </div>
           <h1 className="max-w-3xl text-balance font-bebas text-[36px] font-normal leading-[1.05] tracking-wide text-white sm:text-5xl lg:text-6xl">

@@ -73,11 +73,11 @@
     }
   },
   "Hero": {
-    "tagline": "Liverpool fans in Vietnam · Kick-off times, results, quick news",
+    "tagline": "Liverpool fans everywhere · Kick-off times in your time zone",
     "title": "Welcome to Anfield",
-    "subtitle": "LFCVN — Liverpool FC Vietnam",
-    "description": "Kick-off times in your local time, the latest results, the table and quick news on The Reds. A fan site, not an official one.",
-    "badge": "Liverpool FC Vietnam Fan Community",
+    "subtitle": "Reds Abroad — following the Reds from anywhere",
+    "description": "Kick-off times in your own time zone, the latest results, the table and quick news about The Reds. Made by a fan — not the official site.",
+    "badge": "For Liverpool fans away from Anfield",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings"
@@ -125,8 +125,8 @@
       "viewAll": "Full squad"
     },
     "metadata": {
-      "title": "Liverpool fans in Vietnam: kick-off times, results, quick news",
-      "description": "Liverpool kick-off times in your local time, results, the Premier League table, squad and quick news on The Reds. An independent fan site, not official."
+      "title": "Liverpool kick-off times in your time zone, results, quick news",
+      "description": "Liverpool kick-off times converted to your own time zone, results, the Premier League table, the squad and quick news about The Reds. Unofficial fan site."
     }
   },
   "Bento": {
@@ -301,7 +301,7 @@
     },
     "digest": {
       "badge": "Briefing",
-      "proBadge": "By LFCVN",
+      "proBadge": "By {brand}",
       "author": "LiverpoolFCVN",
       "by": "By {author}",
       "sourceFromSite": "References: {source}",
@@ -754,24 +754,24 @@
   "About": {
     "metadata": {
       "title": "About",
-      "description": "LFCVN is an unofficial Liverpool fan site in Vietnamese: kick-off times, results, squad and quick news. Where the data comes from, how AI is used, how to get in touch."
+      "description": "Reds Abroad is an unofficial Liverpool fan site: kick-off times in your own time zone, results, squad and quick news. Where the data comes from, and what this site is not."
     },
     "label": "About",
-    "title": "A Liverpool fan site in Vietnamese",
-    "disclaimer": "LFCVN is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
+    "title": "A Liverpool fan site for supporters abroad",
+    "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
     "whatIs": {
-      "title": "What is LFCVN?",
-      "description": "LFCVN is a blog by a Liverpool fan, written for fans in Vietnam. Open it and you see the next kick-off in Vietnam time, the latest results, the table, the squad and a few headlines worth reading — no need to dig around. You'll Never Walk Alone.",
+      "title": "What is {brand}?",
+      "description": "Reds Abroad is a blog by a Liverpool fan, written for supporters who follow the club from another country. Open it and you see the next kick-off in your own time, the latest result and where the team sits in the table.",
       "featuresTitle": "What's on the site",
       "features": {
         "squad": "The squad and a profile for each player.",
         "season": "Premier League and Champions League tables, plus season stats.",
-        "fixtures": "Kick-off times in your local time and results: Premier League, Champions League, FA Cup, EFL Cup.",
+        "fixtures": "Kick-off times in your time zone and results: Premier League, Champions League, FA Cup, EFL Cup.",
         "news": "Quick news: headline, short excerpt and a link to the original. A daily digest drafted by AI.",
         "history": "Club history, trophy cabinet, legends and Anfield.",
         "profile": "An optional account to save favourite players and articles.",
         "ai": "LiverBird AI: ask questions about Liverpool, sign-in required. Answers are AI-generated and can be wrong.",
-        "i18n": "Available in Vietnamese and English."
+        "i18n": "Available in English and Vietnamese."
       },
       "dataTitle": "Data sources",
       "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English and Vietnamese outlets, always with a link to the original story.",
@@ -781,7 +781,7 @@
     "creator": {
       "title": "Who makes this",
       "role": "Developer, Liverpool fan",
-      "bio": "I'm a developer and a Liverpool fan. LFCVN is a spare-time project for the Vietnamese fan community."
+      "bio": "I'm a developer and a Liverpool fan. Reds Abroad is a spare-time project for Reds who follow the club from another time zone."
     },
     "contact": {
       "title": "Contact",
@@ -793,7 +793,7 @@
     },
     "support": {
       "title": "Support the site",
-      "description": "LFCVN is free. If it's useful to you, a coffee helps me cover hosting and API costs.",
+      "description": "{brand} is free. If it's useful to you, a coffee helps me cover hosting and API costs.",
       "buyCoffee": "Buy me a coffee",
       "momoAlt": "MoMo QR - Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code"
@@ -801,10 +801,10 @@
     "tagline": "Kick-off times in your local time, results, squad and quick news for Kop fans.",
     "news": {
       "title": "How news is handled",
-      "body": "Quick news shows only the headline, a short excerpt and a link to the original story. To read the full piece, open it on the publisher's own site. LFCVN does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
+      "body": "Quick news shows only the headline, a short excerpt and a link to the original story. To read the full piece, open it on the publisher's own site. {brand} does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
     },
     "ai": {
-      "title": "AI on LFCVN",
+      "title": "AI on {brand}",
       "body": "LiverBird AI (chat), translation of news excerpts and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
     }
   },
@@ -894,7 +894,7 @@
       "emptyTitle": "No matches yet",
       "noResults": "No finished matches for this competition yet.",
       "archive": "Past seasons",
-      "plWatch": "Premier League matches are shown live in Vietnam on FPT Play."
+      "plWatch": "Where to watch depends on your country; match pages show the broadcaster where one is known."
     },
     "detail": {
       "back": "Back to fixtures",
@@ -948,7 +948,7 @@
   "Legal": {
     "metadata": {
       "title": "Legal",
-      "description": "LFCVN's privacy policy, terms of use and data sources. An unofficial Liverpool fan site."
+      "description": "{brand}'s privacy policy, terms of use and data sources. An unofficial Liverpool fan site."
     },
     "title": "Legal Information",
     "lastUpdated": "Last updated: {date}",
@@ -960,11 +960,11 @@
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "LFCVN is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
+        "content": "{brand} is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. LFCVN is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. Quick news shows only the headline, a short excerpt and a link to the original story; all rights in an article belong to the original publisher or author, and LFCVN does not republish full articles. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
+        "content": "This site is provided as-is for informational and entertainment purposes only. {brand} is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. Quick news shows only the headline, a short excerpt and a link to the original story; all rights in an article belong to the original publisher or author, and {brand} does not republish full articles. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
@@ -1022,9 +1022,9 @@
     },
     "metadata": {
       "loginTitle": "Sign in",
-      "loginDescription": "Sign in to LFCVN to save favourite players and articles and use LiverBird AI.",
+      "loginDescription": "Sign in to {brand} to save favourite players and articles and use LiverBird AI.",
       "registerTitle": "Create account",
-      "registerDescription": "Create a free LFCVN account to save favourite players and articles."
+      "registerDescription": "Create a free {brand} account to save favourite players and articles."
     }
   },
   "Profile": {
@@ -1096,7 +1096,7 @@
   },
   "Match": {
     "live": "LIVE",
-    "whereToWatch": "Watch live in Vietnam: FPT Play",
+    "whereToWatch": "Watch live in {country}: {service}",
     "win": "WIN",
     "draw": "DRAW",
     "loss": "LOSS",
@@ -1176,7 +1176,7 @@
     }
   },
   "Footer": {
-    "about": "LFCVN — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
+    "about": "{brand} — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
     "quickLinks": "Explore",
     "legal": "Legal",
     "contact": "Contact",
