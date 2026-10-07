@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, ArrowRight, Newspaper } from "lucide-react";
+import { Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllDigestDates, getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleTitlesByUrls } from "@/lib/news";
-import { CATEGORY_CONFIG, getArticleUrl } from "@/lib/news-config";
+import { detectSource } from "@/lib/news/source-detect";
+import { CATEGORY_CONFIG, SOURCE_CONFIG } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { DigestNav } from "@/components/news/digest-nav";
+import { DigestItem, type DigestItemSource } from "@/components/news/digest-item";
+import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
-import { cleanTitle } from "@/components/news/news-text";
-import { formatMatchDayMonth } from "@/lib/format-match-date";
+import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 type Params = Promise<{ date: string; locale: string }>;
 
@@ -60,10 +62,11 @@ export default async function DigestPage({
   setRequestLocale(locale);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
-  const [digest, dates, t] = await Promise.all([
+  const [digest, dates, t, tNews] = await Promise.all([
     getDigestByDate(date),
     getAllDigestDates(),
     getTranslations("News.digest"),
+    getTranslations("News"),
   ]);
 
   // Dates arrive newest first: the next index is the previous (older) briefing.
@@ -76,13 +79,7 @@ export default async function DigestPage({
     return (
       <div className="min-h-screen">
         <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1rem)]">
-          <Link
-            href="/news"
-            className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            {t("backToNews")}
-          </Link>
+          <NewsBackLink label={t("backToNews")} />
           <div className="mt-4">
             <EmptyState
               icon={<Newspaper className="size-10" aria-hidden />}
@@ -98,6 +95,7 @@ export default async function DigestPage({
     );
   }
 
+  const uiLocale = locale === "vi" ? "vi" : "en";
   const sections = getVisibleDigestSections(digest.sections as {
     category: string;
     categoryVi: string;
@@ -110,18 +108,33 @@ export default async function DigestPage({
   const displayDescription =
     seoArticle?.metaDescription || seoArticle?.excerpt || digest.summary.slice(0, 160);
   const digestDate = new Date(`${date}T00:00:00+07:00`);
+  // A short intro, not the whole summary: the items below carry the detail.
+  const intro = leadSentences(seoArticle?.excerpt || digest.summary, 230);
+  const meta = [
+    digest.article_count > 0 ? t("articleCount", { count: digest.article_count }) : null,
+    digest.generated_at ? t("generatedAt", { time: formatMatchTime(new Date(digest.generated_at)) }) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   // Fetch titles for all source URLs across all sections
   const allUrls = sections.flatMap((s) => s.articleUrls);
   const titleMap = await getArticleTitlesByUrls(allUrls);
 
+  const sourcesOf = (urls: string[]): DigestItemSource[] =>
+    urls.filter(isHttpUrl).map((url, i) => {
+      const detected = detectSource(url);
+      const sourceName = (detected.id !== "unknown" && SOURCE_CONFIG[detected.id]?.label) || detected.name;
+      return { url, sourceName, title: titleMap[url] ? cleanTitle(titleMap[url]) : t("sourceArticle", { n: i + 1 }) };
+    });
+
   return (
     <article className="min-h-screen">
       <JsonLd data={[
         buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "News", url: getCanonical("/news") },
-          { name: "Daily Digest", url: getCanonical(`/news/digest/${date}`) },
+          { name: tNews("breadcrumb.home"), url: getCanonical("/") },
+          { name: tNews("title"), url: getCanonical("/news") },
+          { name: "Liverpool Daily", url: getCanonical(`/news/digest/${date}`) },
         ]),
         buildNewsArticleJsonLd({
           title: displayTitle,
@@ -132,97 +145,64 @@ export default async function DigestPage({
         }),
       ]} />
 
-      <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1rem)]">
-        <Link
-          href="/news"
-          className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          {t("backToNews")}
-        </Link>
+      <div className="page-container max-w-3xl pb-20 pt-[calc(var(--header-h)+1rem)]">
+        <NewsBackLink label={t("backToNews")} />
 
         <header className="reveal mt-2">
           <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
             <SiteArticleBadge label={t("proBadge")} />
-            <span className="text-sm text-stadium-muted">
-              {formatMatchDayMonth(digestDate, locale === "vi" ? "vi" : "en", true)}
-            </span>
+            <span className="text-sm text-stadium-muted">{formatMatchDayMonth(digestDate, uiLocale, true)}</span>
           </div>
-          <h1 className="max-w-3xl text-balance font-bebas text-[40px] font-normal leading-[1.02] tracking-wide text-white sm:text-5xl lg:text-6xl">
-            {displayTitle}
+          <h1 className="max-w-3xl text-balance font-bebas text-[36px] font-normal leading-[1.05] tracking-wide text-white sm:text-5xl lg:text-6xl">
+            {keepDatesTogether(displayTitle)}
           </h1>
-          <p className="mt-3 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted">
-            {t("by", { author: t("author") })}{digest.article_count > 0 ? ` · ${t("articleCount", { count: digest.article_count })}` : ""}
-          </p>
+          {meta && <p className="mt-3 text-sm text-stadium-muted">{meta}</p>}
         </header>
 
-        <div className="mt-8">
-          {seoArticle ? (
-            <div className="article-prose">
-              <p className="border-l-4 border-lfc-red pl-4 text-lg leading-relaxed text-stadium-muted sm:text-xl">
-                {seoArticle.excerpt}
-              </p>
-              {seoArticle.body.map((section, i) => (
+        {intro && (
+          <p className="mt-6 max-w-[42rem] border-l-4 border-lfc-red pl-4 text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>
+        )}
+
+        {sections.length > 0 ? (
+          <div className="mt-9 space-y-9">
+            {sections.map((section, i) => {
+              const catConfig = CATEGORY_CONFIG[section.category as keyof typeof CATEGORY_CONFIG];
+              return (
+                <DigestItem
+                  key={i}
+                  id={`tin-${i + 1}`}
+                  category={catConfig ? (uiLocale === "vi" ? section.categoryVi : catConfig.label) : undefined}
+                  categoryClass={catConfig?.color}
+                  headline={section.headline}
+                  paragraphs={chunkSentences(section.body)}
+                  sources={sourcesOf(section.articleUrls)}
+                  sourcesLabel={t("sourcesLabel")}
+                  newTabLabel={t("opensNewTab")}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          // No itemised stories (older or partial digest): fall back to the long-form text.
+          <div className="article-prose mt-9">
+            {seoArticle ? (
+              seoArticle.body.map((section, i) => (
                 <section key={`${section.heading}-${i}`}>
                   <h2>{section.heading}</h2>
                   {section.paragraphs.map((paragraph, j) => (
                     <p key={j}>{paragraph}</p>
                   ))}
                 </section>
-              ))}
-              {seoArticle.conclusion && (
-                <p className="border-t border-[var(--line)] pt-6 text-white">{seoArticle.conclusion}</p>
-              )}
-            </div>
-          ) : (
-            <p className="max-w-3xl border-l-4 border-lfc-red pl-4 text-lg leading-relaxed text-stadium-muted sm:text-xl">
-              {digest.summary}
-            </p>
-          )}
-        </div>
-
-        {sections.length > 0 && (
-          <section className="mt-12 border-t border-[var(--line)] pt-8">
-            <p className="section-label mb-2 text-brand">{t("sourceDigestTitle")}</p>
-            {seoArticle && <p className="mb-6 text-[15px] leading-relaxed text-stadium-muted">{digest.summary}</p>}
-
-            <div className="space-y-4">
-              {sections.map((section, i) => {
-                const catConfig = CATEGORY_CONFIG[section.category as keyof typeof CATEGORY_CONFIG];
-                return (
-                  <div key={i} className="surface p-5">
-                    {catConfig && (
-                      <span className={`mb-3 inline-block px-1.5 py-0.5 font-barlow text-[11px] font-bold uppercase tracking-wider ${catConfig.color}`}>
-                        {locale === "vi" ? section.categoryVi : catConfig.label}
-                      </span>
-                    )}
-                    <h2 className="font-inter text-lg font-bold leading-snug text-white">{section.headline}</h2>
-                    <p className="mt-2 text-[15px] leading-relaxed text-stadium-muted">{section.body}</p>
-                    {section.articleUrls.length > 0 && (
-                      <ul className="mt-4 divide-y divide-[var(--line)] border-t border-[var(--line)]">
-                        {section.articleUrls.map((url, j) => (
-                          <li key={j}>
-                            <Link
-                              href={getArticleUrl(url)}
-                              className="flex min-h-11 items-center justify-between gap-3 py-2 text-sm text-white transition-colors hover:text-brand"
-                            >
-                              <span className="line-clamp-2">{titleMap[url] ? cleanTitle(titleMap[url]) : t("sourceArticle", { n: j + 1 })}</span>
-                              <ArrowRight className="size-4 shrink-0 text-stadium-muted" aria-hidden />
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+              ))
+            ) : (
+              chunkSentences(digest.summary).map((paragraph, i) => <p key={i}>{paragraph}</p>)
+            )}
+          </div>
         )}
 
         <DigestNav prev={prev} next={next} />
 
-        <p className="mt-10 text-center text-xs text-stadium-muted">{t("generatedBy")}</p>
+        <p className="mt-10 max-w-[42rem] text-[13px] leading-relaxed text-stadium-muted">{t("aiNote")}</p>
       </div>
     </article>
   );

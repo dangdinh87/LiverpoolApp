@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Heart, Bookmark, Share2, ExternalLink, Check, LogIn } from "lucide-react";
+import { Heart, Bookmark, Share2, Check, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toggleSavedArticle } from "@/app/actions/profile";
@@ -22,7 +22,7 @@ import {
   toggleSave as toggleLocalSave,
 } from "@/lib/news/read-history";
 
-/** Equal-width, 44px-tall action button (Like / Save / Share / Original). */
+/** Equal-width, 44px-tall action button (Like / Save / Share). The original-article link is the page's primary button, not repeated here. */
 const ACTION_CLASS =
   "inline-flex min-h-11 min-w-0 items-center justify-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-1)] px-1 font-barlow text-xs font-semibold uppercase tracking-[0.04em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white disabled:opacity-60 cursor-pointer";
 
@@ -233,7 +233,7 @@ export function ArticleActions({
         </AlertDialogContent>
       </AlertDialog>
 
-      <div role="group" aria-label={t("actionsLabel")} className="grid grid-cols-4 gap-2">
+      <div role="group" aria-label={t("actionsLabel")} className="grid grid-cols-3 gap-2">
         <button
           type="button"
           onClick={handleLike}
@@ -261,11 +261,6 @@ export function ArticleActions({
           {shared ? <Check className="size-4 shrink-0 text-green-400" aria-hidden /> : <Share2 className="size-4 shrink-0" aria-hidden />}
           <span className="truncate" aria-live="polite">{shared ? t("copied") : t("share")}</span>
         </button>
-
-        <a href={articleUrl} target="_blank" rel="noopener noreferrer" className={ACTION_CLASS}>
-          <ExternalLink className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{t("original")}</span>
-        </a>
       </div>
     </>
   );

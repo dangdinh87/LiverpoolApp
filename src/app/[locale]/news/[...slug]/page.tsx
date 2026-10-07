@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft, Clock, ExternalLink, User } from "lucide-react";
+import { User } from "lucide-react";
 import { scrapeArticle, getNewsFromDB, getArticleContentFromDB, getArticleByUrl } from "@/lib/news";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -12,7 +11,6 @@ import type { Fixture } from "@/lib/types/football";
 import {
   decodeArticleSlug,
   encodeArticleSlug,
-  formatRelativeDate,
   isKnownNewsSourceUrl,
   SOURCE_CONFIG,
   type NewsSource,
@@ -20,19 +18,18 @@ import {
 import { detectSource as detectArticleSource, isLinkOutOnlyUrl, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { BRAND } from "@/lib/brand";
 import { buildExcerpt } from "@/lib/news/excerpt";
 import "@/components/news/article-reader.css";
-import { ReadingProgress } from "@/components/news/reading-progress";
 import { ReadTracker } from "@/components/news/read-tracker";
-import { ArticleImageViewer } from "@/components/news/article-image-viewer";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { ArticleNextMatch } from "@/components/news/article-end-sections";
 import { ArticleActions } from "@/components/news/article-actions";
-import { ArticleFigures } from "@/components/news/article-figures";
 import { ArticleTitle } from "@/components/news/article-header";
+import { ArticleExcerpt, NewsBackLink, OriginalLinkButton, SourceBadge } from "@/components/news/article-parts";
 import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
-import { TranslateProvider, TranslateHeader, TranslateBody } from "@/components/news/translate-button";
+import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
 import { assessReadability, cleanSnippet, cleanTitle, filterJunk, imageKey, isHttpUrl, pickTitle } from "@/components/news/news-text";
 
@@ -44,14 +41,14 @@ export async function generateStaticParams() {
   return [];
 }
 
-function formatPublishDate(dateStr: string, source: string): { relative: string; absolute: string } {
-  const lang = VI_SOURCES.has(source) ? "vi" : "en";
+/** Vietnam time, whatever the visitor's or the server's zone ("21:30 giờ VN · Thứ 3, 6 thg 10"). */
+function formatPublished(dateStr: string, locale: "vi" | "en", vnLabel: string): { iso: string; text: string } | null {
   const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return { relative: "", absolute: "" };
-  // Fixed Vietnam zone via the shared helper: toLocaleDateString without timeZone used the
-  // runtime zone (UTC on Vercel), so times disagreed with the VN times shown elsewhere.
-  const absolute = `${formatMatchDayMonth(date, lang, true)} · ${formatMatchTime(date)}`;
-  return { relative: formatRelativeDate(dateStr, lang), absolute };
+  if (Number.isNaN(date.getTime())) return null;
+  return {
+    iso: date.toISOString(),
+    text: `${formatMatchTime(date)} ${vnLabel} · ${formatMatchDayMonth(date, locale)}`,
+  };
 }
 
 // Improved keyword-based related articles with stopwords + diversity
@@ -138,7 +135,7 @@ export async function generateMetadata({
       images,
       ...(content.publishedAt && { publishedTime: content.publishedAt }),
       ...(content.author && { authors: [content.author] }),
-      siteName: "Liverpool FC Việt Nam",
+      siteName: BRAND.name,
     },
     twitter: {
       card: "summary_large_image",
@@ -156,17 +153,18 @@ export default async function ArticlePage({
 }) {
   const { slug, locale } = await params;
   setRequestLocale(locale);
+  const uiLocale = locale === "vi" ? "vi" : "en";
   const url = decodeArticleSlug(slug);
   // Legacy base64 slugs decode to any URL; only news sources are articles.
   if (!url || !isKnownNewsSourceUrl(url)) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
-  const [content, allArticles, fixtures, t, tSidebar] = await Promise.all([
+  const [content, allArticles, fixtures, t, tNews] = await Promise.all([
     dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
     getNewsFromDB(100, undefined, { skipSync: true }),
     getFixtures(),
     getTranslations("News.article"),
-    getTranslations("News.sidebar"),
+    getTranslations("News"),
   ]);
 
   const nextMatch: Fixture | null =
@@ -191,7 +189,6 @@ export default async function ArticlePage({
         title={listed ? cleanTitle(listed.title) : undefined}
         lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : undefined}
         heroImage={listed?.thumbnail ?? listed?.heroImage}
-        source={source}
         sourceName={sourceName}
       />
     );
@@ -217,177 +214,38 @@ export default async function ArticlePage({
         title={title || undefined}
         lead={description ?? (paragraphs[0] || undefined)}
         heroImage={content.heroImage ?? listed?.thumbnail}
-        source={source}
         sourceName={sourceName}
       />
     );
   }
 
   const isEnglishArticle = !VI_SOURCES.has(source);
-  // One strip of four, not two stacked strips of ten (a wall of thumbnails under every article).
+  // One short list of four headlines, no pictures.
   const related = getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage));
   // Older stored extractions have no date of their own; the feed row usually does.
   const shownAt = content.publishedAt || listed?.pubDate;
-  const publishDate = shownAt ? formatPublishDate(shownAt, source) : null;
+  const published = shownAt ? formatPublished(shownAt, uiLocale, t("vnTime")) : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
   const canonicalPath = `/news/${slug.join("/")}`;
   const heroImage = isHttpUrl(content.heroImage) ? content.heroImage : undefined;
   // Only ever render (or hand to translation) the same short excerpt a Google
-  // News preview would show — a full reproduction of someone else's article is
+  // News preview would show: a full reproduction of someone else's article is
   // itself an unlicensed derivative work, on top of reproducing the original text.
-  const { excerpt, truncated } = buildExcerpt(paragraphs);
-  // Photos for the plain-text body; the extracted HTML already carries its own.
-  // At most one photo per two excerpt paragraphs (6 max): a short excerpt must not become a wall of pictures.
-  const bodyImages = content.images
-    .filter((img) => imageKey(img) !== imageKey(content.heroImage))
-    .slice(0, Math.max(1, Math.min(6, Math.floor(excerpt.length / 2))));
+  // A page with (almost) no body text, such as a lone photo credit, falls back to
+  // its description, capped the same way.
+  const bodyChars = paragraphs.reduce((n, p) => n + p.length, 0);
+  const excerptSource = bodyChars >= 120 || !description ? paragraphs : [description];
+  const { excerpt, truncated } = buildExcerpt(excerptSource);
   const byline = content.author && !/^https?:/i.test(content.author) ? content.author : null;
-
-  const meta = (
-    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-sm text-stadium-muted">
-      {sourceCfg && (
-        <span className={`px-2 py-1 font-barlow text-xs font-bold uppercase tracking-wider ${sourceCfg.color}`}>
-          {sourceName}
-        </span>
-      )}
-      {publishDate && (
-        <span className="inline-flex items-center gap-1.5" title={publishDate.absolute}>
-          <Clock className="size-3.5" aria-hidden />
-          <span className="sm:hidden">{publishDate.relative}</span>
-          <span className="hidden sm:inline">{publishDate.absolute}</span>
-        </span>
-      )}
-      {content.readingTime ? <span>{tSidebar("minRead", { n: content.readingTime })}</span> : null}
-      {byline && (
-        <span className="inline-flex items-center gap-1.5">
-          <User className="size-3.5" aria-hidden />
-          {byline}
-        </span>
-      )}
-    </div>
-  );
-
-  const actions = (
-    <div className="mt-6 max-w-xl">
-      <ArticleActions
-        articleUrl={url}
-        articleTitle={title}
-        articleSlugUrl={articleSlugUrl}
-        articleMeta={{
-          snippet: content.description,
-          thumbnail: content.heroImage,
-          source,
-          language: isEnglishArticle ? "en" : "vi",
-          publishedAt: content.publishedAt,
-        }}
-      />
-    </div>
-  );
-
-  const footer = (
-    <>
-      {(readability === "thin" || truncated) && (
-        <div className="surface mt-10 flex flex-col gap-4 p-5">
-          <p className="text-[15px] leading-relaxed text-stadium-muted">
-            {readability === "thin" ? t("thinContentMsg") : t("excerptMsg")}
-          </p>
-          {isHttpUrl(url) && (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-12 items-center justify-center gap-2 bg-lfc-red px-6 font-barlow text-base font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark sm:self-start"
-            >
-              {t("readFullOn", { source: sourceName })}
-              <ExternalLink className="size-4" aria-hidden />
-            </a>
-          )}
-        </div>
-      )}
-      <div className="mt-10 flex flex-col gap-4 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-relaxed text-stadium-muted">
-          {t.rich("sourcedFrom", {
-            sourceName,
-            source: (chunks) => (
-              <a href={url} target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-2 hover:text-white">
-                {chunks}
-              </a>
-            ),
-          })}
-        </p>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 border border-[var(--line-strong)] px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/50"
-        >
-          {t("readOriginal")}
-          <ExternalLink className="size-4" aria-hidden />
-        </a>
-      </div>
-    </>
-  );
-
-  const layout = (header: React.ReactNode, body: React.ReactNode) => (
-    <div className="page-container pb-16 pt-[calc(var(--header-h)+1rem)]">
-      <Link
-        href="/news"
-        className="inline-flex min-h-11 items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-stadium-muted transition-colors hover:text-white"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {t("backToNews")}
-      </Link>
-
-      <header className="reveal mt-2 max-w-4xl">
-        {meta}
-        {header}
-      </header>
-      {actions}
-
-      {heroImage && (
-        <div className="relative -mx-4 mt-6 aspect-video max-h-[480px] bg-[var(--surface-3)] sm:mx-0">
-          <Image
-            src={heroImage}
-            alt={title}
-            fill
-            priority
-            sizes="(max-width: 1152px) 100vw, 1152px"
-            unoptimized
-            referrerPolicy="no-referrer"
-            className="object-cover"
-          />
-        </div>
-      )}
-
-      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
-        <div className="min-w-0">
-          {body}
-          {footer}
-          <CommentSection articleUrl={url} />
-        </div>
-        <aside className="hidden lg:block">
-          <ArticleSidebar source={source} sourceName={sourceName} sourceUrl={content.sourceUrl || url} nextMatch={nextMatch} />
-        </aside>
-      </div>
-
-      <RelatedArticles articles={related} />
-      {nextMatch && <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />}
-    </div>
-  );
-
-  // Excerpt only — never the scraped htmlContent/full paragraphs, see
-  // buildExcerpt() above for why.
-  const plainBody = <ArticleFigures paragraphs={excerpt} images={bodyImages} />;
+  const ctaHint = readability === "thin" ? t("thinContentMsg") : truncated ? t("excerptMsg") : undefined;
 
   return (
     <article className="min-h-screen">
-      <ReadingProgress />
       <ReadTracker articleUrl={url} />
-      <ArticleImageViewer />
       <JsonLd data={[
         buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "News", url: getCanonical("/news") },
+          { name: tNews("breadcrumb.home"), url: getCanonical("/") },
+          { name: tNews("title"), url: getCanonical("/news") },
           { name: title, url: getCanonical(canonicalPath) },
         ]),
         buildNewsArticleJsonLd({
@@ -401,25 +259,96 @@ export default async function ArticlePage({
         }),
       ]} />
 
-      {isEnglishArticle ? (
-        // Translate keeps the excerpt and a Vietnamese version side by side.
-        <TranslateProvider
-          articleUrl={url}
-          originalTitle={title}
-          originalDescription={description}
-          originalParagraphs={excerpt}
-        >
-          {layout(
-            <TranslateHeader originalDescription={description} />,
-            <TranslateBody images={bodyImages} />,
-          )}
-        </TranslateProvider>
-      ) : (
-        layout(
-          <ArticleTitle title={title} description={description} />,
-          <div id="article-body">{plainBody}</div>,
-        )
-      )}
+      <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
+        <NewsBackLink label={t("backToNews")} />
+
+        <div className="lg:mt-2 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
+          <div className="min-w-0">
+            <header className="reveal">
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-stadium-muted">
+                <SourceBadge name={sourceName} />
+                {published && <time dateTime={published.iso}>{published.text}</time>}
+                {byline && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <User className="size-3.5" aria-hidden />
+                    {byline}
+                  </span>
+                )}
+              </div>
+              <ArticleTitle title={title} />
+            </header>
+
+            {excerpt.length > 0 && (
+              <div className="mt-5 max-w-[42rem]">
+                {isEnglishArticle ? (
+                  <TranslatableExcerpt articleUrl={url} paragraphs={excerpt} label={t("excerptLabel")} />
+                ) : (
+                  <section>
+                    <p className="section-label mb-3 text-stadium-muted">{t("excerptLabel")}</p>
+                    <div id="article-body">
+                      <ArticleExcerpt paragraphs={excerpt} />
+                    </div>
+                  </section>
+                )}
+              </div>
+            )}
+
+            <div className="mt-5 max-w-[42rem]">
+              <OriginalLinkButton url={url} label={t("readOriginalOn", { source: sourceName })} hint={ctaHint} />
+            </div>
+
+            {/* After the excerpt and the button on purpose: the picture must not push them below the fold. */}
+            {heroImage && (
+              <div className="relative -mx-4 mt-8 aspect-[2/1] bg-[var(--surface-3)] sm:mx-0 sm:aspect-video">
+                <Image
+                  src={heroImage}
+                  alt=""
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 720px"
+                  unoptimized
+                  referrerPolicy="no-referrer"
+                  className="object-cover"
+                />
+              </div>
+            )}
+
+            <div className="mt-8 max-w-xl">
+              <ArticleActions
+                articleUrl={url}
+                articleTitle={title}
+                articleSlugUrl={articleSlugUrl}
+                articleMeta={{
+                  snippet: content.description,
+                  thumbnail: content.heroImage,
+                  source,
+                  language: isEnglishArticle ? "en" : "vi",
+                  publishedAt: content.publishedAt,
+                }}
+              />
+            </div>
+
+            <p className="mt-8 max-w-[42rem] text-sm leading-relaxed text-stadium-muted">
+              {t.rich("sourcedFrom", {
+                sourceName,
+                source: (chunks) => (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-2 hover:text-white">
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </p>
+
+            <RelatedArticles articles={related} />
+            <CommentSection articleUrl={url} />
+          </div>
+
+          <aside className="hidden lg:block">
+            <ArticleSidebar sourceName={sourceName} sourceUrl={content.sourceUrl || url} nextMatch={nextMatch} />
+          </aside>
+        </div>
+
+        {nextMatch && <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />}
+      </div>
     </article>
   );
 }

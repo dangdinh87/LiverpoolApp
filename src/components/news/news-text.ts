@@ -102,6 +102,74 @@ export function cleanSnippet(snippet: string | undefined | null, title?: string)
   return text;
 }
 
+/**
+ * Join the words of a Vietnamese date ("Thứ Ba", "6 tháng 10") with no-break spaces
+ * so a headline never wraps in the middle of one ("Thứ / Ba").
+ */
+export function keepDatesTogether(text: string): string {
+  return text
+    .replace(/\b(Thứ) (Hai|Ba|Tư|Năm|Sáu|Bảy)(?!\p{L})/gu, "$1\u00A0$2")
+    .replace(/\b(\d{1,2}) (tháng) (\d{1,2})\b/gi, "$1\u00A0$2\u00A0$3");
+}
+
+const SENTENCE_END = ".!?…";
+const SENTENCE_CLOSERS = ".!?…\"”’')";
+
+/**
+ * Split prose into sentences after `. ! ? …` that are followed by a space or the
+ * end of the text. A decimal ("£55.1m") has no space after its dot, so it stays whole.
+ * Hand-rolled instead of a lookbehind regex: older iOS Safari rejects those at parse time.
+ */
+export function splitSentences(text: string): string[] {
+  const clean = text.replace(/\s+/g, " ").trim();
+  const out: string[] = [];
+  let start = 0;
+  for (let i = 0; i < clean.length; i++) {
+    if (!SENTENCE_END.includes(clean[i])) continue;
+    let end = i + 1;
+    while (end < clean.length && SENTENCE_CLOSERS.includes(clean[end])) end++;
+    if (end === clean.length || clean[end] === " ") {
+      out.push(clean.slice(start, end));
+      start = end + 1;
+    }
+    i = end - 1;
+  }
+  if (start < clean.length) out.push(clean.slice(start));
+  return out.filter(Boolean);
+}
+
+/** The first whole sentences of `text` that fit `maxChars` (one sentence minimum, cut at a word if even that is too long). */
+export function leadSentences(text: string, maxChars = 300): string {
+  let out = "";
+  for (const sentence of splitSentences(text)) {
+    const next = out ? `${out} ${sentence}` : sentence;
+    if (out && next.length > maxChars) break;
+    out = next;
+  }
+  if (out.length <= maxChars) return out;
+  const cut = out.slice(0, maxChars);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 0 ? cut.slice(0, space) : cut).replace(/[\s,;:–—-]+$/, "")}…`;
+}
+
+/** Break a long blob into short paragraphs (whole sentences, about `maxChars` each) so it scans on a phone. */
+export function chunkSentences(text: string, maxChars = 320): string[] {
+  const paragraphs: string[] = [];
+  for (const block of text.split(/\n{2,}/)) {
+    let current = "";
+    for (const sentence of splitSentences(block)) {
+      if (current && current.length + 1 + sentence.length > maxChars) {
+        paragraphs.push(current);
+        current = sentence;
+      } else {
+        current = current ? `${current} ${sentence}` : sentence;
+      }
+    }
+    if (current) paragraphs.push(current);
+  }
+  return paragraphs;
+}
+
 const DAY_MS = 86_400_000;
 
 /**

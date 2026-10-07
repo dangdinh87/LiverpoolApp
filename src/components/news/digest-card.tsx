@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
-import { formatMatchTime } from "@/lib/format-match-date";
+import { keepDatesTogether, leadSentences } from "@/components/news/news-text";
+import { formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 interface DigestProps {
   date: string;
@@ -15,32 +16,40 @@ interface DigestProps {
 }
 
 /**
- * Highlight card for the daily digest. Server-rendered: no client state, so it
- * cannot disagree with its own hydration (times use the fixed Vietnam zone).
+ * Featured card for the daily digest (the site's own piece, so it leads the news
+ * list). Server-rendered: no client state, and every time uses the fixed Vietnam
+ * zone, so it cannot disagree with its own hydration.
  */
 export function DigestCard({ date, title, summary, articleCount, generatedAt, as: Heading = "h3" }: DigestProps) {
   const t = useTranslations("News.digest");
+  const locale = useLocale() === "vi" ? "vi" : "en";
+  const dateText = formatMatchDayMonth(new Date(`${date}T00:00:00+07:00`), locale);
+  const lead = leadSentences(summary, 260);
+  const meta = [
+    articleCount > 0 ? t("articleCount", { count: articleCount }) : null,
+    generatedAt ? t("generatedAt", { time: formatMatchTime(new Date(generatedAt)) }) : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <section className="surface relative flex flex-col gap-4 border-l-4 border-l-lfc-red p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5">
-      <div className="min-w-0 flex-1">
-        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <SiteArticleBadge label={t("proBadge")} compact />
-          <span className="text-xs text-stadium-muted">
-            {t("articleCount", { count: articleCount })}
-            {generatedAt ? ` · ${t("generatedAt", { time: formatMatchTime(new Date(generatedAt)) })}` : ""}
-          </span>
-        </div>
-        <Heading className="font-bebas text-[26px] leading-[1.05] text-white sm:text-3xl">{title}</Heading>
-        <p className="mt-2 hidden text-[15px] leading-relaxed text-stadium-muted sm:line-clamp-3 sm:block">{summary}</p>
+    <section className="surface relative border-l-4 border-l-lfc-red p-4 sm:p-6">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <SiteArticleBadge label={t("proBadge")} compact />
+        <span className="text-[13px] text-stadium-muted">{dateText}</span>
       </div>
-      <Link
-        href={`/news/digest/${date}`}
-        className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark"
-      >
-        {t("readFull")}
-        <ArrowRight className="size-4" aria-hidden />
-      </Link>
+      <Heading className="mt-3 text-balance font-bebas text-[30px] leading-[1.05] text-white sm:text-4xl">{keepDatesTogether(title)}</Heading>
+      {lead && <p className="mt-2 max-w-2xl text-base leading-[1.55] text-white/80 line-clamp-2 sm:line-clamp-3">{lead}</p>}
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
+        <Link
+          href={`/news/digest/${date}`}
+          className="inline-flex min-h-12 items-center justify-center gap-2 bg-lfc-red px-6 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark sm:min-h-11"
+        >
+          {t("readFull")}
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+        {meta && <span className="hidden text-[13px] text-stadium-muted sm:inline">{meta}</span>}
+      </div>
     </section>
   );
 }

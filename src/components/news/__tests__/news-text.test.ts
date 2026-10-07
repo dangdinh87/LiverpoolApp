@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assessReadability,
+  chunkSentences,
   cleanSnippet,
   cleanTitle,
   decodeEntities,
@@ -9,7 +10,10 @@ import {
   interleave,
   isHttpUrl,
   isJunkParagraph,
+  keepDatesTogether,
+  leadSentences,
   prepareArticleHtml,
+  splitSentences,
 } from "../news-text";
 
 describe("decodeEntities / cleanTitle", () => {
@@ -199,5 +203,48 @@ describe("pickTitle", () => {
   });
   it("keeps the placeholder when there is nothing better", () => {
     expect(pickTitle("Article", undefined)).toBe("Article");
+  });
+});
+
+describe("splitSentences / leadSentences / chunkSentences", () => {
+  const text =
+    "Liverpool thắng 2-0. Giá được nhắc tới là £55.1m, theo Romano! Còn Alisson thì sao? Chưa ai biết…";
+
+  it("splits after . ! ? … but not inside a decimal", () => {
+    expect(splitSentences(text)).toEqual([
+      "Liverpool thắng 2-0.",
+      "Giá được nhắc tới là £55.1m, theo Romano!",
+      "Còn Alisson thì sao?",
+      "Chưa ai biết…",
+    ]);
+  });
+  it("keeps closing quotes with their sentence", () => {
+    expect(splitSentences('Anh nói "đủ rồi." Rồi bỏ đi.')).toEqual(['Anh nói "đủ rồi."', "Rồi bỏ đi."]);
+  });
+  it("leadSentences returns whole sentences that fit, at least one", () => {
+    expect(leadSentences(text, 70)).toBe("Liverpool thắng 2-0. Giá được nhắc tới là £55.1m, theo Romano!");
+    expect(leadSentences(text, 10)).toBe("Liverpool…");
+    expect(leadSentences("Ngắn thôi.", 300)).toBe("Ngắn thôi.");
+  });
+  it("chunkSentences groups sentences into short paragraphs and honours blank lines", () => {
+    expect(chunkSentences(text, 45)).toEqual([
+      "Liverpool thắng 2-0.",
+      "Giá được nhắc tới là £55.1m, theo Romano!",
+      "Còn Alisson thì sao? Chưa ai biết…",
+    ]);
+    expect(chunkSentences("Một.\n\nHai.", 300)).toEqual(["Một.", "Hai."]);
+    expect(chunkSentences("", 300)).toEqual([]);
+  });
+});
+
+describe("keepDatesTogether", () => {
+  it("joins weekday and day-month words with no-break spaces", () => {
+    expect(keepDatesTogether("Liverpool Daily — Thứ Ba, 6 tháng 10, 2026")).toBe(
+      "Liverpool Daily — Thứ\u00A0Ba, 6\u00A0tháng\u00A010, 2026",
+    );
+    expect(keepDatesTogether("Thứ Tư")).toBe("Thứ\u00A0Tư");
+  });
+  it("leaves other text alone", () => {
+    expect(keepDatesTogether("Thứ hạng của Liverpool")).toBe("Thứ hạng của Liverpool");
   });
 });

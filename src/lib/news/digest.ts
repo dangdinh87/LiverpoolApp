@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { BRAND } from "@/lib/brand";
 import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
@@ -128,9 +129,9 @@ Output: JSON object với cấu trúc:
     }
   ],
   "seoArticle": {
-    "sourceName": "Liverpool FC Việt Nam",
+    "sourceName": "${BRAND.name}",
     "sourceUrl": "https://www.liverpoolfcvn.blog",
-    "badgeLabel": "LFCVN Pro",
+    "badgeLabel": "${BRAND.name}",
     "title": "Tiêu đề bài báo chuẩn SEO bằng tiếng Việt, tự nhiên, có Liverpool",
     "metaTitle": "SEO title 50-60 ký tự",
     "metaDescription": "SEO meta description 140-160 ký tự, có từ khóa chính",
@@ -172,7 +173,7 @@ Quy tắc nội dung:
 - Nêu chi tiết cụ thể: tỉ số, thống kê, ngày tháng, trích dẫn khi có
 - Nếu ít hơn 5 bài, viết dạng "Tin Nhanh" với 1-2 section nhưng vẫn chi tiết
 - seoArticle phải là một bài báo riêng chuẩn SEO cho Liverpool, không chỉ lặp lại summary
-- seoArticle dùng nguồn/publisher là "Liverpool FC Việt Nam" và giữ sourceUrl đúng như input
+- seoArticle dùng nguồn/publisher là "${BRAND.name}" và giữ sourceUrl đúng như input
 - seoArticle dài 600-900 từ, có sapo, 3-5 H2, chèn focusKeyword tự nhiên trong title/sapo/ít nhất 1 H2
 - Không copy nguyên văn bài nguồn; chỉ tổng hợp, diễn giải lại và giữ attribution qua articleUrls ở sections
 - Trả về CHỈ JSON hợp lệ — không markdown, không giải thích thêm`;
@@ -209,9 +210,9 @@ function normalizeSeoArticle(
     seoArticle?.metaDescription?.trim() || parsed.summary.slice(0, 160);
 
   return {
-    sourceName: "Liverpool FC Việt Nam",
+    sourceName: BRAND.name,
     sourceUrl,
-    badgeLabel: seoArticle?.badgeLabel?.trim() || "LFCVN Pro",
+    badgeLabel: seoArticle?.badgeLabel?.trim() || BRAND.name,
     title,
     metaTitle: seoArticle?.metaTitle?.trim() || title.slice(0, 60),
     metaDescription,
@@ -469,7 +470,7 @@ export async function generateDigestFromArticles(
 
   // Current facts (head coach, season, squad) come first and override the model's memory:
   // without them the model "knew" a previous head coach and contradicted the articles.
-  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: Liverpool FC Việt Nam (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
+  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
 
   const apiKey = getEnv("VIETAPI_KEY");
   if (!apiKey) throw new Error("VIETAPI_KEY not configured");

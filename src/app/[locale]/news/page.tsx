@@ -71,20 +71,11 @@ export default async function NewsPage({
   const localArticles = allArticles.filter((a) => a.language === "vi");
   const globalArticles = allArticles.filter((a) => a.language === "en");
 
-  const sources = [
-    "LiverpoolFC.com", "BBC Sport", "The Guardian", "This Is Anfield",
-    "Liverpool Echo", "Sky Sports", "Anfield Watch", "Empire of the Kop",
-    "Daily Mirror", "The Independent", "MEN", "Anfield Index", "Liverpool.com", "ESPN",
-    "Bóng Đá", "Bóng Đá+", "24h", "VnExpress", "Tuổi Trẻ", "Thanh Niên",
-    "Dân Trí", "Zing News", "VietNamNet", "Webthethao", "Vietnam.vn",
-    "Bóng Đá 24h", "Thể Thao 247", "Soha",
-  ].join(", ");
-
   return (
     <div className="min-h-screen">
       <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: "News", url: getCanonical("/news") },
+        { name: t("breadcrumb.home"), url: getCanonical("/") },
+        { name: t("title"), url: getCanonical("/news") },
       ])} />
 
       <PageHero
@@ -95,7 +86,7 @@ export default async function NewsPage({
       />
 
       {digest && (
-        <div className="page-container pt-4 sm:pt-6">
+        <div className="page-container pb-4 pt-4 sm:pb-6 sm:pt-6">
           <DigestCard
             as="h2"
             date={digest.digest_date}
@@ -115,9 +106,7 @@ export default async function NewsPage({
         initialSource={initialSource}
       />
 
-      <p className="page-container pb-12 text-xs leading-relaxed text-stadium-muted">
-        {t("attribution", { sources })}
-      </p>
+      <p className="page-container max-w-3xl pb-14 text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>
     </div>
   );
 }

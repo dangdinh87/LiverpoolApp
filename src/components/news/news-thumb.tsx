@@ -17,8 +17,8 @@ interface NewsThumbProps {
 
 /**
  * Thumbnail that always fills its parent (the parent owns the aspect ratio, so
- * nothing shifts). Missing or broken images fall back to a tile in the
- * source's colour with the source name.
+ * nothing shifts). Missing or broken images fall back to a neutral tile with
+ * the source name as plain text (no outlet colours or logos).
  *
  * News images stay `unoptimized` (publisher CDNs, Vercel Hobby image quota) and
  * are sent without a referrer: several publishers block hot-linking by Referer.
@@ -31,9 +31,9 @@ export function NewsThumb({ src, alt = "", source, sizes, priority, className }:
     return (
       <div
         aria-hidden
-        className={`absolute inset-0 flex items-center justify-center px-3 text-center ${cfg?.color ?? "bg-zinc-700 text-zinc-100"}`}
+        className="absolute inset-0 flex items-center justify-center bg-[var(--surface-3)] px-3 text-center"
       >
-        <span className="font-bebas text-2xl leading-none tracking-wide opacity-90">{cfg?.label ?? ""}</span>
+        <span className="font-bebas text-xl leading-tight tracking-wide text-stadium-muted">{cfg?.label ?? ""}</span>
       </div>
     );
   }
