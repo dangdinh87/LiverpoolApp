@@ -247,7 +247,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
         {/* Brand. Plain next/link on purpose: "/" always resolves (the middleware picks the locale). */}
         <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
-          <BrandWordmark className="h-6 lg:h-7" />
+          <BrandWordmark className="text-[26px] lg:text-[30px]" />
         </Link>
 
         {/* Desktop nav (from lg) */}
@@ -449,7 +449,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
               >
                 <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between px-4 border-b border-[var(--line)]">
                   <span className="flex items-center text-white">
-                    <BrandWordmark className="h-6" />
+                    <BrandWordmark className="text-[26px]" />
                     <span className="sr-only">{BRAND.name}</span>
                   </span>
                   <SheetClose asChild>

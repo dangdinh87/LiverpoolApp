@@ -149,7 +149,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
           </button>
         )}
         <div className="mb-7 text-center">
-          <BrandWordmark className="mx-auto mb-4 h-6 text-white" />
+          <BrandWordmark className="mx-auto mb-4 text-[26px] text-white" />
           <Heading className="font-bebas text-4xl text-white tracking-[0.04em] leading-none">{t("title")}</Heading>
           <p className="font-inter text-stadium-muted text-sm mt-2">{t("subtitle")}</p>
         </div>

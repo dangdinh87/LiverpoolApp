@@ -3,16 +3,16 @@ import { BRAND, WORDMARK, brandDescription, brandLocale, brandTagline, brandTitl
 
 describe("brand constant", () => {
   it("keeps the display name and tagline in one place", () => {
-    expect(BRAND.name).toBe("LFCVN");
-    expect(brandTagline("vi")).toBe("Fan Liverpool Việt Nam · Giờ đá, kết quả, tin nhanh");
-    expect(brandTagline("en")).toBe("Liverpool fans in Vietnam · Kick-off times, results, quick news");
+    expect(BRAND.name).toBe("Reds Abroad");
+    expect(brandTagline("vi")).toBe("Fan Liverpool khắp thế giới · Giờ đá theo giờ của bạn");
+    expect(brandTagline("en")).toBe("Liverpool fans everywhere · Kick-off times in your time zone");
   });
 
-  it("falls back to Vietnamese, the default locale", () => {
+  it("falls back to English, the default locale", () => {
     expect(brandLocale("vi")).toBe("vi");
     expect(brandLocale("en")).toBe("en");
-    expect(brandLocale("fr")).toBe("vi");
-    expect(brandTitle("fr")).toBe(`LFCVN — ${BRAND.tagline.vi}`);
+    expect(brandLocale("fr")).toBe("en");
+    expect(brandTitle("fr")).toBe(`Reds Abroad — ${BRAND.tagline.en}`);
   });
 
   it("says in the description that the site is unofficial", () => {
@@ -24,8 +24,17 @@ describe("brand constant", () => {
     for (const path of Object.values(BRAND.assets)) expect(path).not.toMatch(/crest|liverbird/i);
   });
 
-  it("ships the wordmark as path data inside its viewBox", () => {
-    expect(WORDMARK.letters.startsWith("M0 100V0")).toBe(true);
-    expect(WORDMARK.bar.y + WORDMARK.bar.height).toBe(WORDMARK.height);
+  it("does not put the club's name or initials in its own name", () => {
+    // A fan site carrying the club's marks is the weakest position in a
+    // trademark dispute; the rename exists to avoid exactly that.
+    expect(BRAND.name).not.toMatch(/liverpool|lfc/i);
+  });
+
+  it("describes the wordmark as type, so a rename needs no new artwork", () => {
+    // The name used to ship as SVG outlines of its own letters, which meant a
+    // rename could not be done in this file alone.
+    expect(WORDMARK.letterSpacing).toMatch(/em$/);
+    expect(WORDMARK.bar.widthRatio).toBeGreaterThan(0);
+    expect(WORDMARK.bar.widthRatio).toBeLessThan(1);
   });
 });

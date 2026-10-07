@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="LFCVN">
-  <title>LFCVN</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Reds Abroad">
+  <title>Reds Abroad</title>
   <rect width="512" height="512" fill="#c8102e"/>
-  <path fill="#ffffff" d="M192.48 442V70H247.14V391.39H319.52V442Z"/>
+  <!-- A globe: rim plus one meridian. Only two strokes, so the mark still
+       reads at favicon size; the equator was dropped because rim-plus-bar
+       reads as a prohibition sign. -->
+  <g fill="none" stroke="#ffffff" stroke-width="40" stroke-linecap="round">
+    <circle cx="256" cy="256" r="166"/>
+    <ellipse cx="256" cy="256" rx="80" ry="166"/>
+  </g>
+  <!-- One supporter, somewhere else. The red ring keeps the dot off the rim. -->
+  <circle cx="373" cy="139" r="54" fill="#c8102e"/>
+  <circle cx="373" cy="139" r="34" fill="#f6eb61"/>
 </svg>

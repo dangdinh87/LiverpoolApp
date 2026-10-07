@@ -1,24 +1,37 @@
-import { WORDMARK } from "@/lib/brand";
+import { BRAND, WORDMARK } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 /**
- * The LFCVN wordmark as inline SVG. Letters take the current text colour (white
- * on the dark chrome); the short bar is always brand red. Size it with a height
- * class, e.g. `h-6`: the width follows the viewBox. Decorative: put the brand
- * name on the surrounding link (`aria-label`).
+ * The site wordmark: BRAND.name set in League Gothic with the short red rule
+ * beneath its first letters.
+ *
+ * Live text rather than SVG outlines. The outlines spelled one specific name,
+ * so a rename meant redrawing glyphs instead of editing the brand constant —
+ * and text scales, copies and reads to assistive tech for free.
+ *
+ * Size it with a font-size class (e.g. `text-2xl`); the rule follows the text.
+ * Decorative: put the brand name on the surrounding link (`aria-label`).
  */
 export function BrandWordmark({ className }: { className?: string }) {
-  const { bar } = WORDMARK;
   return (
-    <svg
-      viewBox={`0 0 ${WORDMARK.width} ${WORDMARK.height}`}
-      className={cn("block w-auto", className)}
-      fill="currentColor"
+    <span
+      className={cn("inline-flex flex-col items-start leading-none", className)}
       aria-hidden
-      focusable="false"
     >
-      <path d={WORDMARK.letters} />
-      <rect x={bar.x} y={bar.y} width={bar.width} height={bar.height} className="fill-lfc-red" />
-    </svg>
+      <span
+        className="font-bebas uppercase leading-[0.82] whitespace-nowrap"
+        style={{ letterSpacing: WORDMARK.letterSpacing }}
+      >
+        {BRAND.name}
+      </span>
+      <span
+        className="block bg-lfc-red"
+        style={{
+          width: `${WORDMARK.bar.widthRatio * 100}%`,
+          height: `${WORDMARK.bar.thicknessEm}em`,
+          marginTop: `${WORDMARK.bar.gapEm}em`,
+        }}
+      />
+    </span>
   );
 }
