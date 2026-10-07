@@ -1,6 +1,6 @@
-# Liverpool FC Việt Nam — Fan Site
+# Reds Abroad — Liverpool fan site
 
-Trang fan Liverpool FC dành cho cộng đồng fan Việt Nam. Cung cấp thông tin đội hình, lịch thi đấu, bảng xếp hạng, thống kê, tin tức tổng hợp (EN + VI) từ 17+ nguồn RSS, gallery ảnh, lịch sử CLB, và trợ lý AI chat. Thiết kế "Dark Stadium" lấy cảm hứng từ sân Anfield, hỗ trợ song ngữ Anh-Việt.
+Trang fan Liverpool cho người hâm mộ ở ngoài nước Anh (trước đây là LFCVN, định vị Việt Nam). Cung cấp thông tin đội hình, lịch thi đấu, bảng xếp hạng, thống kê, tin tức tổng hợp (EN + VI) từ 17+ nguồn RSS, gallery ảnh, lịch sử CLB, và trợ lý AI chat. Thiết kế "Dark Stadium" lấy cảm hứng từ sân Anfield, hỗ trợ song ngữ Anh-Việt.
 
 ## Tech Stack
 
@@ -183,6 +183,9 @@ src/
 - All functions in `src/lib/football/` are server-only with `React.cache()` for per-request dedup
 - Primary: Football-Data.org (`FOOTBALL_DATA_ORG_KEY`) — standings (PL + UCL), fixtures, squad, coach
 - Supplement: ESPN — cup fixtures (FA Cup, EFL Cup), match events with minute data — free, no key
+- "Where to watch": `src/lib/football/premier-league-broadcasters.ts` maps the viewer's IANA time
+  zone to a country and its Premier League broadcaster. Time zone, not interface language — an
+  English reader in Jakarta needs Vidio. Premier League only; unknown country renders nothing.
 - Without `FOOTBALL_DATA_ORG_KEY` the data layer logs a warning and returns empty — there is no mock fallback
 - Free tier limits: 10 req/min, seasons data only
 
@@ -237,10 +240,22 @@ src/
 
 ### i18n
 
-- 2 locales: `en`, `vi` (default: `vi` — also what crawlers get)
+- 2 locales: `en`, `vi` (default: **`en`** — the bare URL is English; Vietnamese lives under `/vi`)
+- Which locale carries a URL prefix is **only** in `src/i18n/routing.ts` (`withLocalePrefix`,
+  `splitLocalePrefix`, `LOCALE_PREFIX_PATTERN`). Never hard-code `/en` or `/vi` anywhere else —
+  it was hard-coded in eight places and flipping the default silently broke all of them.
 - Detection order: `NEXT_LOCALE` cookie → `Accept-Language` header
 - Translation files: `src/messages/en.json`, `src/messages/vi.json`
 - Static data has `.vi.json` variants (trophies, history, legends, club-info, player-bios)
+
+## Brand
+
+- `src/lib/brand.ts` is the only place that names the site. The wordmark is live
+  text in League Gothic, not SVG outlines, so a rename needs no new artwork.
+- The name contains neither "Liverpool" nor "LFC" on purpose (trademark risk);
+  the club crest is never the site's own mark, only match data.
+- The share image embeds the font (`src/assets/fonts/league-gothic-base64.ts`)
+  so it draws from code with no disk read and no network call.
 
 ## Design System — "Dark Stadium"
 
