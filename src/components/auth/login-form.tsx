@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { loginWithEmail, registerWithEmail } from "@/app/actions/auth";
 import { loadSupabaseClient } from "@/lib/supabase-lazy";
-import { BrandWordmark } from "@/components/layout/brand-wordmark";
+import { BrandLogo } from "@/components/layout/brand-mark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -149,7 +149,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
           </button>
         )}
         <div className="mb-7 text-center">
-          <BrandWordmark className="mx-auto mb-4 text-[26px] text-white" />
+          <BrandLogo className="mb-4 text-white" markClassName="size-9" wordmarkClassName="text-[26px]" />
           <Heading className="font-bebas text-4xl text-white tracking-[0.04em] leading-none">{t("title")}</Heading>
           <p className="font-inter text-stadium-muted text-sm mt-2">{t("subtitle")}</p>
         </div>

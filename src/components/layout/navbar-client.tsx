@@ -13,7 +13,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
-import { BrandWordmark } from "./brand-wordmark";
+import { BrandLogo } from "./brand-mark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { MATCH_PATHS, SQUAD_PATHS, isActiveAny, isActivePath } from "./nav-items";
 import { useMenuStore } from "./menu-store";
@@ -247,7 +247,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
         {/* Brand. Plain next/link on purpose: "/" always resolves (the middleware picks the locale). */}
         <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
-          <BrandWordmark className="text-[26px] lg:text-[30px]" />
+          <BrandLogo markClassName="size-8 lg:size-9" wordmarkClassName="text-[26px] lg:text-[30px]" />
         </Link>
 
         {/* Desktop nav (from lg) */}
@@ -449,7 +449,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
               >
                 <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between px-4 border-b border-[var(--line)]">
                   <span className="flex items-center text-white">
-                    <BrandWordmark className="text-[26px]" />
+                    <BrandLogo markClassName="size-8" wordmarkClassName="text-[26px]" />
                     <span className="sr-only">{BRAND.name}</span>
                   </span>
                   <SheetClose asChild>
