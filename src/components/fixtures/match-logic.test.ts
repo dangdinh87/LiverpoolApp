@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { matchCentreHref } from "./match-centre-links";
 import { parseRound, roundLabel } from "./round-label";
 import { compactTeamName, displayTeamName } from "./team-name";
-import { airsOnFptPlay } from "./where-to-watch";
 
 describe("parseRound", () => {
   it("reads matchdays in every shape the providers use", () => {
@@ -73,17 +72,5 @@ describe("matchCentreHref", () => {
     expect(matchCentreHref("results", 2025)).toBe("/season?season=2025&view=results");
     expect(matchCentreHref("standings", 2025)).toBe("/season?season=2025&tab=standings");
     expect(matchCentreHref("stats", 2025)).toBe("/stats?season=2025");
-  });
-});
-
-describe("airsOnFptPlay", () => {
-  it("is Premier League only", () => {
-    expect(airsOnFptPlay("Premier League", "vi")).toBe(true);
-    expect(airsOnFptPlay("UEFA Champions League", "vi")).toBe(false);
-    expect(airsOnFptPlay(undefined, "vi")).toBe(false);
-  });
-
-  it("is hidden outside Vietnam until a per-country table exists", () => {
-    expect(airsOnFptPlay("Premier League", "en")).toBe(false);
   });
 });

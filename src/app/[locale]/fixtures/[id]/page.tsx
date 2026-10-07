@@ -18,7 +18,7 @@ import { H2HSection } from "@/components/fixtures/h2h-section";
 import { MatchCountdown } from "@/components/fixtures/match-countdown";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
-import { airsOnFptPlay } from "@/components/fixtures/where-to-watch";
+import { WhereToWatch } from "@/components/fixtures/where-to-watch";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -205,8 +205,9 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const homeName = displayTeamName(teams.home.name);
   const awayName = displayTeamName(teams.away.name);
   const round = roundLabel(tRound, league.round);
-  // FPT Play holds the Premier League rights in Vietnam; no other competition is covered.
-  const showWatch = !isFinished && airsOnFptPlay(league.name, locale);
+  // The broadcaster depends on where the reader is, which only the browser
+  // knows, so WhereToWatch decides for itself and renders nothing when unsure.
+  const showWatch = !isFinished;
   const sections = [
     ...(hasStarted
       ? [
@@ -344,9 +345,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                 <li className="flex items-start gap-2.5"><MapPin aria-hidden className={infoIcon} />{venue}</li>
               )}
               {showWatch && (
-                <li className="flex items-start gap-2.5 font-semibold text-white">
-                  <Tv aria-hidden className={cn(infoIcon, "text-lfc-gold")} />
-                  {tMatch("whereToWatch")}
+                <li className="font-semibold text-white">
+                  <WhereToWatch competition={league.name} className="items-start gap-2.5" />
                 </li>
               )}
               {attendance && attendance > 0 && (

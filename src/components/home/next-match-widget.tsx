@@ -11,7 +11,7 @@ import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
-import { airsOnFptPlay } from "@/components/fixtures/where-to-watch";
+import { WhereToWatch } from "@/components/fixtures/where-to-watch";
 import { cn } from "@/lib/utils";
 
 const LFC_TEAM_ID = 40;
@@ -204,12 +204,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         </div>
       )}
 
-      {airsOnFptPlay(league.name, locale) && (
-        <p className="mt-3 flex items-center justify-center gap-2 text-[13px] leading-snug text-white/80">
-          <Tv className="size-4 shrink-0 text-lfc-gold" aria-hidden />
-          <span>{tMatch("whereToWatch")}</span>
-        </p>
-      )}
+      <WhereToWatch competition={league.name} className="mt-3 justify-center" />
 
       <div className="mt-4 flex gap-2">
         <Link

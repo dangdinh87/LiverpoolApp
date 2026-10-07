@@ -7,7 +7,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
 import { ChipBar } from "./chip-bar";
 import { MatchCentreNav } from "./match-centre-nav";
-import { airsOnFptPlay } from "./where-to-watch";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Fixture } from "@/lib/types/football";
 import { defaultTimeZoneForLocale, formatMonthYear, formatZoneOffset } from "@/lib/format-match-date";
@@ -123,7 +122,10 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   ];
   const viewerZone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
   const zoneOffset = formatZoneOffset(new Date(fixtures[0]?.fixture.date ?? 0), viewerZone);
-  const showFptHint = view === "upcoming" && upcoming.some((f) => airsOnFptPlay(f.league.name, locale));
+  // The hint is country-independent now — it points at the match pages, which
+  // resolve the broadcaster for wherever the reader is.
+  const showWatchHint =
+    view === "upcoming" && upcoming.some((f) => f.league.name === "Premier League");
 
   return (
     <div>
@@ -142,7 +144,7 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
 
       <p className="mt-3 text-[13px] leading-snug text-stadium-muted">
         {t("gmtHint", { zone: zoneOffset })}
-        {showFptHint && <> {t("plWatch")}</>}
+        {showWatchHint && <> {t("plWatch")}</>}
       </p>
 
       {groups.length === 0 ? (
