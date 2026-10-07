@@ -92,14 +92,51 @@ export function getCoach(): LfcCoach {
   return data.coach;
 }
 
-/** Get player bio by locale (falls back to English) */
+/** The handful of entities the bios actually contain. */
+const HTML_ENTITIES: Record<string, string> = {
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&#39;": "'",
+  "&apos;": "'",
+  "&nbsp;": " ",
+};
+
+/**
+ * Flatten a bio to plain text, keeping paragraph breaks as blank lines.
+ *
+ * English bios are stored as HTML fragments (<p>, <a>, <strong>, <em>, <br>)
+ * while Vietnamese ones are plain prose. Callers render the string as text, so
+ * the markup was escaped and printed to the reader — a player page showed
+ * "</p><p>Woodman left St." under the Biography heading — and the same string
+ * fed meta descriptions for players with no Vietnamese bio.
+ *
+ * Tags are dropped rather than rendered: the text is treated as data, so
+ * nothing in the data file can inject markup into the page.
+ */
+function flattenBioMarkup(raw: string): string {
+  if (!/<[a-z/]/i.test(raw)) return raw.trim();
+  return raw
+    // Block boundaries become blank lines so callers can split on them.
+    .replace(/<\/p\s*>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&[a-z#0-9]+;/gi, (e) => HTML_ENTITIES[e.toLowerCase()] ?? e)
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .trim();
+}
+
+/** Get player bio by locale (falls back to English), as plain text. */
 export function getPlayerBio(slug: string, locale: string): string {
   if (locale === "vi") {
     const viBio = (playerBiosVi as Record<string, string>)[slug];
-    if (viBio) return viBio;
+    if (viBio) return flattenBioMarkup(viBio);
   }
   const player = getPlayerBySlug(slug);
-  return player?.bio ?? "";
+  return flattenBioMarkup(player?.bio ?? "");
 }
 
 /** Calculate age from date of birth */
