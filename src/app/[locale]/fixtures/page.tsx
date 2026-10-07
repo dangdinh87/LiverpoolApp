@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   const t = await getTranslations({ locale, namespace: "Fixtures.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
-  return { title, description, ...makePageMeta(title, description, { path: "/fixtures" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/fixtures" }) };
 }
 
 // Static page: the ?view=results deep link is handled in FixtureTimeline on the

@@ -101,7 +101,7 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const url = decodeArticleSlug(slug);
   // Unresolvable article pages still answer 200 (the status is sent before the
   // page body streams), so keep them out of the index explicitly.
@@ -127,7 +127,7 @@ export async function generateMetadata({
     // Excerpt-only mirror of another publisher's story: readers can open it,
     // but it must not compete with the original in search (thin/scraped content).
     robots: { index: false, follow: true },
-    alternates: getHreflangAlternates(articlePath),
+    alternates: getHreflangAlternates(articlePath, locale),
     openGraph: {
       type: "article",
       title,

@@ -87,7 +87,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
     title: { absolute: title },
     description,
     category: "sports",
-    ...makePageMeta(title, description, { path: "/" }),
+    ...makePageMeta(title, description, { locale, path: "/" }),
   };
 }
 

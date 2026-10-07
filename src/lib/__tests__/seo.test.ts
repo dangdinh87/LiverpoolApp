@@ -31,12 +31,30 @@ describe("getCanonical", () => {
 });
 
 describe("getHreflangAlternates", () => {
-  it("returns canonical + language alternates pointing to same URL", () => {
+  const HOST = "https://www.liverpoolfcvn.blog";
+
+  it("points each language at its own URL", () => {
     const result = getHreflangAlternates("/squad");
-    expect(result.canonical).toBe("https://www.liverpoolfcvn.blog/squad");
-    expect(result.languages.vi).toBe("https://www.liverpoolfcvn.blog/squad");
-    expect(result.languages.en).toBe("https://www.liverpoolfcvn.blog/squad");
-    expect(result.languages["x-default"]).toBe("https://www.liverpoolfcvn.blog/squad");
+    expect(result.languages.vi).toBe(`${HOST}/squad`);
+    expect(result.languages.en).toBe(`${HOST}/en/squad`);
+    // Vietnamese is the default locale, so it is what an unmatched visitor gets.
+    expect(result.languages["x-default"]).toBe(`${HOST}/squad`);
+  });
+
+  it("defaults the canonical to the Vietnamese URL", () => {
+    expect(getHreflangAlternates("/squad").canonical).toBe(`${HOST}/squad`);
+  });
+
+  it("canonicalises an English page to its own /en URL", () => {
+    // Returning the Vietnamese URL here told search engines to drop the English
+    // page, which is the regression this guards.
+    expect(getHreflangAlternates("/squad", "en").canonical).toBe(`${HOST}/en/squad`);
+  });
+
+  it("does not leave a trailing slash on the localized home page", () => {
+    const result = getHreflangAlternates("/", "en");
+    expect(result.canonical).toBe(`${HOST}/en`);
+    expect(result.languages.vi).toBe(HOST);
   });
 });
 

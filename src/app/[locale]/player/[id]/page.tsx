@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
@@ -95,7 +95,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: player.name,
     description,
-    alternates: getHreflangAlternates(`/player/${id}`),
+    alternates: getHreflangAlternates(`/player/${id}`, locale),
     openGraph: {
       title: player.name,
       description,

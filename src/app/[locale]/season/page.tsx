@@ -50,7 +50,7 @@ export async function generateMetadata({
   return {
     title,
     description,
-    ...makePageMeta(title, description, { path: isCurrent ? "/fixtures" : `/season?season=${selected}` }),
+    ...makePageMeta(title, description, { locale, path: isCurrent ? "/fixtures" : `/season?season=${selected}` }),
   };
 }
 

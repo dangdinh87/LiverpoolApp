@@ -40,18 +40,35 @@ export function getCanonical(path: string): string {
   return `${SITE_URL}${normalized}`;
 }
 
+/** The locale prefix a path carries in its public URL. */
+function localizedPath(path: string, locale: string): string {
+  // Vietnamese is the default locale and keeps unprefixed URLs (localePrefix:
+  // "as-needed" in src/i18n/routing.ts); English lives under /en.
+  return locale === "en" ? `/en${path === "/" ? "" : path}` : path;
+}
+
 /**
- * Generate hreflang alternates for Next.js metadata.
- * Cookie-based i18n → same URL for both locales (correct per Google's guidance).
+ * Generate canonical + hreflang alternates for Next.js metadata.
+ *
+ * Each locale must point at its OWN URL. This used to return one URL for every
+ * language, which was right while locales were chosen by cookie on a single
+ * URL — but the site now serves English under /en, so that left every English
+ * page declaring the Vietnamese page as its canonical (telling search engines
+ * to drop the English version) and gave Google no way to discover /en at all.
+ *
+ * @param path   Unprefixed path, e.g. "/squad".
+ * @param locale Locale the page is being rendered for; decides the canonical.
  */
-export function getHreflangAlternates(path: string) {
-  const url = getCanonical(path);
+export function getHreflangAlternates(path: string, locale: string = "vi") {
+  const vi = getCanonical(path);
+  const en = getCanonical(localizedPath(path, "en"));
   return {
-    canonical: url,
+    canonical: locale === "en" ? en : vi,
     languages: {
-      vi: url,
-      en: url,
-      "x-default": url,
+      vi,
+      en,
+      // Vietnamese is the default locale, so it is what an unmatched visitor gets.
+      "x-default": vi,
     },
   };
 }
@@ -60,6 +77,8 @@ export function getHreflangAlternates(path: string) {
 
 export interface PageMetaOptions {
   path?: string;
+  /** Locale the page renders for; decides canonical and OG locale. */
+  locale?: string;
   image?: string;
   type?: "website" | "article";
   publishedTime?: string;
@@ -82,9 +101,11 @@ export function makePageMeta(
       description,
       type: options?.type ?? "website",
       siteName: SITE_NAME,
-      locale: "vi_VN",
-      alternateLocale: "en_GB",
-      ...(options?.path && { url: getCanonical(options.path) }),
+      locale: options?.locale === "en" ? "en_GB" : "vi_VN",
+      alternateLocale: options?.locale === "en" ? "vi_VN" : "en_GB",
+      ...(options?.path && {
+        url: getCanonical(localizedPath(options.path, options?.locale ?? "vi")),
+      }),
       images: options?.image ? [{ url: options.image }] : [DEFAULT_OG_IMAGE],
       ...(options?.publishedTime && {
         publishedTime: options.publishedTime,
@@ -103,7 +124,7 @@ export function makePageMeta(
 
   // Add canonical + hreflang if path provided
   if (options?.path) {
-    meta.alternates = getHreflangAlternates(options.path);
+    meta.alternates = getHreflangAlternates(options.path, options.locale);
   }
 
   return meta;

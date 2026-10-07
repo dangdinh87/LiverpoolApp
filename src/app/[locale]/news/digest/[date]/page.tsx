@@ -32,7 +32,7 @@ export async function generateMetadata({
 }: {
   params: Params;
 }): Promise<Metadata> {
-  const { date } = await params;
+  const { date, locale } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found", robots: { index: false } };
   const digest = await getDigestByDate(date);
   if (!digest) return { title: "Digest Not Found", robots: { index: false } };
@@ -46,6 +46,7 @@ export async function generateMetadata({
     title,
     description,
     ...makePageMeta(title, description, {
+      locale,
       path: digestPath,
       type: "article",
       publishedTime: digest.generated_at,

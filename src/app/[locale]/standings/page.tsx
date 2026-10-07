@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   const t = await getTranslations({ locale, namespace: "Standings.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
-  return { title, description, ...makePageMeta(title, description, { path: "/standings" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/standings" }) };
 }
 
 export const revalidate = 21600; // 6 hours

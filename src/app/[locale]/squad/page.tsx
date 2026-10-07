@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   const t = await getTranslations({ locale, namespace: "Squad.metadata" });
   const title = t("title");
   const description = t("description", { season: getCurrentSeasonLabel() });
-  return { title, description, ...makePageMeta(title, description, { path: "/squad" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/squad" }) };
 }
 
 export const revalidate = 86400; // season label is derived from the date

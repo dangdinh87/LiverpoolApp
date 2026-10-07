@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
-    ...makePageMeta(title, description, { path: `/fixtures/${id}` }),
+    ...makePageMeta(title, description, { locale, path: `/fixtures/${id}` }),
   };
 }
 

@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   const t = await getTranslations({ locale, namespace: "Gallery.metadata" });
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description, { path: "/gallery" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/gallery" }) };
 }
 
 export const revalidate = 1800;

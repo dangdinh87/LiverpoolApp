@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   const t = await getTranslations({ locale, namespace: "News.metadata" });
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description, { path: "/news" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/news" }) };
 }
 
 const NEWS_PAGE_LIMIT = 36;

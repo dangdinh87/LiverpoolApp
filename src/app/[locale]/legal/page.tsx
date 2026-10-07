@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   return {
     title,
     description,
-    ...makePageMeta(title, description, { path: "/legal" }),
+    ...makePageMeta(title, description, { locale, path: "/legal" }),
   };
 }
 

@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   const t = await getTranslations({ locale, namespace: "History.metadata" });
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description, { path: "/history" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/history" }) };
 }
 
 export const revalidate = 86400; // 24 hours — static data from JSON
