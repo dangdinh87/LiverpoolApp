@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-// usePathname from @/i18n/navigation (not next/navigation): it strips the /en
-// prefix, so active-link checks against bare paths like "/history" still work
-// on English pages.
-import { usePathname } from "@/i18n/navigation";
+// Link and usePathname from @/i18n/navigation (not next/link + next/navigation).
+// usePathname strips the /en prefix, so active-link checks against bare paths
+// like "/history" still work on English pages. Link adds that prefix back when
+// rendering hrefs: with plain next/link every nav target on an English page
+// pointed at the Vietnamese URL and only reached the right page via a 307, so
+// prefetches were wasted and each click paid a redirect.
+import { Link, usePathname } from "@/i18n/navigation";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";

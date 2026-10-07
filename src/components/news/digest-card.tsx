@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";

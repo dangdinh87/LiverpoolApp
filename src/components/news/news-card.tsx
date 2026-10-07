@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { SOURCE_CONFIG, getArticleUrl } from "@/lib/news-config";

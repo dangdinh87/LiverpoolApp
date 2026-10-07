@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { FavouriteHeart } from "./favourite-heart";
 import { PlayerPhoto } from "@/components/player/player-photo";

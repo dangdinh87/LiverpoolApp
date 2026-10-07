@@ -1,5 +1,7 @@
 import { Fragment } from "react";
-import Link from "next/link";
+// Locale-aware Link: plain next/link emitted unprefixed hrefs, which sent
+// English readers through a 307 on every footer link.
+import { Link } from "@/i18n/navigation";
 import { Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { BRAND, brandTagline } from "@/lib/brand";

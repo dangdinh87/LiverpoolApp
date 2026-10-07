@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Fixture } from "@/lib/types/football";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useTransition, useState } from "react";
 import { Heart } from "lucide-react";
 import { toggleFavouritePlayer } from "@/app/actions/profile";

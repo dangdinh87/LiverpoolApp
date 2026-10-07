@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import { formatMatchDayMonth } from "@/lib/format-match-date";

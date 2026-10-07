@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { Coffee, Heart, Users, Calendar, Newspaper, Trophy, UserCircle, Mail, Github, Phone, Zap, Globe, Bot } from "lucide-react";
@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   const t = await getTranslations({ locale, namespace: "About.metadata" });
   const title = t("title");
   const description = t("description");
-  return { title, description, ...makePageMeta(title, description, { path: "/about" }) };
+  return { title, description, ...makePageMeta(title, description, { locale, path: "/about" }) };
 }
 
 const FEATURES = [

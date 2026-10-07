@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { LogIn } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";

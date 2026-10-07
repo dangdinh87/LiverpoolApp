@@ -11,7 +11,7 @@ import { X, Maximize2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { UIMessage } from "ai";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ConversationSelector } from "@/components/chat/conversation-selector";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

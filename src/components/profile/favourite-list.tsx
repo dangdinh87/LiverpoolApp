@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Heart, X } from "lucide-react";
 import { useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
