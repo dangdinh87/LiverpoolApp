@@ -56,7 +56,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
         className,
       )}
     >
-      <div ref={rowRef} role="group" aria-label={ariaLabel} className="scroll-x flex gap-2">
+      <div ref={rowRef} role="group" aria-label={ariaLabel} className="scroll-x scroll-x-fade flex gap-2">
         {items.map((item) => {
           const isActive = item.key === active;
           const content = (

@@ -770,7 +770,7 @@
         "news": "Tin nhanh: tiêu đề, đoạn trích ngắn và link sang bài gốc. Bản tin tổng hợp mỗi ngày do AI soạn nháp.",
         "history": "Lịch sử CLB, tủ danh hiệu, huyền thoại và sân Anfield.",
         "profile": "Tài khoản (không bắt buộc) để lưu cầu thủ yêu thích và bài viết.",
-        "ai": "LiverBird AI: hỏi đáp về Liverpool, cần đăng nhập. Câu trả lời do AI tạo, có thể sai.",
+        "ai": "Reds AI: hỏi đáp về Liverpool, cần đăng nhập. Câu trả lời do AI tạo, có thể sai.",
         "i18n": "Có tiếng Anh và tiếng Việt."
       },
       "dataTitle": "Nguồn dữ liệu",
@@ -805,7 +805,7 @@
     },
     "ai": {
       "title": "AI trên {brand}",
-      "body": "LiverBird AI (chat), bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
+      "body": "Reds AI (chat), bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
     }
   },
   "Standings": {
@@ -976,7 +976,7 @@
   "Auth": {
     "login": {
       "title": "Chào mừng trở lại",
-      "subtitle": "Đăng nhập để lưu cầu thủ yêu thích, bài viết và dùng LiverBird AI.",
+      "subtitle": "Đăng nhập để lưu cầu thủ yêu thích, bài viết và dùng Reds AI.",
       "email": "Địa chỉ Email",
       "password": "Mật khẩu",
       "button": "Đăng nhập",
@@ -1022,7 +1022,7 @@
     },
     "metadata": {
       "loginTitle": "Đăng nhập",
-      "loginDescription": "Đăng nhập {brand} để lưu cầu thủ yêu thích, bài viết đã lưu và dùng LiverBird AI.",
+      "loginDescription": "Đăng nhập {brand} để lưu cầu thủ yêu thích, bài viết đã lưu và dùng Reds AI.",
       "registerTitle": "Tạo tài khoản",
       "registerDescription": "Tạo tài khoản {brand} miễn phí để lưu cầu thủ yêu thích và bài viết."
     }
@@ -1207,17 +1207,17 @@
     "noConversations": "Chưa có cuộc trò chuyện nào. Bắt đầu trò chuyện mới!",
     "deleteConfirmTitle": "Xóa cuộc trò chuyện?",
     "widget": {
-      "open": "Mở chat LiverBird AI",
+      "open": "Mở chat Reds AI",
       "close": "Đóng chat",
       "openFull": "Mở chat toàn màn hình",
-      "dialog": "Chat LiverBird AI"
+      "dialog": "Chat Reds AI"
     },
     "deleteConfirmDescription": "Hành động này không thể hoàn tác. Tất cả tin nhắn trong cuộc trò chuyện này sẽ bị xóa vĩnh viễn.",
     "conversationGroups": {
       "older": "Cũ hơn"
     },
     "thread": {
-      "welcome": "LiverBird AI",
+      "welcome": "Reds AI",
       "welcomeSubtitle": "Trợ lý AI về Liverpool FC",
       "welcomeDescription": "Hỏi về kết quả, thống kê cầu thủ, tin chuyển nhượng, lịch sử CLB, chiến thuật và mọi thứ về The Reds. Câu trả lời do AI tạo và có thể sai, nên hãy kiểm tra lại thông tin quan trọng.",
       "scrollToBottom": "Cuộn xuống cuối",

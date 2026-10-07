@@ -59,7 +59,7 @@ export function MatchCentreNav({ active, season, counts, onSelectView, className
         className,
       )}
     >
-      <div ref={rowRef} role="group" aria-label={tTimeline("viewLabel")} className="scroll-x flex sm:-ml-6">
+      <div ref={rowRef} role="group" aria-label={tTimeline("viewLabel")} className="scroll-x scroll-x-fade flex sm:-ml-6">
         {TABS.map((tab) => {
           const isActive = tab === active;
           const count = tab === "fixtures" || tab === "results" ? counts?.[tab] : undefined;

@@ -651,6 +651,28 @@ html {
     display: none;
   }
 
+  /* Chip / tab rows that scroll sideways on phones: fade the right edge so the
+     clipped last item reads as "more this way", not as a rendering bug. The
+     trailing spacer keeps the final item clear of the fade at the end of the row. */
+  @media (max-width: 639px) {
+    .scroll-x-fade {
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+      mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent);
+    }
+    .scroll-x-fade::after {
+      content: "";
+      flex: 0 0 1.5rem;
+    }
+  }
+
+  /* Opponent crests are drawn for light backgrounds; dark ones (Tottenham navy,
+     Chelsea blue) vanish on the dark cards. A hairline light edge keeps every
+     crest legible without a backing tile. */
+  img[src*="crests"],
+  img[src*="espncdn"] {
+    filter: drop-shadow(0 0 1px rgb(255 255 255 / 0.7));
+  }
+
   /* Fixed floating controls keep clear of the iPhone home indicator. */
   .safe-bottom {
     bottom: var(--fab-base-bottom);

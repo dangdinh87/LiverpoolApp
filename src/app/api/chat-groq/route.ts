@@ -309,7 +309,7 @@ export async function POST(req: NextRequest) {
             if (!usedModel) {
               // Every model failed before answering: say so instead of a blank bubble.
               const apology =
-                'Xin lỗi, LiverBird AI đang quá tải — bạn thử lại sau ít phút nhé. / Sorry, LiverBird AI is overloaded right now — please try again in a few minutes.';
+                'Xin lỗi, Reds AI đang quá tải — bạn thử lại sau ít phút nhé. / Sorry, Reds AI is overloaded right now — please try again in a few minutes.';
               writer.write({ type: 'text-delta', id: messageId, delta: apology });
             } else if (usedModel !== selectedModel) {
               console.log(`[Chat API] Fell back from ${selectedModel} → ${usedModel}`);

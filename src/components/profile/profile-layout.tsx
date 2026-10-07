@@ -84,7 +84,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
         </header>
 
         {/* Tabs */}
-        <div role="tablist" aria-label={t("title")} className="scroll-x mt-4 flex gap-1 border-b border-[var(--line)]">
+        <div role="tablist" aria-label={t("title")} className="scroll-x scroll-x-fade mt-4 flex gap-1 border-b border-[var(--line)]">
           {tabs.map((tab) => (
             <button
               key={tab.id}

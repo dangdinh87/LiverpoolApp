@@ -52,7 +52,7 @@ export function HistoryNav({ items, ariaLabel }: HistoryNavProps) {
       className="sticky top-[var(--header-h)] z-30 border-b border-[var(--line)] bg-stadium-bg/90 backdrop-blur-md"
     >
       <div className="page-container">
-        <ul ref={stripRef} className="scroll-x flex gap-1 sm:gap-2">
+        <ul ref={stripRef} className="scroll-x scroll-x-fade flex gap-1 sm:gap-2">
           {items.map((item) => {
             const isActive = active === item.id;
             return (

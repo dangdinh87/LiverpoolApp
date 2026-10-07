@@ -313,7 +313,7 @@ export function GalleryContent({
           )}
         </div>
 
-        <div role="group" aria-label={t("hero.label")} className="scroll-x -mx-4 flex gap-2 px-4 sm:mx-0 sm:px-0">
+        <div role="group" aria-label={t("hero.label")} className="scroll-x scroll-x-fade -mx-4 flex gap-2 px-4 sm:mx-0 sm:px-0">
           {ALL_CATEGORIES.map((cat) => {
             const isActive = category === cat;
             const count = countFor(cat);

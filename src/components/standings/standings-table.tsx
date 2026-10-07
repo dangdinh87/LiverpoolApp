@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { TableProperties } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { Standing } from "@/lib/types/football";
@@ -107,13 +107,7 @@ export function StandingsTable({ standings, competition = "pl" }: StandingsTable
                   <td className={cn("sticky left-9 z-10 max-w-0 pl-1.5 pr-1 sm:left-10 sm:pl-2 py-2", rowBg)}>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="relative size-5 sm:size-6 shrink-0">
-                        <Image
-                          src={isLfc ? "/assets/lfc/crest.webp" : s.team.logo}
-                          alt=""
-                          fill
-                          sizes="24px"
-                          className="object-contain"
-                        />
+                        <TeamCrest src={isLfc ? "/assets/lfc/crest.webp" : s.team.logo} name={s.team.name} sizes="24px" />
                       </span>
                       <span className={cn("min-w-0 truncate", isLfc ? "font-bold text-white" : "text-white/85")} title={s.team.name}>
                         {/* Compact name on phones ("Man City" instead of "Manchester …"), full name from sm */}

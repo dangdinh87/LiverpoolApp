@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { Link } from "@/i18n/navigation";
 import { MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -53,7 +53,7 @@ function TeamSide({
       )}
     >
       <div className="relative size-10 shrink-0 sm:size-12">
-        {logo && <Image src={logo} alt="" fill sizes="48px" className="object-contain" />}
+        <TeamCrest src={logo} name={team.name} sizes="48px" />
       </div>
       <span
         className={cn(
@@ -119,10 +119,10 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
       {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
       {isNext && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-gold" />}
 
-      <div className="px-4 py-3.5 sm:px-6 sm:py-4">
+      <div className="px-4 py-3.5 sm:px-6 sm:py-4 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_13rem] lg:grid-rows-2 lg:items-center lg:gap-x-8 lg:gap-y-0.5">
         {/* Meta row: competition · round on the left, state badge on the right */}
-        <div className="mb-3 flex min-h-6 items-center justify-between gap-3">
-          <p className="flex min-w-0 items-center gap-2 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted">
+        <div className="mb-3 flex min-h-6 items-center justify-between gap-3 lg:contents">
+          <p className="flex min-w-0 items-center gap-2 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted lg:col-start-1 lg:row-start-1 lg:self-end">
             {comp && <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", comp.dot)} />}
             <span className="truncate">
               <span className="text-white/90">{comp?.short ?? league.name}</span>
@@ -130,7 +130,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
             </span>
           </p>
 
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2 lg:col-start-3 lg:row-start-1 lg:self-end lg:justify-self-end">
             {isLive && (
               <span className="inline-flex items-center gap-1.5 border border-lfc-red/50 bg-lfc-red/15 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white">
                 <span aria-hidden className="size-1.5 rounded-full bg-lfc-red animate-pulse" />
@@ -154,7 +154,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
         </div>
 
         {/* Teams + score/time: fixed centre column keeps both names readable at 390px */}
-        <div className="grid grid-cols-[minmax(0,1fr)_5.25rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:gap-4">
+        <div className="grid grid-cols-[minmax(0,1fr)_5.25rem_minmax(0,1fr)] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] sm:gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <TeamSide team={teams.home} align="home" />
 
           <div className="text-center">
@@ -183,10 +183,10 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
         </div>
 
         {/* Footer: date + venue */}
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted">
-          <span className="shrink-0">{dateStr}</span>
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted lg:contents">
+          <span className="shrink-0 lg:col-start-1 lg:row-start-2 lg:self-start">{dateStr}</span>
           {f.venue.name && (
-            <span className="flex min-w-0 items-center gap-1.5">
+            <span className="flex min-w-0 items-center gap-1.5 text-xs text-stadium-muted lg:col-start-3 lg:row-start-2 lg:self-start lg:justify-self-end">
               <MapPin size={12} aria-hidden className="shrink-0" />
               <span className="truncate">{f.venue.name}</span>
             </span>

@@ -31,7 +31,7 @@ export function FilterChips<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className={cn("scroll-x -mx-4 flex gap-2 px-4 sm:mx-0 sm:flex-wrap sm:px-0", className)}
+      className={cn("scroll-x scroll-x-fade -mx-4 flex gap-2 px-4 sm:mx-0 sm:flex-wrap sm:px-0", className)}
     >
       {options.map((o) => {
         const active = o.value === value;

@@ -225,7 +225,7 @@ export function ChatSidebar({
                             </Link>
                             <span aria-hidden className="text-stadium-muted">·</span>
                             <span className="font-bebas text-lg tracking-wide text-gradient-red">
-                                LiverBird AI
+                                Reds AI
                             </span>
                         </div>
                     </div>

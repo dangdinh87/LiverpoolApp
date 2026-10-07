@@ -95,7 +95,7 @@ export function SquadGrid({ players }: SquadGridProps) {
           aria-label={t("positionsLabel")}
           className="sticky top-[var(--header-h)] z-30 -mx-4 mt-4 border-b border-[var(--line)] bg-stadium-bg/90 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         >
-          <ul ref={chipsRef} className="scroll-x flex gap-1.5 sm:gap-2">
+          <ul ref={chipsRef} className="scroll-x scroll-x-fade flex gap-1.5 sm:gap-2">
             {groups.map(({ pos, items }) => {
               const isActive = active === pos;
               return (

@@ -349,12 +349,12 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
           {/* AI chat: pill on desktop; on phones it lives in the menu sheet */}
           <Link
             href="/chat"
-            aria-label="LiverBird AI"
+            aria-label="Reds AI"
             className="ai-btn group relative hidden lg:flex items-center gap-1.5 min-h-11 min-w-11 justify-center whitespace-nowrap px-3 2xl:px-4 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider"
           >
             <Bird size={16} className="relative z-1 text-white" aria-hidden />
             {/* Label from 2xl; icon-only below so the row fits the page container */}
-            <span className="ai-btn-text hidden 2xl:inline">LiverBird AI</span>
+            <span className="ai-btn-text hidden 2xl:inline">Reds AI</span>
             <span className="ai-btn-shimmer" />
           </Link>
           <LanguageSwitcher />
@@ -489,7 +489,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                       className="flex min-h-12 items-center justify-center gap-2 border border-lfc-red/40 bg-lfc-red/10 font-barlow font-bold uppercase tracking-[0.12em] text-white"
                     >
                       <Bird size={18} aria-hidden />
-                      LiverBird AI
+                      Reds AI
                     </Link>
                   </SheetClose>
                   <LanguageSwitcher variant="segmented" />

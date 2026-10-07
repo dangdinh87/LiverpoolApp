@@ -8,7 +8,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { ChatViewportSync } from "@/components/chat/use-visual-viewport";
 
 export const metadata: Metadata = {
-  title: "LiverBird AI — Liverpool FC Chat Assistant",
+  title: "Reds AI — Liverpool fan chat assistant",
   robots: { index: false, follow: false },
 };
 

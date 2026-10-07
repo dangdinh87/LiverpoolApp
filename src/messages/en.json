@@ -770,7 +770,7 @@
         "news": "Quick news: headline, short excerpt and a link to the original. A daily digest drafted by AI.",
         "history": "Club history, trophy cabinet, legends and Anfield.",
         "profile": "An optional account to save favourite players and articles.",
-        "ai": "LiverBird AI: ask questions about Liverpool, sign-in required. Answers are AI-generated and can be wrong.",
+        "ai": "Reds AI: ask questions about Liverpool, sign-in required. Answers are AI-generated and can be wrong.",
         "i18n": "Available in English and Vietnamese."
       },
       "dataTitle": "Data sources",
@@ -805,7 +805,7 @@
     },
     "ai": {
       "title": "AI on {brand}",
-      "body": "LiverBird AI (chat), translation of news excerpts and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
+      "body": "Reds AI (chat), translation of news excerpts and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
     }
   },
   "Standings": {
@@ -976,7 +976,7 @@
   "Auth": {
     "login": {
       "title": "Welcome Back",
-      "subtitle": "Sign in to save favourite players and articles and use LiverBird AI.",
+      "subtitle": "Sign in to save favourite players and articles and use Reds AI.",
       "email": "Email Address",
       "password": "Password",
       "button": "Sign In",
@@ -1022,7 +1022,7 @@
     },
     "metadata": {
       "loginTitle": "Sign in",
-      "loginDescription": "Sign in to {brand} to save favourite players and articles and use LiverBird AI.",
+      "loginDescription": "Sign in to {brand} to save favourite players and articles and use Reds AI.",
       "registerTitle": "Create account",
       "registerDescription": "Create a free {brand} account to save favourite players and articles."
     }
@@ -1207,17 +1207,17 @@
     "noConversations": "No conversations yet. Start a new chat!",
     "deleteConfirmTitle": "Delete conversation?",
     "widget": {
-      "open": "Open LiverBird AI chat",
+      "open": "Open Reds AI chat",
       "close": "Close chat",
       "openFull": "Open full chat",
-      "dialog": "LiverBird AI chat"
+      "dialog": "Reds AI chat"
     },
     "deleteConfirmDescription": "This action cannot be undone. All messages in this conversation will be permanently deleted.",
     "conversationGroups": {
       "older": "Older"
     },
     "thread": {
-      "welcome": "LiverBird AI",
+      "welcome": "Reds AI",
       "welcomeSubtitle": "An AI assistant for Liverpool FC",
       "welcomeDescription": "Ask about results, player stats, transfer news, club history, tactics and anything Red. Answers are written by AI and can be wrong, so double-check anything important.",
       "scrollToBottom": "Scroll to bottom",

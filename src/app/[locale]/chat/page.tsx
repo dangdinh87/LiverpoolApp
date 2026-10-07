@@ -34,7 +34,7 @@ export default function ChatPage() {
 					</span>
 					<div className="text-center">
 						<h1 className="font-bebas text-3xl tracking-wide text-gradient-red">
-							LiverBird AI
+							Reds AI
 						</h1>
 						<p className="text-sm text-muted-foreground mt-1 max-w-md" suppressHydrationWarning>
 							{t("chat.subtitle")}

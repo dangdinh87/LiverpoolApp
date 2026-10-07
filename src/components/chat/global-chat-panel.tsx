@@ -209,7 +209,7 @@ function GlobalChatPanelContent({
 			>
 				{/* Header */}
 				<div className="flex items-center gap-2 px-3 py-2.5 border-b border-stadium-border bg-stadium-surface/50 rounded-t-2xl max-sm:rounded-t-none pt-[max(0.625rem,env(safe-area-inset-top))] shrink-0">
-					<span className="font-barlow font-semibold text-sm uppercase tracking-[0.12em] text-gradient-red shrink-0">LiverBird AI</span>
+					<span className="font-barlow font-semibold text-sm uppercase tracking-[0.12em] text-gradient-red shrink-0">Reds AI</span>
 
 					<div className="flex-1 min-w-0">
 						<ConversationSelector
