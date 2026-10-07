@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { collectProblems, formatProblems } from "./support/page-diagnostics";
+import { anchorTo } from "./support/localized-link-selector";
 
 /**
  * Interactive behaviour, not just first paint. These are the features most
@@ -10,7 +11,7 @@ test.describe("interactive features", () => {
     const problems = collectProblems(page);
     await page.goto("/squad");
 
-    const cards = page.locator("a[href^='/player/']");
+    const cards = page.locator(anchorTo("/player/"));
     await expect(cards.first()).toBeVisible();
     expect(await cards.count(), "squad should list players").toBeGreaterThan(0);
 
@@ -28,7 +29,7 @@ test.describe("interactive features", () => {
     const problems = collectProblems(page);
     await page.goto("/squad");
 
-    const first = page.locator("a[href^='/player/']").first();
+    const first = page.locator(anchorTo("/player/")).first();
     await expect(first).toBeVisible();
     await first.click();
 
@@ -59,7 +60,7 @@ test.describe("interactive features", () => {
 
   test("news feed lists articles and opens one", async ({ page }) => {
     await page.goto("/news");
-    const articleLinks = page.locator("a[href^='/news/']");
+    const articleLinks = page.locator(anchorTo("/news/"));
     const count = await articleLinks.count();
     // With the database unavailable the feed may legitimately be empty; only
     // assert navigation when there is something to click.

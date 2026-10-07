@@ -25,6 +25,17 @@ function ignored(text: string): boolean {
   return IGNORED.some((re) => re.test(text));
 }
 
+/** Whether a URL is served by the app under test rather than a third party. */
+function isOwnOrigin(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+  } catch {
+    // Non-HTTP schemes (data:, blob:) come from our own page.
+    return true;
+  }
+}
+
 /**
  * Attach listeners that record browser-side failures for the lifetime of a page.
  *
@@ -49,8 +60,14 @@ export function collectProblems(page: Page): PageProblem[] {
   });
 
   page.on("requestfailed", (req: Request) => {
-    const detail = `${req.method()} ${req.url()} — ${req.failure()?.errorText ?? "failed"}`;
+    const url = req.url();
+    const detail = `${req.method()} ${url} — ${req.failure()?.errorText ?? "failed"}`;
     if (ignored(detail)) return;
+    // Same boundary as the 4xx rule below: a request we serve failing is our
+    // bug, a remote host refusing us is not. News outlets hotlink-block and
+    // rate-limit their image CDNs (ORB, 403, DNS), which no change here can fix
+    // and which must not gate a build.
+    if (!isOwnOrigin(url)) return;
     problems.push({ kind: "requestfailed", detail });
   });
 

@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext } from "@playwright/test";
+import { waitForHeader } from "./support/wait-for-header";
 
 /**
  * The app shell: mobile menu, language switch, skip link and keyboard order.
@@ -134,7 +135,7 @@ test.describe("bottom tab bar", () => {
   test("desktop: no bottom bar", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "desktop only");
     await page.goto("/about", { waitUntil: "domcontentloaded" });
-    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await waitForHeader(page);
     await expect(page.getByRole("navigation", { name: "Quick navigation" })).toBeHidden();
   });
 });
@@ -152,13 +153,15 @@ test.describe("desktop header", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
     // The effect that listens for Esc is attached after hydration; retry the
-    // open/close pair until the listener is live instead of sleeping.
+    // open/close pair until the listener is live instead of sleeping. The budget
+    // is generous because the suite runs several workers against one local
+    // server, which can push hydration well past a quiet-machine timing.
     await expect(async () => {
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
       await page.keyboard.press("Escape");
-      await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: 1_000 });
-    }).toPass({ timeout: 15_000 });
+      await expect(toggle).toHaveAttribute("aria-expanded", "false", { timeout: 2_000 });
+    }).toPass({ timeout: 40_000 });
     await expect(toggle).toBeFocused();
 
     await toggle.click();
@@ -176,7 +179,7 @@ test.describe("desktop header", () => {
 
   test("skip link is the first tab stop and moves focus to the main landmark", async ({ page }) => {
     await page.goto("/about", { waitUntil: "domcontentloaded" });
-    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await waitForHeader(page);
 
     await page.keyboard.press("Tab");
     const skip = page.getByRole("link", { name: "Skip to content" });
@@ -189,7 +192,7 @@ test.describe("desktop header", () => {
 
   test("Tab order runs header -> main -> footer with no trap", async ({ page }) => {
     await page.goto("/about", { waitUntil: "domcontentloaded" });
-    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await waitForHeader(page);
 
     const regions: string[] = [];
     for (let i = 0; i < 90; i++) {

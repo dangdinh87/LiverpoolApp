@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { collectProblems, formatProblems } from "./support/page-diagnostics";
+import { waitForHeader } from "./support/wait-for-header";
 
 /** The primary navigation must actually move between sections. */
 test.describe("navigation", () => {
@@ -8,12 +9,13 @@ test.describe("navigation", () => {
     await page.goto("/");
     // The navbar streams in behind a Suspense boundary (it awaits the auth
     // session), so it is not in the initial shell.
-    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await waitForHeader(page);
 
     // Follow whichever primary links this build exposes, rather than hard-coding
-    // labels that differ per locale.
+    // labels that differ per locale. Matched by suffix because hrefs carry the
+    // locale: "/squad" on Vietnamese pages, "/en/squad" on English ones.
     for (const href of ["/squad", "/fixtures", "/standings", "/news"]) {
-      const link = page.locator(`a[href="${href}"]:visible`).first();
+      const link = page.locator(`a[href$="${href}"]:visible`).first();
       // Narrow viewports collapse these links into a menu; navigate directly
       // there rather than asserting on a control that is intentionally hidden.
       if ((await link.count()) === 0) {

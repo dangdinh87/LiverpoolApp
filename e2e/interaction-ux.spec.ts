@@ -1,4 +1,5 @@
 import { test, expect, type BrowserContext } from "@playwright/test";
+import { waitForHeader } from "./support/wait-for-header";
 
 /**
  * Interaction behaviour of the rebuilt pages. Assertions are structural
@@ -151,7 +152,7 @@ test.describe("chat widget", () => {
     test.skip(testInfo.project.name !== "desktop", "signed-out behaviour is viewport independent");
     await page.goto("/", { waitUntil: "domcontentloaded" });
     // Let the header's auth check settle (it decides whether the widget shows).
-    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await waitForHeader(page);
     await page.waitForLoadState("load");
     await expect(page.getByRole("button", { name: /open liverbird ai chat/i })).toHaveCount(0);
 
@@ -173,7 +174,7 @@ test.describe("reduced motion", () => {
       await setLocale(context, baseURL, "en");
       const page = await context.newPage();
       await page.goto("/about", { waitUntil: "load" });
-      await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+      await waitForHeader(page);
       await page.waitForTimeout(600); // let entry animations finish or loop
       const out = await page.evaluate(() => {
         const animations = document.getAnimations().filter((a) => a.playState === "running");
