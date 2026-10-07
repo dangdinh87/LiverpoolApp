@@ -57,3 +57,8 @@ next-env.d.ts
 
 # per-agent build dirs (NEXT_DIST_DIR)
 .build-*
+
+# Playwright output
+/test-results/
+/playwright-report/
+/blob-report/
