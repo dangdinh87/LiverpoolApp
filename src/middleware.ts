@@ -81,6 +81,6 @@ export const config = {
   // never got rewritten to /vi/news/... and 404'd. Matching a known extension
   // list instead of "contains a dot" fixes that.
   matcher: [
-    "/((?!api|auth/callback|_next|_vercel|opengraph-image|google583c5c945cf216b2\\.html|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|json|xml|txt|docx|woff2?|ttf|map)$).*)",
+    "/((?!api|auth/callback|_next|_vercel|opengraph-image|google583c5c945cf216b2\\.html|.*\\.(?:ico|png|jpe?g|gif|svg|webp|avif|css|js|json|xml|txt|docx|webmanifest|woff2?|ttf|map)$).*)",
   ],
 };

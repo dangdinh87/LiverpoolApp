@@ -1,18 +1,15 @@
+import { Fragment } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  Facebook,
-  Instagram,
-  Twitter,
-  Youtube,
-  Linkedin,
-} from "lucide-react";
-import { useTranslations } from "next-intl";
-import { NewsSourceMarquee } from "./news-source-marquee";
+import { Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { BRAND, brandTagline } from "@/lib/brand";
+import { SOURCE_CONFIG } from "@/lib/news-config";
+import type { NewsSource } from "@/lib/news-config";
+import { BrandWordmark } from "./brand-wordmark";
 
 /* ── Data ────────────────────────────────────────────────────────── */
 
-
+/** The club's own channels (not ours): the footer says so next to them. */
 const SOCIAL_LINKS = [
   { Icon: Facebook, href: "https://facebook.com/LiverpoolFC", label: "Facebook" },
   { Icon: Instagram, href: "https://instagram.com/liverpoolfc", label: "Instagram" },
@@ -20,6 +17,12 @@ const SOCIAL_LINKS = [
   { Icon: Youtube, href: "https://youtube.com/liverpoolfc", label: "YouTube" },
   { Icon: Linkedin, href: "https://linkedin.com/company/liverpool-football-club", label: "LinkedIn" },
 ] as const;
+
+/** Outlets the news feed reads from, Vietnamese first. Names come from the shared source table. */
+const SOURCE_IDS: NewsSource[] = [
+  "vnexpress", "tuoitre", "thanhnien", "dantri", "zingnews", "vietnamnet", "bongda", "bongdaplus", "24h",
+  "bongda24h", "soha", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky", "goal", "lfc",
+];
 
 /* ── TikTok icon (not in lucide-react) ───────────────────────────── */
 
@@ -44,60 +47,51 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
 /* ── Footer ──────────────────────────────────────────────────────── */
 
 const LINK =
-  "inline-flex min-h-10 min-w-10 items-center text-sm font-inter text-stadium-muted hover:text-white transition-colors";
+  "inline-flex min-h-11 min-w-11 items-center text-sm font-inter text-stadium-muted hover:text-white transition-colors";
+// 44px squares, 12px apart: comfortable for thumbs.
 const SOCIAL =
-  "tap-target size-9 flex items-center justify-center border border-[var(--line)] text-stadium-muted hover:text-white hover:border-lfc-red hover:bg-lfc-red/20 transition-colors";
+  "size-11 flex items-center justify-center border border-[var(--line)] text-stadium-muted hover:text-white hover:border-lfc-red hover:bg-lfc-red/20 transition-colors";
 
 export function Footer() {
   const t = useTranslations("Footer");
   const navT = useTranslations("Common.nav");
+  const locale = useLocale();
 
-  const QUICK_LINKS = [
+  // One list per column; no link appears twice (standings and stats live under "Trận đấu").
+  const EXPLORE_LINKS = [
+    { href: "/fixtures", label: navT("season") },
     { href: "/squad", label: navT("squad") },
-    { href: "/season", label: navT("season") },
-    { href: "/season?tab=standings", label: navT("standings") },
-    { href: "/season?tab=stats", label: navT("stats") },
     { href: "/news", label: navT("news") },
-    { href: "/history", label: navT("history") },
+    { href: "/history", label: t("club") },
+    { href: "/gallery", label: navT("clubGallery") },
   ] as const;
-  const LEGAL = [
-    { href: "/legal", label: t("legalLinks.privacy") },
-    { href: "/legal", label: t("legalLinks.terms") },
-    { href: "/about", label: t("legalLinks.about") },
+  const INFO_LINKS = [
+    { href: "/about", label: navT("about") },
+    { href: "/legal", label: t("legal") },
   ] as const;
 
   return (
     <footer className="relative mt-16">
       <div className="h-px bg-linear-to-r from-transparent via-lfc-red/40 to-transparent" />
 
-      <NewsSourceMarquee />
-
       <div className="bg-stadium-surface">
         <div className="page-container py-8 sm:py-10">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-[1.4fr_1fr_1fr]">
-            {/* Brand: full width on phones */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-[1.6fr_1fr_1fr]">
+            {/* Brand + the unofficial-site notice: full width on phones */}
             <div className="col-span-2 sm:col-span-1">
-              <Link href="/" className="inline-flex items-center gap-2.5 min-h-10 mb-2" aria-label="LFCVN">
-                <Image src="/assets/lfc/crest.webp" alt="" width={28} height={35} className="h-9 w-auto" />
-                <span className="font-barlow font-bold uppercase text-base text-white tracking-[0.2em]">LFCVN</span>
+              <Link href="/" className="inline-flex min-h-11 items-center text-white" aria-label={BRAND.name}>
+                <BrandWordmark className="h-7" />
               </Link>
-              <p className="font-inter text-sm text-stadium-muted leading-relaxed mb-4 max-w-sm">{t("about")}</p>
-              <div className="flex flex-wrap items-center gap-2">
-                {SOCIAL_LINKS.map(({ Icon, href, label }) => (
-                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={SOCIAL}>
-                    <Icon size={16} aria-hidden />
-                  </a>
-                ))}
-                <a href="https://tiktok.com/@liverpoolfc" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className={SOCIAL}>
-                  <TikTokIcon size={16} />
-                </a>
-              </div>
+              <p className="mt-2 max-w-sm font-inter text-sm leading-relaxed text-stadium-muted">{brandTagline(locale)}</p>
+              <p className="mt-4 max-w-sm border-l-2 border-lfc-red pl-3 font-inter text-sm leading-relaxed text-white/85">
+                {t("disclaimer")}
+              </p>
             </div>
 
             <nav aria-label={t("quickLinks")}>
-              <h2 className="section-label text-white mb-2">{t("quickLinks")}</h2>
+              <h2 className="section-label mb-1 text-white">{t("quickLinks")}</h2>
               <ul>
-                {QUICK_LINKS.map(({ href, label }) => (
+                {EXPLORE_LINKS.map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} className={LINK}>{label}</Link>
                   </li>
@@ -105,34 +99,61 @@ export function Footer() {
               </ul>
             </nav>
 
-            <div>
-              <h2 className="section-label text-white mb-2">{t("legal")}</h2>
+            <nav aria-label={t("info")}>
+              <h2 className="section-label mb-1 text-white">{t("info")}</h2>
               <ul>
-                {LEGAL.map(({ href, label }) => (
-                  <li key={label}>
+                {INFO_LINKS.map(({ href, label }) => (
+                  <li key={href}>
                     <Link href={href} className={LINK}>{label}</Link>
                   </li>
                 ))}
               </ul>
-            </div>
+            </nav>
 
             <div className="col-span-2 sm:col-span-3">
-              <h2 className="section-label text-white mb-2">{t("contact")}</h2>
-              <a href="mailto:nguyendangdinh47@gmail.com" className={LINK}>
-                nguyendangdinh47@gmail.com
-              </a>
+              <h2 className="section-label mb-1 text-white">{t("newsSources")}</h2>
+              <p className="max-w-3xl font-inter text-sm leading-relaxed text-stadium-muted">
+                {/* Names never break across lines ("Liverpool Echo" stays together). */}
+                {SOURCE_IDS.map((id, i) => (
+                  <Fragment key={id}>
+                    {i > 0 && " · "}
+                    <span className="whitespace-nowrap">{SOURCE_CONFIG[id].label}</span>
+                  </Fragment>
+                ))}
+              </p>
+            </div>
+
+            <div className="col-span-2 sm:col-span-3 flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="section-label mb-2 text-white">{t("socialLabel")}</h2>
+                <div className="flex flex-wrap items-center gap-3">
+                  {SOCIAL_LINKS.map(({ Icon, href, label }) => (
+                    <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={SOCIAL}>
+                      <Icon size={18} aria-hidden />
+                    </a>
+                  ))}
+                  <a href="https://tiktok.com/@liverpoolfc" target="_blank" rel="noopener noreferrer" aria-label="TikTok" className={SOCIAL}>
+                    <TikTokIcon size={18} />
+                  </a>
+                </div>
+              </div>
+              <div>
+                <h2 className="section-label mb-1 text-white">{t("contact")}</h2>
+                <a href={`mailto:${BRAND.contactEmail}`} className={LINK}>
+                  {BRAND.contactEmail}
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="bg-[#0a0a0a] border-t border-[var(--line)]">
-        <div className="page-container pt-4 pb-24 lg:pb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="page-container pt-4 pb-safe-nav flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-bebas text-lg text-brand tracking-widest">{t("ynwa")}</p>
-          <div className="text-stadium-muted text-xs font-inter sm:text-right">
-            <p>&copy; {new Date().getFullYear()} {t("rights")}</p>
-            <p>{t("disclaimer")}</p>
-          </div>
+          <p className="text-stadium-muted text-xs font-inter sm:text-right">
+            &copy; {new Date().getFullYear()} {BRAND.name}. {t("rights")}
+          </p>
         </div>
       </div>
     </footer>

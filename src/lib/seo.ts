@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { BRAND } from "./brand";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-const SITE_NAME = "Liverpool FC Việt Nam";
+const SITE_NAME = BRAND.name;
 
 /**
  * Site-wide share image: the generated 1200×630 card at app/opengraph-image.tsx.
@@ -26,7 +27,7 @@ const PUBLISHER = {
   url: SITE_URL,
   logo: {
     "@type": "ImageObject" as const,
-    url: `${SITE_URL}/assets/lfc/crest.webp`,
+    url: `${SITE_URL}${BRAND.assets.icon512}`,
   },
 };
 

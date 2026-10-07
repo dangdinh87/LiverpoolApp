@@ -1,18 +1,23 @@
+import { BRAND } from "@/lib/brand";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
+// The site is an unofficial fan hub: its own entity carries our mark and no
+// official club profiles (sameAs would claim they are ours). The club appears
+// only as the subject of the SportsTeam entity.
 const jsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Liverpool FC Việt Nam",
-    alternateName: ["Liverpool FC VN", "LFC Việt Nam", "Liverpool FC Fan Site"],
+    name: BRAND.name,
+    alternateName: ["Fan Liverpool Việt Nam", "LFC Việt Nam"],
     url: SITE_URL,
-    description: "Trang fan Liverpool FC Việt Nam — Tin tức, đội hình, lịch thi đấu, bảng xếp hạng Ngoại hạng Anh và lịch sử CLB.",
+    description: BRAND.description.vi,
     inLanguage: ["vi", "en"],
     publisher: {
       "@type": "Organization",
-      name: "Liverpool FC Việt Nam Fan Site",
-      logo: `${SITE_URL}/assets/lfc/crest.webp`,
+      name: BRAND.name,
+      logo: `${SITE_URL}${BRAND.assets.icon512}`,
     },
   },
   {
@@ -28,20 +33,13 @@ const jsonLd = [
       name: "Anfield",
       address: { "@type": "PostalAddress", addressLocality: "Liverpool", addressCountry: "GB" },
     },
-    logo: `${SITE_URL}/assets/lfc/crest.webp`,
   },
   {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Liverpool FC Việt Nam Fan Site",
+    name: BRAND.name,
     url: SITE_URL,
-    logo: `${SITE_URL}/assets/lfc/crest.webp`,
-    sameAs: [
-      "https://www.facebook.com/LiverpoolFC",
-      "https://twitter.com/LFC",
-      "https://www.instagram.com/liverpoolfc",
-      "https://www.youtube.com/liverpoolfc",
-    ],
+    logo: `${SITE_URL}${BRAND.assets.icon512}`,
   },
 ];
 

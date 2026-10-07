@@ -55,9 +55,12 @@ test.describe("mobile menu", () => {
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
 
+    // Below md the bottom tab bar holds the main sections, so the menu lists
+    // only the secondary pages (History, Gallery, About, Legal).
     await trigger.click();
-    await dialog.getByRole("link", { name: /^squad$/i }).click();
-    await expect(page).toHaveURL(/\/squad$/);
+    await expect(dialog.getByRole("link", { name: /^squad$/i })).toHaveCount(0);
+    await dialog.getByRole("link", { name: /^gallery$/i }).click();
+    await expect(page).toHaveURL(/\/gallery$/);
     // The sheet must not stay open over the new page.
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
@@ -78,6 +81,61 @@ test.describe("mobile menu", () => {
     expect(cookies.find((c) => c.name === "NEXT_LOCALE")?.value).toBe("vi");
     // The menu trigger is now labelled in Vietnamese.
     await expect(page.getByRole("button", { name: "Mở menu" })).toBeVisible({ timeout: 20_000 });
+  });
+});
+
+test.describe("bottom tab bar", () => {
+  test.beforeEach(async ({ context, baseURL }) => {
+    await setLocale(context, baseURL, "en");
+  });
+
+  test("phone: four section tabs plus More, big touch targets, current page marked", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "the bar only exists below the md breakpoint");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
+    const bar = page.getByRole("navigation", { name: "Quick navigation" });
+    await expect(bar).toBeVisible({ timeout: 20_000 });
+
+    for (const name of ["Home", "Matches", "News", "Squad"]) {
+      const tab = bar.getByRole("link", { name });
+      const box = await tab.boundingBox();
+      expect(box?.height, `${name} tab height`).toBeGreaterThanOrEqual(44);
+      expect(box?.width, `${name} tab width`).toBeGreaterThanOrEqual(44);
+    }
+    const barBox = await bar.boundingBox();
+    expect(barBox?.height, "bar height").toBeGreaterThanOrEqual(56);
+
+    // /about is a secondary page: no section tab is current, "More" is highlighted instead.
+    await expect(bar.locator("[aria-current='page']")).toHaveCount(0);
+
+    await bar.getByRole("link", { name: "Squad" }).click();
+    await expect(page).toHaveURL(/\/squad$/);
+    await expect(bar.getByRole("link", { name: "Squad" })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("phone: More opens the menu sheet and Esc returns focus to the More tab", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "mobile", "the bar only exists below the md breakpoint");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
+    // The sheet mounts after hydration; wait for the hamburger to become the Radix trigger.
+    await expect(page.getByRole("button", { name: "Open menu" })).toHaveAttribute("aria-haspopup", "dialog", {
+      timeout: 20_000,
+    });
+
+    const more = page.getByRole("navigation", { name: "Quick navigation" }).getByRole("button", { name: "More" });
+    await more.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /^gallery$/i })).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(more).toBeFocused();
+  });
+
+  test("desktop: no bottom bar", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "desktop only");
+    await page.goto("/about", { waitUntil: "domcontentloaded" });
+    await page.locator("header a[href='/']").first().waitFor({ timeout: 20_000 });
+    await expect(page.getByRole("navigation", { name: "Quick navigation" })).toBeHidden();
   });
 });
 

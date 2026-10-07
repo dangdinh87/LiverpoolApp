@@ -1,35 +1,25 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Liverpool FC Việt Nam",
-    short_name: "LFC VN",
-    description:
-      "Tin tức Liverpool FC, lịch thi đấu, đội hình, bảng xếp hạng và thống kê cho cộng đồng fan Việt Nam.",
+    name: `${BRAND.name} — Fan Liverpool Việt Nam`,
+    short_name: BRAND.name,
+    description: BRAND.description.vi,
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#0b0b0d",
-    theme_color: "#c8102e",
+    background_color: "#0d0d0d",
+    theme_color: BRAND.red,
     lang: "vi",
-    categories: ["sports", "news"],
+    categories: ["sports"],
+    // The own mark only (red square, white L): the club crest is not our logo.
+    // The L sits inside the maskable safe zone, so one file serves both purposes.
     icons: [
-      {
-        src: "/favicon-32x32.png",
-        sizes: "32x32",
-        type: "image/png",
-      },
-      {
-        src: "/apple-touch-icon.png",
-        sizes: "180x180",
-        type: "image/png",
-      },
-      {
-        src: "/assets/lfc/crest.webp",
-        sizes: "512x512",
-        type: "image/webp",
-        purpose: "any",
-      },
+      { src: BRAND.assets.favicon32, sizes: "32x32", type: "image/png" },
+      { src: BRAND.assets.icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: BRAND.assets.icon512, sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: BRAND.assets.icon512, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

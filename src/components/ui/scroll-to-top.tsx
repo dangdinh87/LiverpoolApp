@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Floating "back to top". Sits above the chat button (GlobalChat publishes
- * --fab-offset) and clear of the iOS home indicator. Always mounted so the
+ * --fab-offset) and clear of the iOS home indicator and the phone bottom bar. Always mounted so the
  * fade is a pure CSS transition; hidden from tab order/AT while invisible.
  */
 export function ScrollToTop() {
@@ -35,7 +35,8 @@ export function ScrollToTop() {
       )}
       style={{
         right: "max(1.625rem, env(safe-area-inset-right))",
-        bottom: "calc(max(1.25rem, env(safe-area-inset-bottom)) + var(--fab-offset, 0px))",
+        // --fab-base-bottom already clears the phone bottom tab bar (globals.css).
+        bottom: "calc(var(--fab-base-bottom, 1.25rem) + var(--fab-offset, 0px))",
       }}
     >
       <ArrowUp className="size-5" aria-hidden />

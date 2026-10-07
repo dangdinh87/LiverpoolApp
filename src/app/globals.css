@@ -468,10 +468,26 @@
      scroll, so there is no layout shift). --navbar-h is the legacy alias. */
   --header-h: 3.5rem;
   --navbar-h: var(--header-h);
+
+  /* Phone bottom tab bar (< 768px, see bottom-nav.tsx).
+     --bottom-nav-h is the bar itself; --bottom-nav-offset is everything it takes
+     from the bottom of the viewport (bar + home-indicator inset), 0 where there
+     is no bar. Anything fixed to the bottom edge, and the end of the page, must
+     clear --bottom-nav-offset. */
+  --bottom-nav-h: 3.5rem;
+  --bottom-nav-offset: 0px;
+  /* Resting `bottom` of floating buttons (chat, scroll-to-top). */
+  --fab-base-bottom: max(1.25rem, env(safe-area-inset-bottom));
 }
 @media (min-width: 1024px) {
   :root {
     --header-h: 4rem;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --bottom-nav-offset: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+    --fab-base-bottom: calc(var(--bottom-nav-offset) + 1rem);
   }
 }
 
@@ -500,6 +516,12 @@ html {
   view-transition-name: site-header;
 }
 ::view-transition-group(site-header) {
+  animation-duration: 0s;
+}
+.bottom-nav {
+  view-transition-name: bottom-nav;
+}
+::view-transition-group(bottom-nav) {
   animation-duration: 0s;
 }
 
@@ -631,10 +653,22 @@ html {
 
   /* Fixed floating controls keep clear of the iPhone home indicator. */
   .safe-bottom {
-    bottom: max(1.25rem, env(safe-area-inset-bottom));
+    bottom: var(--fab-base-bottom);
   }
   .safe-right {
     right: max(1.25rem, env(safe-area-inset-right));
+  }
+
+  /* Last block of the page: keeps content clear of the bottom tab bar and of
+     the floating chat button (56px + 16px gap). Desktop has neither a bar nor
+     much need for the extra room. */
+  .pb-safe-nav {
+    padding-bottom: calc(var(--bottom-nav-offset) + 4.5rem);
+  }
+  @media (min-width: 1024px) {
+    .pb-safe-nav {
+      padding-bottom: 1rem;
+    }
   }
 
   /* Minimum comfortable touch target without changing visual size. The
@@ -655,30 +689,12 @@ html {
    overlay) and the page behind can still scroll on touch devices. */
 html:has(.chat-shell) {
   overflow: hidden;
+  --bottom-nav-offset: 0px;
 }
 body:has(.chat-shell) .site-header,
+body:has(.chat-shell) .bottom-nav,
 body:has(.chat-shell) > footer {
   visibility: hidden;
-}
-
-/* Footer news-source marquee (see news-source-marquee.tsx). */
-.news-marquee-track {
-  animation: news-marquee 90s linear infinite;
-}
-.news-marquee:hover .news-marquee-track,
-.news-marquee:focus-within .news-marquee-track {
-  animation-play-state: paused;
-}
-@keyframes news-marquee {
-  to { transform: translateX(-50%); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .news-marquee {
-    overflow-x: auto;
-  }
-  .news-marquee-track {
-    animation: none !important;
-  }
 }
 
 @keyframes reveal {

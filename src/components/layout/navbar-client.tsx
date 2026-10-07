@@ -10,7 +10,11 @@ import Image from "next/image";
 import { usePathname } from "@/i18n/navigation";
 import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { BRAND } from "@/lib/brand";
+import { BrandWordmark } from "./brand-wordmark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { MATCH_PATHS, SQUAD_PATHS, isActiveAny, isActivePath } from "./nav-items";
+import { useMenuStore } from "./menu-store";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,16 +44,12 @@ interface NavbarClientProps {
   isMatchLive?: boolean;
 }
 
-/** Active when on the page itself or any child route ("/" only matches exactly). */
-const isActivePath = (pathname: string, base: string) =>
-  base === "/" ? pathname === "/" : pathname === base || pathname.startsWith(base + "/");
-
 const DESKTOP_LINK =
   // whitespace-nowrap: Vietnamese labels ("Trang chủ", "Tin tức") are two words and
   // wrapped onto two lines at 1440px. Padding/tracking only widen at 2xl: at xl (1280) the
   // Vietnamese row was 1174px wide inside the 1088px page container, so the right-hand
   // group ran 86px past the container (and 1px past the viewport at 1024).
-  "relative inline-flex min-h-10 items-center whitespace-nowrap px-1.5 xl:px-2 2xl:px-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] 2xl:tracking-[0.12em] transition-colors";
+  "relative inline-flex min-h-11 items-center whitespace-nowrap px-1.5 xl:px-2 2xl:px-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] 2xl:tracking-[0.12em] transition-colors";
 
 function ActiveBar() {
   return <span aria-hidden className="absolute inset-x-3 bottom-1 h-0.5 bg-lfc-red" />;
@@ -58,7 +58,9 @@ function ActiveBar() {
 export function NavbarClient({ user: initialUser, profile: initialProfile, nextMatchDate, isMatchLive }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Shared with the "Thêm" tab of the bottom bar (see menu-store.ts).
+  const menuOpen = useMenuStore((st) => st.open);
+  const setMenuOpen = useMenuStore((st) => st.setOpen);
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
   // Hover-to-open with a short grace period: the menu content is portalled, so
   // moving from the trigger to the menu briefly leaves both elements.
@@ -181,20 +183,25 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   const doLogout = () => startTransition(() => logout());
   const displayName = profile?.username ?? user?.email?.split("@")[0] ?? t("profile");
 
+  // "Trận đấu" groups the season hub, fixtures, standings and stats, so none of
+  // those needs its own top-level link.
   const mainLinks = [
-    { href: "/", label: t("home") },
-    { href: "/news", label: t("news"), hot: true },
-    { href: "/squad", label: t("squad") },
-    { href: "/season", label: t("season"), soon: matchStartsSoon },
-    { href: "/stats", label: t("stats") },
+    { href: "/", label: t("home"), paths: ["/"] as readonly string[] },
+    { href: "/fixtures", label: t("season"), paths: MATCH_PATHS as readonly string[], soon: matchStartsSoon },
+    { href: "/news", label: t("news"), paths: ["/news"] as readonly string[] },
+    { href: "/squad", label: t("squad"), paths: SQUAD_PATHS as readonly string[] },
   ];
   const clubActive = isActivePath(pathname, "/history") || isActivePath(pathname, "/gallery");
 
-  const mobileLinks = [
-    ...mainLinks.map(({ href, label }) => ({ href, label })),
-    { href: "/history", label: `${t("history")} · ${t("clubOverview")}` },
-    { href: "/gallery", label: `${t("history")} · ${t("clubGallery")}` },
-    { href: "/about", label: t("about") },
+  // Menu sheet. Below md the bottom tab bar already holds the main sections, so
+  // the sheet lists only the secondary pages there; from md (tablets, which have
+  // no bar) the main links come first.
+  const sheetLinks = [
+    ...mainLinks.map(({ href, label, paths }) => ({ href, label, paths, primary: true })),
+    { href: "/history", label: t("history"), paths: ["/history"], primary: false },
+    { href: "/gallery", label: t("clubGallery"), paths: ["/gallery"], primary: false },
+    { href: "/about", label: t("about"), paths: ["/about"], primary: false },
+    { href: "/legal", label: t("legal"), paths: ["/legal"], primary: false },
   ];
 
   const avatar = (size: number) =>
@@ -236,23 +243,15 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
         )}
       />
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
-        {/* Logo */}
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 min-h-10" aria-label="LFCVN">
-          <Image
-            src="/assets/lfc/crest.webp"
-            alt=""
-            width={32}
-            height={40}
-            className="h-8 w-auto lg:h-9"
-            priority
-          />
-          <span className="font-barlow font-bold uppercase text-white tracking-[0.2em] text-base">LFCVN</span>
+        {/* Brand. Plain next/link on purpose: "/" always resolves (the middleware picks the locale). */}
+        <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
+          <BrandWordmark className="h-6 lg:h-7" />
         </Link>
 
         {/* Desktop nav (from lg) */}
         <ul className="hidden lg:flex items-center gap-0.5">
-          {mainLinks.map(({ href, label, hot, soon }) => {
-            const active = isActivePath(pathname, href);
+          {mainLinks.map(({ href, label, paths, soon }) => {
+            const active = isActiveAny(pathname, paths);
             return (
               <li key={href}>
                 <Link
@@ -261,11 +260,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                   className={cn(DESKTOP_LINK, active ? "text-white" : "text-white/80 hover:text-white")}
                 >
                   {label}
-                  {hot && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-[11px] font-bold leading-none bg-lfc-red text-white uppercase">
-                      {t("hot")}
-                    </span>
-                  )}
                   {soon && (
                     <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold leading-none bg-lfc-red text-white uppercase whitespace-nowrap">
                       <span className="size-1.5 rounded-full bg-white animate-pulse" />
@@ -350,28 +344,18 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
         <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-1 2xl:gap-2">
           {streakBadge}
 
-          {/* AI chat: labelled pill on desktop, icon-only on phones */}
+          {/* AI chat: pill on desktop; on phones it lives in the menu sheet */}
           <Link
             href="/chat"
             aria-label="LiverBird AI"
-            className="ai-btn group relative hidden lg:flex items-center gap-1.5 min-h-10 whitespace-nowrap px-3 2xl:px-4 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider"
+            className="ai-btn group relative hidden lg:flex items-center gap-1.5 min-h-11 min-w-11 justify-center whitespace-nowrap px-3 2xl:px-4 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider"
           >
             <Bird size={16} className="relative z-1 text-white" aria-hidden />
             {/* Label from 2xl; icon-only below so the row fits the page container */}
             <span className="ai-btn-text hidden 2xl:inline">LiverBird AI</span>
             <span className="ai-btn-shimmer" />
           </Link>
-          <Link
-            href="/chat"
-            aria-label="LiverBird AI"
-            className="lg:hidden inline-flex size-11 items-center justify-center text-white/90 hover:text-white"
-          >
-            <Bird size={22} aria-hidden />
-          </Link>
-
-          <div className="hidden lg:block">
-            <LanguageSwitcher />
-          </div>
+          <LanguageSwitcher />
 
           {/* Auth slot (desktop). Fixed width so the swap never shifts neighbours. */}
           <div className="hidden lg:flex lg:w-40 lg:justify-end">
@@ -379,7 +363,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="group flex min-h-10 max-w-full items-center gap-2 px-2 hover:bg-white/10 transition-colors cursor-pointer outline-none"
+                    className="group flex min-h-11 max-w-full items-center gap-2 px-2 hover:bg-white/10 transition-colors cursor-pointer outline-none"
                     aria-label={`${t("profile")}: ${displayName}`}
                   >
                     <span className="relative size-7 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20 group-hover:ring-lfc-red/60 transition-shadow">
@@ -427,7 +411,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
             ) : (
               <Button
                 onClick={() => setLoginOpen(true)}
-                className="min-h-10 bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm"
+                className="min-h-11 bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm"
               >
                 <Shield size={14} aria-hidden />
                 {t("members")}
@@ -451,12 +435,20 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                 side="right"
                 showCloseButton={false}
                 title={t("primary")}
+                // Opened from the "Thêm" tab: hand focus back to that tab, not the hamburger.
+                onCloseAutoFocus={(e) => {
+                  const { returnFocusTo, clearReturnFocus } = useMenuStore.getState();
+                  if (!returnFocusTo) return;
+                  e.preventDefault();
+                  returnFocusTo.focus();
+                  clearReturnFocus();
+                }}
                 className="w-full max-w-none sm:max-w-none bg-stadium-bg border-none gap-0 overflow-y-auto"
               >
                 <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between px-4 border-b border-[var(--line)]">
-                  <span className="flex items-center gap-2.5">
-                    <Image src="/assets/lfc/crest.webp" alt="" width={32} height={40} className="h-8 w-auto" />
-                    <span className="font-barlow font-bold uppercase text-white tracking-[0.2em]">LFCVN</span>
+                  <span className="flex items-center text-white">
+                    <BrandWordmark className="h-6" />
+                    <span className="sr-only">{BRAND.name}</span>
                   </span>
                   <SheetClose asChild>
                     <button className="inline-flex size-11 items-center justify-center text-white" aria-label={t("closeMenu")}>
@@ -466,10 +458,10 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                 </div>
 
                 <ul className="px-4 py-2">
-                  {mobileLinks.map(({ href, label }) => {
-                    const active = isActivePath(pathname, href);
+                  {sheetLinks.map(({ href, label, paths, primary }) => {
+                    const active = isActiveAny(pathname, paths);
                     return (
-                      <li key={href} className="border-b border-[var(--line)]">
+                      <li key={href} className={cn("border-b border-[var(--line)]", primary && "max-md:hidden")}>
                         <SheetClose asChild>
                           <Link
                             href={href}

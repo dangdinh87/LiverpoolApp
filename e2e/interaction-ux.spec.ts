@@ -196,7 +196,7 @@ test.describe("reduced motion", () => {
     // Positive control: with motion allowed the page really does animate, so an
     // empty list under "reduce" is meaningful.
     expect(normal.scrollBehavior).toBe("smooth");
-    expect(normal.looping.length, "expected the footer marquee to loop with motion allowed").toBeGreaterThan(0);
+    expect(normal.looping.length, "expected a looping decorative animation (the desktop AI button glow) with motion allowed").toBeGreaterThan(0);
 
     expect(reduced.scrollBehavior).toBe("auto");
     expect(reduced.looping, `still animating under reduced motion: ${reduced.looping.join(", ")}`).toEqual([]);

@@ -87,7 +87,7 @@ export function LanguageSwitcher({ variant = "dropdown" }: { variant?: "dropdown
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex min-h-10 items-center gap-1.5 px-2.5 bg-transparent hover:bg-white/10 transition-colors group cursor-pointer"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 bg-transparent hover:bg-white/10 transition-colors group cursor-pointer"
         aria-label={t("aria.toggle")}
         aria-haspopup="true"
         aria-expanded={open}
