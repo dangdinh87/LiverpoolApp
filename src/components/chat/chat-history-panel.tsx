@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { Link } from "@/i18n/navigation";
 import { MessageSquare, Trash2, Search, MoreHorizontal, Plus, ChevronsLeft, ChevronsRight, ArrowLeft } from "lucide-react";
 import { isToday, isYesterday, isWithinInterval, subDays, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -83,7 +83,6 @@ export function ChatSidebar({
     onToggleCollapse,
 }: ChatSidebarProps) {
     const t = useTranslations();
-    const router = useRouter();
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [conversationToDelete, setConversationToDelete] = React.useState<Conversation | null>(null);
     const [searchQuery, setSearchQuery] = React.useState("");
@@ -122,59 +121,64 @@ export function ChatSidebar({
         setConversationToDelete(null);
     };
 
-    const renderConversationItem = (conversation: Conversation) => (
-        <div
-            key={conversation.id}
-            onClick={() => onSelect(conversation.id)}
-            className={cn(
-                "group relative flex items-center gap-2.5 px-3 py-2.5 text-base rounded-lg cursor-pointer overflow-hidden transition-colors",
-                currentConversationId === conversation.id
-                    ? "bg-white/10 text-white"
-                    : "text-stadium-muted hover:bg-white/5 hover:text-white"
-            )}
-        >
-            <span
+    const renderConversationItem = (conversation: Conversation) => {
+        const active = currentConversationId === conversation.id;
+        const title = conversation.title || t('chat.newChat');
+        return (
+            <div
+                key={conversation.id}
                 className={cn(
-                    "flex-1 min-w-0 truncate",
-                    currentConversationId === conversation.id && "font-medium"
+                    "group relative flex items-center rounded-lg transition-colors",
+                    active ? "bg-white/10 text-white" : "text-stadium-muted hover:bg-white/5 hover:text-white"
                 )}
-                title={conversation.title || t('chat.newChat')}
             >
-                {conversation.title || t('chat.newChat')}
-            </span>
+                {/* The row is a real button (keyboard + screen readers); the options menu is its sibling. */}
+                <button
+                    type="button"
+                    onClick={() => onSelect(conversation.id)}
+                    aria-current={active ? "true" : undefined}
+                    title={title}
+                    className={cn(
+                        "min-h-11 min-w-0 flex-1 truncate rounded-lg py-2.5 pl-3 pr-12 text-left text-base",
+                        active && "font-medium"
+                    )}
+                >
+                    {title}
+                </button>
 
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-stadium-muted hover:text-white hover:bg-white/10"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <MoreHorizontal className="h-3.5 w-3.5" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-80 min-w-[140px] bg-stadium-surface border-stadium-border">
-                    <DropdownMenuItem
-                        className="cursor-pointer text-lfc-red-text hover:text-white focus:text-white focus:bg-lfc-red/20"
-                        onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            handleDeleteClick(conversation, e);
-                        }}
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {t('common.delete')}
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-    );
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={t('chat.conversationOptions')}
+                            className="absolute right-0 top-1/2 size-11 -translate-y-1/2 text-stadium-muted transition-opacity hover:bg-white/10 hover:text-white md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 md:data-[state=open]:opacity-100"
+                        >
+                            <MoreHorizontal className="size-4" aria-hidden />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="z-80 min-w-[140px] bg-stadium-surface border-stadium-border">
+                        <DropdownMenuItem
+                            className="min-h-11 cursor-pointer text-lfc-red-text hover:text-white focus:text-white focus:bg-lfc-red/20"
+                            onClick={(e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                handleDeleteClick(conversation, e);
+                            }}
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" aria-hidden />
+                            {t('common.delete')}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        );
+    };
 
     const renderGroup = (group: TimeGroup, items: Conversation[]) => {
         if (items.length === 0) return null;
         return (
             <div key={group} className="mb-1">
-                <div className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-stadium-muted/50">
+                <div className="px-3 py-2 text-xs font-semibold uppercase tracking-widest text-stadium-muted">
                     {timeGroupLabels[group]}
                 </div>
                 <div className="space-y-0.5">
@@ -198,8 +202,9 @@ export function ChatSidebar({
 
             {/* Sidebar */}
             <aside
+                inert={collapsed}
                 className={cn(
-                    "flex flex-col bg-stadium-bg/80 transition-all duration-300 ease-in-out z-66 shrink-0",
+                    "flex flex-col border-r border-[var(--line)] bg-stadium-bg transition-all duration-300 ease-in-out z-66 shrink-0 md:border-r-0 md:bg-stadium-bg/80",
                     // Mobile: overlay sidebar
                     "fixed inset-y-0 left-0 md:relative md:inset-auto",
                     collapsed
@@ -211,15 +216,14 @@ export function ChatSidebar({
                 <div className="shrink-0 p-3 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                            <button
-                                type="button"
-                                onClick={() => router.push("/")}
-                                className="flex items-center gap-1 text-sm text-stadium-muted hover:text-white transition-colors rounded-md px-1.5 py-1 hover:bg-white/5"
+                            <Link
+                                href="/"
+                                className="flex min-h-11 items-center gap-1 rounded-md px-2 text-sm text-stadium-muted transition-colors hover:bg-white/5 hover:text-white"
                             >
-                                <ArrowLeft className="h-3.5 w-3.5" />
-                                <span>Home</span>
-                            </button>
-                            <span className="text-stadium-muted/30">·</span>
+                                <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+                                <span>{t('Common.nav.home')}</span>
+                            </Link>
+                            <span aria-hidden className="text-stadium-muted">·</span>
                             <span className="font-bebas text-lg tracking-wide text-gradient-red">
                                 LiverBird AI
                             </span>
@@ -228,9 +232,9 @@ export function ChatSidebar({
                     <button
                         type="button"
                         onClick={onNewChat}
-                        className="flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-base text-white/80 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
+                        className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-2.5 text-base text-white/80 transition-colors hover:bg-white/10 hover:text-white bg-white/5"
                     >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-4 w-4" aria-hidden />
                         {t('chat.newChat')}
                     </button>
                 </div>
@@ -238,12 +242,14 @@ export function ChatSidebar({
                 {/* Search */}
                 <div className="shrink-0 px-3 pb-2">
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stadium-muted/50" />
+                        <Search aria-hidden className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stadium-muted" />
                         <input
+                            type="search"
                             placeholder={t('common.search')}
+                            aria-label={t('common.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full h-9 pl-8 pr-3 text-base rounded-lg bg-white/5 text-white placeholder:text-stadium-muted/40 outline-none focus:bg-white/8 transition-colors"
+                            className="h-11 w-full rounded-lg bg-white/5 pl-9 pr-3 text-base text-white outline-none transition-colors placeholder:text-stadium-muted focus:bg-white/10"
                         />
                     </div>
                 </div>
@@ -252,8 +258,8 @@ export function ChatSidebar({
                 <ScrollArea className="flex-1 [&>div>div]:!block">
                     {!hasConversations ? (
                         <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                            <MessageSquare className="h-8 w-8 text-stadium-muted/20 mb-3" />
-                            <p className="text-sm text-stadium-muted/50">
+                            <MessageSquare aria-hidden className="mb-3 h-8 w-8 text-stadium-muted" />
+                            <p className="text-sm text-stadium-muted">
                                 {searchQuery ? t('common.noResults') : t('chat.noConversations')}
                             </p>
                         </div>
@@ -296,14 +302,19 @@ export function ChatSidebar({
 
 /** Toggle button for sidebar open/close — always visible outside the sidebar */
 export function SidebarToggleButton({ collapsed, onClick }: { collapsed: boolean; onClick: () => void }) {
+    const t = useTranslations('chat.sidebar');
+    const label = collapsed ? t('open') : t('close');
     return (
         <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 text-stadium-muted hover:text-white"
+            className="size-11 text-stadium-muted hover:text-white"
             onClick={onClick}
+            aria-label={label}
+            aria-expanded={!collapsed}
+            title={label}
         >
-            {collapsed ? <ChevronsRight className="h-5 w-5" /> : <ChevronsLeft className="h-5 w-5" />}
+            {collapsed ? <ChevronsRight className="h-5 w-5" aria-hidden /> : <ChevronsLeft className="h-5 w-5" aria-hidden />}
         </Button>
     );
 }

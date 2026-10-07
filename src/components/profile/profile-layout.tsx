@@ -62,7 +62,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-bebas text-4xl leading-none text-white">{profile?.username ?? "Red Member"}</h1>
+            <h1 className="truncate font-bebas text-4xl leading-none text-white">{profile?.username ?? t("defaultName")}</h1>
             <p className="mt-1 truncate text-sm text-stadium-muted">{user.email}</p>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stadium-muted">
               {memberSince && <span>{t("memberSince", { date: memberSince })}</span>}

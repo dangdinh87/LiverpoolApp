@@ -1,9 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Loader2, LogIn } from "lucide-react";
+import { Bot, Loader2, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -30,16 +29,9 @@ export default function ChatPage() {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4 p-8 relative overflow-hidden">
 				<div className="relative z-10 flex flex-col items-center gap-4">
-					<div>
-						<Image
-							src="/assets/lfc/crest.webp"
-							alt="LFC"
-							width={58}
-							height={72}
-							priority
-							className="h-[72px] w-auto drop-shadow-[0_0_20px_rgba(200,16,46,0.4)]"
-						/>
-					</div>
+					<span aria-hidden className="flex size-16 items-center justify-center bg-lfc-red shadow-[0_0_24px_rgba(200,16,46,0.4)]">
+						<Bot className="size-9 text-white" />
+					</span>
 					<div className="text-center">
 						<h1 className="font-bebas text-3xl tracking-wide text-gradient-red">
 							LiverBird AI
@@ -48,7 +40,7 @@ export default function ChatPage() {
 							{t("chat.subtitle")}
 						</p>
 					</div>
-					<Button onClick={() => router.push("/auth/login")} size="lg" className="glow-red">
+					<Button onClick={() => router.push("/auth/login")} size="lg" className="min-h-11 glow-red">
 						<LogIn className="mr-2 h-4 w-4" />
 						<span suppressHydrationWarning>{t("auth.pleaseLogin")}</span>
 					</Button>

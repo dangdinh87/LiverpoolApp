@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-// 40x40 hit area, colour-only transitions, a quick press scale (transform only).
+// 44x44 hit area, colour-only transitions, a quick press scale (transform only).
 const HEART_BASE =
-  "z-10 inline-flex size-10 cursor-pointer items-center justify-center transition-[background-color,color,border-color,transform] duration-[var(--dur-base)] ease-[var(--ease-out)] active:scale-90";
+  "z-10 inline-flex size-11 cursor-pointer items-center justify-center transition-[background-color,color,border-color,transform] duration-[var(--dur-base)] ease-[var(--ease-out)] active:scale-90";
 
 interface FavouriteHeartProps {
   playerId: number;
@@ -30,6 +30,8 @@ interface FavouriteHeartProps {
   onToggle: (playerId: number, added: boolean) => void;
   onNotify?: (playerName: string, added: boolean) => void;
   variant?: "overlay" | "inline";
+  /** Extra classes, e.g. to move the overlay button (merged last). */
+  className?: string;
 }
 
 export function FavouriteHeart({
@@ -41,6 +43,7 @@ export function FavouriteHeart({
   onToggle,
   onNotify,
   variant = "overlay",
+  className,
 }: FavouriteHeartProps) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -55,7 +58,8 @@ export function FavouriteHeart({
           HEART_BASE,
           variant === "overlay"
             ? "absolute top-1 right-1 bg-black/55 text-white/80 hover:text-white"
-            : "relative border border-white/10 bg-white/5 text-stadium-muted hover:text-white hover:border-white/30"
+            : "relative border border-white/10 bg-white/5 text-stadium-muted hover:text-white hover:border-white/30",
+          className,
         )}
         onClick={(e) => {
           e.preventDefault();
@@ -132,7 +136,8 @@ export function FavouriteHeart({
             ? "bg-lfc-red/25 text-white hover:bg-lfc-red/35"
             : variant === "overlay"
               ? "bg-black/55 text-white/80 hover:text-white"
-              : "border border-white/10 text-stadium-muted hover:text-white hover:border-white/30"
+              : "border border-white/10 text-stadium-muted hover:text-white hover:border-white/30",
+          className,
         )}
         title={isFavourited ? t("removeFav") : t("favourite")}
         aria-label={isFavourited ? t("removeFav") : t("favourite")}

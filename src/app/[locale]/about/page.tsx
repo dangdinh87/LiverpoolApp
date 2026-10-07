@@ -17,9 +17,9 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
 }
 
 const FEATURES = [
-  { key: "squad", Icon: Users },
-  { key: "season", Icon: Calendar },
   { key: "fixtures", Icon: Zap },
+  { key: "season", Icon: Calendar },
+  { key: "squad", Icon: Users },
   { key: "news", Icon: Newspaper },
   { key: "history", Icon: Trophy },
   { key: "profile", Icon: UserCircle },
@@ -55,10 +55,10 @@ export default async function AboutPage({ params }: LocaleParams) {
             <h2 id="about-story" className="font-bebas text-3xl text-white sm:text-4xl">
               {t("whatIs.title")}
             </h2>
-            <p className="max-w-[65ch] text-base leading-[1.75] text-stadium-muted">{t("whatIs.description")}</p>
+            <p className="max-w-[65ch] text-base leading-[1.7] text-white/85 sm:text-[17px]">{t("whatIs.description")}</p>
             <div className="surface flex items-start gap-4 border-l-2 border-l-lfc-red p-4 sm:p-5">
               <Heart size={24} aria-hidden className="mt-0.5 shrink-0 text-lfc-red" />
-              <p className="text-sm leading-relaxed text-stadium-muted">
+              <p className="text-[15px] leading-relaxed text-stadium-muted">
                 {t.rich("disclaimer", { status: (chunks) => <strong className="text-white">{chunks}</strong> })}
               </p>
             </div>
@@ -74,27 +74,30 @@ export default async function AboutPage({ params }: LocaleParams) {
               {FEATURES.map(({ key, Icon }) => (
                 <li key={key} className="surface flex items-start gap-3 p-4">
                   <Icon size={24} aria-hidden className="mt-0.5 shrink-0 text-lfc-red" />
-                  <p className="text-sm leading-relaxed text-stadium-muted">{t(`whatIs.features.${key}`)}</p>
+                  <p className="text-[15px] leading-relaxed text-stadium-muted">{t(`whatIs.features.${key}`)}</p>
                 </li>
               ))}
             </ul>
           </section>
 
-          {/* Data + tech */}
-          <section aria-labelledby="about-data" className="space-y-6">
-            <h2 id="about-data" className="sr-only">
-              {t("whatIs.dataTitle")}
-            </h2>
+          {/* News handling, AI, data sources: the honest-disclosure block */}
+          <section aria-labelledby="about-news" className="space-y-8">
             <div>
-              <h3 className="font-bebas text-2xl text-white">{t("whatIs.dataTitle")}</h3>
-              <p className="mt-2 max-w-[65ch] text-sm leading-relaxed text-stadium-muted">{t("whatIs.dataSources")}</p>
-              <Link href="/legal#sources" className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline-offset-4 hover:underline">
-                {tLegal("sections.sources.title")} →
-              </Link>
+              <h2 id="about-news" className="font-bebas text-3xl text-white sm:text-4xl">
+                {t("news.title")}
+              </h2>
+              <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("news.body")}</p>
             </div>
             <div>
-              <h3 className="font-bebas text-2xl text-white">{t("whatIs.techTitle")}</h3>
-              <p className="mt-2 max-w-[65ch] text-sm leading-relaxed text-stadium-muted">{t("whatIs.techStack")}</p>
+              <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t("ai.title")}</h2>
+              <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("ai.body")}</p>
+            </div>
+            <div>
+              <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t("whatIs.dataTitle")}</h2>
+              <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("whatIs.dataSources")}</p>
+              <Link href="/legal#sources" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-brand underline-offset-4 hover:underline">
+                {tLegal("sections.sources.title")} →
+              </Link>
             </div>
           </section>
 
@@ -106,8 +109,8 @@ export default async function AboutPage({ params }: LocaleParams) {
             <p className="mt-1 text-sm text-stadium-muted">
               <span className="font-semibold text-white">{t("creator.title")}</span> · {t("creator.role")}
             </p>
-            <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-stadium-muted">{t("creator.bio")}</p>
-            <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-stadium-muted">{t("contact.description")}</p>
+            <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("creator.bio")}</p>
+            <p className="mt-3 max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("contact.description")}</p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a href="mailto:nguyendangdinh47@gmail.com" className={`${BUTTON} bg-lfc-red text-white hover:bg-lfc-red-dark`}>
                 <Mail size={16} aria-hidden />
@@ -135,7 +138,7 @@ export default async function AboutPage({ params }: LocaleParams) {
             <h2 id="about-support" className="font-bebas text-3xl text-white">
               {t("support.title")}
             </h2>
-            <p className="max-w-[65ch] text-sm text-stadium-muted">{t("support.description")}</p>
+            <p className="max-w-[65ch] text-base leading-[1.7] text-stadium-muted">{t("support.description")}</p>
             <div className="flex flex-wrap gap-3">
               <a
                 href="https://buymeacoffee.com/deannguyen872k"

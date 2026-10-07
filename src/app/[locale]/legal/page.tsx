@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: LocaleParams) {
 }
 
 // Bump when the policy text in messages/*.json (Legal.*) changes.
-const LEGAL_LAST_UPDATED = new Date("2026-10-04T00:00:00+07:00");
+const LEGAL_LAST_UPDATED = new Date("2026-10-07T00:00:00+07:00");
 
 const SECTION_KEYS = ["privacy", "terms", "sources"] as const;
 
@@ -40,9 +40,9 @@ export default async function LegalPage({ params }: LocaleParams) {
           {/* Table of contents: chip row on phones, sticky list on desktop */}
           <nav aria-label={t("toc")} className="mb-8 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:mb-0 lg:self-start">
             <p className="section-label mb-2 hidden text-brand lg:block">{t("toc")}</p>
-            <ul className="scroll-x -mx-4 flex gap-2 px-4 lg:mx-0 lg:flex-col lg:gap-0 lg:px-0">
+            <ul className="flex flex-wrap gap-2 lg:flex-col lg:gap-0">
               {SECTION_KEYS.map((key) => (
-                <li key={key} className="shrink-0">
+                <li key={key}>
                   <a
                     href={`#${key}`}
                     className="inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white lg:w-full lg:border-0 lg:border-l-2 lg:border-transparent lg:px-3 lg:hover:border-lfc-red"
@@ -59,7 +59,7 @@ export default async function LegalPage({ params }: LocaleParams) {
               {SECTION_KEYS.map((key) => (
                 <section key={key} id={key} className="scroll-mt-[calc(var(--header-h)+1rem)]">
                   <h2 className="font-bebas text-3xl text-white sm:text-4xl">{t(`sections.${key}.title`)}</h2>
-                  <div className="mt-4 space-y-4 text-base leading-[1.75] text-stadium-muted">
+                  <div className="mt-4 space-y-4 text-base leading-[1.7] text-stadium-muted">
                     {toParagraphs(t(`sections.${key}.content`)).map((p, i) => (
                       <p key={i}>{p}</p>
                     ))}
@@ -69,10 +69,10 @@ export default async function LegalPage({ params }: LocaleParams) {
             </div>
 
             <div className="mt-14 border-t border-[var(--line)] pt-6">
-              <p className="text-sm text-stadium-muted">
+              <p className="text-[15px] leading-relaxed text-stadium-muted">
                 {t.rich("contact", {
                   email: (chunks) => (
-                    <a href={`mailto:${chunks}`} className="font-semibold text-brand underline-offset-4 hover:underline">
+                    <a href={`mailto:${chunks}`} className="tap-target font-semibold text-brand underline-offset-4 hover:underline">
                       {chunks}
                     </a>
                   ),

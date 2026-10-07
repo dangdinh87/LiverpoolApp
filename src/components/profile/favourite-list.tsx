@@ -144,7 +144,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
               <button
                 onClick={() => setConfirmTarget(fav)}
                 disabled={isPending}
-                className="absolute top-1 right-1 inline-flex size-10 items-center justify-center bg-black/70 text-stadium-muted transition-colors hover:text-white focus-visible:text-white cursor-pointer"
+                className="absolute top-1 right-1 inline-flex size-11 items-center justify-center bg-black/70 text-stadium-muted transition-colors hover:text-white focus-visible:text-white cursor-pointer"
                 aria-label={t("removeFav")}
               >
                 <X size={14} aria-hidden />

@@ -3,12 +3,12 @@ import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 /** Mirrors the history page: compact hero, section nav, first timeline cards. */
 export default function HistoryLoading() {
   return (
-    <div role="status" aria-busy="true" className="bg-stadium-bg">
+    <div aria-busy="true" className="bg-stadium-bg">
       <div className="border-b border-[var(--line)]">
-        <div className="page-container pt-[calc(var(--header-h)+1.5rem)] pb-6 sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
-          <Skeleton className="mb-3 h-3 w-28" />
-          <Skeleton className="h-12 w-3/4 sm:h-16 sm:w-1/2" />
-          <Skeleton className="mt-4 h-4 w-full max-w-xl" />
+        <div className="page-container pb-4 pt-[calc(var(--header-h)+0.75rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
+          <Skeleton className="mb-1 h-3 w-28 sm:mb-2" />
+          <Skeleton className="h-10 w-3/4 sm:h-16 sm:w-1/2" />
+          <Skeleton className="mt-2 h-4 w-full max-w-xl sm:mt-3" />
           <div className="mt-5 grid grid-cols-4 gap-4 sm:max-w-xl">
             {Array.from({ length: 4 }, (_, i) => (
               <Skeleton key={i} className="h-12" />
@@ -30,7 +30,6 @@ export default function HistoryLoading() {
           <SkeletonCard aspect="aspect-[16/9]" />
         </div>
       </div>
-      <span className="sr-only">Loading…</span>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { ChatViewportSync } from "@/components/chat/use-visual-viewport";
 
 export const metadata: Metadata = {
   title: "LiverBird AI — Liverpool FC Chat Assistant",
@@ -21,7 +22,9 @@ export default async function ChatLayout({
   setRequestLocale(locale);
   const t = await getTranslations("Common.nav");
   return (
-    <div className="chat-shell fixed inset-x-0 top-0 z-60 flex h-dvh flex-col bg-stadium-bg pb-[env(safe-area-inset-bottom)] font-barlow">
+    <div className="chat-shell fixed inset-x-0 top-[var(--vvt,0px)] z-60 flex h-[var(--vvh,100dvh)] flex-col bg-stadium-bg pb-[env(safe-area-inset-bottom)] font-barlow">
+      {/* Keeps the shell above the on-screen keyboard on phones. */}
+      <ChatViewportSync />
       {/* Background image */}
       <Image
         src="/assets/fan_made/background_1.jpg"
@@ -34,9 +37,9 @@ export default async function ChatLayout({
       {/* Exit — the chat shell covers the site header */}
       <Link
         href="/"
-        className="absolute top-2 right-2 z-[70] inline-flex min-h-10 items-center gap-1.5 rounded-full border border-stadium-border bg-stadium-surface/90 px-3 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur hover:bg-stadium-surface2 focus-visible:ring-2 focus-visible:ring-lfc-red outline-none"
+        className="absolute top-2 right-2 z-[70] inline-flex min-h-11 items-center gap-1.5 rounded-full border border-stadium-border bg-stadium-surface/90 px-4 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur hover:bg-stadium-surface2 focus-visible:ring-2 focus-visible:ring-lfc-red outline-none"
       >
-        <ArrowLeft size={14} />
+        <ArrowLeft size={14} aria-hidden />
         {t("home")}
       </Link>
       {/* react-query + tooltip provider are chat-only; not in the root layout. */}

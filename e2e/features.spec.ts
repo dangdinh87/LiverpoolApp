@@ -6,24 +6,20 @@ import { collectProblems, formatProblems } from "./support/page-diagnostics";
  * likely to look fine on load and misbehave on interaction.
  */
 test.describe("interactive features", () => {
-  test("squad position filter narrows the grid", async ({ page }) => {
+  test("squad position chips jump to their group", async ({ page }) => {
     const problems = collectProblems(page);
     await page.goto("/squad");
 
     const cards = page.locator("a[href^='/player/']");
     await expect(cards.first()).toBeVisible();
-    const total = await cards.count();
-    expect(total, "squad should list players").toBeGreaterThan(0);
+    expect(await cards.count(), "squad should list players").toBeGreaterThan(0);
 
-    // Filter controls are rendered as buttons; pick a non-"all" option.
-    const filter = page.getByRole("button", { name: /defender|hậu vệ/i }).first();
-    if ((await filter.count()) > 0) {
-      await filter.click();
-      await expect(cards.first()).toBeVisible();
-      const filtered = await cards.count();
-      expect(filtered, "filter should narrow the list").toBeLessThan(total);
-      expect(filtered, "filter should not empty the list").toBeGreaterThan(0);
-    }
+    // The sticky chips are in-page links (all groups stay on the page); the group
+    // heading must land in view below the sticky bar.
+    const chip = page.getByRole("navigation", { name: /position|vị trí/i }).getByRole("link", { name: /defender|hậu vệ/i });
+    await chip.click();
+    await expect(page.locator("#pos-defender-title")).toBeInViewport();
+    await expect(chip).toHaveAttribute("aria-current", "true");
 
     expect(problems, `squad problems:\n${formatProblems(problems)}`).toHaveLength(0);
   });

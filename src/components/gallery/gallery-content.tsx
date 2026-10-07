@@ -299,7 +299,7 @@ export function GalleryContent({
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder={t("search.placeholder")}
             aria-label={t("search.placeholder")}
-            className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-10 pr-10 text-[15px] text-white placeholder:text-stadium-muted focus-visible:border-lfc-red focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-10 pr-10 text-base text-white sm:text-[15px] placeholder:text-stadium-muted focus-visible:border-lfc-red focus-visible:outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {search && (
             <button
@@ -324,7 +324,7 @@ export function GalleryContent({
                 aria-pressed={isActive}
                 onClick={() => handleCategoryChange(cat)}
                 className={cn(
-                  "inline-flex min-h-10 shrink-0 items-center gap-2 border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] whitespace-nowrap transition-colors",
+                  "inline-flex min-h-11 shrink-0 items-center gap-2 border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] whitespace-nowrap transition-colors",
                   isActive
                     ? "border-lfc-red bg-lfc-red text-white"
                     : "border-[var(--line-strong)] text-stadium-muted hover:border-white/40 hover:text-white",
@@ -371,7 +371,7 @@ export function GalleryContent({
                 />
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-6 text-left font-barlow text-[11px] uppercase tracking-wider text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/80 to-transparent px-2 pb-1.5 pt-6 text-left font-barlow text-xs uppercase tracking-wider text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
                 >
                   {img.alt}
                 </span>

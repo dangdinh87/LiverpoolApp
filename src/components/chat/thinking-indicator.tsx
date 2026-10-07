@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Bot, Globe } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 // Client-side check matching server-side needsWebSearch logic
@@ -47,13 +47,9 @@ export function ThinkingIndicator({ isSearching = false }: { isSearching?: boole
 						<Globe className="size-4 text-white animate-spin" style={{ animationDuration: "2s" }} />
 					</div>
 				) : (
-					<img
-						src="/assets/lfc/crest.webp"
-						alt="LFC"
-						width={32}
-						height={32}
-						className="size-8 animate-pulse"
-					/>
+					<div className="size-8 animate-pulse rounded-full bg-lfc-red flex items-center justify-center">
+						<Bot className="size-4 text-white" aria-hidden />
+					</div>
 				)}
 				{/* Pulse ring */}
 				<div className="absolute inset-0 rounded-full bg-lfc-red/30 animate-ping" style={{ animationDuration: "1.5s" }} />

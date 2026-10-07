@@ -122,7 +122,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                 {/* Source badge */}
                 {sourceCfg && (
                   <span
-                    className={`self-start inline-flex items-center font-barlow font-bold text-[10px] uppercase tracking-wider px-1.5 py-0.5 ${sourceCfg.color}`}
+                    className={`self-start inline-flex items-center font-barlow font-bold text-xs uppercase tracking-wider px-1.5 py-0.5 ${sourceCfg.color}`}
                   >
                     {sourceCfg.label}
                   </span>
@@ -138,14 +138,14 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                 {/* Actions row */}
                 <div className="flex items-center gap-3 mt-0.5">
                   {article.article_published_at && (
-                    <span className="font-inter text-[11px] text-stadium-muted">
+                    <span className="font-inter text-xs text-stadium-muted">
                       {formatDayMonth(new Date(article.article_published_at), dateLoc === "vi-VN" ? "vi" : "en")}
                     </span>
                   )}
                   <button
                     onClick={() => setConfirmTarget(article)}
                     disabled={isPending}
-                    className="inline-flex min-h-10 items-center gap-1 text-amber-400 font-inter text-xs hover:text-white transition-colors cursor-pointer"
+                    className="inline-flex min-h-11 items-center gap-1 text-amber-400 font-inter text-xs hover:text-white transition-colors cursor-pointer"
                     aria-label={t("unsave")}
                   >
                     <Bookmark size={12} className="fill-amber-400" />

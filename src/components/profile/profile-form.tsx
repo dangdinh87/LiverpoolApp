@@ -17,7 +17,7 @@ interface ProfileFormProps {
 }
 
 const FIELD =
-  "w-full border bg-[var(--surface-1)] px-3 py-2.5 text-[15px] text-white placeholder:text-stadium-muted focus-visible:outline-none";
+  "w-full border bg-[var(--surface-1)] px-3 py-2.5 text-base text-white sm:text-[15px] placeholder:text-stadium-muted focus-visible:outline-none";
 
 export function ProfileForm({ profile }: ProfileFormProps) {
   const [isPending, startTransition] = useTransition();

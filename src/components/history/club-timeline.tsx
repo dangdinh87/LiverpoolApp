@@ -31,7 +31,7 @@ export function ClubTimeline({ events }: { events: HistoryEvent[] }) {
             />
             <article className="surface min-w-0 overflow-hidden md:w-[calc(50%-2rem)]">
               {event.image && (
-                <div className="relative aspect-[16/9] bg-[var(--surface-3)]">
+                <div className="relative aspect-[2/1] bg-[var(--surface-3)] sm:aspect-[16/9]">
                   <Image
                     src={event.image}
                     alt=""

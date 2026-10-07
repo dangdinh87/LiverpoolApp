@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { getSquadPlayers } from "@/lib/squad-data";
+import { calculateAge, getSquadPlayers } from "@/lib/squad-data";
 import { PageHero } from "@/components/ui/page-hero";
 import { SquadGrid } from "@/components/squad/squad-grid";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
@@ -31,6 +31,7 @@ export default async function SquadPage({ params }: LocaleParams) {
     shirtName: p.shirtName,
     slug: p.slug,
     position: p.position,
+    age: calculateAge(p.dateOfBirth),
     onLoan: p.onLoan,
     forever: p.forever,
     photo: p.photo,

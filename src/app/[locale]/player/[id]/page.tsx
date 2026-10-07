@@ -6,6 +6,8 @@ import { ArrowLeft, Trophy } from "lucide-react";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
+import { BRAND } from "@/lib/brand";
+import { getNationality } from "@/lib/nationality";
 import { getPlayerStats } from "@/lib/football";
 import { getFplPlayerStats } from "@/lib/football/fpl-stats";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
@@ -15,41 +17,6 @@ import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildPersonJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
-
-// ─── Country flag emoji mapping ──────────────────────────────────────────────
-
-const NATIONALITY_FLAGS: Record<string, string> = {
-  Argentinian: "🇦🇷",
-  Brazilian: "🇧🇷",
-  Czech: "🇨🇿",
-  Dutch: "🇳🇱",
-  Egyptian: "🇪🇬",
-  English: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  French: "🇫🇷",
-  Georgian: "🇬🇪",
-  German: "🇩🇪",
-  Greek: "🇬🇷",
-  Hungarian: "🇭🇺",
-  Irish: "🇮🇪",
-  Italian: "🇮🇹",
-  Japanese: "🇯🇵",
-  "Northern Irish": "🇬🇧",
-  Portuguese: "🇵🇹",
-  Scottish: "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  Spanish: "🇪🇸",
-  Swedish: "🇸🇪",
-  Welsh: "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
-  Colombian: "🇨🇴",
-  Belgian: "🇧🇪",
-  Uruguayan: "🇺🇾",
-  Senegalese: "🇸🇳",
-  Guinean: "🇬🇳",
-  American: "🇺🇸",
-};
-
-function getFlag(nationality: string): string {
-  return NATIONALITY_FLAGS[nationality] ?? "🏳️";
-}
 
 // ─── Types & constants ───────────────────────────────────────────────────────
 
@@ -134,7 +101,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "profile",
       ...(images.length > 0 && { images }),
-      siteName: "Liverpool FC Việt Nam",
+      siteName: BRAND.name,
     },
     twitter: {
       card: "summary_large_image",
@@ -165,7 +132,8 @@ export default async function PlayerPage({ params }: PageProps) {
     timeZone: "UTC",
   });
   const accent = POS_ACCENT[player.position];
-  const flag = getFlag(player.nationality);
+  const { flag, key: nationalityKey } = getNationality(player.nationality);
+  const nationality = nationalityKey ? t(`nationalities.${nationalityKey}`) : player.nationality;
 
   const [playerStats, fplStats] = await Promise.all([
     getPlayerStats(player.id),
@@ -176,18 +144,13 @@ export default async function PlayerPage({ params }: PageProps) {
   const bioParagraphs = toParagraphs(bio).slice(0, 6);
 
   const facts: { label: string; value: string; highlight?: boolean }[] = [
-    { label: t("info.nationality"), value: `${flag} ${player.nationality}` },
-    { label: t("info.age"), value: t("info.ageYears", { age }) },
+    { label: t("info.nationality"), value: `${flag} ${nationality}` },
     { label: t("info.dob"), value: dob },
     { label: t("info.position"), value: t(`positions.${player.position}`) },
+    { label: t("info.status"), value: player.forever ? t("status.forever") : player.onLoan ? t("status.onLoan") : t("status.active"), highlight: player.forever },
     ...(player.height ? [{ label: t("info.height"), value: player.height }] : []),
     ...(player.weight ? [{ label: t("info.weight"), value: player.weight }] : []),
-    { label: t("info.shirtName"), value: player.shirtName || "—" },
-    {
-      label: t("info.status"),
-      value: player.forever ? t("status.forever") : player.onLoan ? t("status.onLoan") : t("status.active"),
-      highlight: player.forever,
-    },
+    ...(player.shirtName ? [{ label: t("info.shirtName"), value: player.shirtName }] : []),
   ];
 
   return (
@@ -221,7 +184,7 @@ export default async function PlayerPage({ params }: PageProps) {
         <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+1.5rem)]">
           <Link
             href="/squad"
-            className="group mb-4 inline-flex min-h-10 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
+            className="group mb-3 inline-flex min-h-11 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
           >
             <ArrowLeft size={16} aria-hidden className="transition-transform group-hover:-translate-x-1" />
             {t("backSquad")}
@@ -250,7 +213,7 @@ export default async function PlayerPage({ params }: PageProps) {
               <h1 className="mt-1 font-bebas text-4xl leading-[0.95] text-white text-balance sm:text-6xl lg:text-7xl">{player.name}</h1>
               <p className="mt-3 text-[15px] text-stadium-muted">
                 <span aria-hidden>{flag} </span>
-                {player.nationality} · {t("info.ageYears", { age })}
+                {nationality} · {t("info.ageYears", { age })}
               </p>
               <div className="mt-4">
                 <PlayerFavouriteButton playerId={player.id} playerName={player.name} playerPhoto={player.photo} />
@@ -264,11 +227,11 @@ export default async function PlayerPage({ params }: PageProps) {
         {/* ─── Key facts ─── */}
         <section>
           <SectionHeader title={t("sections.playerInfo")} />
-          <dl className="surface grid grid-cols-2 gap-px bg-[var(--line)] sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             {facts.map((f) => (
-              <div key={f.label} className="bg-[var(--surface-2)] px-4 py-3.5">
+              <div key={f.label} className="surface min-w-0 px-4 py-3">
                 <dt className="font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-stadium-muted">{f.label}</dt>
-                <dd className={cn("mt-1 text-[15px] font-medium", f.highlight ? "text-lfc-gold" : "text-white")}>{f.value}</dd>
+                <dd className={cn("mt-1 text-[15px] font-medium leading-snug [overflow-wrap:anywhere]", f.highlight ? "text-lfc-gold" : "text-white")}>{f.value}</dd>
               </div>
             ))}
           </dl>
@@ -287,7 +250,7 @@ export default async function PlayerPage({ params }: PageProps) {
             <SectionHeader title={t("sections.biography")} />
             <div className="max-w-[65ch] space-y-4">
               {bioParagraphs.map((paragraph, i) => (
-                <p key={i} className="text-[15px] leading-7 text-white/80 sm:text-base sm:leading-8">
+                <p key={i} className="text-base leading-[1.7] text-white/85 sm:text-[17px]">
                   {paragraph.trim()}
                 </p>
               ))}
@@ -332,7 +295,14 @@ export default async function PlayerPage({ params }: PageProps) {
           </section>
         )}
 
-        <p className="text-center">
+        <div className="flex flex-col items-center gap-1 sm:flex-row sm:justify-between">
+          <Link
+            href="/squad"
+            className="group inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-white transition-colors hover:text-brand"
+          >
+            <ArrowLeft size={16} aria-hidden className="transition-transform group-hover:-translate-x-1" />
+            {t("backSquad")}
+          </Link>
           <a
             href={`https://www.liverpoolfc.com/team/mens/player/${player.slug}`}
             target="_blank"
@@ -344,7 +314,7 @@ export default async function PlayerPage({ params }: PageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
           </a>
-        </p>
+        </div>
       </div>
     </div>
   );

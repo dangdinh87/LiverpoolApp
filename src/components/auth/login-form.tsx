@@ -1,11 +1,11 @@
 "use client";
 
 import { useId, useState, useTransition } from "react";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
 import { loginWithEmail, registerWithEmail } from "@/app/actions/auth";
 import { loadSupabaseClient } from "@/lib/supabase-lazy";
+import { BrandWordmark } from "@/components/layout/brand-wordmark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -83,7 +83,12 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
     setError(null);
     setTouched({ email: true, password: true, confirm: true });
     const relevant: Field[] = mode === "register" ? ["email", "password", "confirm"] : ["email", "password"];
-    if (relevant.some((f) => fieldError[f])) return;
+    const firstInvalid = relevant.find((f) => fieldError[f]);
+    if (firstInvalid) {
+      // Move focus to the first field that needs attention (keyboard and screen-reader users).
+      document.getElementById(`${uid}-${firstInvalid}`)?.focus();
+      return;
+    }
 
     // Read from the DOM (not state) so password-manager autofill is included.
     const formData = new FormData(e.currentTarget);
@@ -144,7 +149,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
           </button>
         )}
         <div className="mb-7 text-center">
-          <Image src="/assets/lfc/crest.webp" alt="" width={48} height={60} className="mx-auto mb-3 h-[52px] w-auto" />
+          <BrandWordmark className="mx-auto mb-4 h-6 text-white" />
           <Heading className="font-bebas text-4xl text-white tracking-[0.04em] leading-none">{t("title")}</Heading>
           <p className="font-inter text-stadium-muted text-sm mt-2">{t("subtitle")}</p>
         </div>
@@ -205,7 +210,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
                   {...inputProps("email")}
                   type="email"
                   inputMode="email"
-                  autoComplete="email"
+                  autoComplete={mode === "login" ? "username" : "email"}
                   autoCapitalize="none"
                   spellCheck={false}
                   placeholder="you@example.com"
@@ -223,7 +228,6 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
                     type={showPassword ? "text" : "password"}
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
                     className={cn(inputProps("password").className, "pr-12")}
-                    placeholder="••••••••"
                   />
                   <button
                     type="button"
@@ -235,6 +239,9 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
                     {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
                   </button>
                 </div>
+                {mode === "register" && !shown("password") && (
+                  <p className="mt-1.5 font-inter text-[13px] text-stadium-muted">{tRegister("passwordHint")}</p>
+                )}
                 {renderError("password")}
               </div>
 
@@ -247,7 +254,6 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
                     {...inputProps("confirm")}
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    placeholder="••••••••"
                   />
                   {renderError("confirm")}
                 </div>

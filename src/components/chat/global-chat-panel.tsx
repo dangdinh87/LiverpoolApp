@@ -16,6 +16,7 @@ import { ConversationSelector } from "@/components/chat/conversation-selector";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DEFAULT_CHAT_AI_MODEL } from "@/config/constants";
+import { useVisualViewportVars } from "@/components/chat/use-visual-viewport";
 import type { ChatMessage, Conversation } from "@/lib/chat/conversation-types";
 
 const GlobalChatInterface = ({
@@ -91,6 +92,9 @@ function GlobalChatPanelContent({
 	const queryClient = useQueryClient();
 	const t = useTranslations("chat.widget");
 	const closeRef = useRef<HTMLButtonElement>(null);
+
+	// Phones: size the full-screen panel to the visible area so the keyboard never covers the message box.
+	useVisualViewportVars(isOpen);
 
 	// Move focus into the panel when it opens (the trigger restores it on close).
 	useEffect(() => {
@@ -194,9 +198,10 @@ function GlobalChatPanelContent({
 				className={cn(
 					"fixed z-[70] flex flex-col border border-[var(--line-strong)] bg-stadium-bg shadow-2xl shadow-black/40 font-barlow origin-bottom-right",
 					"transition-[transform,opacity,visibility] duration-200 ease-[var(--ease-out)]",
-					"right-5 bottom-[max(6rem,calc(env(safe-area-inset-bottom)+5.5rem))] w-[380px] h-[600px] max-h-[calc(100dvh-8rem)] rounded-2xl",
-					// Phones: cover the screen (dvh = correct height with the mobile URL bar)
-					"max-sm:inset-0 max-sm:h-dvh max-sm:max-h-none max-sm:w-full max-sm:rounded-none",
+					// Floating card above the chat button (--fab-base-bottom already clears the phone tab bar)
+					"right-5 bottom-[calc(var(--fab-base-bottom)+4.5rem)] w-[380px] h-[600px] max-h-[calc(100dvh-var(--fab-base-bottom)-4.5rem-var(--header-h)-1rem)] rounded-2xl",
+					// Phones: cover the screen, sized to the visible viewport (shrinks with the keyboard)
+					"max-sm:inset-x-0 max-sm:top-[var(--vvt,0px)] max-sm:bottom-auto max-sm:h-[var(--vvh,100dvh)] max-sm:max-h-none max-sm:w-full max-sm:rounded-none",
 					isOpen
 						? "visible translate-y-0 opacity-100"
 						: "invisible translate-y-3 opacity-0 pointer-events-none"
@@ -227,7 +232,7 @@ function GlobalChatPanelContent({
 							asChild
 							variant="ghost"
 							size="icon"
-							className="size-10 text-stadium-muted hover:text-white"
+							className="size-11 text-stadium-muted hover:text-white"
 						>
 							<Link href="/chat" onClick={onClose} aria-label={t("openFull")} title={t("openFull")}>
 								<Maximize2 className="size-4" aria-hidden />
@@ -237,7 +242,7 @@ function GlobalChatPanelContent({
 							ref={closeRef}
 							variant="ghost"
 							size="icon"
-							className="size-10 text-stadium-muted hover:text-white"
+							className="size-11 text-stadium-muted hover:text-white"
 							onClick={onClose}
 							aria-label={t("close")}
 						>

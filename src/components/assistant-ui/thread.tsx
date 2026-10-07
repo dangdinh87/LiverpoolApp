@@ -27,12 +27,13 @@ import {
 	DownloadIcon,
 	PencilIcon,
 	RefreshCwIcon,
+	Bot,
 	CalendarClock,
 	Table2,
 	Newspaper,
 	Users,
 } from "lucide-react";
-import { type FC } from "react";
+import { useState, type FC } from "react";
 import { useTranslations } from "next-intl";
 
 export const Thread: FC<{ compact?: boolean }> = ({ compact = false }) => {
@@ -70,7 +71,7 @@ const ThreadScrollToBottom: FC = () => {
 			<TooltipIconButton
 				tooltip={t("chat.thread.scrollToBottom")}
 				variant="outline"
-				className="aui-thread-scroll-to-bottom -top-12 absolute z-10 self-center rounded-full p-4 disabled:invisible dark:bg-background dark:hover:bg-accent"
+				className="aui-thread-scroll-to-bottom -top-14 absolute z-10 size-11 self-center rounded-full p-0 disabled:invisible dark:bg-background dark:hover:bg-accent"
 			>
 				<ArrowDownIcon />
 			</TooltipIconButton>
@@ -84,16 +85,12 @@ const ThreadWelcome: FC<{ compact?: boolean }> = ({ compact = false }) => {
 		<div className="aui-thread-welcome-root mx-auto my-auto flex w-full max-w-3xl grow flex-col">
 			<div className="aui-thread-welcome-center flex w-full grow flex-col items-center justify-center">
 				<div className="aui-thread-welcome-message flex size-full flex-col items-center justify-center px-4 text-center">
-					{/* Crest above brand name */}
+					{/* Neutral AI mark above the name (the club crest is never the site's own logo) */}
 					<div className="fade-in animate-in duration-500 flex flex-col items-center gap-2 mb-3">
 						{!compact && (
-							<img
-								src="/assets/lfc/crest.webp"
-								alt="LFC"
-								width={56}
-								height={56}
-								className="drop-shadow-[0_0_20px_rgba(200,16,46,0.4)]"
-							/>
+							<span aria-hidden className="flex size-14 items-center justify-center bg-lfc-red shadow-[0_0_24px_rgba(200,16,46,0.4)]">
+								<Bot className="size-8 text-white" />
+							</span>
 						)}
 						<h1
 							className={cn("font-bebas tracking-wider text-lfc-red-text", compact ? "text-2xl" : "text-4xl")}
@@ -108,9 +105,14 @@ const ThreadWelcome: FC<{ compact?: boolean }> = ({ compact = false }) => {
 					>
 						{t("chat.thread.welcomeSubtitle")}
 					</p>
+					{compact && (
+						<p className="mt-2 max-w-xs text-xs leading-relaxed text-stadium-muted" suppressHydrationWarning>
+							{t("chat.thread.aiNotice")}
+						</p>
+					)}
 					{!compact && (
 						<p
-							className="fade-in slide-in-from-bottom-1 animate-in text-stadium-muted/70 text-base delay-150 duration-300 mt-2 max-w-md leading-relaxed"
+							className="fade-in slide-in-from-bottom-1 animate-in text-stadium-muted text-base delay-150 duration-300 mt-2 max-w-md leading-relaxed"
 							suppressHydrationWarning
 						>
 							{t("chat.thread.welcomeDescription")}
@@ -142,7 +144,7 @@ const ThreadSuggestions: FC = () => {
 	}));
 
 	return (
-		<div className="aui-thread-welcome-suggestions grid w-full @md:grid-cols-2 gap-3 pb-4 px-1">
+		<div className="aui-thread-welcome-suggestions grid w-full grid-cols-1 @md:grid-cols-2 gap-3 pb-4 px-1">
 			{suggestions.map((suggestion, index) => (
 				<div
 					key={suggestion.key}
@@ -152,7 +154,7 @@ const ThreadSuggestions: FC = () => {
 					<ThreadPrimitive.Suggestion prompt={suggestion.prompt} send asChild>
 						<Button
 							variant="ghost"
-							className="group h-auto w-full flex-col items-start justify-start gap-1.5 border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-base transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40"
+							className="group h-auto min-h-11 w-full min-w-0 flex-col items-start justify-start gap-1.5 whitespace-normal border border-stadium-border bg-stadium-surface/30 px-4 py-3.5 text-left text-base transition-all duration-200 hover:bg-lfc-red/8 hover:border-lfc-red/40"
 							aria-label={suggestion.prompt}
 						>
 							<span className="flex items-center gap-2 font-barlow font-semibold text-base uppercase tracking-widest text-foreground/90 group-hover:text-lfc-gold transition-colors duration-200" suppressHydrationWarning>
@@ -175,16 +177,21 @@ const ThreadSuggestions: FC = () => {
 
 const Composer: FC = () => {
 	const t = useTranslations();
+	// Only grab focus where there is a hardware keyboard: on a phone, focusing
+	// on mount raises the on-screen keyboard over the welcome screen. The thread
+	// is client-only (loaded with ssr: false), so reading matchMedia is safe.
+	const [autoFocus] = useState(() => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches);
 	return (
 		<ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
 			<ComposerPrimitive.AttachmentDropzone className="aui-composer-attachment-dropzone flex w-full flex-col rounded-2xl border border-stadium-border bg-stadium-surface/40 px-1 pt-2 outline-none transition-all duration-300 has-[textarea:focus-visible]:border-lfc-red/40 has-[textarea:focus-visible]:shadow-[0_0_16px_rgba(200,16,46,0.12)] data-[dragging=true]:border-lfc-red/60 data-[dragging=true]:border-dashed data-[dragging=true]:bg-lfc-red/5">
 				<ComposerAttachments />
 				<ComposerPrimitive.Input
 					placeholder={t("chat.thread.inputPlaceholder")}
-					className="aui-composer-input mb-1 max-h-28 min-h-10 w-full resize-none bg-transparent px-4 py-2 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-0"
+					className="aui-composer-input mb-1 max-h-28 min-h-11 w-full resize-none bg-transparent px-4 py-2.5 text-base outline-none placeholder:text-muted-foreground focus-visible:ring-0"
 					rows={1}
-					autoFocus
-					aria-label="Message input"
+					autoFocus={autoFocus}
+					enterKeyHint="send"
+					aria-label={t("chat.thread.inputLabel")}
 				/>
 				<ComposerAction />
 			</ComposerPrimitive.AttachmentDropzone>
@@ -204,10 +211,10 @@ const ComposerAction: FC = () => {
 						type="submit"
 						variant="default"
 						size="icon"
-						className="aui-composer-send size-8 rounded-full"
+						className="aui-composer-send size-11 rounded-full"
 						aria-label={t("chat.thread.sendMessage")}
 					>
-						<ArrowUpIcon className="aui-composer-send-icon size-4" />
+						<ArrowUpIcon className="aui-composer-send-icon size-5" />
 					</TooltipIconButton>
 				</ComposerPrimitive.Send>
 			</AssistantIf>
@@ -220,11 +227,11 @@ const ComposerAction: FC = () => {
 					type="button"
 					variant="default"
 					size="icon"
-					className="aui-composer-send size-8 rounded-full opacity-50 cursor-not-allowed"
+					className="aui-composer-send size-11 rounded-full opacity-50 cursor-not-allowed"
 					aria-label={t("chat.thread.generating")}
 					disabled
 				>
-					<ArrowUpIcon className="aui-composer-send-icon size-4" />
+					<ArrowUpIcon className="aui-composer-send-icon size-5" />
 				</TooltipIconButton>
 			</AssistantIf>
 		</div>

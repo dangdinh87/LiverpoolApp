@@ -93,56 +93,55 @@ export function ConversationSelector({
 		older: t("chat.conversationGroups.older"),
 	};
 
-	const renderConversationItem = (conversation: Conversation) => (
-		<div
-			key={conversation.id}
-			className="group flex items-center gap-1 rounded-sm px-2 hover:bg-accent text-sm py-1.5 focus-within:bg-accent overflow-hidden"
-		>
+	const renderConversationItem = (conversation: Conversation) => {
+		const active = currentConversationId === conversation.id;
+		const title = conversation.title || t("chat.newChat");
+		return (
 			<div
-				className="flex-1 cursor-pointer overflow-hidden"
-				onClick={() => {
-					onSelect(conversation.id);
-					setOpen(false);
-				}}
+				key={conversation.id}
+				className="group relative flex items-center rounded-sm text-sm hover:bg-accent focus-within:bg-accent"
 			>
-				<span
-					className={cn(
-						"block truncate",
-						currentConversationId === conversation.id && "font-medium text-primary"
-					)}
-					title={conversation.title || t("chat.newChat")}
+				<button
+					type="button"
+					className={cn("flex min-h-11 min-w-0 flex-1 items-center gap-2 py-2 pl-2 pr-12 text-left", active && "font-medium text-primary")}
+					aria-current={active ? "true" : undefined}
+					title={title}
+					onClick={() => {
+						onSelect(conversation.id);
+						setOpen(false);
+					}}
 				>
-					{conversation.title || t("chat.newChat")}
-				</span>
+					<span className="block truncate">{title}</span>
+					{active && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />}
+				</button>
+
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							aria-label={t("chat.conversationOptions")}
+							className="absolute right-0 top-1/2 size-11 -translate-y-1/2 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 sm:data-[state=open]:opacity-100"
+						>
+							<MoreHorizontal className="size-4" aria-hidden />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="z-80">
+						<DropdownMenuItem
+							className="min-h-11 text-destructive focus:text-destructive"
+							onClick={(e: React.MouseEvent) => {
+								e.stopPropagation();
+								onDelete(conversation.id);
+							}}
+						>
+							<Trash2 className="mr-2 h-4 w-4" aria-hidden />
+							{t("common.delete")}
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
-
-			{currentConversationId === conversation.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
-
-			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 data-[state=open]:opacity-100"
-					>
-						<MoreHorizontal className="h-3 w-3" />
-					</Button>
-				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="z-80">
-					<DropdownMenuItem
-						className="text-destructive focus:text-destructive"
-						onClick={(e: React.MouseEvent) => {
-							e.stopPropagation();
-							onDelete(conversation.id);
-						}}
-					>
-						<Trash2 className="mr-2 h-4 w-4" />
-						{t("common.delete")}
-					</DropdownMenuItem>
-				</DropdownMenuContent>
-			</DropdownMenu>
-		</div>
-	);
+		);
+	};
 
 	const renderGroup = (group: TimeGroup, conversations: Conversation[]) => {
 		if (conversations.length === 0) return null;
@@ -165,7 +164,7 @@ export function ConversationSelector({
 					aria-expanded={open}
 					className={cn(
 						"justify-between bg-muted/50 hover:bg-muted border-0",
-						compact ? "w-full h-7 text-xs px-2 gap-1" : "w-[280px] h-9"
+						compact ? "h-11 w-full gap-1 px-2 text-sm" : "w-[280px] h-9"
 					)}
 				>
 					<div className="flex items-center gap-1.5 truncate min-w-0">
@@ -178,25 +177,27 @@ export function ConversationSelector({
 			<PopoverContent className="w-[280px] p-0 z-80 font-barlow" align="start">
 				<div className="p-2">
 					<div className="relative">
-						<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Search aria-hidden className="absolute left-2 top-3.5 h-4 w-4 text-muted-foreground" />
 						<Input
 							placeholder={t("common.search")}
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="pl-8 h-9"
+							className="h-11 pl-8 text-base"
+							aria-label={t("common.search")}
 						/>
 					</div>
 				</div>
-				<div
-					className="flex items-center gap-2 px-3 py-2 hover:bg-muted cursor-pointer text-primary"
-					onClick={(e: React.MouseEvent) => {
+				<button
+					type="button"
+					className="flex min-h-11 w-full items-center gap-2 px-3 py-2 text-left text-primary hover:bg-muted"
+					onClick={() => {
 						onNewChat();
 						setOpen(false);
 					}}
 				>
-					<Plus className="h-4 w-4" />
+					<Plus className="h-4 w-4" aria-hidden />
 					<span className="font-medium text-sm">{t("chat.newChat")}</span>
-				</div>
+				</button>
 				<ScrollArea className="h-[300px]">
 					{!hasConversations ? (
 						<div className="p-4 text-center text-sm text-muted-foreground">{t("errors.notFound")}</div>

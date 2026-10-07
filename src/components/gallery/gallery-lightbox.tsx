@@ -24,7 +24,7 @@ interface GalleryLightboxProps {
 
 /**
  * Lightbox (loaded on first open). yet-another-react-lightbox provides ←/→/Esc,
- * touch swipe, a focus trap and focus return to the opener; we only restrict
+ * touch swipe (pull down to close), a focus trap and focus return to the opener; we only restrict
  * preloading to the immediate neighbours and translate the controls.
  */
 export default function GalleryLightbox({ open, index, slides, onClose, onIndexChange, labels }: GalleryLightboxProps) {
@@ -36,7 +36,7 @@ export default function GalleryLightbox({ open, index, slides, onClose, onIndexC
       slides={slides}
       plugins={[Zoom, Counter, Download]}
       carousel={{ preload: 1, finite: false }}
-      controller={{ closeOnBackdropClick: true }}
+      controller={{ closeOnBackdropClick: true, closeOnPullDown: true }}
       on={{ view: ({ index: i }) => onIndexChange(i) }}
       labels={{
         Previous: labels.previous,

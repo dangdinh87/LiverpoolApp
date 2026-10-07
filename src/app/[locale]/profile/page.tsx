@@ -10,11 +10,11 @@ import { getSiteSetting } from "@/lib/gallery/queries";
 import { ProfileLayout } from "@/components/profile/profile-layout";
 import type { UserProfile, FavouritePlayer, SavedArticle } from "@/lib/supabase";
 
-export const metadata: Metadata = {
-  title: "My Profile",
-  description: "Manage your Liverpool FC fan profile.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Profile.metadata" });
+  return { title: t("title"), description: t("description"), robots: { index: false, follow: false } };
+}
 
 export default async function ProfilePage({ params }: LocaleParams) {
   const { locale } = await params;
