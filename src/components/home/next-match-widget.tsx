@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { CalendarDays, Tv } from "lucide-react";
@@ -12,12 +11,13 @@ import { useNowAfterMount } from "@/hooks/use-now-after-mount";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { WhereToWatch } from "@/components/fixtures/where-to-watch";
+import { useLiveMatch } from "@/components/fixtures/use-live-match";
+import { LiveClock, LiveEdgeTrack, LiveEventColumns, LiveScore, LiveStats, LiveStatusBadge, LiveTicker } from "@/components/fixtures/live-match-panel";
 import { cn } from "@/lib/utils";
 
 const LFC_TEAM_ID = 40;
 const LFC_CREST = "/assets/lfc/crest.webp";
 const LIVE_STATUSES = new Set(["1H", "HT", "2H", "ET", "P", "BT", "LIVE"]);
-const POLL_MS = 60_000;
 
 const crest = (team: { id: number; logo: string }) => (team.id === LFC_TEAM_ID ? LFC_CREST : team.logo);
 
@@ -119,51 +119,24 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
   const tRound = useTranslations("Match.round");
   const tMatch = useTranslations("Match");
   const locale = useLocale();
-  // undefined = no poll result yet; null = poll says the match is over.
-  const [polled, setPolled] = useState<Fixture | null | undefined>(undefined);
-  const fixture = polled === undefined ? initial : (polled ?? initial);
-  const isLive = polled !== null && LIVE_STATUSES.has(fixture.fixture.status.short);
-
-  useEffect(() => {
-    if (!LIVE_STATUSES.has(initial.fixture.status.short)) return;
-    let stopped = false;
-    const poll = async () => {
-      try {
-        const res = await fetch("/api/live-fixture");
-        if (!res.ok || stopped) return;
-        const { fixture: next } = (await res.json()) as { fixture: Fixture | null };
-        if (!stopped) setPolled(next);
-      } catch {
-        /* keep showing the last known score */
-      }
-    };
-    const id = setInterval(poll, POLL_MS);
-    return () => {
-      stopped = true;
-      clearInterval(id);
-    };
-  }, [initial]);
+  // Also listens around kick-off, in case the cached homepage still says "not started".
+  const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial, true);
+  // A match that ended while the page was open keeps the live layout with an "FT" chip.
+  const isLive = LIVE_STATUSES.has(fixture.fixture.status.short) || ended;
 
   const { teams, league, fixture: f, goals } = fixture;
   const date = new Date(f.date);
-  const isHT = f.status.short === "HT";
+  const lfcSide = teams.home.id === LFC_TEAM_ID ? "home" : teams.away.id === LFC_TEAM_ID ? "away" : null;
   const round = roundLabel(tRound, league.round);
   const zone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
   const hasDetailPage = f.id > 0;
   const detailHref = hasDetailPage ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
-    <div className={cn(CARD, "p-4 sm:p-5", isLive && "border-lfc-gold/60")}>
+    <div ref={ref} className={cn(CARD, "p-4 sm:p-5", isLive && !ended && "border-lfc-red/60")}>
       <div className="mb-4 flex flex-col items-start gap-1 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between min-[390px]:gap-3">
         {isLive ? (
-          <p className="flex items-center gap-2 font-barlow text-sm font-bold uppercase tracking-[0.14em] text-lfc-gold">
-            <span aria-hidden className="relative flex size-2.5">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-lfc-gold opacity-75" />
-              <span className="relative inline-flex size-2.5 rounded-full bg-lfc-gold" />
-            </span>
-            {t("live")}
-            {isHT ? " · HT" : f.status.elapsed != null ? ` · ${f.status.elapsed}'` : ""}
-          </p>
+          <LiveStatusBadge status={f.status.short} ended={ended} />
         ) : (
           <p className="section-label text-brand">{t("title")}</p>
         )}
@@ -184,15 +157,20 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         <TeamBlock team={teams.home} />
         <div className="flex w-28 shrink-0 flex-col items-center gap-1 text-center sm:w-36">
           {isLive ? (
-            <span className="font-bebas text-5xl leading-none tabular-nums text-white">
-              {goals.home ?? 0}
-              <span className="px-1 text-stadium-muted">-</span>
-              {goals.away ?? 0}
-            </span>
+            <>
+              <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-5xl text-white" />
+              <LiveClock
+                live={live}
+                updatedAt={updatedAt}
+                fallback={f.status.elapsed != null ? `${f.status.elapsed}'` : null}
+                status={f.status.short}
+                ended={ended}
+              />
+            </>
           ) : (
             <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date, zone)}</span>
           )}
-          <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>
+          {!isLive && <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>}
           {!isLive && <span className="text-xs text-stadium-muted">{h("vnTime")} · {formatZoneOffset(date, zone)}</span>}
         </div>
         <TeamBlock team={teams.away} />
@@ -201,6 +179,14 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
       {!isLive && (
         <div className="mt-4">
           <Countdown target={date.getTime()} />
+        </div>
+      )}
+
+      {isLive && live && (
+        <div className="mt-3 space-y-4">
+          <LiveEventColumns events={live.events} centered />
+          {live.stats && <LiveStats stats={live.stats} lfcSide={lfcSide} rows />}
+          <LiveTicker live={live} updatedAt={updatedAt} ended={ended} className="border-t border-[var(--line)] pt-3" />
         </div>
       )}
 
@@ -220,6 +206,8 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
           {h("allFixtures")}
         </Link>
       </div>
+
+      {isLive && live && <LiveEdgeTrack live={live} ended={ended} />}
     </div>
   );
 }

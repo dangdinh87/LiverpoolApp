@@ -173,6 +173,40 @@ export interface FixtureEvent {
   comments: string | null;
 }
 
+// ─── Live match snapshot (ESPN, polled while a match is in play) ────────────
+
+export type LiveSide = "home" | "away";
+
+export interface LiveMatchEvent {
+  side: LiveSide;
+  kind: "goal" | "penalty" | "own-goal" | "yellow" | "red";
+  /** ESPN's clock label: "8'", "45'+2'". */
+  minute: string;
+  /** Minute as a number (stoppage time added), for placing it on the progress bar. */
+  at: number;
+  player: string | null;
+}
+
+export interface LiveMatchSnapshot {
+  state: "pre" | "in" | "post";
+  /** Mapped like Fixture status: "1H" | "HT" | "2H" | "ET" | "P" | "FT". */
+  statusShort: string;
+  clock: string;
+  /** Minute played (stoppage time added); null before kick-off or when unknown. */
+  minute: number | null;
+  score: { home: number | null; away: number | null };
+  /** Goals and cards, in match order. */
+  events: LiveMatchEvent[];
+  stats: {
+    possession: [number, number];
+    shots: [number, number];
+    onTarget: [number, number];
+    corners: [number, number];
+  } | null;
+  /** The newest line of ESPN's (English) text commentary. */
+  latest: { minute: string; text: string } | null;
+}
+
 // ─── Fixture Lineups ────────────────────────────────────────────────────────
 
 export interface LineupPlayer {

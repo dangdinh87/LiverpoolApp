@@ -3,7 +3,16 @@
 // plus venue, attendance, referee, and 28 per-team match statistics.
 
 import "server-only";
-import type { Fixture, FixtureEvent, FixtureLineup, FixtureTeamStats, FixtureStatItem } from "@/lib/types/football";
+import type {
+  Fixture,
+  FixtureEvent,
+  FixtureLineup,
+  FixtureTeamStats,
+  FixtureStatItem,
+  LiveMatchEvent,
+  LiveMatchSnapshot,
+  LiveSide,
+} from "@/lib/types/football";
 import { getCurrentSeasonYear } from "@/lib/football/current-season";
 
 const ESPN_BASE = "https://site.api.espn.com/apis/site/v2/sports/soccer";
@@ -74,9 +83,17 @@ interface EspnRosterTeam {
 interface EspnSummary {
   header?: {
     competitions?: {
+      status?: {
+        displayClock?: string;
+        period?: number;
+        type?: { name?: string; state?: string };
+      };
       competitors?: {
+        homeAway?: string;
+        score?: string;
         team?: {
           id?: string;
+          displayName?: string;
           logo?: string;
           logos?: { href: string; rel?: string[] }[];
         };
@@ -84,6 +101,7 @@ interface EspnSummary {
     }[];
   };
   keyEvents?: EspnKeyEvent[];
+  commentary?: { sequence?: number; time?: { displayValue?: string }; text?: string }[];
   boxscore?: {
     teams?: EspnBoxscoreTeam[];
   };
@@ -696,6 +714,145 @@ export async function getEspnMatchDetail(fixtureDate: string): Promise<EspnMatch
     return { venue, attendance, referee, stats };
   } catch (err) {
     console.error("[espn] getEspnMatchDetail failed:", err);
+    return null;
+  }
+}
+
+// ─── Public: live snapshot (clock, score, goals/cards, key stats) ──────────
+
+/** Fixture-style status for ESPN's clock state. */
+function liveStatusShort(name: string, state: string, period: number): string {
+  if (state === "pre") return "NS";
+  if (state === "post") return name.includes("PEN") ? "PEN" : name.includes("AET") ? "AET" : "FT";
+  if (name.includes("HALFTIME")) return "HT";
+  if (name.includes("SHOOTOUT") || period >= 5) return "P";
+  if (period >= 3) return "ET";
+  return period === 2 ? "2H" : "1H";
+}
+
+const LIVE_KIND: Record<string, LiveMatchEvent["kind"]> = {
+  "Penalty": "penalty",
+  "Own Goal": "own-goal",
+  "Yellow Card": "yellow",
+  "Red Card": "red",
+};
+
+function statPair(teams: EspnBoxscoreTeam[], ids: [string, string], name: string): [number, number] {
+  const read = (id: string) => {
+    const raw = teams.find((t) => t.team.id === id)?.statistics.find((s) => s.name === name)?.displayValue;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  };
+  return [read(ids[0]), read(ids[1])];
+}
+
+/** Exported for tests. Null when the summary has no header to read the clock from. */
+export function mapLiveSnapshot(summary: EspnSummary): LiveMatchSnapshot | null {
+  const comp = summary.header?.competitions?.[0];
+  const home = comp?.competitors?.find((c) => c.homeAway === "home");
+  const away = comp?.competitors?.find((c) => c.homeAway === "away");
+  if (!comp?.status || !home?.team?.id || !away?.team?.id) return null;
+
+  const ids: [string, string] = [home.team.id, away.team.id];
+  const state = comp.status.type?.state === "in" || comp.status.type?.state === "post" ? comp.status.type.state : "pre";
+  const clock = comp.status.displayClock ?? "";
+  const { elapsed, extra } = parseMinute(clock);
+  const score = { home: parseEspnScore(home.score), away: parseEspnScore(away.score) };
+
+  const sideOf = (team: EspnKeyEvent["team"]): LiveSide | null => {
+    if (!team) return null;
+    if (team.id === ids[0] || team.displayName === home.team?.displayName) return "home";
+    if (team.id === ids[1] || team.displayName === away.team?.displayName) return "away";
+    return null;
+  };
+
+  const events: LiveMatchEvent[] = [];
+  for (const ke of summary.keyEvents ?? []) {
+    const mapped = mapEventType(ke.type.type);
+    const side = sideOf(ke.team);
+    if (!mapped || !side || mapped.type === "subst") continue;
+    const m = parseMinute(ke.clock.displayValue);
+    events.push({
+      side,
+      kind: LIVE_KIND[mapped.detail] ?? "goal",
+      minute: ke.clock.displayValue,
+      at: m.elapsed + (m.extra ?? 0),
+      player: ke.participants?.[0]?.athlete?.displayName ?? null,
+    });
+  }
+  events.sort((a, b) => a.at - b.at);
+
+  // ESPN can file an own goal under the player's team rather than the team it
+  // counts for. When the scorer list disagrees with the score and flipping the
+  // own goals fixes it, flip them.
+  const tally = (list: LiveMatchEvent[]) => {
+    const goals = list.filter((e) => e.kind === "goal" || e.kind === "penalty" || e.kind === "own-goal");
+    return [goals.filter((e) => e.side === "home").length, goals.filter((e) => e.side === "away").length];
+  };
+  const flipped = events.map((e) => (e.kind === "own-goal" ? { ...e, side: (e.side === "home" ? "away" : "home") as LiveSide } : e));
+  const [h, a] = tally(events);
+  const [fh, fa] = tally(flipped);
+  const ownGoalsFiled = (h !== score.home || a !== score.away) && fh === score.home && fa === score.away;
+
+  const box = summary.boxscore?.teams ?? [];
+  let stats: LiveMatchSnapshot["stats"] = null;
+  if (box.length === 2) {
+    const [ph, pa] = statPair(box, ids, "possessionPct");
+    const possessionHome = ph + pa > 0 ? Math.round((ph / (ph + pa)) * 100) : 50;
+    stats = {
+      possession: [possessionHome, 100 - possessionHome],
+      shots: statPair(box, ids, "totalShots"),
+      onTarget: statPair(box, ids, "shotsOnTarget"),
+      corners: statPair(box, ids, "wonCorners"),
+    };
+  }
+
+  let latest: LiveMatchSnapshot["latest"] = null;
+  let latestSeq = -1;
+  for (const c of summary.commentary ?? []) {
+    const minute = c.time?.displayValue;
+    if (!c.text || !minute || (c.sequence ?? 0) <= latestSeq) continue;
+    latest = { minute, text: c.text };
+    latestSeq = c.sequence ?? 0;
+  }
+
+  return {
+    state,
+    statusShort: liveStatusShort(comp.status.type?.name ?? "", state, comp.status.period ?? 0),
+    clock,
+    minute: elapsed > 0 ? elapsed + (extra ?? 0) : null,
+    score,
+    events: ownGoalsFiled ? flipped : events,
+    stats,
+    latest,
+  };
+}
+
+/**
+ * Live state of a Liverpool match from ESPN, read fresh on every call (the
+ * caller's CDN cache is the throttle). Football-Data.org's free tier gives no
+ * match minute and lags on the score; ESPN has both, plus events and stats.
+ */
+export async function getEspnLiveSnapshot(fixtureDate: string): Promise<LiveMatchSnapshot | null> {
+  try {
+    const espnId = await resolveEspnId(fixtureDate);
+    if (!espnId) return null;
+    for (const slug of LEAGUE_SLUGS) {
+      try {
+        const res = await fetch(`${ESPN_BASE}/${slug}/summary?event=${espnId}`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+        });
+        if (!res.ok) continue;
+        const snapshot = mapLiveSnapshot((await res.json()) as EspnSummary);
+        if (snapshot) return snapshot;
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error("[espn] getEspnLiveSnapshot failed:", err);
     return null;
   }
 }

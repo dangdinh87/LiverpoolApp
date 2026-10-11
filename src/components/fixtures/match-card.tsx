@@ -10,12 +10,14 @@ import { cn } from "@/lib/utils";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { MatchCountdown } from "./match-countdown";
+import { useLiveMatch } from "./use-live-match";
+import { LiveClock, LiveEdgeTrack, LiveEventColumns, LiveScore, LiveStats, LiveStatusBadge, LiveTicker } from "./live-match-panel";
 import { roundLabel } from "./round-label";
 import { displayTeamName } from "./team-name";
 
 export const LFC_TEAM_ID = 40;
 const FINISHED = ["FT", "AET", "PEN"];
-const LIVE = ["1H", "2H", "HT", "ET", "P", "LIVE"];
+const LIVE = ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"];
 
 /** Short competition tag + accent (dot colour only; text stays AA-contrast). */
 const COMP_TAG: Record<string, { short: string; dot: string }> = {
@@ -73,14 +75,20 @@ interface MatchCardProps {
   isNext?: boolean;
 }
 
-export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
+export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) {
   const t = useTranslations("Match");
   const tRound = useTranslations("Match.round");
+  // The next match also listens around kick-off, in case this cached page still says "not started".
+  const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial, isNext);
+
   const { fixture: f, league, teams, goals, score } = fixture;
   const status = f.status.short;
-  const isFinished = FINISHED.includes(status);
-  const isLive = LIVE.includes(status);
+  // A match that ended while the page was open stays in the live layout with a "Full time" label.
+  const isLive = LIVE.includes(status) || ended;
+  const isFinished = !isLive && FINISHED.includes(status);
   const isUpcoming = !isFinished && !isLive;
+  const showNext = isNext && isUpcoming;
+  const lfcSide = teams.home.id === LFC_TEAM_ID ? "home" : teams.away.id === LFC_TEAM_ID ? "away" : null;
   const result = getMatchResult(fixture);
   const resultStyle = result === "NS" ? null : RESULT_STYLE[result];
   const comp = COMP_TAG[league.name];
@@ -111,15 +119,15 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
       aria-label={aria}
       className={cn(
         "surface-interactive group relative block overflow-hidden",
-        isLive && "!border-lfc-red/60",
-        isNext && "!border-lfc-gold/40",
+        isLive && !ended && "!border-lfc-red/50",
+        showNext && "!border-lfc-gold/40",
       )}
     >
       {isFinished && resultStyle && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", resultStyle.strip)} />}
-      {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
-      {isNext && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-gold" />}
+      {isLive && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", ended ? "bg-white/30" : "bg-lfc-red")} />}
+      {showNext && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-gold" />}
 
-      <div className="px-4 py-3.5 sm:px-6 sm:py-4 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_13rem] lg:grid-rows-2 lg:items-center lg:gap-x-8 lg:gap-y-0.5">
+      <div ref={ref} className="px-4 py-3.5 sm:px-6 sm:py-4 lg:grid lg:grid-cols-[12rem_minmax(0,1fr)_13rem] lg:grid-rows-2 lg:items-center lg:gap-x-8 lg:gap-y-0.5">
         {/* Meta row: competition · round on the left, state badge on the right */}
         <div className="mb-3 flex min-h-6 items-center justify-between gap-3 lg:contents">
           <p className="flex min-w-0 items-center gap-2 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted lg:col-start-1 lg:row-start-1 lg:self-end">
@@ -130,14 +138,15 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
             </span>
           </p>
 
-          <div className="flex shrink-0 items-center gap-2 lg:col-start-3 lg:row-start-1 lg:self-end lg:justify-self-end">
-            {isLive && (
-              <span className="inline-flex items-center gap-1.5 border border-lfc-red/50 bg-lfc-red/15 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white">
-                <span aria-hidden className="size-1.5 rounded-full bg-lfc-red animate-pulse" />
-                {t("live")}
-                {f.status.elapsed ? ` ${f.status.elapsed}'` : ""}
-              </span>
+          <div
+            className={cn(
+              "flex shrink-0 items-center gap-2",
+              isLive
+                ? "lg:col-start-1 lg:row-start-2 lg:self-start"
+                : "lg:col-start-3 lg:row-start-1 lg:self-end lg:justify-self-end",
             )}
+          >
+            {isLive && <LiveStatusBadge status={status} ended={ended} />}
             {isFinished && resultStyle && (
               <span
                 className={cn(
@@ -149,7 +158,7 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
                 {extra && <span className="text-white/70">· {extra}</span>}
               </span>
             )}
-            {isNext && <MatchCountdown kickOff={f.date} />}
+            {showNext && <MatchCountdown kickOff={f.date} />}
           </div>
         </div>
 
@@ -158,7 +167,18 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
           <TeamSide team={teams.home} align="home" />
 
           <div className="text-center">
-            {isFinished || isLive ? (
+            {isLive ? (
+              <>
+                <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-4xl text-white sm:text-5xl" />
+                <LiveClock
+                  live={live}
+                  updatedAt={updatedAt}
+                  fallback={f.status.elapsed ? `${f.status.elapsed}'` : null}
+                  status={status}
+                  ended={ended}
+                />
+              </>
+            ) : isFinished ? (
               <>
                 <p className="font-bebas text-4xl leading-none tracking-wide text-white tabular-nums sm:text-5xl">
                   {goals.home ?? 0}
@@ -182,17 +202,39 @@ export function MatchCard({ fixture, isNext = false }: MatchCardProps) {
           <TeamSide team={teams.away} align="away" />
         </div>
 
-        {/* Footer: date + venue */}
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted lg:contents">
-          <span className="shrink-0 lg:col-start-1 lg:row-start-2 lg:self-start">{dateStr}</span>
-          {f.venue.name && (
-            <span className="flex min-w-0 items-center gap-1.5 text-xs text-stadium-muted lg:col-start-3 lg:row-start-2 lg:self-start lg:justify-self-end">
-              <MapPin size={12} aria-hidden className="shrink-0" />
-              <span className="truncate">{f.venue.name}</span>
-            </span>
-          )}
-        </div>
+        {/* Live: goals/cards under the teams, stats in the side column, newest commentary across the foot */}
+        {isLive && live && (
+          <>
+            <LiveEventColumns events={live.events} className="mt-3 lg:col-start-2 lg:row-start-3 lg:mt-2" />
+            {live.stats && (
+              <div className="mt-4 lg:col-start-3 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center">
+                <LiveStats stats={live.stats} lfcSide={lfcSide} />
+              </div>
+            )}
+            <LiveTicker
+              live={live}
+              updatedAt={updatedAt}
+              ended={ended}
+              className="mt-4 border-t border-[var(--line)] pt-3 lg:col-span-3 lg:row-start-4"
+            />
+          </>
+        )}
+
+        {/* Footer: date + venue (dropped while live: it is today's match) */}
+        {!isLive && (
+          <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line)] pt-3 text-xs text-stadium-muted lg:contents">
+            <span className="shrink-0 lg:col-start-1 lg:row-start-2 lg:self-start">{dateStr}</span>
+            {f.venue.name && (
+              <span className="flex min-w-0 items-center gap-1.5 text-xs text-stadium-muted lg:col-start-3 lg:row-start-2 lg:self-start lg:justify-self-end">
+                <MapPin size={12} aria-hidden className="shrink-0" />
+                <span className="truncate">{f.venue.name}</span>
+              </span>
+            )}
+          </div>
+        )}
       </div>
+
+      {isLive && live && <LiveEdgeTrack live={live} ended={ended} />}
     </Link>
   );
 }

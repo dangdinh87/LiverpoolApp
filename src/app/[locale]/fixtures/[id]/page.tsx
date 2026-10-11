@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, MapPin, Users, CircleDot, ListOrdered, BarChart3, Shirt, Swords, Tv } from "lucide-react";
+import { ArrowLeft, CalendarDays, MapPin, Users, CircleDot, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
@@ -30,6 +30,7 @@ import {
   teamLogo,
 } from "@/components/fixtures/match-detail-parts";
 import { FormationPitch } from "@/components/fixtures/formation-pitch";
+import { LiveDetailBadge, LiveDetailScore, LiveDetailStats, LiveDetailTimeline } from "@/components/fixtures/live-match-detail";
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
@@ -97,7 +98,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const { fixture: f, league, teams, goals, score } = match;
   const result = getMatchResult(match);
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
-  const isLive = ["1H", "2H", "HT", "ET", "P", "LIVE"].includes(f.status.short);
+  const isLive = ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"].includes(f.status.short);
 
   const [events, lineups, providerStats, espnDetail, prevFixtures, seasonFixtures] = await Promise.all([
     isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
@@ -273,12 +274,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   )}
                 </span>
               )}
-              {isLive && (
-                <span className="inline-flex shrink-0 items-center gap-1.5 border border-lfc-red/50 bg-lfc-red/15 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white">
-                  <span aria-hidden className="size-1.5 rounded-full bg-lfc-red animate-pulse" />
-                  {tMatch("live")}{f.status.elapsed ? ` ${f.status.elapsed}'` : ""}
-                </span>
-              )}
+              {isLive && <LiveDetailBadge initial={match} />}
               {!hasStarted && <MatchCountdown kickOff={f.date} showLabel={false} />}
             </div>
 
@@ -298,7 +294,9 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
               {/* Score / time */}
               <div className="pt-1 text-center sm:pt-3">
-                {hasStarted ? (
+                {isLive ? (
+                  <LiveDetailScore initial={match} />
+                ) : hasStarted ? (
                   <>
                     <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
                       {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
@@ -384,7 +382,9 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           {hasStarted && (
             <section id="timeline" className={sectionClass}>
               <SectionHeader title={tDetail("matchTimeline")} />
-              {hasEvents ? (
+              {isLive ? (
+                <LiveDetailTimeline initial={match} />
+              ) : hasEvents ? (
                 <ul className="surface px-4 sm:px-5">
                   {resolvedEvents.map((event, i) => (
                     <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
@@ -405,7 +405,9 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           {hasStarted && (
             <section id="stats" className={sectionClass}>
               <SectionHeader title={tDetail("statistics")} />
-              {homeStats && awayStats ? (
+              {isLive ? (
+                <LiveDetailStats initial={match} homeName={homeName} awayName={awayName} />
+              ) : homeStats && awayStats ? (
                 <div className="surface p-4 sm:p-5">
                   <div className="mb-4 flex items-center justify-between gap-3 text-sm font-semibold text-white">
                     <span className="min-w-0 truncate">{homeName}</span>

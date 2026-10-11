@@ -9,6 +9,7 @@ import { FdoProvider } from "./fdo-provider";
 import { getFdoStandings, getFdoUclStandings } from "./fdo-standings";
 import { getFdoLfcFixtures, getFdoCoach } from "./fdo-matches";
 import { getEspnMatchEvents, getEspnMatchDetail, getEspnMatchLineups, getEspnCupFixtures } from "./espn-events";
+export { getEspnLiveSnapshot as getLiveSnapshot } from "./espn-events";
 export type { EspnMatchDetail } from "./espn-events";
 export { computeSeasonStats } from "./season-stats";
 export { computeH2H } from "./fdo-h2h";

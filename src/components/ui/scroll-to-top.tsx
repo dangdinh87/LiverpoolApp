@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Floating "back to top". Sits above the chat button (GlobalChat publishes
  * --fab-offset) and clear of the iOS home indicator and the phone bottom bar. Always mounted so the
- * fade is a pure CSS transition; hidden from tab order/AT while invisible.
+ * fade is a pure CSS transition; inert (no focus, no AT) while invisible.
  */
 export function ScrollToTop() {
   const t = useTranslations("Common");
@@ -26,8 +26,9 @@ export function ScrollToTop() {
       type="button"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       aria-label={t("scrollToTop")}
-      tabIndex={visible ? 0 : -1}
-      aria-hidden={!visible}
+      // `inert` takes the hidden button out of the tab order and the accessibility
+      // tree in one go (aria-hidden on a focusable button is flagged by audits).
+      inert={!visible}
       className={cn(
         "fixed z-50 flex size-11 items-center justify-center rounded-full border border-[var(--line-strong)] bg-stadium-surface/95 text-white shadow-lg backdrop-blur",
         "transition-[opacity,transform,background-color] duration-200 ease-[var(--ease-out)] hover:bg-lfc-red",
