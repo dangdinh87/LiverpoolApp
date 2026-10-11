@@ -13,6 +13,7 @@ export interface RouteUnderTest {
  */
 export const ROUTES: RouteUnderTest[] = [
   { path: "/", expects: /liverpool/i },
+  { path: "/analysis", expects: /analysis|phân tích|written here|bài của site/i },
   { path: "/news", expects: /news|tin t/i },
   { path: "/squad", expects: /squad|đội hình/i },
   { path: "/players", expects: /player|cầu thủ/i },

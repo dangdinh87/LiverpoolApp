@@ -20,6 +20,7 @@ export async function GET() {
   const staticRoutes = [
     { path: "/", changefreq: "daily", priority: "1.0" },
     { path: "/news", changefreq: "hourly", priority: "0.9" },
+    { path: "/analysis", changefreq: "daily", priority: "0.9" },
     { path: "/squad", changefreq: "weekly", priority: "0.9" },
     { path: "/fixtures", changefreq: "daily", priority: "0.9" },
     { path: "/standings", changefreq: "daily", priority: "0.8" },
@@ -37,6 +38,7 @@ export async function GET() {
   // ─── Dynamic routes from DB (graceful fallback if DB unavailable) ─────────
   let digests: { digest_date: string; generated_at: string }[] = [];
   let fixtureUrls: { id: number; date: string; label: string }[] = [];
+  const ownArticles: { slug: string; published_at: string }[] = [];
 
   try {
     const [digestData, fixtures] = await Promise.allSettled([
@@ -95,6 +97,12 @@ export async function GET() {
   // Scraped article pages (/news/<slug>) are excerpt-only mirrors of other
   // publishers' stories and are noindex (see generateMetadata) — keep them out
   // of the sitemap. Only our own digest pages below are listed.
+
+  // The site's own articles: original content, unlike the /news mirrors, so
+  // these are the pages here that are actually worth crawling.
+  for (const a of ownArticles) {
+    urls.push(urlEntry(`/analysis/${a.slug}`, a.published_at.slice(0, 10), "monthly", "0.8"));
+  }
 
   // Digest pages
   for (const d of digests) {

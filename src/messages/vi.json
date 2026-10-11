@@ -50,7 +50,8 @@
         "more": "Thêm"
       },
       "quick": "Điều hướng nhanh",
-      "legal": "Pháp lý"
+      "legal": "Pháp lý",
+      "analysis": "Phân tích"
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -1173,6 +1174,33 @@
       "playoff": "Vòng play-off",
       "leaguePhase": "Vòng league",
       "group": "Vòng bảng"
+    },
+    "liveCard": {
+      "live": "Trực tiếp",
+      "firstHalf": "Hiệp 1",
+      "secondHalf": "Hiệp 2",
+      "halfTime": "Nghỉ giữa hiệp",
+      "extraTime": "Hiệp phụ",
+      "penalties": "Luân lưu",
+      "fullTime": "Hết trận",
+      "ftShort": "FT",
+      "htShort": "HT",
+      "possession": "Kiểm soát bóng",
+      "shots": "Dứt điểm",
+      "onTarget": "Trúng đích",
+      "corners": "Phạt góc",
+      "progress": "Số phút đã đá",
+      "updatedNow": "Vừa cập nhật",
+      "updatedAgo": "Cập nhật {s} giây trước",
+      "penShort": "pen",
+      "ogShort": "phản lưới",
+      "event": {
+        "goal": "Bàn thắng",
+        "penalty": "Bàn thắng phạt đền",
+        "own-goal": "Phản lưới nhà",
+        "yellow": "Thẻ vàng",
+        "red": "Thẻ đỏ"
+      }
     }
   },
   "Footer": {
@@ -1366,5 +1394,33 @@
       "zoomIn": "Phóng to",
       "zoomOut": "Thu nhỏ"
     }
+  },
+  "Analysis": {
+    "metadata": {
+      "title": "Phân tích",
+      "description": "Bài sau trận và phân tích viết từ số liệu: bàn thắng, dứt điểm, cầm bóng, và mỗi kết quả đưa Liverpool tới đâu."
+    },
+    "hero": {
+      "eyebrow": "Bài của site",
+      "title": "Phân tích",
+      "description": "Bài viết dựng từ dữ liệu trận đấu, không xào lại tin của ai. Mọi con số đều lấy từ nguồn dữ liệu trận."
+    },
+    "kinds": {
+      "review": "Sau trận",
+      "preview": "Trước trận",
+      "weekly": "Tuần qua",
+      "digest": "Điểm tin",
+      "history": "Lịch sử"
+    },
+    "empty": {
+      "title": "Chưa có bài nào",
+      "description": "Bài sẽ xuất hiện ở đây sau khi trận kết thúc và dữ liệu về đủ."
+    },
+    "disclosure": {
+      "body": "Bài do {brand} viết tự động từ dữ liệu trận đấu. Mọi con số và tên riêng đều được đối chiếu lại với dữ liệu đó trước khi đăng.",
+      "link": "Cách làm"
+    },
+    "viewMatch": "Xem chi tiết trận",
+    "related": "Bài cùng loại"
   }
 }

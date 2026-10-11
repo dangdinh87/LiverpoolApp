@@ -50,7 +50,8 @@
         "more": "More"
       },
       "quick": "Quick navigation",
-      "legal": "Legal"
+      "legal": "Legal",
+      "analysis": "Analysis"
     },
     "labels": {
       "opponent": "Opponent",
@@ -1173,6 +1174,33 @@
       "playoff": "Play-offs",
       "leaguePhase": "League phase",
       "group": "Group stage"
+    },
+    "liveCard": {
+      "live": "Live",
+      "firstHalf": "1st half",
+      "secondHalf": "2nd half",
+      "halfTime": "Half-time",
+      "extraTime": "Extra time",
+      "penalties": "Penalties",
+      "fullTime": "Full time",
+      "ftShort": "FT",
+      "htShort": "HT",
+      "possession": "Possession",
+      "shots": "Shots",
+      "onTarget": "On target",
+      "corners": "Corners",
+      "progress": "Minutes played",
+      "updatedNow": "Updated just now",
+      "updatedAgo": "Updated {s}s ago",
+      "penShort": "pen",
+      "ogShort": "OG",
+      "event": {
+        "goal": "Goal",
+        "penalty": "Penalty goal",
+        "own-goal": "Own goal",
+        "yellow": "Yellow card",
+        "red": "Red card"
+      }
     }
   },
   "Footer": {
@@ -1366,5 +1394,33 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out"
     }
+  },
+  "Analysis": {
+    "metadata": {
+      "title": "Analysis",
+      "description": "Match reports and analysis written from the numbers: goals, shots, possession and where each result leaves Liverpool."
+    },
+    "hero": {
+      "eyebrow": "Written here",
+      "title": "Analysis",
+      "description": "Match reports built from the data, not from someone else's story. Every figure comes from the match feed."
+    },
+    "kinds": {
+      "review": "Match report",
+      "preview": "Preview",
+      "weekly": "The week",
+      "digest": "Daily digest",
+      "history": "History"
+    },
+    "empty": {
+      "title": "Nothing written yet",
+      "description": "Reports appear here after a match finishes and the data lands."
+    },
+    "disclosure": {
+      "body": "Written automatically by {brand} from the match data. Every number and name is checked against that data before it publishes.",
+      "link": "How this works"
+    },
+    "viewMatch": "View match details",
+    "related": "More like this"
   }
 }

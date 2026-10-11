@@ -191,6 +191,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     { href: "/", label: t("home"), paths: ["/"] as readonly string[] },
     { href: "/fixtures", label: t("season"), paths: MATCH_PATHS as readonly string[], soon: matchStartsSoon },
     { href: "/news", label: t("news"), paths: ["/news"] as readonly string[] },
+    { href: "/analysis", label: t("analysis"), paths: ["/analysis"] as readonly string[] },
     { href: "/squad", label: t("squad"), paths: SQUAD_PATHS as readonly string[] },
   ];
   const clubActive = isActivePath(pathname, "/history") || isActivePath(pathname, "/gallery");
@@ -355,7 +356,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
             <Bird size={16} className="relative z-1 text-white" aria-hidden />
             {/* Label from 2xl; icon-only below so the row fits the page container */}
             <span className="ai-btn-text hidden 2xl:inline">Reds AI</span>
-            <span className="ai-btn-shimmer" />
+            <span className="ai-btn-sheen" />
           </Link>
           <LanguageSwitcher />
 

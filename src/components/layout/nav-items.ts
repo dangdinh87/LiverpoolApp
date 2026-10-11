@@ -14,7 +14,7 @@ export const isActivePath = (pathname: string, base: string) =>
 export const MATCH_PATHS = ["/season", "/fixtures", "/standings", "/stats"] as const;
 export const SQUAD_PATHS = ["/squad", "/player", "/players"] as const;
 /** Pages reached from the "Thêm" (More) sheet rather than a tab. */
-export const MORE_PATHS = ["/history", "/gallery", "/about", "/legal", "/profile", "/auth"] as const;
+export const MORE_PATHS = ["/analysis", "/history", "/gallery", "/about", "/legal", "/profile", "/auth"] as const;
 
 export const isActiveAny = (pathname: string, bases: readonly string[]) =>
   bases.some((base) => isActivePath(pathname, base));

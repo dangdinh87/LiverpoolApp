@@ -9,6 +9,7 @@ import { describeDigestWindow } from "./digest-window";
 import { analyzeArticleRelevance } from "./relevance";
 import { buildCurrentFactsBlock } from "@/lib/prompts/current-facts";
 import type { NewsArticle } from "./types";
+import { parseModelJson } from "@/lib/ai/parse-model-json";
 
 const SEO_ARTICLE_SECTION_CATEGORY = "__seo_article__";
 
@@ -383,50 +384,7 @@ type ParsedDigest = {
  * instead of failing the whole day's digest.
  */
 export function parseDigestJson(text: string): ParsedDigest {
-  const stripped = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
-  const start = stripped.indexOf("{");
-  const end = stripped.lastIndexOf("}");
-  if (start === -1 || end <= start) throw new Error("no JSON object in model output");
-  const body = stripped.slice(start, end + 1);
-
-  const attempts = [body, repairJson(body)];
-  let lastError: unknown;
-  for (const candidate of attempts) {
-    try {
-      return validateParsedDigest(JSON.parse(candidate));
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw new Error(`digest JSON unparseable: ${lastError instanceof Error ? lastError.message : lastError}`);
-}
-
-/** Escape raw control characters inside string literals and drop trailing commas. */
-function repairJson(body: string): string {
-  let out = "";
-  let inString = false;
-  let escaped = false;
-  for (const ch of body) {
-    if (inString) {
-      if (escaped) {
-        escaped = false;
-        out += ch;
-      } else if (ch === "\\") {
-        escaped = true;
-        out += ch;
-      } else if (ch === '"') {
-        inString = false;
-        out += ch;
-      } else if (ch === "\n") out += "\\n";
-      else if (ch === "\r") out += "\\r";
-      else if (ch === "\t") out += "\\t";
-      else out += ch;
-    } else {
-      if (ch === '"') inString = true;
-      out += ch;
-    }
-  }
-  return out.replace(/,\s*([}\]])/g, "$1");
+  return validateParsedDigest(parseModelJson(text));
 }
 
 function validateParsedDigest(value: unknown): ParsedDigest {
@@ -517,18 +475,11 @@ const CORE_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON gồm "title", "su
 const SEO_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON dạng {"seoArticle": {...}} theo cấu trúc seoArticle ở trên. KHÔNG có "title", "summary", "sections". Bài dài 500-700 từ.`;
 
 function parseSeoOnlyJson(text: string): { seoArticle: DigestSeoArticle } {
-  const stripped = text.replace(/^\s*```(?:json)?\s*/i, "").replace(/```\s*$/, "").trim();
-  const start = stripped.indexOf("{");
-  const end = stripped.lastIndexOf("}");
-  if (start === -1 || end <= start) throw new Error("no JSON object in model output");
-  const body = stripped.slice(start, end + 1);
-  for (const candidate of [body, repairJson(body)]) {
-    try {
-      const v = JSON.parse(candidate);
-      const article = v?.seoArticle ?? v;
-      if (isDigestSeoArticle(article)) return { seoArticle: article };
-    } catch { /* try the repaired form */ }
-  }
+  try {
+    const v = parseModelJson<{ seoArticle?: unknown }>(text);
+    const article = (v as { seoArticle?: unknown })?.seoArticle ?? v;
+    if (isDigestSeoArticle(article)) return { seoArticle: article };
+  } catch { /* fall through to the shared failure below */ }
   throw new Error("seoArticle JSON unparseable or incomplete");
 }
 
