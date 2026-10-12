@@ -10,6 +10,18 @@ import type { ArticleContent, NewsArticle } from "./types";
 const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
+/**
+ * Rows that are not written articles and must not appear in the news feed.
+ *
+ * `lfctv` is the club's YouTube output. It lives in the same table because it
+ * has the same shape — title, url, thumbnail, date, source — and gets dedup,
+ * thumbnails, retention and cleanup for free, but a video is not a story and
+ * would otherwise take a slot from one. The /news page shows these in their own
+ * strip; `getVideoItemsFromDB` is the only reader that wants them.
+ */
+export const NON_ARTICLE_SOURCES = ["lfctv"] as const;
+const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
+
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
 const PREFERRED_LANGUAGE_SHARE = 0.8; // Vietnamese locale should read VI-first, not 50/50.
 
@@ -76,6 +88,35 @@ export async function requireNonEmptyNews(articles: Promise<NewsArticle[]>): Pro
   return list;
 }
 
+/**
+ * The newest video rows — the mirror of the exclusion above.
+ *
+ * No relevance filter: every upload on the club's own channel is about the club
+ * by definition, and `analyzeArticleRelevance` scores written prose, so a
+ * one-line video description scores far too low to survive it.
+ */
+export const getVideoItemsFromDB = cache(async (limit = 6): Promise<NewsArticle[]> => {
+  try {
+    const { data, error } = await getServiceClient()
+      .from("articles")
+      .select(ARTICLE_COLUMNS)
+      .eq("is_active", true)
+      .not("published_at", "is", null)
+      .in("source", [...NON_ARTICLE_SOURCES])
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("[news/db] video items:", error.message);
+      return [];
+    }
+    return ((data ?? []) as ArticleRow[]).map(rowToArticle);
+  } catch (err) {
+    console.error("[news/db] video items failed:", err);
+    return [];
+  }
+});
+
 export const getNewsFromDB = cache(
   async (
     limit = 30,
@@ -96,6 +137,7 @@ export const getNewsFromDB = cache(
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
             .not("published_at", "is", null)
+            .not("source", "in", NON_ARTICLE_FILTER)
             .eq("language", preferLang)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
@@ -105,6 +147,7 @@ export const getNewsFromDB = cache(
             .select(ARTICLE_COLUMNS)
             .eq("is_active", true)
             .not("published_at", "is", null)
+            .not("source", "in", NON_ARTICLE_FILTER)
             .neq("language", preferLang)
             .order("published_at", { ascending: false, nullsFirst: false })
             .order("relevance", { ascending: false, nullsFirst: false })
@@ -133,6 +176,7 @@ export const getNewsFromDB = cache(
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
           .not("published_at", "is", null)
+          .not("source", "in", NON_ARTICLE_FILTER)
           .eq("language", "en")
           .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
@@ -142,6 +186,7 @@ export const getNewsFromDB = cache(
           .select(ARTICLE_COLUMNS)
           .eq("is_active", true)
           .not("published_at", "is", null)
+          .not("source", "in", NON_ARTICLE_FILTER)
           .eq("language", "vi")
           .order("published_at", { ascending: false, nullsFirst: false })
           .order("relevance", { ascending: false, nullsFirst: false })
@@ -254,6 +299,8 @@ export async function getNewsPaginated(
       .from("articles")
       .select(ARTICLE_COLUMNS)
       .eq("is_active", true)
+      // Keep page 2 consistent with page 1, which getNewsFromDB filters.
+      .not("source", "in", NON_ARTICLE_FILTER)
       // Postgres sorts NULL first on DESC: undated rows must come LAST, not top the list.
       .order("published_at", { ascending: false, nullsFirst: false })
       .range(offset, offset + limit); // fetch limit+1 to check hasMore
@@ -327,6 +374,8 @@ export async function getArticleSitemapData(): Promise<{ url: string; published_
       .select("url, published_at")
       .gte("published_at", cutoff)
       .eq("is_active", true)
+      // These rows link out to youtube.com; our sitemap lists our own pages.
+      .not("source", "in", NON_ARTICLE_FILTER)
       .order("published_at", { ascending: false })
       .limit(500);
     return (data ?? []).filter((r) => r.url && r.published_at);

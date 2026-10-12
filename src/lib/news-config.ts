@@ -11,6 +11,7 @@ export const SOURCE_CONFIG: Record<
   { label: string; color: string }
 > = {
   lfc: { label: "Liverpool FC", color: "bg-lfc-red text-white" },
+  lfctv: { label: "LFC on YouTube", color: "bg-[#FF0000] text-white" },
   bbc: { label: "BBC Sport", color: "bg-[#BB1919] text-white" },
   guardian: { label: "The Guardian", color: "bg-[#052962] text-[#9DBFFF]" },
   echo: { label: "Liverpool Echo", color: "bg-purple-700 text-purple-100" },

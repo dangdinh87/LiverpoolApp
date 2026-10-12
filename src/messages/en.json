@@ -340,6 +340,10 @@
     },
     "breadcrumb": {
       "home": "Home"
+    },
+    "video": {
+      "title": "Latest video",
+      "onYouTube": "On YouTube"
     }
   },
   "NextMatch": {

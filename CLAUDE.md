@@ -285,6 +285,7 @@ See `.env.example`. All required for full functionality:
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL — SEO, metadataBase, OAuth redirects |
 | `VIETAPI_KEY` | VietAPI — AI chat + article translation + digest |
 | `GROQ_API_KEY` | Groq — live web search only (`openai/gpt-oss-20b` + `browser_search`; `compound-mini` was retired); chat works without it |
+| `YOUTUBE_API_KEY` | YouTube Data API v3 — club video strip on `/news`. Optional; the source is skipped without it (that channel's RSS feed is disabled) |
 | `CRON_SECRET` | Protects cron endpoints (random string) |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
 | `CLOUDINARY_API_KEY` | Cloudinary API key |

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { getNewsFromDB } from "@/lib/news";
+import { getNewsFromDB, getVideoItemsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
 import type { NewsArticle } from "@/lib/news/types";
 import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
+import { VideoStrip } from "@/components/news/video-strip";
 import { DigestCard } from "@/components/news/digest-card";
 import { PageHero } from "@/components/ui/page-hero";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
@@ -41,6 +42,15 @@ const getCachedNewsDigest = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
+// Videos are excluded from the feed queries on purpose (see NON_ARTICLE_SOURCES);
+// this is the only reader that wants them. An empty list is a fine thing to
+// cache here — the site runs without YOUTUBE_API_KEY and the strip hides itself.
+const getCachedVideoItems = unstable_cache(
+  async () => getVideoItemsFromDB(6),
+  ["news-page-video-v1"],
+  { revalidate: 900, tags: ["news"] },
+);
+
 // Was fresh only because the root layout forced dynamic rendering; the cached
 // queries below revalidate on their own, this bounds the page itself.
 export const revalidate = 600;
@@ -55,10 +65,11 @@ export default async function NewsPage({ params }: LocaleParams) {
   const t = await getTranslations("News");
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
 
-  const [allArticles, digest] = await Promise.all([
+  const [allArticles, digest, videos] = await Promise.all([
     getCachedNewsList().catch((): NewsArticle[] => []),
     // getLatestDigest throws on a DB error so the failure is not cached.
     getCachedNewsDigest().catch(() => null),
+    getCachedVideoItems().catch((): NewsArticle[] => []),
   ]);
   const nowMs = new Date().getTime();
 
@@ -98,6 +109,10 @@ export default async function NewsPage({ params }: LocaleParams) {
         locale={userLang}
         nowMs={nowMs}
       />
+
+      <div className="page-container">
+        <VideoStrip items={videos} locale={userLang} />
+      </div>
 
       <p className="page-container max-w-3xl pb-14 text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>
     </div>

@@ -340,6 +340,10 @@
     },
     "breadcrumb": {
       "home": "Trang chủ"
+    },
+    "video": {
+      "title": "Video mới nhất",
+      "onYouTube": "Trên YouTube"
     }
   },
   "NextMatch": {

@@ -16,6 +16,7 @@ export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 // Re-export DB query helpers
 export {
   getNewsFromDB,
+  getVideoItemsFromDB,
   searchArticles,
   getNewsPaginated,
   getArticleRefsByUrls,

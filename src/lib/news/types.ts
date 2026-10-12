@@ -6,7 +6,11 @@ export type NewsSource =
   | "men" | "anfieldindex" | "liverpoolcom" | "tia" | "espn"
   | "vnexpress" | "tuoitre" | "thanhnien"
   | "dantri" | "zingnews" | "vietnamnet" | "webthethao" | "vietnamvn"
-  | "bongda24h" | "thethao247" | "soha" | "goal";
+  | "bongda24h" | "thethao247" | "soha" | "goal"
+  // Video. Not an outlet: the club's own YouTube channel, reached through the
+  // Data API because its RSS feed is disabled. Link-out only, and kept out of
+  // the /news feed so a video never competes with a written story.
+  | "lfctv";
 
 export type NewsLanguage = "en" | "vi";
 

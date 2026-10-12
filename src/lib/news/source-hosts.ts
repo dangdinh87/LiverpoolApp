@@ -15,6 +15,7 @@ interface SourceHostEntry {
 
 export const SOURCE_HOST_TABLE: SourceHostEntry[] = [
   { id: "lfc", name: "LiverpoolFC.com", canonical: "www.liverpoolfc.com", domains: ["liverpoolfc.com"] },
+  { id: "lfctv", name: "LFC on YouTube", canonical: "www.youtube.com", domains: ["youtube.com", "youtu.be"] },
   { id: "bbc", name: "BBC Sport", canonical: "www.bbc.com", domains: ["bbc.com", "bbc.co.uk"] },
   { id: "guardian", name: "The Guardian", canonical: "www.theguardian.com", domains: ["theguardian.com"] },
   { id: "echo", name: "Liverpool Echo", canonical: "www.liverpoolecho.co.uk", domains: ["liverpoolecho.co.uk"] },
