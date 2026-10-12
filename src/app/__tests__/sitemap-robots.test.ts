@@ -97,6 +97,15 @@ describe("sitemap.xml", () => {
     expect(locs.some((l) => /\/news\/[a-z0-9-]+\//.test(l) && !l.includes("/news/digest/"))).toBe(false);
   });
 
+  it("escapes anything that would break the XML", () => {
+    // Archive URLs carry a query string; a bare & in a <loc> is invalid XML and
+    // the whole file is rejected, not just that entry.
+    const locs = entries.map(locOf);
+    for (const loc of locs) {
+      expect(loc, `unescaped & in ${loc}`).not.toMatch(/&(?!amp;|lt;|gt;)/);
+    }
+  });
+
   it("is well-formed enough to parse, with the xhtml namespace declared", () => {
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);
     expect(xml).toContain('xmlns:xhtml="http://www.w3.org/1999/xhtml"');

@@ -59,7 +59,17 @@ export function collectProblems(page: Page): PageProblem[] {
 
   page.on("pageerror", (err: Error) => {
     if (ignored(err.message)) return;
-    problems.push({ kind: "pageerror", detail: `${err.name}: ${err.message}` });
+    // With the frames, because the name and message alone can be useless: an
+    // intermittent `Error: int64` showed up twice in a 28-page crawl and the
+    // report named neither the file nor the call, so there was nothing to
+    // chase. The throw site is what identifies a minified vendor chunk.
+    const frames = (err.stack ?? "")
+      .split("\n")
+      .slice(1, 4)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const where = frames.length > 0 ? `\n      ${frames.join("\n      ")}` : "";
+    problems.push({ kind: "pageerror", detail: `${err.name}: ${err.message}${where}` });
   });
 
   page.on("requestfailed", (req: Request) => {

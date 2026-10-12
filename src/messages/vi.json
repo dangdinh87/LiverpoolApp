@@ -920,12 +920,12 @@
     },
     "summary": {
       "label": "Liverpool trên bảng xếp hạng",
-      "position": "Hạng · {points} điểm",
+      "position": "Hạng trên bảng xếp hạng",
       "leading": "Đang dẫn đầu",
-      "behindLeader": "Kém đội đầu bảng {count} điểm",
-      "topFourClear": "Hơn nhóm sau top 4 {count} điểm",
-      "topFourBehind": "Cách top 4 {count} điểm",
-      "aboveDrop": "Hơn nhóm xuống hạng {count} điểm",
+      "behindLeader": "điểm kém đội đầu bảng",
+      "topFourClear": "điểm hơn nhóm sau top 4",
+      "topFourBehind": "điểm cách top 4",
+      "aboveDrop": "điểm hơn nhóm xuống hạng",
       "next": "Trận Ngoại hạng Anh tới: <b>{team}</b>, hạng {rank} với {points} điểm.",
       "matchLink": "Trang trận"
     },

@@ -27,7 +27,6 @@ export async function GET() {
     { path: "/fixtures", changefreq: "daily", priority: "0.9" },
     { path: "/standings", changefreq: "daily", priority: "0.8" },
     { path: "/predictions", changefreq: "daily", priority: "0.6" },
-    { path: "/season", changefreq: "daily", priority: "0.8" },
     { path: "/stats", changefreq: "daily", priority: "0.7" },
     { path: "/gallery", changefreq: "weekly", priority: "0.7" },
     { path: "/history", changefreq: "monthly", priority: "0.6" },
@@ -121,6 +120,15 @@ export async function GET() {
   // Static pages
   for (const r of staticRoutes) {
     urls.push(...urlEntries(r.path, null, r.changefreq, r.priority));
+  }
+
+  // The archive seasons. /season on its own is the current season, which is the
+  // same content as /fixtures and says so with a canonical pointing there — a
+  // sitemap entry for it asked Google to crawl a page that declares itself a
+  // duplicate, while the past seasons, which are self-canonical and are this
+  // page's own content, were not listed at all.
+  for (const year of getSelectableSeasons().filter((y) => y !== getCurrentSeasonYear())) {
+    urls.push(...urlEntries(`/season?season=${year}`, null, "monthly", "0.4"));
   }
 
   // Archive stats, one URL per past season. These became real pages when

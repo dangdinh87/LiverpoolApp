@@ -9,9 +9,13 @@ import type { StandingsContext } from "@/lib/football/standings-context";
  */
 export async function StandingsSummary({ context, nextFixtureId }: { context: StandingsContext; nextFixtureId?: number }) {
   const t = await getTranslations("Standings.summary");
-  const { rank, points, behindLeader, topFour, aboveDrop, opponent } = context;
+  const { rank, behindLeader, topFour, aboveDrop, opponent } = context;
+  // Each tile is a figure and what it is. The labels used to repeat the figure
+  // ("9" above "9 points behind the leader"), and the first one named a second,
+  // different number — a big rank beside the points total — so two tiles could
+  // read "9" and mean different things.
   const items = [
-    { value: `${rank}`, label: t("position", { points }) },
+    { value: `${rank}`, label: t("position") },
     { value: `${behindLeader}`, label: behindLeader === 0 ? t("leading") : t("behindLeader", { count: behindLeader }) },
     {
       value: `${topFour.gap}`,

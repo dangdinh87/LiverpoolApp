@@ -920,12 +920,12 @@
     },
     "summary": {
       "label": "Liverpool in the table",
-      "position": "Position · {points} pts",
+      "position": "Position in the table",
       "leading": "Top of the table",
-      "behindLeader": "{count, plural, one {# point} other {# points}} behind the leader",
-      "topFourClear": "{count, plural, one {# point} other {# points}} clear in the top four",
-      "topFourBehind": "{count, plural, one {# point} other {# points}} off the top four",
-      "aboveDrop": "{count, plural, one {# point} other {# points}} above the drop",
+      "behindLeader": "{count, plural, one {point} other {points}} behind the leader",
+      "topFourClear": "{count, plural, one {point} other {points}} clear in the top four",
+      "topFourBehind": "{count, plural, one {point} other {points}} off the top four",
+      "aboveDrop": "{count, plural, one {point} other {points}} above the drop",
       "next": "Next league match: <b>{team}</b>, {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} on {points} pts.",
       "matchLink": "Match page"
     },
