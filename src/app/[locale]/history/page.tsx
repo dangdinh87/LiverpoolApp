@@ -54,15 +54,14 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-export default async function HistoryPage({
-  params,
-  searchParams,
-}: LocaleParams & {
-  searchParams: Promise<{ tab?: string }>;
-}) {
+// Everything on this page comes from the JSON in src/data, so it prerenders.
+// It used to declare and await a `searchParams.tab` left over from a ClubTabs
+// component that no longer exists; awaiting searchParams opts a route into
+// dynamic rendering, so the page was re-rendered on every request to read a
+// value nothing set and nothing used. The section nav is anchor links now.
+export default async function HistoryPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  await searchParams;
   const t = await getTranslations("History");
   const isVi = locale === "vi";
 
