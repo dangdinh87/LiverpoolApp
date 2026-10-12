@@ -1,5 +1,11 @@
 # Deployment — Hoi & Dap
 
+> **Cập nhật 13/10/2026:** site đã chuyển sang **https://anfielddaily.com** (mua ở Cloudflare, DNS ở
+> Cloudflare chế độ "DNS only", site chạy trên Vercel). `liverpoolfcvn.blog` chỉ còn chuyển hướng 308 về
+> tên miền mới. Các ví dụ bên dưới vẫn dùng tên miền cũ để giải thích khái niệm; cấu hình hiện tại xem
+> `docs/en/deployment.md` (mục Custom Domain) và `plans/261012-2207-domain-anfielddaily/runbook.md`.
+
+
 Tai lieu giai thich chi tiet cac khai niem deployment cho nguoi moi.
 
 ---

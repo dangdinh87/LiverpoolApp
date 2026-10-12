@@ -1,6 +1,6 @@
 # Deployment
 
-Deploy target: **Vercel (Hobby plan)** + **Hostinger custom domain** (`www.liverpoolfcvn.blog`).
+Deploy target: **Vercel (Hobby plan)** + **Cloudflare-registered domain** (`anfielddaily.com`).
 
 ---
 
@@ -24,7 +24,7 @@ In Vercel Dashboard → Project → Settings → Environment Variables, add all 
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Supabase service role key |
 | `FOOTBALL_DATA_ORG_KEY` | All | Football-Data.org API key |
-| `NEXT_PUBLIC_SITE_URL` | Production | `https://www.liverpoolfcvn.blog` |
+| `NEXT_PUBLIC_SITE_URL` | Production | `https://anfielddaily.com` |
 | `NEXT_PUBLIC_SITE_URL` | Preview | Your Vercel preview URL (or leave blank) |
 | `GROQ_API_KEY` | All | Groq API key |
 | `CRON_SECRET` | All | Random secret string |
@@ -80,7 +80,7 @@ if (secret !== process.env.CRON_SECRET) {
 You can also trigger sync manually for testing:
 
 ```bash
-curl -fsS https://www.liverpoolfcvn.blog/api/news/sync \
+curl -fsS https://anfielddaily.com/api/news/sync \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
 
@@ -93,65 +93,44 @@ curl -fsS https://www.liverpoolfcvn.blog/api/news/sync \
 
 ---
 
-## Custom Domain — Hostinger
+## Custom Domain — Cloudflare (anfielddaily.com)
 
-### Step 1: Buy Domain on Hostinger
+Since 13 Oct 2026 the site lives at **https://anfielddaily.com** (no `www`). The domain is
+registered at Cloudflare and its DNS stays there; Vercel serves the site. The old domain
+`liverpoolfcvn.blog` (Hostinger) is kept only to redirect — keep it renewed for at least a year.
+Full move log and checklist: `plans/261012-2207-domain-anfielddaily/runbook.md`.
 
-Purchase your domain at [hostinger.com](https://www.hostinger.com). The domain `liverpoolfcvn.blog` is already registered.
+### DNS (Cloudflare → anfielddaily.com → DNS → Records)
 
-### Step 2: Add Domain on Vercel
-
-1. Vercel Dashboard → Project → Settings → Domains
-2. Click **Add Domain**
-3. Enter: `www.liverpoolfcvn.blog`
-4. Also add the apex: `liverpoolfcvn.blog` (Vercel will suggest a redirect from apex → www)
-5. Vercel shows you the DNS records to configure — keep this page open
-
-### Step 3: Configure DNS on Hostinger
-
-Log in to Hostinger → hPanel → Domains → your domain → **DNS / Nameservers**.
-
-Add these records:
-
-| Type | Name | Value | TTL |
+| Type | Name | Value | Proxy |
 |---|---|---|---|
-| `A` | `@` | `76.76.21.21` | 3600 |
-| `CNAME` | `www` | `cname.vercel-dns.com` | 3600 |
+| `A` | `@` | `76.76.21.21` | **DNS only** (grey cloud) |
+| `A` | `www` | `76.76.21.21` | **DNS only** (grey cloud) |
 
-> Vercel may give you a different IP or CNAME value in their dashboard — always use the exact values Vercel shows you, as they can update them.
+Keep the proxy off: an orange cloud puts Cloudflare between visitors and Vercel and breaks
+Vercel's certificates and cache. Use the exact values `vercel domains inspect <domain>` prints.
 
-If Hostinger uses **nameservers** (not DNS zone editor), you may need to switch to custom nameservers or use Hostinger's DNS Zone editor instead.
+### Vercel domains (Project → Settings → Domains)
 
-### Step 4: Wait for DNS Propagation
+| Domain | Setting |
+|---|---|
+| `anfielddaily.com` | Production (primary) |
+| `www.anfielddaily.com` | 308 → `anfielddaily.com` |
+| `liverpoolfcvn.blog`, `www.liverpoolfcvn.blog` | 308 → `anfielddaily.com` (path and query kept) |
 
-DNS propagation takes **5–30 minutes** typically, up to 48h in rare cases.
+If the certificate does not appear a few minutes after DNS resolves, run
+`vercel certs issue anfielddaily.com www.anfielddaily.com`.
 
-Check propagation status:
+Check DNS from outside the local resolver (a local cache can keep an old empty answer):
 ```bash
-# Check A record
-dig A liverpoolfcvn.blog
-
-# Check CNAME
-dig CNAME www.liverpoolfcvn.blog
-
-# Quick online check
-# https://dnschecker.org
+curl -s -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name=anfielddaily.com&type=A'
 ```
 
-### Step 5: Verify on Vercel
+### NEXT_PUBLIC_SITE_URL
 
-Vercel Dashboard → Project → Settings → Domains. Once DNS is propagated, the domain shows **Valid Configuration** with a green checkmark.
-
-If it shows "Invalid Configuration" after 30 minutes, double-check the DNS records are saved correctly on Hostinger.
-
-### Step 6: Update NEXT_PUBLIC_SITE_URL
-
-In Vercel Environment Variables, update `NEXT_PUBLIC_SITE_URL` to `https://www.liverpoolfcvn.blog`.
-
-This variable is used for:
-- `metadataBase` (OpenGraph URLs)
-- Sitemap canonical URLs
-- OAuth redirect URI construction
+Production value: `https://anfielddaily.com` (set as a non-sensitive variable so it can be read back).
+It drives `metadataBase`, canonical and hreflang URLs, the sitemap, robots.txt and JSON-LD.
+`NEXT_PUBLIC_*` is inlined at build time, so a change needs a redeploy.
 
 ### Step 7: Redeploy
 
@@ -166,15 +145,15 @@ After your domain is live, update Supabase Auth settings so OAuth redirects work
 ### Update Site URL
 
 1. Supabase Dashboard → Authentication → URL Configuration
-2. Set **Site URL** to: `https://www.liverpoolfcvn.blog`
+2. Set **Site URL** to: `https://anfielddaily.com`
 
 ### Add Redirect URLs
 
 Under **Redirect URLs**, add:
 
 ```
-https://www.liverpoolfcvn.blog/**
-https://www.liverpoolfcvn.blog/auth/callback
+https://anfielddaily.com/**
+https://anfielddaily.com/auth/callback
 ```
 
 The wildcard `/**` covers all OAuth callback paths.
@@ -183,8 +162,8 @@ The wildcard `/**` covers all OAuth callback paths.
 
 For each OAuth provider (Google, GitHub) configured in Supabase:
 
-- **Google:** Google Cloud Console → OAuth 2.0 credentials → Authorized redirect URIs → add `https://www.liverpoolfcvn.blog/auth/callback`
-- **GitHub:** GitHub → Settings → Developer settings → OAuth Apps → your app → Update callback URL to `https://www.liverpoolfcvn.blog/auth/callback`
+- **Google:** Google Cloud Console → OAuth 2.0 credentials → Authorized redirect URIs → add `https://anfielddaily.com/auth/callback`
+- **GitHub:** GitHub → Settings → Developer settings → OAuth Apps → your app → Update callback URL to `https://anfielddaily.com/auth/callback`
 
 ---
 
@@ -202,14 +181,14 @@ HTTPS is enforced automatically; HTTP requests are redirected to HTTPS.
 
 ```bash
 # Check what's currently resolving
-nslookup www.liverpoolfcvn.blog
-dig www.liverpoolfcvn.blog CNAME
+nslookup anfielddaily.com
+dig anfielddaily.com CNAME
 
 # Flush local DNS cache (macOS)
 sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
 ```
 
-If still not working after 1h: log in to Hostinger hPanel → DNS Zone and verify the records were saved. Some Hostinger plans require disabling "Auto-renew DNS" or similar option before custom records take effect.
+If still not working after 1h: open Cloudflare → anfielddaily.com → DNS → Records and check both A records exist with the proxy off (DNS only).
 
 ### SSL Certificate Errors
 
@@ -303,7 +282,7 @@ Before going live:
 - [ ] Supabase Auth → Site URL updated to production domain
 - [ ] Supabase Auth → Redirect URLs includes production domain
 - [ ] OAuth providers (Google/GitHub) callback URLs updated
-- [ ] DNS records configured on Hostinger
+- [ ] DNS records configured on Cloudflare (DNS only)
 - [ ] Domain shows "Valid Configuration" on Vercel
 - [ ] SSL certificate issued (green padlock in browser)
 - [ ] Vercel cron jobs visible in Vercel Dashboard → Settings → Crons

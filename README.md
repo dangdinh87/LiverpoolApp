@@ -3,14 +3,14 @@
 Liverpool FC fan site for the Vietnamese community, built with Next.js + Supabase.  
 Live site:
 
-- Production: `https://www.liverpoolfcvn.blog`
+- Production: `https://anfielddaily.com`
 - Vercel URL: `https://liverpool-app-five.vercel.app`
 
 Repository: [dangdinh87/LiverpoolApp](https://github.com/dangdinh87/LiverpoolApp)
 
 ## Demo and quick links
 
-- Demo (production): [www.liverpoolfcvn.blog](https://www.liverpoolfcvn.blog)
+- Demo (production): [anfielddaily.com](https://anfielddaily.com)
 - Demo (vercel): [liverpool-app-five.vercel.app](https://liverpool-app-five.vercel.app)
 - Repository: [dangdinh87/LiverpoolApp](https://github.com/dangdinh87/LiverpoolApp)
 - Actions: [GitHub Actions Dashboard](https://github.com/dangdinh87/LiverpoolApp/actions)
@@ -124,7 +124,7 @@ Required repository secrets:
 ## Build and deployment
 
 - Primary deployment target: Vercel
-- Suggested production domain: `https://www.liverpoolfcvn.blog`
+- Suggested production domain: `https://anfielddaily.com`
 - Local production build:
 
 ```bash
