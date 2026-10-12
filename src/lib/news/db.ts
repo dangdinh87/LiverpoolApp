@@ -276,12 +276,19 @@ export async function getNewsPaginated(
   }
 }
 
+export interface ArticleRef {
+  title: string;
+  /** Feed thumbnail, else the scraped hero image; null when neither is known. */
+  image: string | null;
+}
+
 /**
- * Fetch article title + url for a set of URLs (used by digest page to show source links).
+ * Title and picture for a set of article URLs (the digest page shows them as
+ * its source links and story images).
  */
-export async function getArticleTitlesByUrls(
+export async function getArticleRefsByUrls(
   urls: string[]
-): Promise<Record<string, string>> {
+): Promise<Record<string, ArticleRef>> {
   if (!urls.length) return {};
   try {
     const supabase = getServiceClient();
@@ -295,11 +302,14 @@ export async function getArticleTitlesByUrls(
     }
     const { data } = await supabase
       .from("articles")
-      .select("url, title")
+      .select("url, title, thumbnail, hero_image")
       .in("url", [...requestedByVariant.keys()]);
-    const map: Record<string, string> = {};
+    const map: Record<string, ArticleRef> = {};
     for (const row of data ?? []) {
-      map[requestedByVariant.get(row.url) ?? row.url] = row.title;
+      map[requestedByVariant.get(row.url) ?? row.url] = {
+        title: row.title,
+        image: row.thumbnail || row.hero_image || null,
+      };
     }
     return map;
   } catch {

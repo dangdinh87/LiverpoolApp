@@ -61,7 +61,7 @@
 }
 
 .article-prose a {
-  color: #ff5c75;
+  color: var(--color-lfc-red-text);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
@@ -84,7 +84,7 @@
   margin-top: 0.4em;
 }
 .article-prose li::marker {
-  color: #ff5c75;
+  color: var(--color-lfc-red-text);
 }
 
 .article-prose blockquote {

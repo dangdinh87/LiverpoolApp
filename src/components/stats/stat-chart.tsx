@@ -13,7 +13,7 @@ import {
 import type { TopScorer } from "@/lib/types/football";
 
 /** --color-lfc-red-text: the brand red that passes AA on the dark card (#C8102E is 3:1). */
-const RED_TEXT = "#ff5c75";
+const RED_TEXT = "#ff3347";
 
 interface BarChartEntry {
   name: string;

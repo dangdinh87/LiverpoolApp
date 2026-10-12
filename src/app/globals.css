@@ -16,8 +16,9 @@
   --color-lfc-red: #c8102e;
   --color-lfc-red-dark: #a00e24;
   /* Brand red as TEXT: #c8102e is only 3:1 on the dark surfaces (fails WCAG AA).
-     This tint is 5.8:1 on surface, 6.5:1 on bg. Keep #c8102e for fills/borders. */
-  --color-lfc-red-text: #ff5c75;
+     This lighter red is 4.8:1 on surface, 5.4:1 on bg. It keeps the red hue: the
+     earlier #ff5c75 passed too but read as pink. Keep #c8102e for fills/borders. */
+  --color-lfc-red-text: #ff3347;
   --color-lfc-gold: #f6eb61;
   --color-stadium-bg: #0d0d0d;
   --color-stadium-surface: #1a1a1a;

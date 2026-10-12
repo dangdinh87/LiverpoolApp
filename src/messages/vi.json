@@ -77,11 +77,14 @@
     "tagline": "Fan Liverpool khắp thế giới · Giờ đá theo giờ của bạn",
     "title": "Chào mừng đến với Anfield",
     "subtitle": "Reds Abroad — theo The Reds từ bất cứ đâu",
-    "description": "Giờ đá theo múi giờ của bạn, kết quả mới nhất, bảng xếp hạng và tin nhanh về The Reds. Trang do fan làm, không phải trang chính thức.",
+    "description": "<b>{brand}</b> gom tin Liverpool từ {count} tờ báo tiếng Anh và tiếng Việt về một chỗ, tóm tắt mỗi ngày. Kèm giờ bóng lăn theo giờ nơi bạn ở, kết quả và bảng xếp hạng.",
     "badge": "Dành cho fan Liverpool xa Anfield",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
-    "standings": "Bảng xếp hạng"
+    "standings": "Bảng xếp hạng",
+    "headlineTop": "Ở đâu cũng là",
+    "headlineBottom": "Anfield.",
+    "ctaNews": "Đọc tin hôm nay"
   },
   "Home": {
     "breaking": {
@@ -330,7 +333,12 @@
       "opensNewTab": "(mở tab mới)",
       "latestHint": "Đây là bản tin mới nhất",
       "oldestHint": "Đây là bản tin đầu tiên",
-      "aiNote": "Bản tin này do AI soạn từ các bài đã dẫn nguồn, nên có thể sót hoặc sai chi tiết. Muốn chắc, bạn bấm vào bài gốc nhé."
+      "aiNote": "Bản tin này do AI soạn từ các bài đã dẫn nguồn, nên có thể sót hoặc sai chi tiết. Muốn chắc, bạn bấm vào bài gốc nhé.",
+      "inThisBriefing": "Trong bản tin này",
+      "storyCount": "{count} tin",
+      "sourcesShort": "Nguồn",
+      "moreSources": "+{count}",
+      "photoCredit": "Ảnh: {source}"
     },
     "breadcrumb": {
       "home": "Trang chủ"

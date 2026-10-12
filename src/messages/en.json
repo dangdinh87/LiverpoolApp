@@ -77,11 +77,14 @@
     "tagline": "Liverpool fans everywhere · Kick-off times in your time zone",
     "title": "Welcome to Anfield",
     "subtitle": "Reds Abroad — following the Reds from anywhere",
-    "description": "Kick-off times in your own time zone, the latest results, the table and quick news about The Reds. Made by a fan — not the official site.",
+    "description": "<b>{brand}</b> brings Liverpool news from {count} English and Vietnamese outlets into one place and sums it up every day. Plus kick-off in your local time, results and the table.",
     "badge": "For Liverpool fans away from Anfield",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
-    "standings": "Standings"
+    "standings": "Standings",
+    "headlineTop": "Wherever you are,",
+    "headlineBottom": "it’s Anfield.",
+    "ctaNews": "Read today’s news"
   },
   "Home": {
     "breaking": {
@@ -330,7 +333,12 @@
       "opensNewTab": "(opens in a new tab)",
       "latestHint": "This is the latest digest",
       "oldestHint": "This is the first digest",
-      "aiNote": "This digest is written by AI from the linked articles, so it can miss or get details wrong. To be sure, open the original."
+      "aiNote": "This digest is written by AI from the linked articles, so it can miss or get details wrong. To be sure, open the original.",
+      "inThisBriefing": "In this briefing",
+      "storyCount": "{count, plural, one {# story} other {# stories}}",
+      "sourcesShort": "Sources",
+      "moreSources": "+{count}",
+      "photoCredit": "Photo: {source}"
     },
     "breadcrumb": {
       "home": "Home"

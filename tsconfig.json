@@ -52,7 +52,9 @@
     ".build-sitewide-prod6/types/**/*.ts",
     ".build-sitewide-prod6/dev/types/**/*.ts",
     ".build-preview/types/**/*.ts",
-    ".build-preview/dev/types/**/*.ts"
+    ".build-preview/dev/types/**/*.ts",
+    ".build-live/types/**/*.ts",
+    ".build-live/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

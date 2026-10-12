@@ -40,6 +40,13 @@ export const RSS_FEEDS: FeedConfig[] = [
   { url: "https://soha.vn/rss/the-thao/anh.rss", source: "soha", language: "vi", filter: "lfc", maxAgeDays: 7 },
 ];
 
+/**
+ * Distinct outlets the news pipeline reads: every RSS source plus the two that
+ * have their own adapters (LFC official site, Bongdaplus). The homepage quotes
+ * this number, so it stays true when a feed is added or dropped.
+ */
+export const NEWS_OUTLET_COUNT = new Set([...RSS_FEEDS.map((f) => f.source), "lfc", "bongdaplus"]).size;
+
 // Bongdaplus scraper config
 // Tag pages list Liverpool stories only; the section pages (ngoai-hang-anh, c1) were ~95% other clubs.
 export const BONGDAPLUS_URLS = [

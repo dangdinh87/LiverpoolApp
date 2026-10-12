@@ -18,7 +18,7 @@ export {
   getNewsFromDB,
   searchArticles,
   getNewsPaginated,
-  getArticleTitlesByUrls,
+  getArticleRefsByUrls,
   getArticleContentFromDB,
   getArticleByUrl,
 } from "./db";
