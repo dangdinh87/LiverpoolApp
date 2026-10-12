@@ -56,8 +56,8 @@ function NoUpcomingMatch() {
 function CountdownUnit({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex min-w-0 flex-1 items-baseline justify-center gap-1">
-      <span className="font-bebas text-3xl leading-none tabular-nums text-white">{value}</span>
-      <span className="font-barlow text-xs uppercase tracking-wider text-stadium-muted">{label}</span>
+      <span className="font-bebas text-xl leading-none tabular-nums text-white sm:text-3xl">{value}</span>
+      <span className="font-barlow text-[11px] uppercase tracking-wider text-stadium-muted sm:text-xs">{label}</span>
     </div>
   );
 }
@@ -86,7 +86,7 @@ function Countdown({ target }: { target: number }) {
       <span className="shrink-0 font-barlow text-xs font-semibold uppercase tracking-[0.14em] text-stadium-muted">
         {h("kickoffIn")}
       </span>
-      <div className="flex min-h-9 w-full min-w-0 items-center min-[390px]:flex-1" role="timer" aria-live="off">
+      <div className="flex min-h-7 w-full min-w-0 items-center sm:min-h-9 min-[390px]:flex-1" role="timer" aria-live="off">
         <CountdownUnit value={part(diff, 86_400_000)} label={h("days")} />
         <CountdownUnit value={part(diff, 3_600_000, 24)} label={h("hours")} />
         <CountdownUnit value={part(diff, 60_000, 60)} label={h("minutes")} />
@@ -99,7 +99,7 @@ function Countdown({ target }: { target: number }) {
 function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-      <span className="relative size-14 sm:size-16">
+      <span className="relative size-11 sm:size-16">
         <Image
           src={crest(team)}
           alt=""
@@ -167,7 +167,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
               />
             </>
           ) : (
-            <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date, zone)}</span>
+            <span className="font-bebas text-4xl leading-none text-white sm:text-5xl">{formatMatchTime(date, zone)}</span>
           )}
           {!isLive && <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>}
           {!isLive && <span className="text-xs text-stadium-muted">{h("viewerTime")} · {formatZoneOffset(date, zone)}</span>}
@@ -176,7 +176,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
       </div>
 
       {!isLive && (
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <Countdown target={date.getTime()} />
         </div>
       )}
@@ -191,7 +191,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
 
       <WhereToWatch competition={league.name} className="mt-3 justify-center" />
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-3 flex gap-2 sm:mt-4">
         <Link
           href={detailHref}
           className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
