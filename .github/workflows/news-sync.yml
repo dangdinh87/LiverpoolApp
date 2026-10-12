@@ -13,6 +13,11 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # The site's public URL, not a secret. It used to come from the SYNC_URL secret,
+    # which kept pointing at the old domain after the move: a 308 to another host
+    # makes curl drop the Authorization header, so every sync failed.
+    env:
+      SITE_URL: https://anfielddaily.com
     steps:
       - name: Trigger /api/news/sync
         id: trigger
@@ -23,7 +28,7 @@ jobs:
             curl -X GET \
               -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
               -H "Content-Type: application/json" \
-              "${{ secrets.SYNC_URL }}" \
+              "${SITE_URL}/api/news/sync" \
               --max-time 300 \
               --retry 3 \
               --retry-delay 10 \
@@ -216,12 +221,11 @@ jobs:
             echo "Outside 01:00-16:59 UTC; the daily Vercel cron (00:00 UTC) owns this hour."
             exit 0
           fi
-          DIGEST_URL="${SYNC_URL%/api/news/sync*}/api/news/digest/generate"
+          DIGEST_URL="${SITE_URL}/api/news/digest/generate"
           curl --silent --show-error --fail --max-time 90 \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             "$DIGEST_URL"
         env:
-          SYNC_URL: ${{ secrets.SYNC_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
 
       - name: Notify Telegram on success

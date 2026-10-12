@@ -54,7 +54,7 @@ Sửa luôn `.env.production` trong repo cho khớp.
 
 | Hệ thống | Việc cần làm | Ai | Không làm thì sao |
 |---|---|---|---|
-| **GitHub Actions** secret `SYNC_URL` | Đổi thành `https://anfielddaily.com/api/news/sync` (Settings → Secrets → Actions) | Bạn | Cron sync tin gọi tên miền cũ; curl không theo redirect với POST → **tin ngừng cập nhật** |
+| **GitHub Actions** `SYNC_URL` | ✅ Xong 13/10: workflow không dùng secret này nữa, URL nằm trong `env.SITE_URL` của `news-sync.yml`. Secret cũ có thể xoá | Claude | Cron sync tin gọi tên miền cũ; curl không theo redirect với POST → **tin ngừng cập nhật** |
 | **Supabase Auth** → URL Configuration | Site URL = `https://anfielddaily.com`; thêm `https://anfielddaily.com/**` vào Redirect URLs (giữ URL cũ vài tuần) | Bạn | Đăng nhập / email xác nhận quay về tên miền cũ hoặc bị chặn |
 | **Google Search Console** | Thêm property `anfielddaily.com` (xác minh DNS TXT, hoặc file `google583c5c945cf216b2.html` đã có sẵn trong `public/`); nộp `https://anfielddaily.com/sitemap.xml`; ở property cũ dùng **Change of Address** → anfielddaily.com | Bạn | Google chuyển thứ hạng chậm hơn nhiều tuần |
 | **Bing Webmaster** | Thêm site mới, nộp sitemap (hoặc import từ Search Console) | Bạn | Bing index chậm |
