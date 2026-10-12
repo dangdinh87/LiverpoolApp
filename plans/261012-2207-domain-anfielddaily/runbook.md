@@ -56,9 +56,9 @@ Sửa luôn `.env.production` trong repo cho khớp.
 |---|---|---|---|
 | **GitHub Actions** `SYNC_URL` | ✅ Xong 13/10: workflow không dùng secret này nữa, URL nằm trong `env.SITE_URL` của `news-sync.yml`. Secret cũ có thể xoá | Claude | Cron sync tin gọi tên miền cũ; curl không theo redirect với POST → **tin ngừng cập nhật** |
 | **Supabase Auth** → URL Configuration | Site URL = `https://anfielddaily.com`; thêm `https://anfielddaily.com/**` vào Redirect URLs (giữ URL cũ vài tuần) | Bạn | Đăng nhập / email xác nhận quay về tên miền cũ hoặc bị chặn |
-| **Google Search Console** | Thêm property `anfielddaily.com` (xác minh DNS TXT, hoặc file `google583c5c945cf216b2.html` đã có sẵn trong `public/`); nộp `https://anfielddaily.com/sitemap.xml`; ở property cũ dùng **Change of Address** → anfielddaily.com | Bạn | Google chuyển thứ hạng chậm hơn nhiều tuần |
+| **Google Search Console** | ✅ Xong 13/10: property `https://anfielddaily.com/` (xác minh bằng file HTML), đã nộp `sitemap.xml`, Change of Address từ `www.liverpoolfcvn.blog` đang chạy | Claude | — |
 | **Bing Webmaster** | Thêm site mới, nộp sitemap (hoặc import từ Search Console) | Bạn | Bing index chậm |
-| **Google AdSense** | Sites → thêm `anfielddaily.com`, đợi duyệt. `ads.txt` đã thêm sẵn (`public/ads.txt`) | Bạn | Quảng cáo không chạy / bị hạn chế trên tên miền mới |
+| **Google AdSense** | Đã thêm `anfielddaily.com` (13/10). **Còn lại:** tick "Tôi đã đặt mã" → Xác minh → Yêu cầu xem xét. Mã AdSense và `ads.txt` đã có trên site | Bạn | Quảng cáo không chạy trên tên miền mới |
 | **Google Analytics / GTM** | Đổi URL luồng dữ liệu web (nếu có lọc theo hostname thì sửa) | Bạn | Báo cáo tách đôi hai tên miền |
 | **Vercel Firewall** (chặn bot) | Không cần sửa (áp theo project, không theo tên miền). Kiểm tra lại sau khi chuyển | — | — |
 
