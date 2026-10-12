@@ -73,7 +73,10 @@ test.describe("mobile menu", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
     await trigger.click();
-    const group = page.getByRole("dialog").getByRole("group", { name: "Toggle Language" });
+    // Matched by prefix: the name carries the current locale code now, because
+    // the visible chip reads "EN" and an accessible name that does not contain
+    // it leaves voice control unable to act on what the user sees (WCAG 2.5.3).
+    const group = page.getByRole("dialog").getByRole("group", { name: /^Language:/ });
     await expect(group.getByRole("button", { name: /English/ })).toHaveAttribute("aria-pressed", "true");
     await Promise.all([page.waitForEvent("load"), group.getByRole("button", { name: /Tiếng Việt/ }).click()]);
 
@@ -148,7 +151,7 @@ test.describe("desktop header", () => {
 
   test("language dropdown: Esc closes it and returns focus; choosing a language persists it", async ({ page, context }) => {
     await page.goto("/about", { waitUntil: "domcontentloaded" });
-    const toggle = page.getByRole("button", { name: "Toggle Language" });
+    const toggle = page.getByRole("button", { name: /^Language:/ });
     await expect(toggle).toBeVisible({ timeout: 20_000 });
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
 

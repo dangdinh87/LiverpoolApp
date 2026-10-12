@@ -109,7 +109,7 @@
       "draw": "Hòa",
       "loss": "Thua",
       "empty": "Mùa này chưa có trận nào kết thúc.",
-      "aria": "{result}, {opponent}, {venue}, tỷ số {score}"
+      "aria": "{result} trước {opponent}, {venue}"
     },
     "news": {
       "emptyTitle": "Tin tức đang nghỉ giữa hiệp",
@@ -1300,7 +1300,7 @@
   },
   "Language": {
     "aria": {
-      "toggle": "Thay đổi ngôn ngữ"
+      "toggle": "Ngôn ngữ: {code}"
     }
   },
   "chat": {

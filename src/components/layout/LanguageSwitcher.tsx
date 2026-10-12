@@ -57,7 +57,7 @@ export function LanguageSwitcher({ variant = "dropdown" }: { variant?: "dropdown
 
   if (variant === "segmented") {
     return (
-      <div role="group" aria-label={t("aria.toggle")} className="grid grid-cols-2 border border-[var(--line-strong)]">
+      <div role="group" aria-label={t("aria.toggle", { code: locale.toUpperCase() })} className="grid grid-cols-2 border border-[var(--line-strong)]">
         {LOCALES.map((l) => {
           const active = l.code === locale;
           return (
@@ -89,7 +89,7 @@ export function LanguageSwitcher({ variant = "dropdown" }: { variant?: "dropdown
         type="button"
         onClick={() => setOpen(!open)}
         className="flex min-h-11 min-w-11 items-center justify-center gap-1.5 px-2.5 bg-transparent hover:bg-white/10 transition-colors group cursor-pointer"
-        aria-label={t("aria.toggle")}
+        aria-label={t("aria.toggle", { code: locale.toUpperCase() })}
         aria-haspopup="true"
         aria-expanded={open}
       >

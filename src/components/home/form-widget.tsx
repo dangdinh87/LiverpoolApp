@@ -43,6 +43,16 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
             const isHome = f.teams.home.id === LFC_TEAM_ID;
             const opponent = isHome ? f.teams.away : f.teams.home;
             const score = `${f.goals.home ?? 0}–${f.goals.away ?? 0}`;
+            // Appended to the chip rather than replacing it. An aria-label
+            // overrides the content outright, so the name no longer contained
+            // the visible "W 2–1" and voice control could not act on what the
+            // user reads (WCAG 2.5.3). Built from content, the name starts with
+            // the chip by construction and this only adds the context.
+            const context = t("aria", {
+              result: word[result],
+              opponent: displayTeamName(opponent.name),
+              venue: isHome ? tNext("home") : tNext("away"),
+            });
             const content = (
               <>
                 <span className={cn("spoiler-hide flex h-6 w-6 items-center justify-center font-bebas text-base leading-none", RESULT_STYLE[result])}>
@@ -57,24 +67,19 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
                 </span>
                 <span className="spoiler-hide font-bebas text-xl leading-none text-white tabular-nums">{score}</span>
                 <span aria-hidden className="spoiler-show font-bebas text-xl leading-none text-white/40">?–?</span>
+                <span className="sr-only">{context}</span>
               </>
             );
             const cls =
               "surface-interactive flex min-h-[5.5rem] flex-col items-center justify-center gap-2 px-1 py-2";
-            const aria = t("aria", {
-              result: word[result],
-              opponent: displayTeamName(opponent.name),
-              venue: isHome ? tNext("home") : tNext("away"),
-              score,
-            });
             return (
               <li key={f.fixture.id} className="min-w-0">
                 {f.fixture.id > 0 ? (
-                  <Link href={`/fixtures/${f.fixture.id}`} aria-label={aria} className={cls}>
+                  <Link href={`/fixtures/${f.fixture.id}`} className={cls}>
                     {content}
                   </Link>
                 ) : (
-                  <div aria-label={aria} role="img" className={cls}>
+                  <div role="img" aria-label={`${tMatch(`resultShort.${result}`)} ${score}, ${context}`} className={cls}>
                     {content}
                   </div>
                 )}

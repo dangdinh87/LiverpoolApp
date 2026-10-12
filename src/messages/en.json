@@ -109,7 +109,7 @@
       "draw": "Draw",
       "loss": "Loss",
       "empty": "No finished matches yet this season.",
-      "aria": "{result}, {opponent}, {venue}, score {score}"
+      "aria": "{result} against {opponent}, {venue}"
     },
     "news": {
       "emptyTitle": "News is taking a breather",
@@ -1300,7 +1300,7 @@
   },
   "Language": {
     "aria": {
-      "toggle": "Toggle Language"
+      "toggle": "Language: {code}"
     }
   },
   "chat": {
