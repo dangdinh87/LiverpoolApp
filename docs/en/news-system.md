@@ -482,13 +482,13 @@ Missing or wrong secret → HTTP 401 `{ "error": "Unauthorized" }`.
 curl -X GET \
   -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
   -H "Content-Type: application/json" \
-  "${{ secrets.SYNC_URL }}" \
+  "${SITE_URL}/api/news/sync" \
   --max-time 300 \
   --retry 3 --retry-delay 10 --retry-connrefused \
   --silent --output "$TMP_RESPONSE" \
   --write-out "%{http_code}"
 ```
-- `SYNC_URL` is stored as a repo secret (typically `https://www.liverpoolfcvn.blog/api/news/sync`)
+- `SITE_URL` is a job-level `env` in the workflow (`https://anfielddaily.com`). It was the `SYNC_URL` repo secret until the domain move; a stale secret pointed at the old domain, whose 308 to another host makes curl drop the `Authorization` header
 - Response body written to a temp file; HTTP code captured separately
 - `http_code` and `response` are pushed to `$GITHUB_OUTPUT` for downstream steps
 - HTTP code outside `[200, 299]` → `::error::` + `exit 1`
@@ -645,7 +645,7 @@ PostgREST serializes a bulk upsert payload using the *union* of keys across all 
 
 The fix explicitly seeds `is_active: true` and `read_count: 0` on new rows. Any backfill of historical `is_active = NULL` rows needs a one-off migration.
 
-**`SYNC_URL` secret hardcodes domain.** Production GH Actions hit `liverpoolfcvn.blog` directly — preview deployments cannot be sync-tested via the same workflow.
+**`SITE_URL` hardcodes the domain.** Production GH Actions hit `anfielddaily.com` directly — preview deployments cannot be sync-tested via the same workflow.
 
 **No concurrency guard.** `schedule` + `workflow_dispatch` can overlap. Add:
 ```yaml

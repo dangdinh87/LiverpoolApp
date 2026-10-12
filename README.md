@@ -109,14 +109,13 @@ Triggers:
 
 Flow:
 
-1. Calls `${{ secrets.SYNC_URL }}` (`/api/news/sync`) with `CRON_SECRET`
+1. Calls `${SITE_URL}/api/news/sync` with `CRON_SECRET` (`SITE_URL` is set in the workflow file, not a secret)
 2. Validates HTTP status and response JSON
 3. Publishes sync metrics to workflow summary
 4. Sends Telegram success/failure notification when Telegram secrets exist
 
 Required repository secrets:
 
-- `SYNC_URL` (example: `https://<your-domain>/api/news/sync`)
 - `CRON_SECRET` (must match server env)
 - `TELEGRAM_BOT_TOKEN` (optional but recommended)
 - `TELEGRAM_CHAT_ID` (optional but recommended)
