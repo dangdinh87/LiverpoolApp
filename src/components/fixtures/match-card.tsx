@@ -78,6 +78,7 @@ interface MatchCardProps {
 export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) {
   const t = useTranslations("Match");
   const tRound = useTranslations("Match.round");
+  const tLive = useTranslations("Match.liveCard");
   // The next match also listens around kick-off, in case this cached page still says "not started".
   const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial, isNext);
 
@@ -123,7 +124,7 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
         showNext && "!border-lfc-gold/40",
       )}
     >
-      {isFinished && resultStyle && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", resultStyle.strip)} />}
+      {isFinished && resultStyle && <span aria-hidden className={cn("spoiler-hide absolute inset-y-0 left-0 w-1", resultStyle.strip)} />}
       {isLive && <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", ended ? "bg-white/30" : "bg-lfc-red")} />}
       {showNext && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-gold" />}
 
@@ -148,15 +149,23 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
           >
             {isLive && <LiveStatusBadge status={status} ended={ended} />}
             {isFinished && resultStyle && (
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider",
-                  resultStyle.badge,
-                )}
-              >
-                {resultWord}
-                {extra && <span className="text-white/70">· {extra}</span>}
-              </span>
+              <>
+                <span
+                  className={cn(
+                    "spoiler-hide inline-flex items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider",
+                    resultStyle.badge,
+                  )}
+                >
+                  {resultWord}
+                  {extra && <span className="text-white/70">· {extra}</span>}
+                </span>
+                {/* Spoiler-free mode: a neutral "FT" instead of WIN/LOSS */}
+                <span className="spoiler-show">
+                  <span className="inline-flex border border-white/20 px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider text-white/70">
+                    {tLive("ftShort")}
+                  </span>
+                </span>
+              </>
             )}
             {showNext && <MatchCountdown kickOff={f.date} />}
           </div>
@@ -180,16 +189,21 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
               </>
             ) : isFinished ? (
               <>
-                <p className="font-bebas text-4xl leading-none tracking-wide text-white tabular-nums sm:text-5xl">
-                  {goals.home ?? 0}
-                  <span className="px-1 text-stadium-muted">-</span>
-                  {goals.away ?? 0}
-                </p>
-                {pens && (
-                  <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
-                    {t("penShort", { score: pens })}
+                <div className="spoiler-hide">
+                  <p className="font-bebas text-4xl leading-none tracking-wide text-white tabular-nums sm:text-5xl">
+                    {goals.home ?? 0}
+                    <span className="px-1 text-stadium-muted">-</span>
+                    {goals.away ?? 0}
                   </p>
-                )}
+                  {pens && (
+                    <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
+                      {t("penShort", { score: pens })}
+                    </p>
+                  )}
+                </div>
+                <p className="spoiler-show font-bebas text-4xl leading-none tracking-wide text-white/40 sm:text-5xl" aria-hidden>
+                  ? - ?
+                </p>
               </>
             ) : (
               <>

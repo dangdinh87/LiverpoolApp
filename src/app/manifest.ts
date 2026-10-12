@@ -28,12 +28,12 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: locale,
     categories: ["sports"],
     // The own mark only (red square, white L): the club crest is not our logo.
-    // The L sits inside the maskable safe zone, so one file serves both purposes.
+    // The maskable icon is full-bleed with the art shrunk into the safe zone (scripts/build-brand-icons.ts).
     icons: [
       { src: BRAND.assets.favicon32, sizes: "32x32", type: "image/png" },
       { src: BRAND.assets.icon192, sizes: "192x192", type: "image/png", purpose: "any" },
       { src: BRAND.assets.icon512, sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: BRAND.assets.icon512, sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: BRAND.assets.iconMaskable, sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

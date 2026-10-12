@@ -20,6 +20,7 @@ export {
   searchArticles,
   getNewsPaginated,
   getArticleRefsByUrls,
+  getArticlesMentioning,
   getArticleContentFromDB,
   getArticleByUrl,
 } from "./db";

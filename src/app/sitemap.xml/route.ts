@@ -26,6 +26,7 @@ export async function GET() {
     { path: "/squad", changefreq: "weekly", priority: "0.9" },
     { path: "/fixtures", changefreq: "daily", priority: "0.9" },
     { path: "/standings", changefreq: "daily", priority: "0.8" },
+    { path: "/predictions", changefreq: "daily", priority: "0.6" },
     { path: "/season", changefreq: "daily", priority: "0.8" },
     { path: "/stats", changefreq: "daily", priority: "0.7" },
     { path: "/gallery", changefreq: "weekly", priority: "0.7" },
@@ -79,7 +80,8 @@ export async function GET() {
    * helper the pages' own <head> uses, so the two can no longer disagree.
    *
    * A sitemap must list every localised URL, not just the default one, and each
-   * entry repeats the full set including x-default.
+   * entry repeats the full set including x-default. That is what the protocol
+   * asks for, and it is why this returns a group rather than one string.
    */
   function urlEntries(
     path: string,
@@ -88,10 +90,12 @@ export async function GET() {
     priority: string,
   ): string[] {
     const { languages } = getHreflangAlternates(path);
-    const alternates = Object.entries(languages).map(
-      ([lang, href]) =>
-        `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(href)}" />`,
-    );
+    const alternates = [
+      ...Object.entries(languages).map(
+        ([lang, href]) =>
+          `    <xhtml:link rel="alternate" hreflang="${lang}" href="${escapeXml(href)}" />`,
+      ),
+    ];
 
     return Object.keys(languages)
       .filter((lang) => lang !== "x-default")

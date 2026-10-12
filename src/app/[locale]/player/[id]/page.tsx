@@ -17,6 +17,9 @@ import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildPersonJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { getArticlesMentioning } from "@/lib/news";
+import { getPlayerFanRating } from "@/lib/fan-predictions/leaderboard";
+import { NewsCard } from "@/components/news/news-card";
 
 // ─── Types & constants ───────────────────────────────────────────────────────
 
@@ -132,12 +135,20 @@ export default async function PlayerPage({ params }: PageProps) {
     timeZone: "UTC",
   });
   const accent = POS_ACCENT[player.position];
+  // Fixed per render (the page is cached for an hour) so news ages print the same on server and client.
+  // eslint-disable-next-line react-hooks/purity
+  const renderedAt = Date.now();
   const { flag, key: nationalityKey } = getNationality(player.nationality);
   const nationality = nationalityKey ? t(`nationalities.${nationalityKey}`) : player.nationality;
 
-  const [playerStats, fplStats] = await Promise.all([
+  // Headlines usually name a player by surname ("Isak", "Mac Allister").
+  const nameParts = player.name.split(" ");
+  const surname = nameParts.length > 1 && nameParts.at(-1)!.length >= 4 ? nameParts.at(-1)! : player.name;
+  const [playerStats, fplStats, mentions, fanRating] = await Promise.all([
     getPlayerStats(player.id),
     getFplPlayerStats(player.name),
+    getArticlesMentioning(surname),
+    getPlayerFanRating(player.name).catch(() => null),
   ]);
 
   const bio = getPlayerBio(player.slug, locale);
@@ -243,6 +254,29 @@ export default async function PlayerPage({ params }: PageProps) {
           fplStats={fplStats}
           position={player.position}
         />
+
+        {/* ─── Fans' rating this season (from the match pages) ─── */}
+        {fanRating && (
+          <section className="surface flex flex-wrap items-center gap-x-6 gap-y-2 p-5">
+            <p className="font-bebas text-6xl leading-none text-lfc-gold tabular-nums">{fanRating.average.toFixed(1)}</p>
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold text-white">{t("fanRating.title")}</h2>
+              <p className="text-sm text-stadium-muted">{t("fanRating.detail", { matches: fanRating.matches, votes: fanRating.votes })}</p>
+            </div>
+          </section>
+        )}
+
+        {/* ─── Latest news naming the player ─── */}
+        {mentions.length > 0 && (
+          <section>
+            <SectionHeader title={t("sections.news", { name: surname })} href="/news" linkLabel={t("sections.allNews")} />
+            <div className="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              {mentions.map((a) => (
+                <NewsCard key={a.link} article={a} nowMs={renderedAt} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ─── Biography ─── */}
         {bio && (

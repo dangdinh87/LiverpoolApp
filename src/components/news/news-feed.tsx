@@ -10,7 +10,9 @@ import { getReadArticles } from "@/lib/news/read-history";
 import { loadMoreNews } from "@/app/actions/news";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
-import { NewsCard, NewsCardSkeleton } from "./news-card";
+import { NewsCardSkeleton } from "./news-card";
+import { StoryCard } from "./story-card";
+import { clusterStories } from "@/lib/news/story-clusters";
 import { cleanTitle } from "./news-text";
 
 /** Headlines revealed per step. */
@@ -109,10 +111,13 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
     });
   }, [byLang, source, category, search]);
 
+  // Same story from several outlets -> one card (paging counts cards, not articles).
+  const stories = useMemo(() => clusterStories(articles), [articles]);
+
   const sheetFilters = (category !== "all" ? 1 : 0) + (source !== "all" ? 1 : 0);
   const filtersActive = sheetFilters > 0 || search.trim() !== "";
-  const shown = articles.slice(0, visible);
-  const hasMore = visible < articles.length || serverHasMore;
+  const shown = stories.slice(0, visible);
+  const hasMore = visible < stories.length || serverHasMore;
 
   function resetPaging() {
     setVisible(PAGE_SIZE);
@@ -136,7 +141,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
 
   function loadMore() {
     setLoadFailed(false);
-    if (visible < articles.length) {
+    if (visible < stories.length) {
       setVisible((v) => v + PAGE_SIZE);
       return;
     }
@@ -404,8 +409,15 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
         ) : (
           <div className="space-y-4">
             <div className="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {shown.map((a, i) => (
-                <NewsCard key={a.link} article={a} nowMs={nowMs} priority={i < 3} isRead={readSet.has(a.link)} />
+              {shown.map((story, i) => (
+                <StoryCard
+                  key={story.lead.link}
+                  lead={story.lead}
+                  related={story.related}
+                  nowMs={nowMs}
+                  priority={i < 3}
+                  isRead={readSet.has(story.lead.link)}
+                />
               ))}
               {pending && Array.from({ length: 6 }, (_, i) => <NewsCardSkeleton key={`sk-${i}`} />)}
             </div>

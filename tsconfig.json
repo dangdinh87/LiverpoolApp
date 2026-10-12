@@ -54,7 +54,9 @@
     ".build-preview/types/**/*.ts",
     ".build-preview/dev/types/**/*.ts",
     ".build-live/types/**/*.ts",
-    ".build-live/dev/types/**/*.ts"
+    ".build-live/dev/types/**/*.ts",
+    ".build-prodcheck/types/**/*.ts",
+    ".build-prodcheck/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

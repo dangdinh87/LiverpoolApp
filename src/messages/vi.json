@@ -74,16 +74,16 @@
     }
   },
   "Hero": {
-    "tagline": "Fan Liverpool khắp thế giới · Giờ đá theo giờ của bạn",
-    "title": "Chào mừng đến với Anfield",
-    "subtitle": "Reds Abroad — theo The Reds từ bất cứ đâu",
-    "description": "<b>{brand}</b> gom tin Liverpool từ {count} tờ báo tiếng Anh và tiếng Việt về một chỗ, tóm tắt mỗi ngày. Kèm giờ bóng lăn theo giờ nơi bạn ở, kết quả và bảng xếp hạng.",
-    "badge": "Dành cho fan Liverpool xa Anfield",
+    "tagline": "Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày",
+    "title": "Tin Liverpool gọn ở một nơi",
+    "subtitle": "Anfield Daily — tin Liverpool tổng hợp và tóm tắt",
+    "description": "<b>{brand}</b> gom tin từ {count} tờ báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt thành bản tin mỗi ngày.",
+    "badge": "Tin Liverpool tổng hợp mỗi ngày",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng",
-    "headlineTop": "Ở đâu cũng là",
-    "headlineBottom": "Anfield.",
+    "headlineTop": "Khỏi mở 20 tab.",
+    "headlineBottom": "Tin Liverpool ở đây.",
     "ctaNews": "Đọc tin hôm nay"
   },
   "Home": {
@@ -131,6 +131,15 @@
     "metadata": {
       "title": "Giờ đá Liverpool theo múi giờ của bạn, kết quả, tin nhanh",
       "description": "Tin Liverpool từ hơn 20 báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng."
+    },
+    "digest": {
+      "kicker": "Bản tin hôm nay",
+      "inside": "{count} tin trong bản tin"
+    },
+    "predict": {
+      "title": "Dự đoán tỷ số",
+      "cta": "Dự đoán",
+      "table": "BXH"
     }
   },
   "Bento": {
@@ -268,7 +277,8 @@
       "langVi": "Tiếng Việt",
       "langEn": "Tiếng Anh",
       "showResults": "Xem {count} tin",
-      "close": "Đóng"
+      "close": "Đóng",
+      "alsoCovering": "Thêm {count} báo đưa tin:"
     },
     "sidebar": {
       "source": "Nguồn tin",
@@ -433,7 +443,9 @@
       "pastSeasons": "Các mùa trước",
       "playerInfo": "Thông tin cầu thủ",
       "honours": "Danh hiệu tại Liverpool FC",
-      "biography": "Tiểu sử"
+      "biography": "Tiểu sử",
+      "news": "Tin mới về {name}",
+      "allNews": "Tất cả tin"
     },
     "info": {
       "fullName": "Họ tên đầy đủ",
@@ -517,6 +529,10 @@
       "swedish": "Thụy Điển",
       "uruguayan": "Uruguay",
       "welsh": "Xứ Wales"
+    },
+    "fanRating": {
+      "title": "Điểm fan chấm mùa này",
+      "detail": "Trung bình {matches} trận, từ {votes} lượt chấm của fan trên trang trận đấu."
     }
   },
   "Season": {
@@ -760,19 +776,47 @@
     },
     "trophies": {
       "years": "Các năm đăng quang"
+    },
+    "eras": {
+      "jump": "Đến thời kỳ",
+      "now": "nay",
+      "beginnings": {
+        "name": "Khởi đầu",
+        "summary": "Ra đời sau khi Everton rời Anfield, Liverpool có chức vô địch quốc gia đầu tiên chỉ trong một thập kỷ và trụ vững ở hạng Nhất."
+      },
+      "shankly": {
+        "name": "Thời Shankly",
+        "summary": "Bill Shankly đến khi đội còn ở hạng Hai và dựng nên Liverpool hiện đại: lên hạng, vô địch, FA Cup đầu tiên và Boot Room."
+      },
+      "paisley": {
+        "name": "Thời hoàng kim",
+        "summary": "Dưới thời Paisley, Fagan và Dalglish, Liverpool thống trị nước Anh và châu Âu, qua cả vinh quang lẫn bi kịch Heysel và Hillsborough."
+      },
+      "rebuild": {
+        "name": "Tái thiết",
+        "summary": "Kỷ nguyên Premier League mang về các cúp thay vì chức vô địch, cùng hai đêm bất tử: cú ăn ba cúp 2001 và Istanbul 2005."
+      },
+      "klopp": {
+        "name": "Thời Klopp",
+        "summary": "Jürgen Klopp biến hoài nghi thành niềm tin: Cúp C1 thứ sáu năm 2019 và chức vô địch quốc gia năm 2020 sau ba mươi năm chờ đợi."
+      },
+      "today": {
+        "name": "Hiện tại",
+        "summary": "Huấn luyện viên mới, đội hình mới và cùng một kỳ vọng ở Anfield."
+      }
     }
   },
   "About": {
     "metadata": {
       "title": "Giới thiệu",
-      "description": "Reds Abroad là trang fan Liverpool không chính thức: giờ đá theo múi giờ của bạn, kết quả, đội hình và tin nhanh. Dữ liệu lấy từ đâu, và trang này không phải cái gì."
+      "description": "Anfield Daily là trang fan Liverpool không chính thức, gom tin từ hơn 20 tờ báo và tóm tắt mỗi ngày. Dữ liệu lấy từ đâu, và trang này không phải cái gì."
     },
     "label": "Giới thiệu",
-    "title": "Trang fan Liverpool cho người hâm mộ xa nhà",
+    "title": "Tin Liverpool, tổng hợp và tóm tắt",
     "disclaimer": "{brand} là trang fan <status>độc lập, không chính thức</status>. Trang không liên kết với, không được tài trợ hay xác nhận bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các tờ báo được dẫn link. Tên, logo và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
       "title": "{brand} là gì?",
-      "description": "Reds Abroad là blog của một fan Liverpool, viết cho người hâm mộ theo dõi CLB từ nước khác. Mở ra là thấy ngay trận tới đá lúc mấy giờ theo giờ của bạn, kết quả gần nhất và đội đang đứng đâu trên bảng.",
+      "description": "Anfield Daily là trang của một fan Liverpool, làm ra để đọc tin cho nhanh. Trang gom tin từ hơn 20 tờ báo tiếng Anh và tiếng Việt, bỏ các bài trùng nhau và tóm tắt cả ngày thành một bản tin ngắn, để bạn khỏi phải mở hai mươi tab. Lịch thi đấu, kết quả và bảng xếp hạng nằm ngay bên cạnh.",
       "featuresTitle": "Trong trang có gì",
       "features": {
         "squad": "Đội hình và hồ sơ từng cầu thủ.",
@@ -792,7 +836,7 @@
     "creator": {
       "title": "Người làm trang",
       "role": "Lập trình viên, fan Liverpool",
-      "bio": "Mình là lập trình viên và là fan Liverpool. Reds Abroad là dự án làm lúc rảnh, cho những Kopite theo CLB từ một múi giờ khác."
+      "bio": "Mình là lập trình viên và là fan Liverpool. Anfield Daily là dự án làm lúc rảnh, để mình (và bạn) đọc tin Liverpool mỗi ngày cho nhanh, khỏi lùng từng báo."
     },
     "contact": {
       "title": "Liên hệ",
@@ -809,7 +853,7 @@
       "momoAlt": "QR MoMo - Nguyễn Đăng Định",
       "momoTitle": "Mã QR MoMo"
     },
-    "tagline": "Giờ đá theo giờ Việt Nam, kết quả, đội hình và tin nhanh cho fan The Kop.",
+    "tagline": "Tin nhanh, bản tin tóm tắt mỗi ngày, lịch thi đấu và kết quả cho fan Liverpool.",
     "news": {
       "title": "Tin tức được xử lý thế nào",
       "body": "Mục tin nhanh chỉ hiện tiêu đề, một đoạn trích ngắn và link sang bài gốc. Muốn đọc đầy đủ, bạn mở bài trên trang của báo đó. {brand} không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
@@ -872,7 +916,19 @@
       "title": "Chưa có bảng xếp hạng",
       "description": "Chưa tải được bảng xếp hạng. Bạn thử lại sau vài phút nhé.",
       "action": "Xem tin nhanh"
-    }
+    },
+    "summary": {
+      "label": "Liverpool trên bảng xếp hạng",
+      "position": "Hạng · {points} điểm",
+      "leading": "Đang dẫn đầu",
+      "behindLeader": "Kém đội đầu bảng {count} điểm",
+      "topFourClear": "Hơn nhóm sau top 4 {count} điểm",
+      "topFourBehind": "Cách top 4 {count} điểm",
+      "aboveDrop": "Hơn nhóm xuống hạng {count} điểm",
+      "next": "Trận Ngoại hạng Anh tới: <b>{team}</b>, hạng {rank} với {points} điểm.",
+      "matchLink": "Trang trận"
+    },
+    "nextBadge": "Trận tới"
   },
   "Fixtures": {
     "metadata": {
@@ -954,6 +1010,16 @@
       "results": "Kết quả",
       "standings": "BXH",
       "stats": "Thống kê"
+    },
+    "calendar": {
+      "button": "Thêm vào lịch",
+      "hint": "Mọi trận Liverpool hiện trong lịch điện thoại theo giờ nơi bạn ở, nhắc trước 30 phút. Đổi giờ bóng lăn thì lịch tự cập nhật.",
+      "google": "Google Calendar",
+      "apple": "Lịch Apple (iPhone, Mac)",
+      "outlook": "Outlook",
+      "copy": "Chép link lịch",
+      "copied": "Đã chép link",
+      "calendarName": "Lịch Liverpool"
     }
   },
   "Legal": {
@@ -1432,5 +1498,75 @@
     },
     "viewMatch": "Xem chi tiết trận",
     "related": "Bài cùng loại"
+  },
+  "Calendar": {
+    "name": "Lịch Liverpool · Anfield Daily",
+    "description": "Mọi trận của Liverpool, hiện theo giờ nơi bạn ở. Tự cập nhật khi đổi giờ bóng lăn.",
+    "matchPage": "Trang trận đấu",
+    "reminder": "30 phút nữa bóng lăn"
+  },
+  "Spoiler": {
+    "toggle": "Không spoil",
+    "hint": "Ẩn tỷ số và kết quả trên toàn trang cho tới khi bạn muốn xem. Tiện khi bạn xem lại trận sau.",
+    "hiddenTitle": "Đang ẩn kết quả",
+    "hiddenDesc": "Bạn đang bật chế độ không spoil, nên tỷ số, diễn biến và thống kê trận này đang được ẩn.",
+    "reveal": "Hiện kết quả trận này",
+    "turnOff": "Tắt chế độ không spoil"
+  },
+  "Predict": {
+    "title": "Dự đoán của bạn",
+    "count": "{count, plural, =0 {Hãy là người đầu tiên dự đoán} other {# fan đã dự đoán}}",
+    "save": "Lưu dự đoán",
+    "update": "Cập nhật dự đoán",
+    "saved": "Đã lưu",
+    "signIn": "Đăng nhập để dự đoán",
+    "rule": "Đúng tỷ số được 3 điểm, đúng kết quả được 1 điểm. Sửa được tới giờ bóng lăn.",
+    "yourPick": "Bạn đoán: {home}–{away}",
+    "closedNoPick": "Đã khoá dự đoán lúc bóng lăn.",
+    "points": "{count} điểm",
+    "win": "{team} thắng",
+    "draw": "Hoà",
+    "mostPicked": "Được chọn nhiều nhất:",
+    "leaderboardLink": "Xem bảng xếp hạng dự đoán",
+    "error": {
+      "signIn": "Bạn cần đăng nhập trước.",
+      "closed": "Trận này đã khoá dự đoán.",
+      "invalid": "Tỷ số không hợp lệ.",
+      "unavailable": "Chưa lưu được. Bạn thử lại sau ít phút nhé."
+    },
+    "ratings": {
+      "title": "Chấm điểm cầu thủ",
+      "votes": "{count, plural, =0 {Chưa ai chấm} other {# fan đã chấm}}",
+      "hint": "Kéo 1–10 cho những ai bạn đã xem. Điểm trung bình của fan nằm bên phải.",
+      "closed": "Đã khoá chấm điểm sau một tuần. Điểm trung bình của fan:",
+      "rate": "Chấm điểm {player}",
+      "average": "Trung bình của {count} fan",
+      "save": "Lưu điểm",
+      "saved": "Đã lưu",
+      "signIn": "Đăng nhập để chấm điểm",
+      "error": {
+        "signIn": "Bạn cần đăng nhập trước.",
+        "closed": "Trận này đã khoá chấm điểm.",
+        "invalid": "Có điểm không hợp lệ.",
+        "unavailable": "Chưa lưu được. Bạn thử lại sau ít phút nhé."
+      }
+    },
+    "page": {
+      "eyebrow": "Fan dự đoán",
+      "title": "Bảng xếp hạng dự đoán",
+      "description": "Dự đoán tỷ số mọi trận của Liverpool và xem bạn đứng thứ mấy giữa các fan mùa này.",
+      "rule": "Đúng tỷ số được {exact} điểm, đúng kết quả được {result} điểm. Khoá dự đoán lúc bóng lăn.",
+      "nextLabel": "Trận tiếp theo để dự đoán",
+      "predictNow": "Dự đoán",
+      "tableTitle": "Mùa này",
+      "fan": "Fan",
+      "exact": "Đúng tỷ số",
+      "played": "Số trận",
+      "points": "Điểm",
+      "emptyTitle": "Chưa có điểm",
+      "emptyDesc": "Bảng sẽ có điểm khi một trận đã dự đoán đá xong.",
+      "unavailableTitle": "Chưa tải được bảng",
+      "unavailableDesc": "Bạn thử lại sau ít phút nhé."
+    }
   }
 }

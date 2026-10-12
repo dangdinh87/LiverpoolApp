@@ -74,16 +74,16 @@
     }
   },
   "Hero": {
-    "tagline": "Liverpool fans everywhere · Kick-off times in your time zone",
-    "title": "Welcome to Anfield",
-    "subtitle": "Reds Abroad — following the Reds from anywhere",
-    "description": "<b>{brand}</b> brings Liverpool news from {count} English and Vietnamese outlets into one place and sums it up every day. Plus kick-off in your local time, results and the table.",
-    "badge": "For Liverpool fans away from Anfield",
+    "tagline": "Liverpool news, fast · Gathered and summed up daily",
+    "title": "Liverpool news in one place",
+    "subtitle": "Anfield Daily — Liverpool news, gathered and summed up",
+    "description": "<b>{brand}</b> gathers the news from {count} English and Vietnamese outlets, drops the duplicates and sums it up in a daily briefing.",
+    "badge": "Liverpool news, gathered daily",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings",
-    "headlineTop": "Wherever you are,",
-    "headlineBottom": "it’s Anfield.",
+    "headlineTop": "Skip the twenty tabs.",
+    "headlineBottom": "Liverpool news, here.",
     "ctaNews": "Read today’s news"
   },
   "Home": {
@@ -131,6 +131,15 @@
     "metadata": {
       "title": "Liverpool kick-off times in your time zone, results, quick news",
       "description": "Liverpool news from 20+ English and Vietnamese outlets, de-duplicated and summed up daily. Plus fixtures, results and the table."
+    },
+    "digest": {
+      "kicker": "Today’s briefing",
+      "inside": "{count, plural, one {# story inside} other {# stories inside}}"
+    },
+    "predict": {
+      "title": "Predict the score",
+      "cta": "Predict",
+      "table": "Table"
     }
   },
   "Bento": {
@@ -268,7 +277,8 @@
       "langVi": "Vietnamese",
       "langEn": "English",
       "showResults": "Show {count} stories",
-      "close": "Close"
+      "close": "Close",
+      "alsoCovering": "{count, plural, one {Also in # more outlet:} other {Also in # more outlets:}}"
     },
     "sidebar": {
       "source": "Source",
@@ -433,7 +443,9 @@
       "pastSeasons": "Past Seasons",
       "playerInfo": "Player Information",
       "honours": "Honours at Liverpool FC",
-      "biography": "Biography"
+      "biography": "Biography",
+      "news": "Latest on {name}",
+      "allNews": "All news"
     },
     "info": {
       "fullName": "Full Name",
@@ -517,6 +529,10 @@
       "swedish": "Swedish",
       "uruguayan": "Uruguayan",
       "welsh": "Welsh"
+    },
+    "fanRating": {
+      "title": "Fans’ rating this season",
+      "detail": "Average over {matches, plural, one {# match} other {# matches}}, {votes} ratings from fans on the match pages."
     }
   },
   "Season": {
@@ -760,19 +776,47 @@
     },
     "trophies": {
       "years": "Winning years"
+    },
+    "eras": {
+      "jump": "Jump to an era",
+      "now": "now",
+      "beginnings": {
+        "name": "Beginnings",
+        "summary": "Founded after Everton left Anfield, Liverpool won their first league titles within a decade and became a First Division fixture."
+      },
+      "shankly": {
+        "name": "The Shankly years",
+        "summary": "Bill Shankly arrived with the club in the Second Division and built the modern Liverpool: promotion, titles, the first FA Cup and the Boot Room."
+      },
+      "paisley": {
+        "name": "The glory years",
+        "summary": "Under Paisley, Fagan and Dalglish, Liverpool dominated England and Europe, through triumph and the tragedies of Heysel and Hillsborough."
+      },
+      "rebuild": {
+        "name": "Rebuilding",
+        "summary": "The Premier League era brought cup runs rather than titles, and two nights that live forever: the 2001 treble of cups and Istanbul in 2005."
+      },
+      "klopp": {
+        "name": "The Klopp years",
+        "summary": "Jürgen Klopp turned doubters into believers: a sixth European Cup in 2019 and, in 2020, the league title the club had waited thirty years for."
+      },
+      "today": {
+        "name": "Today",
+        "summary": "A new head coach, a new team and the same expectations at Anfield."
+      }
     }
   },
   "About": {
     "metadata": {
       "title": "About",
-      "description": "Reds Abroad is an unofficial Liverpool fan site: kick-off times in your own time zone, results, squad and quick news. Where the data comes from, and what this site is not."
+      "description": "Anfield Daily is an unofficial Liverpool fan site that gathers the news from 20+ outlets and sums it up daily. Where the data comes from, and what the site is not."
     },
     "label": "About",
-    "title": "A Liverpool fan site for supporters abroad",
+    "title": "Liverpool news, gathered and summed up",
     "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
     "whatIs": {
       "title": "What is {brand}?",
-      "description": "Reds Abroad is a blog by a Liverpool fan, written for supporters who follow the club from another country. Open it and you see the next kick-off in your own time, the latest result and where the team sits in the table.",
+      "description": "Anfield Daily is a Liverpool fan’s site for reading the news fast. It gathers stories from more than 20 English and Vietnamese outlets, drops the duplicates and sums up the day in one short briefing, so you don’t have to open twenty tabs. Fixtures, results and the table sit alongside.",
       "featuresTitle": "What's on the site",
       "features": {
         "squad": "The squad and a profile for each player.",
@@ -792,7 +836,7 @@
     "creator": {
       "title": "Who makes this",
       "role": "Developer, Liverpool fan",
-      "bio": "I'm a developer and a Liverpool fan. Reds Abroad is a spare-time project for Reds who follow the club from another time zone."
+      "bio": "I'm a developer and a Liverpool fan. Anfield Daily is a spare-time project for reading the day's Liverpool news fast, without hunting through every outlet."
     },
     "contact": {
       "title": "Contact",
@@ -809,7 +853,7 @@
       "momoAlt": "MoMo QR - Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code"
     },
-    "tagline": "Kick-off times in your local time, results, squad and quick news for Kop fans.",
+    "tagline": "Quick news, a daily summary, fixtures and results for Liverpool fans.",
     "news": {
       "title": "How news is handled",
       "body": "Quick news shows only the headline, a short excerpt and a link to the original story. To read the full piece, open it on the publisher's own site. {brand} does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
@@ -872,7 +916,19 @@
       "title": "The table is unavailable",
       "description": "We could not load the table. Please try again in a few minutes.",
       "action": "Read quick news"
-    }
+    },
+    "summary": {
+      "label": "Liverpool in the table",
+      "position": "Position · {points} pts",
+      "leading": "Top of the table",
+      "behindLeader": "{count, plural, one {# point} other {# points}} behind the leader",
+      "topFourClear": "{count, plural, one {# point} other {# points}} clear in the top four",
+      "topFourBehind": "{count, plural, one {# point} other {# points}} off the top four",
+      "aboveDrop": "{count, plural, one {# point} other {# points}} above the drop",
+      "next": "Next league match: <b>{team}</b>, {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} on {points} pts.",
+      "matchLink": "Match page"
+    },
+    "nextBadge": "Next"
   },
   "Fixtures": {
     "metadata": {
@@ -954,6 +1010,16 @@
       "results": "Results",
       "standings": "Table",
       "stats": "Stats"
+    },
+    "calendar": {
+      "button": "Add to calendar",
+      "hint": "Every Liverpool match in your phone’s calendar, at your local time, with a reminder 30 minutes before. It updates itself when a kick-off moves.",
+      "google": "Google Calendar",
+      "apple": "Apple Calendar (iPhone, Mac)",
+      "outlook": "Outlook",
+      "copy": "Copy calendar link",
+      "copied": "Link copied",
+      "calendarName": "Liverpool fixtures"
     }
   },
   "Legal": {
@@ -1432,5 +1498,75 @@
     },
     "viewMatch": "View match details",
     "related": "More like this"
+  },
+  "Calendar": {
+    "name": "Liverpool fixtures · Anfield Daily",
+    "description": "Every Liverpool match, shown in your own time zone. Updates itself when a kick-off moves.",
+    "matchPage": "Match page",
+    "reminder": "Kick-off in 30 minutes"
+  },
+  "Spoiler": {
+    "toggle": "Spoiler-free",
+    "hint": "Hide scores and results across the site until you choose to see them. Handy when you watch the replay later.",
+    "hiddenTitle": "Result hidden",
+    "hiddenDesc": "Spoiler-free mode is on, so this match’s score, events and stats are hidden.",
+    "reveal": "Show this result",
+    "turnOff": "Turn off spoiler-free"
+  },
+  "Predict": {
+    "title": "Your prediction",
+    "count": "{count, plural, =0 {Be the first to predict} one {# fan has predicted} other {# fans have predicted}}",
+    "save": "Save prediction",
+    "update": "Update prediction",
+    "saved": "Saved",
+    "signIn": "Sign in to predict",
+    "rule": "3 points for the exact score, 1 for the right result. You can change it until kick-off.",
+    "yourPick": "Your pick: {home}–{away}",
+    "closedNoPick": "Predictions closed at kick-off.",
+    "points": "{count, plural, one {# point} other {# points}}",
+    "win": "{team} win",
+    "draw": "Draw",
+    "mostPicked": "Most picked:",
+    "leaderboardLink": "See the prediction table",
+    "error": {
+      "signIn": "Sign in first.",
+      "closed": "Predictions for this match are closed.",
+      "invalid": "That score is not valid.",
+      "unavailable": "Could not save right now. Try again in a minute."
+    },
+    "ratings": {
+      "title": "Rate the players",
+      "votes": "{count, plural, =0 {No ratings yet} one {# fan rated} other {# fans rated}}",
+      "hint": "Slide 1–10 for anyone you watched. Fans’ averages are on the right.",
+      "closed": "Ratings closed a week after the match. Fans’ averages:",
+      "rate": "Rate {player}",
+      "average": "Average of {count} fans",
+      "save": "Save ratings",
+      "saved": "Saved",
+      "signIn": "Sign in to rate",
+      "error": {
+        "signIn": "Sign in first.",
+        "closed": "Ratings for this match are closed.",
+        "invalid": "One of those ratings is not valid.",
+        "unavailable": "Could not save right now. Try again in a minute."
+      }
+    },
+    "page": {
+      "eyebrow": "Fan predictions",
+      "title": "Prediction table",
+      "description": "Predict every Liverpool score and see how you rank against other fans this season.",
+      "rule": "{exact} points for the exact score, {result} for the right result. Predictions close at kick-off.",
+      "nextLabel": "Next match to predict",
+      "predictNow": "Predict",
+      "tableTitle": "This season",
+      "fan": "Fan",
+      "exact": "Exact",
+      "played": "Played",
+      "points": "Pts",
+      "emptyTitle": "No points yet",
+      "emptyDesc": "The table fills up once a predicted match has been played.",
+      "unavailableTitle": "The table is unavailable",
+      "unavailableDesc": "We could not load it. Try again in a few minutes."
+    }
   }
 }

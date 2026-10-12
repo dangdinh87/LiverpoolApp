@@ -1,6 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { getStandings, getUclStandings } from "@/lib/football";
+import { getFixtures, getStandings, getUclStandings } from "@/lib/football";
+import { standingsContext } from "@/lib/football/standings-context";
+import { StandingsSummary } from "@/components/standings/standings-summary";
 import { PageHero } from "@/components/ui/page-hero";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
@@ -23,7 +25,14 @@ export default async function StandingsPage({ params }: LocaleParams) {
   setRequestLocale(locale);
   const t = await getTranslations("Standings");
   // The Champions League table is a second tab when the data source has it (it is empty off-season).
-  const [standings, uclStandings] = await Promise.all([getStandings(), getUclStandings()]);
+  const [standings, uclStandings, fixtures] = await Promise.all([getStandings(), getUclStandings(), getFixtures()]);
+
+  // Liverpool's next Premier League match: its opponent is tagged in the table.
+  const nextLeague = fixtures
+    .filter((f) => f.league.name === "Premier League" && f.fixture.status.short === "NS")
+    .sort((a, b) => a.fixture.date.localeCompare(b.fixture.date))[0];
+  const nextOpponentId = nextLeague ? (nextLeague.teams.home.id === 40 ? nextLeague.teams.away.id : nextLeague.teams.home.id) : undefined;
+  const context = standingsContext(standings, 40, nextOpponentId);
 
   // Find Liverpool's position for the header
   const lfcStanding = standings.find((s) => s.team.id === 40);
@@ -52,7 +61,8 @@ export default async function StandingsPage({ params }: LocaleParams) {
       <div className="page-container pb-16">
         <MatchCentreNav active="standings" />
         <div className="pt-4 sm:pt-6">
-          <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />
+          {context && <StandingsSummary context={context} nextFixtureId={nextLeague?.fixture.id} />}
+          <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} nextOpponentId={nextOpponentId} />
         </div>
       </div>
     </div>

@@ -483,6 +483,19 @@ html {
   color: #fff;
 }
 
+/* Spoiler-free mode (src/lib/spoiler-mode.ts): results swap for neutral
+   placeholders while <html data-spoiler-free> is set, unless this one match
+   page was revealed. Unlayered and !important so no utility can show a score. */
+.spoiler-show {
+  display: none !important;
+}
+html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-hide {
+  display: none !important;
+}
+html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
+  display: revert !important;
+}
+
 /* Respect users who ask for less motion: stop decorative loops and
    collapse transitions to instant. Essential state changes still happen. */
 @media (prefers-reduced-motion: reduce) {

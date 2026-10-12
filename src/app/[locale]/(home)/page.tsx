@@ -15,6 +15,8 @@ import { NewsSection } from "@/components/home/news-section";
 import { selectHomeNews } from "@/components/home/news-utils";
 import { StandingsPreview } from "@/components/home/standings-preview";
 import { SquadCarousel } from "@/components/home/squad-carousel";
+import { DigestFeature } from "@/components/home/digest-feature";
+import { PredictCta } from "@/components/home/predict-cta";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildBreadcrumbJsonLd, DEFAULT_OG_IMAGE, getCanonical, makePageMeta } from "@/lib/seo";
@@ -200,6 +202,8 @@ export default async function HomePage({ params }: LocaleParams) {
       .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
 
   const uiLocale: "vi" | "en" = locale === "en" ? "en" : "vi";
+  // The next match still open for predictions (not the live one).
+  const upcoming = liveMatch ? null : nextMatch && nextMatch.fixture.id > 0 ? nextMatch : null;
   const topNews = selectHomeNews(allNews, uiLocale, HOME_NEWS_SHOWN);
   const squadTeaser = getSquadPlayers()
     .sort((a, b) => a.shirtNumber - b.shirtNumber)
@@ -212,16 +216,17 @@ export default async function HomePage({ params }: LocaleParams) {
         <NextMatchWidget fixture={nextMatch} />
       </Hero>
       <div className="page-container py-6 sm:py-10 lg:py-12">
+        {/* The site's own daily briefing leads; the outlets' headlines follow. */}
+        {digest && <DigestFeature digest={digest} locale={uiLocale} />}
+
         {/* grid-cols-1 = minmax(0,1fr): an implicit auto track grew to the widest nowrap row of the table preview (326px in a 256px card at 320px). */}
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:gap-x-8 lg:gap-y-6">
-          {/* Mobile order: results, quick news, table. On desktop news spans two rows beside both widgets. */}
-          <div className="lg:col-span-4 lg:col-start-9 lg:row-start-1">
+        <div className={`grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8 ${digest ? "mt-8 sm:mt-12" : ""}`}>
+          <div className="lg:col-span-8">
+            <NewsSection articles={topNews} locale={uiLocale} />
+          </div>
+          <div className="flex flex-col gap-6 lg:col-span-4">
             <FormWidget results={pickRecentResults(fixtures)} />
-          </div>
-          <div className="lg:col-span-8 lg:col-start-1 lg:row-span-2 lg:row-start-1">
-            <NewsSection articles={topNews} digest={digest} locale={uiLocale} />
-          </div>
-          <div className="lg:col-span-4 lg:col-start-9 lg:row-start-2">
+            {upcoming && <PredictCta fixture={upcoming} />}
             <StandingsPreview standings={standings} />
           </div>
         </div>

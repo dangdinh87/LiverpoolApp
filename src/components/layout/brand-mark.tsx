@@ -1,30 +1,22 @@
-import { BRAND } from "@/lib/brand";
+import { BRAND, MARK } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { BrandWordmark } from "./brand-wordmark";
 
 /**
- * The square mark: a white globe (rim plus one meridian) on brand red, with a
- * gold dot for one supporter somewhere else. The same drawing as
- * `public/brand/icon.svg` (the favicon and app icon), inlined so it scales
- * crisply, inherits no external request, and needs no `next/image`.
+ * The mark: two pages folded into an "A" with a gold crossbar, on a red rounded
+ * tile (MARK in src/lib/brand.ts). Same drawing as `public/brand/icon.svg`,
+ * inlined so it scales crisply, makes no request and needs no `next/image`.
  *
  * Decorative: name the surrounding link with `aria-label={BRAND.name}`.
  */
 export function BrandMark({ className }: { className?: string }) {
+  const { size, radius, back, front, backFill, rule } = MARK;
   return (
-    <svg
-      viewBox="0 0 512 512"
-      aria-hidden
-      focusable="false"
-      className={cn("shrink-0", className)}
-    >
-      <rect width="512" height="512" fill={BRAND.red} />
-      <g fill="none" stroke="#ffffff" strokeWidth="40" strokeLinecap="round">
-        <circle cx="256" cy="256" r="166" />
-        <ellipse cx="256" cy="256" rx="80" ry="166" />
-      </g>
-      <circle cx="373" cy="139" r="54" fill={BRAND.red} />
-      <circle cx="373" cy="139" r="34" fill="#f6eb61" />
+    <svg viewBox={`0 0 ${size} ${size}`} aria-hidden focusable="false" className={cn("shrink-0", className)}>
+      <rect width={size} height={size} rx={radius} fill={BRAND.red} />
+      <polygon points={back} fill={backFill} />
+      <polygon points={front} fill="#ffffff" />
+      <rect x={rule.x} y={rule.y} width={rule.width} height={rule.height} fill={BRAND.gold} />
     </svg>
   );
 }

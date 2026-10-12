@@ -16,8 +16,9 @@ interface HeroProps {
 
 /**
  * Compact home hero: stadium photo (the LCP image), a two-line h1
- * ("Wherever you are, / it's Anfield."), one sentence naming the site and what
- * it is best at (news from every outlet, summed up daily) with a way into it, and the next-match
+ * ("Skip the twenty tabs. / Liverpool news, here."), one sentence naming
+ * the site and what it does (gathers, de-duplicates and sums up the news) with
+ * a way into it, and the next-match
  * card. Server-rendered with CSS-only reveals, so the text is in the first HTML
  * and visible without waiting for hydration.
  */

@@ -30,6 +30,9 @@ import {
   teamLogo,
 } from "@/components/fixtures/match-detail-parts";
 import { FormationPitch } from "@/components/fixtures/formation-pitch";
+import { SpoilerRevealPanel } from "@/components/fixtures/spoiler-controls";
+import { FanPrediction } from "@/components/fixtures/fan-prediction";
+import { PlayerRatings } from "@/components/fixtures/player-ratings";
 import { LiveDetailBadge, LiveDetailScore, LiveDetailStats, LiveDetailTimeline } from "@/components/fixtures/live-match-detail";
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
@@ -257,7 +260,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           {/* ─── Score header ─── */}
           <section className="surface reveal relative overflow-hidden p-4 sm:p-6">
             {isFinished && result !== "NS" && (
-              <span aria-hidden className={cn("absolute inset-y-0 left-0 w-1", result === "W" ? "bg-green-500" : result === "D" ? "bg-amber-400" : "bg-red-500")} />
+              <span aria-hidden className={cn("spoiler-hide absolute inset-y-0 left-0 w-1", result === "W" ? "bg-green-500" : result === "D" ? "bg-amber-400" : "bg-red-500")} />
             )}
             {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
 
@@ -267,7 +270,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                 {round && <span> · {round}</span>}
               </p>
               {isFinished && result !== "NS" && (
-                <span className={cn("inline-flex shrink-0 items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider", resultTone)}>
+                <span className={cn("spoiler-hide inline-flex shrink-0 items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider", resultTone)}>
                   {resultWord}
                   {(f.status.short === "AET" || f.status.short === "PEN") && (
                     <span className="text-white/70">· {f.status.short}</span>
@@ -289,7 +292,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   {homeName}
                 </p>
                 {homeLineup && <p className="font-barlow text-xs text-stadium-muted">{homeLineup.formation}</p>}
-                {isFinished && <ScorerList goals={homeGoals} align="home" />}
+                {isFinished && <div className="spoiler-hide"><ScorerList goals={homeGoals} align="home" /></div>}
               </div>
 
               {/* Score / time */}
@@ -298,14 +301,17 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   <LiveDetailScore initial={match} />
                 ) : hasStarted ? (
                   <>
-                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
-                      {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
-                    </p>
-                    {isFinished && hasHt && (
-                      <p className="mt-1.5 text-xs text-stadium-muted">{tMatch("halftimeShort")} {htHome} – {htAway}</p>
-                    )}
-                    {f.status.short === "AET" && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("aet")}</p>}
-                    {pens && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("penShort", { score: pens })}</p>}
+                    <div className="spoiler-hide">
+                      <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
+                        {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
+                      </p>
+                      {isFinished && hasHt && (
+                        <p className="mt-1.5 text-xs text-stadium-muted">{tMatch("halftimeShort")} {htHome} – {htAway}</p>
+                      )}
+                      {f.status.short === "AET" && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("aet")}</p>}
+                      {pens && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("penShort", { score: pens })}</p>}
+                    </div>
+                    <p aria-hidden className="spoiler-show font-bebas text-5xl leading-none tracking-wide text-white/40 sm:text-6xl">? - ?</p>
                   </>
                 ) : (
                   <>
@@ -324,7 +330,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   {awayName}
                 </p>
                 {awayLineup && <p className="font-barlow text-xs text-stadium-muted">{awayLineup.formation}</p>}
-                {isFinished && <ScorerList goals={awayGoals} align="away" />}
+                {isFinished && <div className="spoiler-hide"><ScorerList goals={awayGoals} align="away" /></div>}
               </div>
             </div>
 
@@ -347,7 +353,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                   <WhereToWatch competition={league.name} className="items-start gap-2.5" />
                 </li>
               )}
-              {attendance && attendance > 0 && (
+              {attendance != null && attendance > 0 && (
                 <li className="flex items-start gap-2.5"><Users aria-hidden className={infoIcon} />{tDetail("attendance", { count: attendance.toLocaleString(loc) })}</li>
               )}
               {referee && (
@@ -355,6 +361,19 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               )}
             </ul>
           </section>
+
+          {isFinished && <SpoilerRevealPanel />}
+
+          {/* Fans: score predictions (open until kick-off) and, once played, player ratings.
+              A played match's points and ratings say how it went, so they hide in spoiler-free mode. */}
+          {isFinished ? (
+            <div className="spoiler-hide">
+              <FanPrediction fixture={match} />
+              <PlayerRatings fixtureId={fixtureId} />
+            </div>
+          ) : (
+            <FanPrediction fixture={match} />
+          )}
 
           {/* ─── Jump chips (phones): a finished match has four long sections ─── */}
           {sections.length > 2 && (
@@ -380,7 +399,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
           {/* ─── Events ─── */}
           {hasStarted && (
-            <section id="timeline" className={sectionClass}>
+            <section id="timeline" className={cn(sectionClass, isFinished && "spoiler-hide")}>
               <SectionHeader title={tDetail("matchTimeline")} />
               {isLive ? (
                 <LiveDetailTimeline initial={match} />
@@ -403,7 +422,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
           {/* ─── Statistics ─── */}
           {hasStarted && (
-            <section id="stats" className={sectionClass}>
+            <section id="stats" className={cn(sectionClass, isFinished && "spoiler-hide")}>
               <SectionHeader title={tDetail("statistics")} />
               {isLive ? (
                 <LiveDetailStats initial={match} homeName={homeName} awayName={awayName} />
@@ -458,7 +477,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           </section>
 
           {/* ─── Head to head ─── */}
-          <section id="h2h" className={sectionClass}>
+          {/* Its "recent meetings" include this match once it is played. */}
+          <section id="h2h" className={cn(sectionClass, isFinished && "spoiler-hide")}>
             <SectionHeader title={tMatch("h2h.title")} />
             {h2h ? (
               <H2HSection h2h={h2h} opponentName={displayTeamName(opponentName)} />

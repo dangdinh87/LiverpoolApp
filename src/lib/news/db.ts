@@ -285,6 +285,38 @@ export const searchArticles = cache(
 );
 
 /**
+ * Newest articles whose headline names a player ("Isak", "Araújo"), for the
+ * player page. Matches the surname with and without accents, since outlets
+ * spell "Araujo" both ways. Errors return [] (the section then hides).
+ */
+export const getArticlesMentioning = cache(
+  async (name: string, limit = 6): Promise<NewsArticle[]> => {
+    const plain = name.normalize("NFD").replace(/\p{M}/gu, "");
+    // PostgREST `or` syntax: commas and parentheses would split the filter.
+    const safe = (s: string) => s.replace(/[,()%*]/g, "");
+    const terms = [...new Set([safe(name), safe(plain)])].filter((t) => t.length >= 3);
+    if (terms.length === 0) return [];
+    try {
+      const { data, error } = await getServiceClient()
+        .from("articles")
+        .select(ARTICLE_COLUMNS)
+        .eq("is_active", true)
+        .or(terms.map((t) => `title.ilike.*${t}*`).join(","))
+        .order("published_at", { ascending: false })
+        .limit(limit * 2);
+      if (error) {
+        console.error("[news/db] Mentions error:", error.message);
+        return [];
+      }
+      return onlyRelevantArticles((data ?? []) as ArticleRow[]).slice(0, limit);
+    } catch (err) {
+      console.error("[news/db] Mentions fatal:", err);
+      return [];
+    }
+  }
+);
+
+/**
  * Paginated article query for load-more. No sync trigger.
  */
 export async function getNewsPaginated(

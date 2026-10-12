@@ -6,6 +6,7 @@ import { hasLocale } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { SPOILER_BOOT_SCRIPT } from "@/lib/spoiler-mode";
 import { Suspense } from "react";
 import { NavbarAuth } from "@/components/layout/navbar-auth";
 import { NavProgress } from "@/components/layout/nav-progress";
@@ -136,6 +137,8 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
+        {/* Before anything paints: spoiler-free readers must never see a score flash up. */}
+        <script dangerouslySetInnerHTML={{ __html: SPOILER_BOOT_SCRIPT }} />
         <GoogleTagManager />
         <AdsenseGate />
         <StructuredData />

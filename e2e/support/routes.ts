@@ -19,6 +19,7 @@ export const ROUTES: RouteUnderTest[] = [
   { path: "/players", expects: /player|cầu thủ/i },
   { path: "/fixtures", expects: /fixture|lịch/i },
   { path: "/standings", expects: /standing|bảng/i },
+  { path: "/predictions", expects: /prediction|dự đoán/i },
   { path: "/stats", expects: /stat|thống kê/i },
   // Archive stats moved from /stats?season= to a path segment so /stats itself prerenders.
   { path: "/stats/2025", expects: /stat|thống kê/i },

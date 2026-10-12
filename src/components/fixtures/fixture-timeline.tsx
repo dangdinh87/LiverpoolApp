@@ -8,6 +8,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
 import { ChipBar } from "./chip-bar";
 import { MatchCentreNav } from "./match-centre-nav";
+import { AddToCalendar } from "./add-to-calendar";
+import { SpoilerToggle } from "./spoiler-controls";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Fixture } from "@/lib/types/football";
 import { defaultTimeZoneForLocale, formatMonthYear, formatZoneOffset } from "@/lib/format-match-date";
@@ -138,10 +140,16 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
         </div>
       )}
 
-      <p className="mt-3 text-[13px] leading-snug text-stadium-muted">
-        {t("gmtHint", { zone: zoneOffset })}
-        {showWatchHint && <> {t("plWatch")}</>}
-      </p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <p className="text-[13px] leading-snug text-stadium-muted">
+          {t("gmtHint", { zone: zoneOffset })}
+          {showWatchHint && <> {t("plWatch")}</>}
+        </p>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <SpoilerToggle />
+          {!season && <AddToCalendar />}
+        </div>
+      </div>
 
       {groups.length === 0 ? (
         <EmptyState

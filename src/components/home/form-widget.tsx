@@ -45,13 +45,18 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
             const score = `${f.goals.home ?? 0}–${f.goals.away ?? 0}`;
             const content = (
               <>
-                <span className={cn("flex h-6 w-6 items-center justify-center font-bebas text-base leading-none", RESULT_STYLE[result])}>
+                <span className={cn("spoiler-hide flex h-6 w-6 items-center justify-center font-bebas text-base leading-none", RESULT_STYLE[result])}>
                   {tMatch(`resultShort.${result}`)}
+                </span>
+                {/* Spoiler-free mode: no W/D/L and no score */}
+                <span aria-hidden className="spoiler-show">
+                  <span className="flex h-6 w-6 items-center justify-center bg-white/10 font-bebas text-base leading-none text-white/50">?</span>
                 </span>
                 <span className="relative size-7">
                   <Image src={opponent.logo} alt="" fill sizes="28px" className="object-contain" />
                 </span>
-                <span className="font-bebas text-xl leading-none text-white tabular-nums">{score}</span>
+                <span className="spoiler-hide font-bebas text-xl leading-none text-white tabular-nums">{score}</span>
+                <span aria-hidden className="spoiler-show font-bebas text-xl leading-none text-white/40">?–?</span>
               </>
             );
             const cls =

@@ -22,7 +22,8 @@ describe("web app manifest", () => {
 
   it("names no single country", () => {
     const text = `${m.name} ${m.description ?? ""}`;
-    expect(text).not.toMatch(/Việt Nam|Vietnam|VN\b/i);
+    // "Vietnamese outlets" names the news sources' language, not the reader's country.
+    expect(text).not.toMatch(/Việt Nam|Vietnam(?!ese)|VN\b/i);
   });
 
   it("uses only the own mark, never the club crest", () => {

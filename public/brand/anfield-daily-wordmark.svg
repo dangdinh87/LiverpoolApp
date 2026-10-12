@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 948 232" width="948" height="232" role="img" aria-label="Reds Abroad">
-  <title>Reds Abroad</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1048 232" width="1048" height="232" role="img" aria-label="Anfield Daily">
+  <title>Anfield Daily</title>
   <desc>Wordmark set in League Gothic (SIL OFL 1.1), embedded so the file renders the same anywhere. viewBox measured from the rendered text.</desc>
   <defs>
     <style type="text/css">
@@ -10,6 +10,6 @@
       .wm { font-family: "League Gothic", "Arial Narrow", sans-serif; font-size: 170px; letter-spacing: 30.6px; fill: #ffffff; text-transform: uppercase; }
     </style>
   </defs>
-  <text class="wm" x="0" y="168">REDS ABROAD</text>
-  <rect x="0" y="196" width="180" height="13" fill="#c8102e"/>
+  <text class="wm" x="0" y="168">ANFIELD DAILY</text>
+  <rect x="0" y="196" width="199" height="13" fill="#c8102e"/>
 </svg>

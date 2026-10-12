@@ -40,3 +40,32 @@ export function NewsHeadline({ article, locale }: NewsHeadlineProps) {
     </Link>
   );
 }
+
+/**
+ * The newest story as the lead of "Tin nhanh": a wide picture, then the
+ * headline in a larger size and the outlet with its age.
+ */
+export function NewsLeadStory({ article, locale }: NewsHeadlineProps) {
+  const title = cleanTitle(article.title);
+  const when = formatRelativeDate(article.pubDate, locale);
+  const source = SOURCE_CONFIG[article.source]?.label;
+
+  return (
+    <Link href={getArticleUrl(article.link)} className="group flex h-full flex-col bg-[var(--surface-2)] transition-colors hover:bg-[var(--surface-3)]">
+      {/* Beside the headline list the picture grows to the list's height instead of leaving a gap. */}
+      <div className="relative aspect-video overflow-hidden md:aspect-auto md:min-h-56 md:flex-1">
+        <NewsThumb src={article.thumbnail} sizes="(max-width: 1024px) 100vw, 480px" crestClassName="w-14" />
+      </div>
+      <div className="flex flex-col gap-2 p-4 sm:p-5">
+        <p className="text-balance text-lg font-bold leading-snug text-white decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline sm:text-xl">
+          {title}
+        </p>
+        <p className="flex items-center gap-2 text-[13px] text-stadium-muted">
+          {source && <span className="truncate">{source}</span>}
+          {source && when && <span aria-hidden>·</span>}
+          {when && <span className="shrink-0">{when}</span>}
+        </p>
+      </div>
+    </Link>
+  );
+}

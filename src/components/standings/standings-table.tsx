@@ -47,9 +47,11 @@ const ROW_BG_LFC = "bg-[color-mix(in_oklab,var(--surface-2)_86%,var(--color-lfc-
 interface StandingsTableProps {
   standings: Standing[];
   competition?: "pl" | "ucl";
+  /** Liverpool's next opponent: its row gets a "Next" tag. */
+  nextOpponentId?: number;
 }
 
-export function StandingsTable({ standings, competition = "pl" }: StandingsTableProps) {
+export function StandingsTable({ standings, competition = "pl", nextOpponentId }: StandingsTableProps) {
   const t = useTranslations("Standings");
 
   if (standings.length === 0) {
@@ -114,6 +116,15 @@ export function StandingsTable({ standings, competition = "pl" }: StandingsTable
                         <span className="sm:hidden">{compactTeamName(s.team)}</span>
                         <span className="hidden sm:inline">{displayTeamName(s.team.name)}</span>
                       </span>
+                      {s.team.id === nextOpponentId && (
+                        <>
+                          {/* Phones: a dot, so the club name keeps its room. */}
+                          <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-lfc-gold sm:hidden" />
+                          <span className="sr-only sm:not-sr-only sm:shrink-0 sm:border sm:border-lfc-gold/50 sm:px-1.5 sm:py-px sm:font-barlow sm:text-[11px] sm:font-bold sm:uppercase sm:tracking-wider sm:text-lfc-gold">
+                            {t("nextBadge")}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className={td}>{s.all.played}</td>

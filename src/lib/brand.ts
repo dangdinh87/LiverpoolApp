@@ -4,9 +4,11 @@
  * JSON-LD and share image all read from here.
  *
  * Identity rules (see plans/261007-1000-brand-ux-upgrade/design-spec.md):
- * - The mark is the "Reds Abroad" wordmark set in League Gothic, plus the red
- *   globe tile. The club crest / Liver bird is never the site's own logo;
- *   crests appear only as match data.
+ * - The mark is the "Anfield Daily" wordmark set in League Gothic, plus the red
+ *   tile with two pages folded into an "A" and a gold crossbar (MARK below). The club crest /
+ *   Liver bird is never the site's own logo; crests appear only as match data.
+ * - The site is for reading Liverpool news fast (gathered, de-duplicated,
+ *   summed up daily) — not "for fans abroad". Copy and art say news.
  * - The name deliberately contains neither "Liverpool" nor "LFC": a fan site
  *   carrying the club's marks is the weakest position in a trademark dispute
  *   (plans/reports/researcher-261007-1201-global-name-legal-indonesia.md).
@@ -15,15 +17,15 @@
 
 export const BRAND = {
   /** Display name. */
-  name: "Reds Abroad",
+  name: "Anfield Daily",
   tagline: {
-    vi: "Fan Liverpool khắp thế giới · Giờ đá theo giờ của bạn",
-    en: "Liverpool fans everywhere · Kick-off times in your time zone",
+    vi: "Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày",
+    en: "Liverpool news, fast · Gathered and summed up daily",
   },
   /** Meta description: the tagline expanded to one readable sentence. */
   description: {
-    vi: "Giờ đá theo múi giờ của bạn, kết quả, bảng xếp hạng, đội hình và tin nhanh cho fan Liverpool ở khắp nơi. Trang fan không chính thức.",
-    en: "Kick-off times in your own time zone, results, standings, squad and quick news for Liverpool supporters wherever they are. Unofficial fan site.",
+    vi: "Tin Liverpool từ hơn 20 tờ báo tiếng Anh và tiếng Việt, gom về một chỗ, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng. Trang fan không chính thức.",
+    en: "Liverpool news from more than 20 English and Vietnamese outlets, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site.",
   },
   /** One-line notice for places without room for the full footer text (share image). */
   unofficial: {
@@ -34,17 +36,36 @@ export const BRAND = {
   contactEmail: "nguyendangdinh47@gmail.com",
   /** Brand colour (fills only; use the `text-brand` utility for red text). */
   red: "#c8102e",
-  /** Accent used sparingly — the locator dot in the mark. */
+  /** Accent used sparingly — the crossbar of the mark's A. */
   gold: "#f6eb61",
   /** Static copies of the mark live in public/brand/. */
   assets: {
-    wordmark: "/brand/reds-abroad-wordmark.svg",
+    wordmark: "/brand/anfield-daily-wordmark.svg",
     icon: "/brand/icon.svg",
     icon192: "/brand/icon-192.png",
     icon512: "/brand/icon-512.png",
     favicon32: "/brand/favicon-32.png",
+    iconMaskable: "/brand/icon-maskable-512.png",
     appleTouchIcon: "/brand/apple-touch-icon.png",
   },
+} as const;
+
+/**
+ * The mark: two pages folded into an "A" — the front page white, the page
+ * behind it in a shade of the fold — with a gold rule for the crossbar, the
+ * headline rule of a front page. Red rounded tile, 512 box. One source for
+ * BrandMark, the share image and the files in public/brand/ (tested to match).
+ */
+export const MARK = {
+  size: 512,
+  radius: 112,
+  /** The page behind, drawn first so the front page keeps a clean apex. */
+  back: "232,92 280,92 400,420 328,420",
+  front: "232,92 280,92 184,420 112,420",
+  backFill: "#f3d3d9",
+  rule: { x: 196, y: 296, width: 124, height: 36 },
+  /** The maskable app icon shrinks the art to this, inside the 0.4-radius safe zone. */
+  maskableScale: 0.88,
 } as const;
 
 export type BrandLocale = keyof typeof BRAND.tagline;
@@ -57,7 +78,7 @@ export function brandLocale(locale: string): BrandLocale {
 export const brandTagline = (locale: string) => BRAND.tagline[brandLocale(locale)];
 export const brandUnofficial = (locale: string) => BRAND.unofficial[brandLocale(locale)];
 export const brandDescription = (locale: string) => BRAND.description[brandLocale(locale)];
-/** `Reds Abroad — <tagline>`: the home title and the default for pages without one. */
+/** `Anfield Daily — <tagline>`: the home title and the default for pages without one. */
 export const brandTitle = (locale: string) => `${BRAND.name} — ${brandTagline(locale)}`;
 
 /**

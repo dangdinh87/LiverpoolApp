@@ -9,9 +9,11 @@ import type { Standing } from "@/lib/types/football";
 interface StandingsCompTabsProps {
   plStandings: Standing[];
   uclStandings: Standing[];
+  /** Liverpool's next league opponent, tagged in the Premier League table. */
+  nextOpponentId?: number;
 }
 
-export function StandingsCompTabs({ plStandings, uclStandings }: StandingsCompTabsProps) {
+export function StandingsCompTabs({ plStandings, uclStandings, nextOpponentId }: StandingsCompTabsProps) {
   const t = useTranslations("Standings");
   const [comp, setComp] = useState<"pl" | "ucl">("pl");
   const hasUcl = uclStandings.length > 0;
@@ -30,7 +32,9 @@ export function StandingsCompTabs({ plStandings, uclStandings }: StandingsCompTa
           ]}
         />
       )}
-      <StandingsTable standings={comp === "pl" || !hasUcl ? plStandings : uclStandings} competition={comp === "pl" || !hasUcl ? "pl" : "ucl"} />
+      <StandingsTable standings={comp === "pl" || !hasUcl ? plStandings : uclStandings} competition={comp === "pl" || !hasUcl ? "pl" : "ucl"}
+        nextOpponentId={comp === "pl" || !hasUcl ? nextOpponentId : undefined}
+      />
     </div>
   );
 }

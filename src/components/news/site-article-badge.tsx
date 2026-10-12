@@ -8,7 +8,7 @@ interface SiteArticleBadgeProps {
 
 /**
  * Byline for pieces the site writes itself: the site's own mark beside
- * "By Reds Abroad". It reads as a signature rather than a sticker, so it can sit
+ * "By Anfield Daily". It reads as a signature rather than a sticker, so it can sit
  * on a photo or a card without competing with the headline.
  */
 export function SiteArticleBadge({ label, compact = false }: SiteArticleBadgeProps) {
