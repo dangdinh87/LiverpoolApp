@@ -62,6 +62,9 @@ export function ArticleActions({
 
   // Fetch like state from DB + saved state from localStorage
   useEffect(() => {
+    // localStorage does not exist during the server render, so this first
+    // value can only be read once we are on the client.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(getLocalSaved().has(articleUrl));
 
     fetch(`/api/news/like?url=${encodeURIComponent(articleUrl)}`)

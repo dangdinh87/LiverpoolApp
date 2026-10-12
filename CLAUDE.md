@@ -56,7 +56,6 @@ src/
 ├── app/                    # Next.js App Router pages & API routes
 │   ├── page.tsx            # Homepage — Hero + BentoGrid widgets
 │   ├── layout.tsx          # Root layout — fonts, ThemeProvider, NavbarAuth, Footer, GlobalChat
-│   ├── middleware.ts       # Supabase session refresh + route protection
 │   ├── api/
 │   │   ├── news/sync/      # Cron: sync RSS → Supabase
 │   │   ├── news/cleanup/   # Cron: deactivate old articles
@@ -166,7 +165,8 @@ src/
 ├── config/                 # App config (constants)
 ├── i18n/
 │   └── request.ts          # next-intl server config (locale detection)
-└── middleware.ts            # Supabase session refresh + route protection
+└── proxy.ts                 # Supabase session refresh + route protection
+                            # (was middleware.ts; the convention was renamed in Next 16)
 ```
 
 ## Architecture Rules
@@ -317,7 +317,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 
 ## Protected Routes
 
-- `/profile` — requires Supabase auth (middleware redirects to `/auth/login?redirect=/profile`)
+- `/profile` — requires Supabase auth (proxy redirects to `/auth/login?redirect=/profile`)
 
 ## SEO
 

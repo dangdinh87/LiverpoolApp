@@ -13,6 +13,10 @@ const SECURITY_HEADERS = [
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  // The site is HTTPS-only behind Vercel, so tell browsers never to try plain
+  // HTTP again. No `preload`: that is a one-way submission to a browser-shipped
+  // list, and this domain is due to be replaced.
+  { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains' },
 ];
 
 const nextConfig: NextConfig = {

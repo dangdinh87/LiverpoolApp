@@ -4,6 +4,8 @@
 
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 // ─── Configuration ──────────────────────────────────────────────────────────
 
 const FPL_API = "https://fantasy.premierleague.com/api/bootstrap-static/";
@@ -196,27 +198,59 @@ function findFplMatch(
 
 // ─── Public API ─────────────────────────────────────────────────────────────
 
-/** Cached LFC FPL players — single fetch for all */
-let _fplCache: FplPlayerStats[] | null = null;
-let _fplCacheTime = 0;
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h in-memory
-
-/** Fetch all Liverpool FPL player stats */
-async function fetchLfcFplStats(): Promise<FplPlayerStats[]> {
-  const now = Date.now();
-  if (_fplCache && now - _fplCacheTime < CACHE_TTL_MS) {
-    return _fplCache;
-  }
-
+/**
+ * Download bootstrap-static and keep only Liverpool.
+ *
+ * The fetch is deliberately uncached. `bootstrap-static` carries every player in
+ * the league and is ~2.4MB, over the 2MB ceiling on a Next data-cache entry, so
+ * asking Next to store it only produced "items over 2MB can not be cached" on
+ * every single render — 44 times in one production build, each one re-downloading
+ * and re-parsing the whole payload. What *is* cacheable is the ~25-player slice
+ * we actually want, a few KB, so the caching moved one level out (see below).
+ */
+async function fetchLfcFplStatsUncached(): Promise<FplPlayerStats[]> {
   const res = await fetch(FPL_API, {
-    next: { revalidate: REVALIDATE_SEC },
+    cache: "no-store",
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
 
   if (!res.ok) throw new Error(`[fpl-stats] HTTP ${res.status}`);
 
   const data: FplBootstrapResponse = await res.json();
-  const lfcPlayers = selectLiverpoolElements(data);
+  return selectLiverpoolElements(data);
+}
+
+/**
+ * The Liverpool slice, shared across requests and server instances.
+ *
+ * Errors are left to propagate: a throw is never written to the cache, so a bad
+ * response is retried on the next request instead of pinning an empty squad in
+ * place for six hours. Both public callers below turn it into a safe fallback.
+ */
+const getCachedLfcFplStats = unstable_cache(
+  fetchLfcFplStatsUncached,
+  ["fpl-lfc-player-stats"],
+  { revalidate: REVALIDATE_SEC },
+);
+
+/** Cached LFC FPL players — single fetch for all */
+let _fplCache: FplPlayerStats[] | null = null;
+let _fplCacheTime = 0;
+const CACHE_TTL_MS = REVALIDATE_SEC * 1000; // in-memory tier, same window
+
+/**
+ * Fetch all Liverpool FPL player stats.
+ *
+ * Two tiers: a per-instance memo that costs nothing, then the shared data cache.
+ * Without the second tier every cold instance paid the full 2.4MB download.
+ */
+async function fetchLfcFplStats(): Promise<FplPlayerStats[]> {
+  const now = Date.now();
+  if (_fplCache && now - _fplCacheTime < CACHE_TTL_MS) {
+    return _fplCache;
+  }
+
+  const lfcPlayers = await getCachedLfcFplStats();
 
   _fplCache = lfcPlayers;
   _fplCacheTime = now;

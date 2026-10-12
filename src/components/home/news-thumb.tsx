@@ -26,7 +26,6 @@ export function NewsThumb({ src, sizes, priority, className, crestClassName }: N
   useEffect(() => {
     const img = wrapRef.current?.querySelector("img");
     if (img && img.complete && img.naturalWidth === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFailed(true);
     }
   }, [src]);

@@ -15,7 +15,7 @@ function addNoIndex(response: NextResponse): NextResponse {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Rewrites /x → /vi/x (or redirects to /en/x when the NEXT_LOCALE cookie or
   // Accept-Language asks for English) so pages can be prerendered per locale.
   const response = handleI18nRouting(request);

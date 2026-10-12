@@ -120,6 +120,9 @@ export function GalleryUpload({ onUploadComplete }: GalleryUploadProps) {
         <div>
           {preview ? (
             <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element --
+                  `preview` is a local object URL for the file the user just
+                  picked. next/image cannot optimise a blob: URL. */}
               <img
                 src={preview}
                 alt="Preview"

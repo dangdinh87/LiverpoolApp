@@ -73,6 +73,9 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   }, [articleUrl]);
 
   useEffect(() => {
+    // `fetchComments` is async: every setState inside it runs after an await,
+    // so there is no synchronous cascade for the rule to prevent here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchComments();
   }, [fetchComments]);
 

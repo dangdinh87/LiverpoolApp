@@ -145,6 +145,9 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   }, [user]);
 
   // Client-only chrome: the flag must flip after hydration, never during it.
+  // Flipping the flag synchronously after mount is the whole point: see the
+  // comment above. The directive must sit on the line before the code.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
 
   /**
@@ -160,6 +163,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   useEffect(() => {
     if (isMatchLive || !nextMatchDate) {
       // Clearing the badge is the early-return branch of the timer below.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMatchStartsSoon(false);
       return;
     }

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
-import { CalendarDays, Tv } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
@@ -117,7 +117,6 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
   const t = useTranslations("NextMatch");
   const h = useTranslations("Home.match");
   const tRound = useTranslations("Match.round");
-  const tMatch = useTranslations("Match");
   const locale = useLocale();
   // Also listens around kick-off, in case the cached homepage still says "not started".
   const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial, true);

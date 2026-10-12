@@ -177,14 +177,33 @@ test.describe("reduced motion", () => {
       await waitForHeader(page);
       await page.waitForTimeout(600); // let entry animations finish or loop
       const out = await page.evaluate(() => {
+        // Positive control: an element carrying one of the site's own looping
+        // utilities. Reading whatever happened to be mid-animation instead made
+        // this flaky — the only looping thing on /about is a loading skeleton,
+        // so the control passed or failed depending on how fast the page
+        // settled. This probe always exists, and the reduced-motion rule that
+        // has to neutralise it is the real global `*` rule in globals.css.
+        const probe = document.createElement("div");
+        probe.className = "skeleton";
+        probe.dataset.motionProbe = "1";
+        probe.style.cssText = "position:fixed;width:1px;height:1px;opacity:0;pointer-events:none";
+        document.body.append(probe);
+        // Chromium serialises this as "1.8s" or "1e-05s", so compare numbers.
+        const probeDurationSec = parseFloat(getComputedStyle(probe).animationDuration);
+
         const animations = document.getAnimations().filter((a) => a.playState === "running");
         const longOrLooping = animations.filter((a) => {
           const t = a.effect?.getComputedTiming();
           return !!t && (t.iterations === Infinity || (typeof t.duration === "number" && t.duration > 50));
         });
+        const names = longOrLooping.map((a) => (a as CSSAnimation).animationName ?? a.constructor.name);
+        probe.remove();
         return {
           scrollBehavior: getComputedStyle(document.documentElement).scrollBehavior,
-          looping: longOrLooping.map((a) => (a as CSSAnimation).animationName ?? a.constructor.name),
+          probeDurationSec,
+          // The probe is ours, not the page's: keep it out of the list the
+          // reduced-motion assertion below checks.
+          looping: names.filter((n) => n !== "shimmer"),
         };
       });
       await context.close();
@@ -194,12 +213,14 @@ test.describe("reduced motion", () => {
     const normal = await probe("no-preference");
     const reduced = await probe("reduce");
 
-    // Positive control: with motion allowed the page really does animate, so an
-    // empty list under "reduce" is meaningful.
+    // Positive control: with motion allowed the site's own looping utility runs
+    // at full length, so "nothing is animating" under reduce is a real result
+    // and not just a detector that never sees anything.
     expect(normal.scrollBehavior).toBe("smooth");
-    expect(normal.looping.length, "expected a looping decorative animation (the desktop AI button glow) with motion allowed").toBeGreaterThan(0);
+    expect(normal.probeDurationSec, "the site's .skeleton shimmer should run normally with motion allowed").toBeGreaterThan(1);
 
     expect(reduced.scrollBehavior).toBe("auto");
+    expect(reduced.probeDurationSec, "reduced motion should collapse animation durations").toBeLessThan(0.001);
     expect(reduced.looping, `still animating under reduced motion: ${reduced.looping.join(", ")}`).toEqual([]);
   });
 });

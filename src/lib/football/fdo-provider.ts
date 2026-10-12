@@ -387,7 +387,6 @@ export class FdoProvider implements FootballDataProvider {
         3600,
       );
 
-      const now = new Date();
       const finished = data.matches
         .filter((m) => m.status === "FINISHED")
         .sort((a, b) => b.utcDate.localeCompare(a.utcDate));

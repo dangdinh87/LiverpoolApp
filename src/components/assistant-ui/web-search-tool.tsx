@@ -6,6 +6,20 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
+/**
+ * Host of a source URL, or the raw string if it will not parse.
+ *
+ * These URLs come from the model, not from us. A bare `new URL()` here threw
+ * inside render and took the whole chat message down with it.
+ */
+function hostnameOf(url: string): string {
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return url;
+	}
+}
+
 interface SearchSource {
 	title: string;
 	url: string;
@@ -52,7 +66,10 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 		return (
 			<div className="my-2 flex items-center gap-2 text-base text-stadium-muted">
 				<Loader2 className="size-4 animate-spin text-lfc-red" />
-				<span>{t("searching")}</span>
+				<span>
+					{t("searching")}
+					{query ? <span className="text-white/70">{` \u201C${query}\u201D`}</span> : null}
+				</span>
 			</div>
 		);
 	}
@@ -91,7 +108,7 @@ export const WebSearchTool: ToolCallMessagePartComponent = ({
 							</span>
 							<div className="min-w-0">
 								<p className="text-sm font-medium truncate group-hover:text-lfc-red-text transition-colors">
-									{s.title || new URL(s.url).hostname}
+									{s.title || hostnameOf(s.url)}
 								</p>
 								{s.snippet && (
 									<p className="text-xs text-stadium-muted line-clamp-2 mt-0.5">

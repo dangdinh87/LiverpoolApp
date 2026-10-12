@@ -219,7 +219,7 @@ src/
 ├── data/ (static JSON: trophies, history, legends, club-info, squad, gallery)
 ├── messages/ (i18n: en.json, vi.json)
 ├── stores/ (Zustand: auth, user, navigation)
-└── middleware.ts (session refresh, route protection)
+└── proxy.ts (session refresh, route protection)
 ```
 
 ---
