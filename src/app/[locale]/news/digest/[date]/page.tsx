@@ -18,7 +18,8 @@ import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
 import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
-import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { formatMatchDayMonth } from "@/lib/format-match-date";
+import { LocalTimeOfDay } from "@/components/ui/local-time";
 import { BRAND } from "@/lib/brand";
 
 type Params = Promise<{ date: string; locale: string }>;
@@ -115,12 +116,16 @@ export default async function DigestPage({
   const digestDate = new Date(`${date}T00:00:00+07:00`);
   // A short intro, not the whole summary: the items below carry the detail.
   const intro = leadSentences(seoArticle?.excerpt || digest.summary, 230);
-  const meta = [
+  // Nodes, not strings: the time renders in the viewer's own zone rather than
+  // being printed server-side and labelled from the interface language.
+  const meta: React.ReactNode[] = [
     digest.article_count > 0 ? t("articleCount", { count: digest.article_count }) : null,
-    digest.generated_at ? t("generatedAt", { time: formatMatchTime(new Date(digest.generated_at), defaultTimeZoneForLocale(uiLocale)) }) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+    digest.generated_at
+      ? t.rich("generatedAt", {
+          t: () => <LocalTimeOfDay iso={digest.generated_at!} locale={uiLocale} />,
+        })
+      : null,
+  ].filter(Boolean);
 
   // Titles and pictures for every source link across the stories.
   const refs = await getArticleRefsByUrls(sections.flatMap((s) => s.articleUrls));
@@ -207,7 +212,14 @@ export default async function DigestPage({
             </h1>
             {intro && <p className="mt-5 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>}
             <p className="mt-4 text-sm text-stadium-muted">
-              {[sections.length > 0 ? t("storyCount", { count: sections.length }) : null, meta].filter(Boolean).join(" · ")}
+              {[sections.length > 0 ? t("storyCount", { count: sections.length }) : null, ...meta]
+                .filter(Boolean)
+                .map((part, i) => (
+                  <span key={i}>
+                    {i > 0 && " · "}
+                    {part}
+                  </span>
+                ))}
             </p>
             {heroImage && <p className="mt-1 text-xs text-white/50">{t("photoCredit", { source: heroImage.credit })}</p>}
           </div>

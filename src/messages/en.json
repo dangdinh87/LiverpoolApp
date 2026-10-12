@@ -326,7 +326,7 @@
       "backToNews": "Back to news roundup",
       "sourceArticle": "Original {n}",
       "generatedBy": "LiverpoolFCVN",
-      "generatedAt": "Posted at {time} UK time",
+      "generatedAt": "Posted at <t></t>",
       "refresh": "Sync",
       "syncing": "Syncing...",
       "navLabel": "Go to another day's digest",

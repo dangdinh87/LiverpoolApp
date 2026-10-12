@@ -59,3 +59,16 @@ export function LocalPublishedTime({ iso, locale, zoneLabel }: LocalTimeProps & 
     </>
   );
 }
+
+/**
+ * `18:18` in the viewer's own time zone.
+ *
+ * For meta lines that previously printed a server-chosen zone and labelled it
+ * from the interface language — the digest said "Posted at 18:18 UK time" to
+ * every English reader, wherever they were. The label beside this says whose
+ * time it is in the reader's terms; it must never name a country.
+ */
+export function LocalTimeOfDay({ iso, locale }: LocalTimeProps) {
+  const zone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
+  return <>{formatMatchTime(new Date(iso), zone)}</>;
+}

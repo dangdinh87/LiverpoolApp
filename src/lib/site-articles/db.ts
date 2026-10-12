@@ -61,13 +61,26 @@ export const listSiteArticles = cache(
         console.error("[site-articles] list:", error.message);
         return [];
       }
-      return (data ?? []).map((r) => toRow(r as Record<string, unknown>));
+      // Sorted on the date the reader is shown, not the one the row is stored
+      // by. The query orders on `published_at` (when the text was generated)
+      // while every card prints `match_date` (when the match was played), so a
+      // report written late landed above an older match: the list read
+      // 10 Sep, 20 Sep, 5 Sep. Postgres cannot order on the coalesce without a
+      // generated column, and these lists are short, so it is done here.
+      return (data ?? [])
+        .map((r) => toRow(r as Record<string, unknown>))
+        .sort((a, b) => displayDate(b).localeCompare(displayDate(a)));
     } catch (err) {
       console.error("[site-articles] list failed:", err);
       return [];
     }
   },
 );
+
+/** The date a card prints for a row — see `match_date`. */
+function displayDate(row: SiteArticleRow): string {
+  return row.match_date ?? row.published_at ?? "";
+}
 
 /** One published article by slug. */
 export const getSiteArticleBySlug = cache(

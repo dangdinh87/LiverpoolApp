@@ -3,7 +3,8 @@ import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { keepDatesTogether, leadSentences } from "@/components/news/news-text";
-import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { formatMatchDayMonth } from "@/lib/format-match-date";
+import { LocalTimeOfDay } from "@/components/ui/local-time";
 import { BRAND } from "@/lib/brand";
 
 interface DigestProps {
@@ -26,12 +27,15 @@ export function DigestCard({ date, title, summary, articleCount, generatedAt, as
   const locale = useLocale() === "vi" ? "vi" : "en";
   const dateText = formatMatchDayMonth(new Date(`${date}T00:00:00+07:00`), locale);
   const lead = leadSentences(summary, 260);
-  const meta = [
+  // The time is a node, not a string: it renders in the viewer's own zone.
+  // Printing it server-side meant labelling it from the interface language —
+  // "Posted at 18:18 UK time" to an English reader anywhere on earth.
+  const meta: React.ReactNode[] = [
     articleCount > 0 ? t("articleCount", { count: articleCount }) : null,
-    generatedAt ? t("generatedAt", { time: formatMatchTime(new Date(generatedAt), defaultTimeZoneForLocale(locale)) }) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+    generatedAt
+      ? t.rich("generatedAt", { t: () => <LocalTimeOfDay iso={generatedAt} locale={locale} /> })
+      : null,
+  ].filter(Boolean);
 
   return (
     <section className="surface relative border-l-4 border-l-lfc-red p-4 sm:p-6">
@@ -49,7 +53,16 @@ export function DigestCard({ date, title, summary, articleCount, generatedAt, as
           {t("readFull")}
           <ArrowRight className="size-4" aria-hidden />
         </Link>
-        {meta && <span className="hidden text-[13px] text-stadium-muted sm:inline">{meta}</span>}
+        {meta.length > 0 && (
+          <span className="hidden text-[13px] text-stadium-muted sm:inline">
+            {meta.map((part, i) => (
+              <span key={i}>
+                {i > 0 && " · "}
+                {part}
+              </span>
+            ))}
+          </span>
+        )}
       </div>
     </section>
   );

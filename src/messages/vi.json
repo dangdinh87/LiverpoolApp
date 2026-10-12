@@ -326,7 +326,7 @@
       "backToNews": "Về Điểm tin",
       "sourceArticle": "Bài gốc {n}",
       "generatedBy": "LiverpoolFCVN",
-      "generatedAt": "Đăng lúc {time}",
+      "generatedAt": "Đăng lúc <t></t>",
       "refresh": "Đồng bộ",
       "syncing": "Đang đồng bộ...",
       "navLabel": "Chuyển sang bản tin ngày khác",
