@@ -55,7 +55,7 @@ Sửa luôn `.env.production` trong repo cho khớp.
 | Hệ thống | Việc cần làm | Ai | Không làm thì sao |
 |---|---|---|---|
 | **GitHub Actions** `SYNC_URL` | ✅ Xong 13/10: workflow không dùng secret này nữa, URL nằm trong `env.SITE_URL` của `news-sync.yml`. Secret cũ có thể xoá | Claude | Cron sync tin gọi tên miền cũ; curl không theo redirect với POST → **tin ngừng cập nhật** |
-| **Supabase Auth** → URL Configuration | Site URL = `https://anfielddaily.com`; thêm `https://anfielddaily.com/**` vào Redirect URLs (giữ URL cũ vài tuần) | Bạn | Đăng nhập / email xác nhận quay về tên miền cũ hoặc bị chặn |
+| **Supabase Auth** → URL Configuration | ✅ Xong 13/10: Site URL = `https://anfielddaily.com`, Redirect URLs có `https://anfielddaily.com/**` (giữ URL cũ vài tuần) | Bạn | — |
 | **Google Search Console** | ✅ Xong 13/10: property `https://anfielddaily.com/` (xác minh bằng file HTML), đã nộp `sitemap.xml`, Change of Address từ `www.liverpoolfcvn.blog` đang chạy | Claude | — |
 | **Bing Webmaster** | Thêm site mới, nộp sitemap (hoặc import từ Search Console) | Bạn | Bing index chậm |
 | **Google AdSense** | Đã thêm `anfielddaily.com` (13/10). **Còn lại:** tick "Tôi đã đặt mã" → Xác minh → Yêu cầu xem xét. Mã AdSense và `ads.txt` đã có trên site | Bạn | Quảng cáo không chạy trên tên miền mới |
