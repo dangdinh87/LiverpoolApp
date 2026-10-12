@@ -325,7 +325,16 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 - `robots.txt` and `sitemap.xml` — dynamic route handlers
 - JSON-LD structured data in root layout (WebSite, SportsTeam, Organization)
 - OpenGraph + Twitter Card metadata on all pages
-- Vietnamese locale priority (`vi_VN`), English alternate (`en_GB`)
+- `og:locale` follows the page's own locale (`en_GB` / `vi_VN`); English is the default
+  locale, so the bare URL is the x-default and `/vi/...` is the alternate
+- Canonical and hreflang come from `getHreflangAlternates()` in `src/lib/seo.ts` — the
+  sitemap reads the same helper, so the two cannot drift apart again (they had: every
+  sitemap entry declared all three hreflangs as the English URL)
+- Scraped `/news/<slug>` mirrors are `index: false, follow: true` and stay out of the
+  sitemap; `/analysis/<slug>` is the site's own writing and is listed
+- `robots.txt` blocks only `/api/`, `/chat`, `/profile`, `/auth/`. It must not blanket-
+  block query strings: a disallowed URL is never fetched, so its `rel=canonical` is
+  never read
 
 ## Testing
 

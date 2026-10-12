@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BRAND, brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
@@ -80,8 +80,13 @@ const getCachedHomeHeroSetting = unstable_cache(
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Home.metadata" });
   const title = brandTitle(locale);
-  const description = brandDescription(locale);
+  // Not brandDescription: that one is display copy and runs to 183 characters,
+  // past the ~155 Google renders, so the sentence that says what the site does
+  // was being cut off mid-phrase in results. Home.metadata.description is the
+  // slot meant for this and was sitting unread.
+  const description = t("description");
   return {
     // The brand title already carries the site name, so it must not get the "| name" template suffix.
     title: { absolute: title },

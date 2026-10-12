@@ -14,7 +14,8 @@ import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { matchCentreHref, type MatchCentreTab } from "@/components/fixtures/match-centre-links";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
-import { makePageMeta } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import {
   formatSeasonLabel,
   getCurrentSeasonYear,
@@ -90,6 +91,11 @@ export default async function SeasonPage({
 
   return (
     <div className="min-h-screen">
+      {/* The one page in the sitemap that carried no structured data. */}
+      <JsonLd data={buildBreadcrumbJsonLd([
+        { name: "Home", url: getCanonical("/") },
+        { name: t("title"), url: getCanonical("/season") },
+      ])} />
       <PageHero
         eyebrow={t("hero.eyebrow", { season: seasonLabel(selectedSeason) })}
         title={t("title")}

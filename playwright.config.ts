@@ -32,6 +32,10 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
+  // Runs after webServer is up, before any spec: reuseExistingServer means the
+  // port may belong to an unrelated app, and the whole suite would then report
+  // on that one.
+  globalSetup: "./e2e/support/assert-correct-app.ts",
   webServer: {
     command: `npm run start -- --port ${PORT}`,
     url: BASE_URL,
