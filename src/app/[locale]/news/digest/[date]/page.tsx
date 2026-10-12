@@ -7,7 +7,7 @@ import { getArticleRefsByUrls } from "@/lib/news";
 import { detectSource } from "@/lib/news/source-detect";
 import { CATEGORY_CONFIG, SOURCE_CONFIG } from "@/lib/news-config";
 import type { NewsSource } from "@/lib/news/types";
-import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical, getHreflangAlternates } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
@@ -55,6 +55,11 @@ export async function generateMetadata({
       path: digestPath,
       type: "article",
       publishedTime: digest.generated_at,
+      // Without this every briefing shared the one generic brand card, so
+      // ninety different days looked identical in a link preview. Built from
+      // the canonical rather than left to the file convention, which would
+      // have emitted the /en-prefixed URL and that redirects.
+      image: `${getHreflangAlternates(digestPath, locale).canonical}/opengraph-image`,
     }),
   };
 }
@@ -68,11 +73,13 @@ export default async function DigestPage({
   setRequestLocale(locale);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
-  const [digest, dates, t, tNews] = await Promise.all([
+  const [digest, dates, t, tNews, tCat] = await Promise.all([
     getDigestByDate(date),
     getAllDigestDates(),
     getTranslations("News.digest"),
     getTranslations("News"),
+    // Category labels come from the catalogue, not from the model.
+    getTranslations("News.categories"),
   ]);
 
   // Dates arrive newest first: the next index is the previous (older) briefing.
@@ -244,7 +251,7 @@ export default async function DigestPage({
                       key={i}
                       id={`tin-${i + 1}`}
                       number={i + 1}
-                      category={catConfig ? (uiLocale === "vi" ? section.categoryVi : catConfig.label) : undefined}
+                      category={catConfig ? tCat(section.category) : undefined}
                       categoryClass={catConfig?.color}
                       headline={section.headline}
                       paragraphs={chunkSentences(section.body)}

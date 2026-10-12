@@ -44,18 +44,27 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { slug, locale } = await params;
   const row = await getSiteArticleBySlug(slug);
   const content = row ? pick(row, locale) : null;
+  const alternates = getHreflangAlternates(`/analysis/${slug}`, locale);
   if (!content) return { title: "Not found", robots: { index: false } };
 
   return {
     title: content.metaTitle || content.title,
     description: content.metaDescription || content.excerpt,
-    alternates: getHreflangAlternates(`/analysis/${slug}`, locale),
+    alternates,
     openGraph: {
       type: "article",
       title: content.metaTitle || content.title,
       description: content.metaDescription || content.excerpt,
       ...(row?.published_at && { publishedTime: row.published_at }),
       siteName: BRAND.name,
+      // Declared rather than left to the file convention. Next builds that URL
+      // from the matched `[locale]` segment, so the default locale came out as
+      // /en/analysis/..., which is a 307 — a share image should not redirect.
+      images: [{ url: `${alternates.canonical}/opengraph-image`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [`${alternates.canonical}/opengraph-image`],
     },
   };
 }
@@ -80,14 +89,27 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
         data={[
           {
             "@context": "https://schema.org",
-            "@type": "Article",
+            // NewsArticle, not Article: these are match reports, and the more
+            // specific type is the one news surfaces read.
+            "@type": "NewsArticle",
             headline: content.title,
             description: content.excerpt,
             url,
             inLanguage: locale,
+            // The share card this route generates. Article markup without an
+            // image is the commonest reason a story is passed over.
+            image: [`${url}/opengraph-image`],
             ...(row.published_at && { datePublished: row.published_at }),
+            // Google asks for both dates; without a modified date it assumes
+            // the article has never been touched since publication.
+            ...((row.generated_at || row.published_at) && {
+              dateModified: row.generated_at ?? row.published_at,
+            }),
             author: { "@type": "Organization", name: BRAND.name },
-            publisher: { "@type": "Organization", name: BRAND.name },
+            // Points at the single publisher entity declared site-wide rather
+            // than restating it, so the two cannot describe the same thing
+            // differently.
+            publisher: { "@id": `${getCanonical("/")}/#publisher` },
           },
           buildBreadcrumbJsonLd([
             { name: "Home", url: getCanonical("/") },

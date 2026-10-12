@@ -15,7 +15,6 @@ const SEO_ARTICLE_SECTION_CATEGORY = "__seo_article__";
 
 export interface DigestSection {
   category: string;
-  categoryVi: string;
   headline: string;
   body: string;
   articleUrls: string[];
@@ -91,16 +90,6 @@ function formatDigestDateVi(date = new Date()): string {
   }).format(date);
 }
 
-const CATEGORY_VI_MAP: Record<string, string> = {
-  "match-report": "Kết Quả Trận Đấu",
-  transfer: "Chuyển Nhượng",
-  injury: "Chấn Thương",
-  "team-news": "Tin Đội Bóng",
-  analysis: "Phân Tích",
-  opinion: "Quan Điểm",
-  general: "Tin Tổng Hợp",
-};
-
 // Model fallback chain — try each model in order until one succeeds.
 // Groq free tier has per-model daily token limits (TPD).
 // The digest is a LARGE request (~7K tokens: long prompt + up to 25 articles).
@@ -113,71 +102,82 @@ const DIGEST_MODELS = [
   "claude-sonnet-5",   // last resort (slowest; long runs can exceed the 60s cron limit)
 ] as const;
 
-const DIGEST_SYSTEM_PROMPT = `Bạn là một biên tập viên thể thao người Việt, đồng thời là fan cuồng nhiệt của Liverpool FC. Bạn viết bản tin hàng ngày cho cộng đồng fan Liverpool Việt Nam — giọng văn gần gũi, sôi nổi, như đang kể chuyện cho anh em fan cùng nghe.
+/** The site's own URL, named once: the prompt and the stored record both need it. */
+const SITE_URL = getEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000";
 
-Input: Danh sách bài báo gần đây kèm tiêu đề, tóm tắt, nguồn và danh mục.
-Output: JSON object với cấu trúc:
+/**
+ * English, because the bare URL is English and the briefing is the biggest body
+ * of original writing on the site — 90 of its ~185 indexable English URLs.
+ * Every one of them used to be Vietnamese, so the language a reader got had
+ * nothing to do with the page they asked for. The prompt was also written for
+ * "cộng đồng fan Liverpool Việt Nam", which is two repositionings out of date.
+ *
+ * `categoryVi` is gone on purpose: a category label is interface text, and the
+ * app already has both languages for all seven keys in `News.categories`.
+ * Asking a model to invent them produced a label that only existed in one
+ * language and could not be translated.
+ */
+const DIGEST_SYSTEM_PROMPT = `You are a football editor who follows Liverpool closely and writes the site's daily briefing. You are writing for people who want today's Liverpool news in one place, read quickly.
+
+Input: recent articles with title, summary, source and category.
+Output: a JSON object shaped like this:
 {
-  "title": "Liverpool Daily — {ngày tháng tiếng Việt}",
-  "summary": "Tóm tắt 4-6 câu, giọng kể chuyện cuốn hút. Mở đầu bằng tin quan trọng nhất, tự nhiên chuyển tiếp sang các tin khác. Nhắc tên cầu thủ, tỉ số, chi tiết cụ thể.",
+  "title": "Liverpool Daily — {date in English, e.g. 12 October 2026}",
+  "summary": "4-6 sentences. Open with the most important story, then move through the rest. Name players, give scores, keep the detail.",
   "sections": [
     {
       "category": "category-key",
-      "categoryVi": "Tên danh mục tiếng Việt",
-      "headline": "Tiêu đề hấp dẫn bằng tiếng Việt, nhắc tên người/sự kiện chính",
-      "body": "4-6 câu chi tiết. Kể chuyện có mạch lạc, có nhân vật, có bối cảnh. Kết hợp thông tin từ nhiều bài để cho bức tranh toàn cảnh.",
+      "headline": "A headline that names the person or the event",
+      "body": "4-6 sentences. Join the reporting from several articles into one account with people and context in it.",
       "articleUrls": ["url1", "url2"]
     }
   ],
   "seoArticle": {
     "sourceName": "${BRAND.name}",
-    "sourceUrl": "https://www.liverpoolfcvn.blog",
+    "sourceUrl": "${SITE_URL}",
     "badgeLabel": "${BRAND.name}",
-    "title": "Tiêu đề bài báo chuẩn SEO bằng tiếng Việt, tự nhiên, có Liverpool",
-    "metaTitle": "SEO title 50-60 ký tự",
-    "metaDescription": "SEO meta description 140-160 ký tự, có từ khóa chính",
-    "excerpt": "Đoạn sapo 2-3 câu, tóm lược giá trị bài viết.",
-    "focusKeyword": "tin tức Liverpool",
-    "secondaryKeywords": ["Liverpool FC", "tin Liverpool mới nhất", "The Reds"],
+    "title": "A natural article headline containing Liverpool",
+    "metaTitle": "50-60 characters",
+    "metaDescription": "140-160 characters, carrying the focus keyword",
+    "excerpt": "2-3 sentences saying what the piece covers.",
+    "focusKeyword": "Liverpool news",
+    "secondaryKeywords": ["Liverpool FC", "latest Liverpool news", "The Reds"],
     "body": [
       {
-        "heading": "H2 chứa ý chính",
-        "paragraphs": ["2-3 đoạn văn chi tiết, mỗi đoạn 2-4 câu."]
+        "heading": "An H2 carrying one idea",
+        "paragraphs": ["2-3 paragraphs, each 2-4 sentences."]
       }
     ],
-    "conclusion": "Kết bài có nhận định rõ ràng cho fan Liverpool."
+    "conclusion": "A close that takes a clear view."
   }
 }
 
-Phong cách viết:
-- Giọng văn tự nhiên, có cảm xúc — như biên tập viên đang trò chuyện với fan, KHÔNG phải bản tin thông tấn khô khan
-- Dùng câu chuyển tiếp mượt mà giữa các ý (thay vì liệt kê rời rạc kiểu "Ngoài ra...", "Bên cạnh đó...")
-- Được phép thể hiện cảm xúc fan: hào hứng khi thắng, lo lắng khi chấn thương, kỳ vọng trước trận lớn
-- Đặt tin trong bối cảnh rộng hơn (cuộc đua vô địch, phong độ gần đây, lịch sử đối đầu)
-- Kết thúc summary bằng câu tạo kỳ vọng hoặc nhận định ngắn gọn
+Voice:
+- Write like an editor talking to supporters, not a wire service
+- Move between ideas with real sentences, not "Additionally" and "Furthermore"
+- Feeling is allowed: pleased at a win, worried at an injury, expectant before a big game
+- Put the news in context — the title race, recent form, the history between the clubs
+- End the summary with a view or an expectation, not a shrug
 
-QUAN TRỌNG — Viết như người thật, TUYỆT ĐỐI tránh lộ chất AI:
-- CẤM các cụm sáo rỗng kiểu AI: "Trong bối cảnh", "Đáng chú ý là", "Điều thú vị là", "Không thể phủ nhận", "Có thể nói rằng", "Nhìn chung", "Tóm lại", "Hơn bao giờ hết", "đánh dấu một bước ngoặt", "không chỉ... mà còn", "Hãy cùng chờ đợi", "Thời gian sẽ trả lời"
-- ĐA DẠNG độ dài câu: xen câu ngắn gọn, dứt khoát với câu dài. KHÔNG để mọi câu cùng nhịp điệu đều đều
-- KHÔNG mở đầu nhiều đoạn bằng cùng một kiểu (tránh lặp "Liverpool...", "The Reds...", "Đội bóng...")
-- KHÔNG dùng dấu gạch ngang (—) tràn lan; ưu tiên dấu câu tự nhiên
-- KHÔNG kết bài kiểu chung chung vô thưởng vô phạt; nêu quan điểm cụ thể, có lập trường của một fan thực thụ
-- Dùng khẩu ngữ fan bóng đá Việt khi hợp lý: "The Kop", "lữ đoàn đỏ", "thầy trò Iraola", "đại chiến", "phong độ hủy diệt" — nhưng đừng nhồi nhét
-- Viết như đang gõ nhanh cho anh em fan đọc, có chính kiến, hơi đời thường — KHÔNG trau chuốt máy móc, KHÔNG cân bằng giả tạo kiểu "một mặt... mặt khác"
+Write like a person. Avoid the tells:
+- Banned openers and fillers: "In the world of", "It is worth noting", "Interestingly", "It cannot be denied", "Overall", "In conclusion", "more than ever", "marks a turning point", "not only... but also", "Only time will tell", "Let's wait and see"
+- Vary sentence length. Short, flat sentences next to longer ones. Do not let every sentence share a rhythm
+- Do not start several paragraphs the same way ("Liverpool...", "The Reds...", "The side...")
+- Do not scatter em dashes; use ordinary punctuation
+- Do not end on something that could be said about any club on any day — have a position
+- Supporters' language is fine where it fits ("The Kop", "Slot's side", "the Anfield crowd") but do not pack it in
 
-Quy tắc nội dung:
-- Nhắc TẤT CẢ tên cầu thủ, HLV quan trọng — KHÔNG được bỏ sót
-- Gộp bài theo danh mục, bỏ danh mục không có bài
-- Mỗi section tổng hợp 1-5 bài liên quan
-- Giữ nguyên tên riêng tiếng Anh (Van Dijk, Wirtz, Arsenal, Iraola)
-- Thuật ngữ: "clean sheet" = "giữ sạch lưới", "assist" = "kiến tạo", "hat-trick" giữ nguyên
-- Nêu chi tiết cụ thể: tỉ số, thống kê, ngày tháng, trích dẫn khi có
-- Nếu ít hơn 5 bài, viết dạng "Tin Nhanh" với 1-2 section nhưng vẫn chi tiết
-- seoArticle phải là một bài báo riêng chuẩn SEO cho Liverpool, không chỉ lặp lại summary
-- seoArticle dùng nguồn/publisher là "${BRAND.name}" và giữ sourceUrl đúng như input
-- seoArticle dài 600-900 từ, có sapo, 3-5 H2, chèn focusKeyword tự nhiên trong title/sapo/ít nhất 1 H2
-- Không copy nguyên văn bài nguồn; chỉ tổng hợp, diễn giải lại và giữ attribution qua articleUrls ở sections
-- Trả về CHỈ JSON hợp lệ — không markdown, không giải thích thêm`;
+Content rules:
+- Name every player and manager that matters; leave none out
+- Group articles by category, drop categories with nothing in them
+- Each section draws on 1-5 related articles
+- Give the specifics: scores, numbers, dates, quotes where there are any
+- Fewer than 5 articles: write it short, 1-2 sections, still with the detail
+- seoArticle is its own piece about Liverpool, not the summary again
+- seoArticle names "${BRAND.name}" as source and publisher, and keeps sourceUrl exactly as given
+- seoArticle runs 600-900 words with a standfirst, 3-5 H2s, and the focus keyword read naturally into the title, the standfirst and at least one H2
+- Never copy a source's wording. Summarise and rewrite; attribution lives in each section's articleUrls
+- Return ONLY valid JSON — no markdown, no commentary`;
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value)
@@ -191,7 +191,7 @@ function normalizeSeoArticle(
   sourceUrl: string
 ): DigestSeoArticle {
   const fallbackBody = parsed.sections.map((section) => ({
-    heading: section.headline || section.categoryVi || "Tin Liverpool đáng chú ý",
+    heading: section.headline || "Liverpool news",
     paragraphs: [section.body].filter(Boolean),
   }));
 
@@ -200,7 +200,7 @@ function normalizeSeoArticle(
     .map((section) => ({
       heading: typeof section?.heading === "string" && section.heading.trim()
         ? section.heading.trim()
-        : "Tin Liverpool đáng chú ý",
+        : "Liverpool news",
       paragraphs: asStringArray(section?.paragraphs),
     }))
     .filter((section) => section.paragraphs.length > 0);
@@ -218,12 +218,13 @@ function normalizeSeoArticle(
     metaTitle: seoArticle?.metaTitle?.trim() || title.slice(0, 60),
     metaDescription,
     excerpt,
-    focusKeyword: seoArticle?.focusKeyword?.trim() || "tin tức Liverpool",
+    focusKeyword: seoArticle?.focusKeyword?.trim() || "Liverpool news",
     secondaryKeywords: asStringArray(seoArticle?.secondaryKeywords).slice(0, 8),
     body: body.length > 0 ? body : fallbackBody,
     conclusion:
+      // Named the site LFCVN, two renames ago, in copy that ships to readers.
       seoArticle?.conclusion?.trim() ||
-      "Liverpool vẫn là tâm điểm chú ý của người hâm mộ, và những diễn biến mới nhất sẽ tiếp tục được LFCVN cập nhật sát sao.",
+      `There is more to come from Liverpool, and ${BRAND.name} will keep gathering it as it lands.`,
   };
 }
 
@@ -257,7 +258,6 @@ function withSeoArticleSection(
     ...getVisibleDigestSections(sections),
     {
       category: SEO_ARTICLE_SECTION_CATEGORY,
-      categoryVi: "SEO Article",
       headline: seoArticle.title,
       body: seoArticle.excerpt,
       articleUrls: [],
@@ -423,12 +423,11 @@ export async function generateDigestFromArticles(
     )
     .join("\n\n");
 
-  const siteUrl = getEnv("NEXT_PUBLIC_SITE_URL") ?? "https://www.liverpoolfcvn.blog";
   const today = formatDigestDateVi(now);
 
   // Current facts (head coach, season, squad) come first and override the model's memory:
   // without them the model "knew" a previous head coach and contradicted the articles.
-  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
+  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${SITE_URL}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
 
   const apiKey = getEnv("VIETAPI_KEY");
   if (!apiKey) throw new Error("VIETAPI_KEY not configured");
@@ -453,26 +452,20 @@ export async function generateDigestFromArticles(
   ]);
 
   const parsed = core.value;
-  // Ensure categoryVi is populated
-  for (const section of parsed.sections) {
-    if (!section.categoryVi && section.category) {
-      section.categoryVi = CATEGORY_VI_MAP[section.category] || section.category;
-    }
-  }
 
   return {
     title: parsed.title,
     summary: parsed.summary,
     sections: parsed.sections,
-    seoArticle: normalizeSeoArticle(seo?.value.seoArticle ?? parsed.seoArticle, parsed, siteUrl),
+    seoArticle: normalizeSeoArticle(seo?.value.seoArticle ?? parsed.seoArticle, parsed, SITE_URL),
     articleCount: articles.length,
     tokensUsed: core.tokens + (seo?.tokens ?? 0),
     model: core.model,
   };
 }
 
-const CORE_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON gồm "title", "summary", "sections". KHÔNG có trường "seoArticle".`;
-const SEO_ONLY_SUFFIX = `LƯU Ý ĐẦU RA: CHỈ trả JSON dạng {"seoArticle": {...}} theo cấu trúc seoArticle ở trên. KHÔNG có "title", "summary", "sections". Bài dài 500-700 từ.`;
+const CORE_ONLY_SUFFIX = `OUTPUT: return ONLY a JSON object with "title", "summary" and "sections". No "seoArticle" field.`;
+const SEO_ONLY_SUFFIX = `OUTPUT: return ONLY {"seoArticle": {...}} in the shape given above. No "title", "summary" or "sections". 500-700 words.`;
 
 function parseSeoOnlyJson(text: string): { seoArticle: DigestSeoArticle } {
   try {

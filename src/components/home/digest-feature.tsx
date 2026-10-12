@@ -18,6 +18,9 @@ const STORIES_SHOWN = 3;
 export async function DigestFeature({ digest, locale }: { digest: DigestRecord; locale: "vi" | "en" }) {
   const t = await getTranslations("Home.digest");
   const tDigest = await getTranslations("News.digest");
+  // Category labels are interface text and exist in both locales; they used to
+  // come from the model, which only ever produced one language.
+  const tCat = await getTranslations("News.categories");
   const seo = getSeoArticleFromDigest(digest);
   const title = cleanTitle(seo?.title || digest.title);
   const intro = leadSentences(seo?.excerpt || digest.summary, 200);
@@ -62,7 +65,7 @@ export async function DigestFeature({ digest, locale }: { digest: DigestRecord; 
                       <span className="min-w-0">
                         {cat && (
                           <span className={`mb-1.5 inline-block px-1.5 py-0.5 font-barlow text-[11px] font-bold uppercase tracking-wider ${cat.color}`}>
-                            {locale === "vi" ? story.categoryVi : cat.label}
+                            {tCat(story.category)}
                           </span>
                         )}
                         <span className="block text-[15px] font-semibold leading-snug text-white decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline">
