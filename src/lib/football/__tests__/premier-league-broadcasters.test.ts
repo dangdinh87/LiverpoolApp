@@ -47,6 +47,43 @@ describe("findBroadcaster", () => {
     }
   });
 
+  it("lists each time zone once, so no market silently shadows another", () => {
+    // The table is built from a per-market list, each naming its own zones, so
+    // the same zone appearing under two countries is a typo away. Object
+    // construction would keep whichever came last, without complaining.
+    const seen = new Set<string>();
+    const repeated = KNOWN_TIME_ZONES.filter((z) => (seen.has(z) ? true : (seen.add(z), false)));
+    expect(repeated, `listed more than once: ${repeated.join(", ")}`).toEqual([]);
+  });
+
+  it("covers the regions the club's following actually lives in", () => {
+    // Europe outside the UK was missing entirely, and Norway has the largest
+    // supporters' club outside England. Latin America and east Asia were absent.
+    const sample = {
+      "Europe/Oslo": "Norway",
+      "Europe/Berlin": "Germany",
+      "Europe/Madrid": "Spain",
+      "Asia/Tokyo": "Japan",
+      "Asia/Seoul": "South Korea",
+      "America/Sao_Paulo": "Brazil",
+      "Asia/Dhaka": "Bangladesh",
+      "Africa/Lagos": "Nigeria",
+    };
+    for (const [zone, country] of Object.entries(sample)) {
+      expect(findBroadcaster("Premier League", zone)?.country, zone).toBe(country);
+    }
+  });
+
+  it("holds the three rows that were found wrong on 2026-10-12", () => {
+    // Australia pointed at Optus Sport, which shut down on 1 August 2025.
+    expect(findBroadcaster("Premier League", "Australia/Sydney")?.service).toBe("Stan Sport");
+    // Thailand pointed at TrueVisions, which stopped carrying the league after 2024/25.
+    expect(findBroadcaster("Premier League", "Asia/Bangkok")?.service).toBe("AIS Play / MONOMAX");
+    // The Philippines pointed at Premier Sports; its current holder could not be
+    // confirmed, and an unknown country is meant to render nothing.
+    expect(findBroadcaster("Premier League", "Asia/Manila")).toBeNull();
+  });
+
   it("gives every entry both a country and a service", () => {
     for (const zone of KNOWN_TIME_ZONES) {
       const b = findBroadcaster("Premier League", zone);

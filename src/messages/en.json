@@ -220,8 +220,6 @@
     },
     "feed": {
       "all": "All",
-      "local": "Local News",
-      "global": "International",
       "viewImage": "View Image",
       "moreStories": "More Stories",
       "loadMore": "Show more stories",
