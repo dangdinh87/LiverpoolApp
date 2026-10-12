@@ -93,14 +93,14 @@
     },
     "match": {
       "kickoffIn": "Còn",
-      "vnTime": "Giờ của bạn",
       "days": "ngày",
       "hours": "giờ",
       "minutes": "phút",
       "seconds": "giây",
       "noMatchHint": "Khi có lịch trận tiếp theo, giờ đá sẽ hiện ở đây.",
       "started": "Trận đã bắt đầu",
-      "allFixtures": "Lịch đấu"
+      "allFixtures": "Lịch đấu",
+      "viewerTime": "Giờ của bạn"
     },
     "results": {
       "title": "Kết quả gần đây",
@@ -216,7 +216,7 @@
       "viewAll": "Xem tất cả",
       "readOriginalOn": "Đọc bài gốc tại {source}",
       "excerptLabel": "Đoạn trích",
-      "vnTime": "giờ VN"
+      "viewerTime": "Giờ của bạn"
     },
     "feed": {
       "all": "Tất cả",

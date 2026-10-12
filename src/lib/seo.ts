@@ -10,6 +10,23 @@ const SITE_URL =
 const SITE_NAME = BRAND.name;
 
 /**
+ * Host of the site's own canonical URL, e.g. `www.example.com`.
+ *
+ * Lets a link be classified as internal without naming a domain in the code.
+ * The chat renderer used to hardcode `liverpoolfcvn.blog`, which would quietly
+ * start opening the site's own links in a new tab the day the domain changes —
+ * and that rename is already planned.
+ */
+export const SITE_HOST = (() => {
+  try {
+    return new URL(SITE_URL).host;
+  } catch {
+    return "";
+  }
+})();
+
+
+/**
  * Site-wide share image: the generated 1200×630 card at app/opengraph-image.tsx.
  * Pages without their own image must still name it — a page's `openGraph`
  * object replaces the root layout's, so leaving `images` out removed the
@@ -33,6 +50,35 @@ const PUBLISHER = {
 };
 
 /** OpenGraph wants a language_TERRITORY code, not a bare locale. */
+/**
+ * Site-level keywords, per locale.
+ *
+ * These used to be one fixed list, mostly Vietnamese ("fan Liverpool Việt Nam",
+ * "giờ đá Liverpool", "Ngoại hạng Anh"), served to English readers as well. The
+ * English set is not a translation of the Vietnamese one: each is the wording
+ * that readers in that language actually search for, and neither names a
+ * country, because the site is for supporters anywhere.
+ */
+const KEYWORDS: Record<string, string[]> = {
+  en: [
+    "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    "Liverpool kick-off time", "Liverpool fixtures", "Liverpool results", "Liverpool squad",
+    "Premier League table", "Liverpool news", "Liverpool transfers",
+    "Premier League", "where to watch Liverpool", "You'll Never Walk Alone",
+  ],
+  vi: [
+    "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    "giờ đá Liverpool", "lịch thi đấu Liverpool", "kết quả Liverpool", "đội hình Liverpool",
+    "bảng xếp hạng Ngoại hạng Anh", "tin Liverpool", "chuyển nhượng Liverpool",
+    "Premier League", "Ngoại hạng Anh", "xem Liverpool ở đâu", "You'll Never Walk Alone",
+  ],
+};
+
+/** Keywords for `locale`, falling back to the default locale's set. */
+export function keywordsFor(locale: string): string[] {
+  return KEYWORDS[locale] ?? KEYWORDS[routing.defaultLocale];
+}
+
 const OG_LOCALES: Record<string, string> = { en: "en_GB", vi: "vi_VN" };
 const ogLocale = (locale: string) => OG_LOCALES[locale] ?? OG_LOCALES[routing.defaultLocale];
 

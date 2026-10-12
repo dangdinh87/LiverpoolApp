@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
+import { useUrlSearchParam } from "@/hooks/use-url-search-param";
 import { Link } from "@/i18n/navigation";
 import { CalendarX } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -52,9 +53,6 @@ interface FixtureTimelineProps {
   showArchiveLink?: boolean;
 }
 
-const subscribeToNothing = () => () => {};
-const readViewParam = () => new URLSearchParams(window.location.search).get("view");
-
 export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink = false }: FixtureTimelineProps) {
   const t = useTranslations("Fixtures.timeline");
   const locale = useLocale() === "vi" ? "vi" : "en";
@@ -62,10 +60,8 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   // Status-based (no clock) so server HTML and hydration agree.
   const hasUpcoming = fixtures.some((f) => !FINISHED.has(f.fixture.status.short));
   const defaultView: View = initialView ?? (hasUpcoming ? "upcoming" : "results");
-  // A link like /fixtures?view=results is read from the URL on the client rather than
-  // on the server, so the page itself stays static (CDN-cached) and the whole list is
-  // in the HTML for search engines. The server snapshot is null, so hydration matches.
-  const urlView = useSyncExternalStore(subscribeToNothing, readViewParam, () => null);
+  // Read on the client so the page itself stays static — see useUrlSearchParam.
+  const urlView = useUrlSearchParam("view");
   const [picked, setPicked] = useState<View | null>(null);
   const view: View = picked ?? (urlView === "results" && !initialView ? "results" : defaultView);
   const [comp, setComp] = useState("All");

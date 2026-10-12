@@ -170,7 +170,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
             <span className="font-bebas text-5xl leading-none text-white">{formatMatchTime(date, zone)}</span>
           )}
           {!isLive && <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>}
-          {!isLive && <span className="text-xs text-stadium-muted">{h("vnTime")} · {formatZoneOffset(date, zone)}</span>}
+          {!isLive && <span className="text-xs text-stadium-muted">{h("viewerTime")} · {formatZoneOffset(date, zone)}</span>}
         </div>
         <TeamBlock team={teams.away} />
       </div>

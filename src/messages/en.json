@@ -93,14 +93,14 @@
     },
     "match": {
       "kickoffIn": "Kick-off in",
-      "vnTime": "Your time",
       "days": "d",
       "hours": "h",
       "minutes": "m",
       "seconds": "s",
       "noMatchHint": "As soon as the next match is confirmed, its kick-off time will show here.",
       "started": "Match under way",
-      "allFixtures": "Fixtures"
+      "allFixtures": "Fixtures",
+      "viewerTime": "Your time"
     },
     "results": {
       "title": "Recent results",
@@ -216,7 +216,7 @@
       "viewAll": "View all",
       "readOriginalOn": "Read the original on {source}",
       "excerptLabel": "Excerpt",
-      "vnTime": "UK time"
+      "viewerTime": "Your time"
     },
     "feed": {
       "all": "All",

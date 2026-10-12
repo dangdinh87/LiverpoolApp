@@ -9,7 +9,6 @@ import { getLatestDigest } from "@/lib/news/digest";
 import { NewsFeed } from "@/components/news/news-feed";
 import { DigestCard } from "@/components/news/digest-card";
 import { PageHero } from "@/components/ui/page-hero";
-import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 
@@ -21,7 +20,9 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   return { title, description, ...makePageMeta(title, description, { locale, path: "/news" }) };
 }
 
-const NEWS_PAGE_LIMIT = 36;
+// Enough articles for the feed to find the same story told by several outlets
+// (StoryCard); 36 rarely held two takes on one story.
+const NEWS_PAGE_LIMIT = 72;
 
 // Cache the heavy DB reads across requests (Next Data Cache). The page itself
 // stays dynamic because it reads the locale cookie, but the article/digest/
@@ -30,7 +31,7 @@ const NEWS_PAGE_LIMIT = 36;
 // tag is busted by the sync route, so a fresh sync shows up immediately.
 const getCachedNewsList = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(NEWS_PAGE_LIMIT, undefined, { skipSync: true })),
-  ["news-page-list-v3"],
+  ["news-page-list-v4"],
   { revalidate: 300, tags: ["news"] },
 );
 
@@ -44,22 +45,15 @@ const getCachedNewsDigest = unstable_cache(
 // queries below revalidate on their own, this bounds the page itself.
 export const revalidate = 600;
 
-export default async function NewsPage({
-  params,
-  searchParams,
-}: LocaleParams & {
-  searchParams: Promise<{ source?: string | string[] }>;
-}) {
+// `?source=` used to be read here, which made every visit render on demand in a
+// single region. NewsFeed reads it after hydration instead, so both locales are
+// prerendered and served from the CDN edge — the articles are all in the HTML
+// either way, the parameter only chooses which of them to show.
+export default async function NewsPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [t, query] = await Promise.all([
-    getTranslations("News"),
-    searchParams,
-  ]);
+  const t = await getTranslations("News");
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
-  const sourceParam = Array.isArray(query.source) ? query.source[0] : query.source;
-  const initialSource =
-    sourceParam && Object.hasOwn(SOURCE_CONFIG, sourceParam) ? (sourceParam as NewsSource) : undefined;
 
   const [allArticles, digest] = await Promise.all([
     getCachedNewsList().catch((): NewsArticle[] => []),
@@ -103,7 +97,6 @@ export default async function NewsPage({
         globalArticles={globalArticles}
         locale={userLang}
         nowMs={nowMs}
-        initialSource={initialSource}
       />
 
       <p className="page-container max-w-3xl pb-14 text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>

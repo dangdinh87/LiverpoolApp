@@ -12,6 +12,24 @@ import type { SiteArticleContent } from "@/lib/site-articles/types";
 
 export const revalidate = 3600;
 
+/**
+ * Prerender every published article.
+ *
+ * Without this the route was `ƒ`: rendered on demand, in one region, for every
+ * reader. These are the site's own articles and the reason anyone arrives from
+ * search, so a visitor in Jakarta or Lagos should get them from the CDN edge,
+ * not from a round trip to Singapore.
+ *
+ * Only `slug` is returned — the `[locale]` segment is enumerated by the layout
+ * above. `dynamicParams` stays at its default, so an article published after
+ * the build still renders on first request and is cached from then on, and
+ * `listSiteArticles` already swallows a database error into `[]`, which leaves
+ * the route behaving exactly as it did before rather than failing the build.
+ */
+export async function generateStaticParams() {
+  return (await listSiteArticles(100)).map((row) => ({ slug: row.slug }));
+}
+
 type Params = Promise<{ slug: string; locale: string }>;
 
 /** The reader's language, falling back to whichever version exists. */

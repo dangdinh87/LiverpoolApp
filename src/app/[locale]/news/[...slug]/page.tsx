@@ -5,7 +5,7 @@ import { scrapeArticle, getNewsFromDB, getArticleContentFromDB, getArticleByUrl 
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
-import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { LocalPublishedTime } from "@/components/ui/local-time";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
 import {
@@ -41,14 +41,10 @@ export async function generateStaticParams() {
   return [];
 }
 
-/** Locale default zone (Vietnam for vi, UK for en), whatever the server's zone ("21:30 giờ VN · Thứ 3, 6 thg 10"). */
-function formatPublished(dateStr: string, locale: "vi" | "en", vnLabel: string): { iso: string; text: string } | null {
+/** The instant, if it parses. The wall-clock rendering belongs to the client. */
+function publishedInstant(dateStr: string): string | null {
   const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return null;
-  return {
-    iso: date.toISOString(),
-    text: `${formatMatchTime(date, defaultTimeZoneForLocale(locale))} ${vnLabel} · ${formatMatchDayMonth(date, locale, false, defaultTimeZoneForLocale(locale))}`,
-  };
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 // Improved keyword-based related articles with stopwords + diversity
@@ -224,7 +220,7 @@ export default async function ArticlePage({
   const related = getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage));
   // Older stored extractions have no date of their own; the feed row usually does.
   const shownAt = content.publishedAt || listed?.pubDate;
-  const published = shownAt ? formatPublished(shownAt, uiLocale, t("vnTime")) : null;
+  const published = shownAt ? publishedInstant(shownAt) : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
   const canonicalPath = `/news/${slug.join("/")}`;
   const heroImage = isHttpUrl(content.heroImage) ? content.heroImage : undefined;
@@ -267,7 +263,11 @@ export default async function ArticlePage({
             <header className="reveal">
               <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-stadium-muted">
                 <SourceBadge name={sourceName} />
-                {published && <time dateTime={published.iso}>{published.text}</time>}
+                {published && (
+                  <time dateTime={published}>
+                    <LocalPublishedTime iso={published} locale={uiLocale} zoneLabel={t("viewerTime")} />
+                  </time>
+                )}
                 {byline && (
                   <span className="inline-flex items-center gap-1.5">
                     <User className="size-3.5" aria-hidden />

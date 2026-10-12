@@ -20,6 +20,8 @@ export const ROUTES: RouteUnderTest[] = [
   { path: "/fixtures", expects: /fixture|lịch/i },
   { path: "/standings", expects: /standing|bảng/i },
   { path: "/stats", expects: /stat|thống kê/i },
+  // Archive stats moved from /stats?season= to a path segment so /stats itself prerenders.
+  { path: "/stats/2025", expects: /stat|thống kê/i },
   { path: "/season", expects: /fixtures|table|lịch|bảng/i },
   { path: "/gallery", expects: /anfield|all|squad|legends/i },
   { path: "/history", expects: /history|lịch sử|trophy|danh hiệu/i },

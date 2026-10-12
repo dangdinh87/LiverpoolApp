@@ -5,6 +5,7 @@ import { Loader2, Newspaper, Search, SearchX, SlidersHorizontal, X } from "lucid
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { SOURCE_CONFIG, type ArticleCategory, type NewsSource } from "@/lib/news-config";
+import { useUrlSearchParam } from "@/hooks/use-url-search-param";
 import { getReadArticles } from "@/lib/news/read-history";
 import { loadMoreNews } from "@/app/actions/news";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -49,15 +50,20 @@ interface NewsFeedProps {
   locale: "en" | "vi";
   /** Render-time clock from the server: keeps server and client dates identical. */
   nowMs: number;
-  /** Preselected source, from `/news?source=…`. */
-  initialSource?: NewsSource;
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale, nowMs, initialSource }: NewsFeedProps) {
+export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsFeedProps) {
   const t = useTranslations("News.feed");
   const [lang, setLang] = useState<LangFilter>(locale === "en" ? "en" : "vi");
   const [category, setCategory] = useState<CategoryFilter>("all");
-  const [source, setSource] = useState<"all" | NewsSource>(initialSource && SOURCE_CONFIG[initialSource] ? initialSource : "all");
+  // `/news?source=bbc` is read here rather than in the page, so /news stays
+  // prerendered and is served from the CDN edge worldwide instead of being
+  // rendered per request in one region. Every article is in the static HTML
+  // already; the parameter only chooses which of them to show.
+  const urlSource = useUrlSearchParam("source");
+  const [pickedSource, setPickedSource] = useState<"all" | NewsSource | null>(null);
+  const source: "all" | NewsSource =
+    pickedSource ?? (urlSource && Object.hasOwn(SOURCE_CONFIG, urlSource) ? (urlSource as NewsSource) : "all");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -110,6 +116,15 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs, initial
 
   function resetPaging() {
     setVisible(PAGE_SIZE);
+  }
+
+  /** Pick a source and keep `?source=` in the URL, without a navigation. */
+  function setSource(next: "all" | NewsSource) {
+    setPickedSource(next);
+    const url = new URL(window.location.href);
+    if (next === "all") url.searchParams.delete("source");
+    else url.searchParams.set("source", next);
+    window.history.replaceState(window.history.state, "", url.toString());
   }
 
   function resetFilters() {

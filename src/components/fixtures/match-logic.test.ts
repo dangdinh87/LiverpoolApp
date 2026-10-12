@@ -71,6 +71,8 @@ describe("matchCentreHref", () => {
     expect(matchCentreHref("fixtures", 2025)).toBe("/season?season=2025");
     expect(matchCentreHref("results", 2025)).toBe("/season?season=2025&view=results");
     expect(matchCentreHref("standings", 2025)).toBe("/season?season=2025&tab=standings");
-    expect(matchCentreHref("stats", 2025)).toBe("/stats?season=2025");
+    // A path segment, not `?season=`: a page that reads searchParams cannot be
+    // prerendered, so the query form kept /stats itself rendering on demand.
+    expect(matchCentreHref("stats", 2025)).toBe("/stats/2025");
   });
 });

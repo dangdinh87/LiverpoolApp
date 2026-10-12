@@ -20,7 +20,7 @@ import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { AdsenseGate } from "@/components/analytics/adsense-gate";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { Analytics } from '@vercel/analytics/next';
-import { DEFAULT_OG_IMAGE } from "@/lib/seo";
+import { DEFAULT_OG_IMAGE, keywordsFor } from "@/lib/seo";
 import { BRAND, brandDescription, brandLocale, brandTitle } from "@/lib/brand";
 import "../globals.css";
 
@@ -74,12 +74,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     creator: BRAND.name,
     publisher: BRAND.name,
     category: "sports",
-    keywords: [
-      BRAND.name, "fan Liverpool Việt Nam", "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
-      "giờ đá Liverpool", "lịch thi đấu Liverpool", "kết quả Liverpool", "đội hình Liverpool",
-      "bảng xếp hạng Ngoại hạng Anh", "tin Liverpool", "chuyển nhượng Liverpool",
-      "Premier League", "Ngoại hạng Anh", "You'll Never Walk Alone",
-    ],
+    keywords: [BRAND.name, ...keywordsFor(locale)],
     openGraph: {
       type: "website",
       url: SITE_URL,

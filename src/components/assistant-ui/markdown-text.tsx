@@ -15,6 +15,7 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { cn } from "@/lib/utils";
+import { SITE_HOST } from "@/lib/seo";
 
 const MarkdownTextImpl = () => {
   return (
@@ -147,8 +148,8 @@ const defaultComponents = memoizeMarkdownComponents({
         </sup>
       );
     }
-    // Internal link (relative path or liverpoolfcvn.blog) — same tab
-    const isInternal = href?.startsWith("/") || href?.includes("liverpoolfcvn.blog");
+    // Internal link (relative path, or an absolute one back to this site) — same tab.
+    const isInternal = href?.startsWith("/") || (!!SITE_HOST && !!href?.includes(SITE_HOST));
     return (
       <a
         href={href}

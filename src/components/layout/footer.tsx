@@ -20,11 +20,26 @@ const SOCIAL_LINKS = [
   { Icon: Linkedin, href: "https://linkedin.com/company/liverpool-football-club", label: "LinkedIn" },
 ] as const;
 
-/** Outlets the news feed reads from, Vietnamese first. Names come from the shared source table. */
-const SOURCE_IDS: NewsSource[] = [
+/** Outlets the news feed reads from. Names come from the shared source table. */
+const VI_SOURCE_IDS: NewsSource[] = [
   "vnexpress", "tuoitre", "thanhnien", "dantri", "zingnews", "vietnamnet", "bongda", "bongdaplus", "24h",
-  "bongda24h", "soha", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky", "goal", "lfc",
+  "bongda24h", "soha",
 ];
+const EN_SOURCE_IDS: NewsSource[] = [
+  "lfc", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky", "goal",
+];
+
+/**
+ * The outlet list, the reader's own language first.
+ *
+ * It was Vietnamese-first for everyone, which left an English reader looking at
+ * eleven Vietnamese mastheads before the first one they recognise.
+ */
+function sourceIdsFor(locale: string): NewsSource[] {
+  return locale === "vi"
+    ? [...VI_SOURCE_IDS, ...EN_SOURCE_IDS]
+    : [...EN_SOURCE_IDS, ...VI_SOURCE_IDS];
+}
 
 /* ── TikTok icon (not in lucide-react) ───────────────────────────── */
 
@@ -116,7 +131,7 @@ export function Footer() {
               <h2 className="section-label mb-1 text-white">{t("newsSources")}</h2>
               <p className="max-w-3xl font-inter text-sm leading-relaxed text-stadium-muted">
                 {/* Names never break across lines ("Liverpool Echo" stays together). */}
-                {SOURCE_IDS.map((id, i) => (
+                {sourceIdsFor(locale).map((id, i) => (
                   <Fragment key={id}>
                     {i > 0 && " · "}
                     <span className="whitespace-nowrap">{SOURCE_CONFIG[id].label}</span>
