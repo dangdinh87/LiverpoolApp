@@ -15,12 +15,23 @@ interface HeroProps {
 }
 
 /**
- * Compact home hero: stadium photo (the LCP image), a two-line h1
- * ("Skip the twenty tabs. / Liverpool news, here."), one sentence naming
- * the site and what it does (gathers, de-duplicates and sums up the news) with
- * a way into it, and the next-match
- * card. Server-rendered with CSS-only reveals, so the text is in the first HTML
- * and visible without waiting for hydration.
+ * Home hero: stadium photo (the LCP image), the strapline, one sentence saying
+ * what the site does, a way into the news, and the next-match card.
+ *
+ * Deliberately small type. This block is the site talking about itself, and it
+ * used to open at 52px on a phone and 96px on a desktop — two lines of
+ * slogan, a paragraph and a button before a single headline. On a site whose
+ * whole proposition is reading the news quickly, the largest words on the home
+ * page should be today's story, not the pitch for the site; the briefing
+ * headline directly below now carries that weight. Shrinking this lifts the
+ * first real headline roughly a third of a screen up the page on a phone.
+ *
+ * Keep this smaller than the briefing headline at every width (that one is
+ * 34px, then 48px from `sm`). At 48px here the two tied on desktop and neither
+ * read as the page's lead.
+ *
+ * Server-rendered with CSS-only reveals, so the text is in the first HTML and
+ * visible without waiting for hydration.
  */
 export async function Hero({ backgroundUrl, children }: HeroProps) {
   const t = await getTranslations("Hero");
@@ -45,11 +56,11 @@ export async function Hero({ backgroundUrl, children }: HeroProps) {
       <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+2.5rem)]">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-center lg:gap-12">
           <div className="reveal min-w-0 lg:col-span-7">
-            <h1 className="font-bebas text-[3.25rem] leading-[0.9] text-white sm:text-7xl lg:text-8xl">
-              <span className="block">{t("headlineTop")}</span>
-              <span className="block text-brand">{t("headlineBottom")}</span>
+            <h1 className="font-bebas text-[1.75rem] leading-[1.05] text-white sm:text-[2rem] lg:text-4xl">
+              <span>{t("headlineTop")} </span>
+              <span className="text-brand">{t("headlineBottom")}</span>
             </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/85 sm:text-base">
+            <p className="mt-2.5 max-w-lg text-[13px] leading-relaxed text-white/75 sm:text-sm">
               {t.rich("description", {
                 brand: BRAND.name,
                 count: NEWS_OUTLET_COUNT,
@@ -58,7 +69,7 @@ export async function Hero({ backgroundUrl, children }: HeroProps) {
             </p>
             <Link
               href="/news"
-              className="mt-5 inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-black/30 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/10 active:bg-white/15"
+              className="mt-3.5 inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-black/30 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/10 active:bg-white/15"
             >
               <Newspaper className="size-4" aria-hidden />
               {t("ctaNews")}
