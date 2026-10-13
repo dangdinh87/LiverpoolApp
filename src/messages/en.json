@@ -161,11 +161,11 @@
   "News": {
     "metadata": {
       "title": "Liverpool news roundup",
-      "description": "Liverpool headlines every day: a short excerpt and a link to the original story, plus the Liverpool Daily digest of the day."
+      "description": "Liverpool headlines every day: a short excerpt and a link to the original story, plus the daily briefing that sums the day up."
     },
     "tagline": "Quick Liverpool headlines",
     "title": "News roundup",
-    "heroDesc": "Headlines, a short excerpt and a link to the original. A new Liverpool Daily every day.",
+    "heroDesc": "Headlines, a short excerpt and a link to the original. A new briefing every day.",
     "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more",
     "summary": "{total} articles — {en} international, {vi} Vietnamese",
     "search": "Search news...",
@@ -279,7 +279,10 @@
       "langEn": "English",
       "showResults": "Show {count} stories",
       "close": "Close",
-      "alsoCovering": "{count, plural, one {Also in # more outlet:} other {Also in # more outlets:}}"
+      "alsoCovering": "{count, plural, one {Also in # more outlet:} other {Also in # more outlets:}}",
+      "newSince": "New since {time}",
+      "newCount": "{count, plural, one {# new story} other {# new stories}}",
+      "newCountCapped": "{count}+ new stories"
     },
     "sidebar": {
       "source": "Source",
@@ -531,6 +534,10 @@
       "uruguayan": "Uruguayan",
       "welsh": "Welsh"
     },
+    "bio": {
+      "more": "Read more",
+      "less": "Show less"
+    },
     "fanRating": {
       "title": "Fans’ rating this season",
       "detail": "Average over {matches, plural, one {# match} other {# matches}}, {votes} ratings from fans on the match pages."
@@ -610,10 +617,13 @@
       "goalDiff": "Goal Diff",
       "cleanSheets": "Clean Sheets",
       "winRate": "Win Rate",
-      "points": "PL Points",
-      "rank": "PL Position",
+      "points": "Points",
+      "rank": "Position",
       "winStreak": "{count}W Streak",
-      "unbeaten": "{count} Unbeaten"
+      "unbeaten": "{count} Unbeaten",
+      "groupAll": "All competitions",
+      "recentForm": "{count, plural, one {Last match} other {Last # matches}}",
+      "playedShort": "P"
     },
     "headlines": {
       "goals": "LFC Goals",
@@ -632,7 +642,7 @@
       "home": "Home",
       "away": "Away",
       "formTimeline": "Form Timeline",
-      "formTimelineSub": "Last 20 matches · all competitions",
+      "formTimelineSub": "{count, plural, one {Last match} other {Last # matches}} · all competitions",
       "win": "Win",
       "draw": "Draw",
       "loss": "Loss",
@@ -649,14 +659,18 @@
         "oct": "Oct",
         "nov": "Nov",
         "dec": "Dec"
-      }
+      },
+      "partialMonth": "so far",
+      "matchesShort": "matches"
     },
     "competitions": {
       "title": "By Competition",
       "subtitle": "Season {season}",
       "winRate": "Win Rate",
       "gf": "GF",
-      "ga": "GA"
+      "ga": "GA",
+      "gfLong": "Goals for",
+      "gaLong": "Goals against"
     },
     "records": {
       "title": "Season Records",
@@ -672,10 +686,11 @@
       "times": "times"
     },
     "table": {
-      "title": "Liverpool Scorers",
+      "title": "Liverpool scorers in the Premier League",
       "goalsShort": "G",
       "assistsShort": "A",
-      "appsShort": "Apps"
+      "player": "Player",
+      "minutesShort": "Min"
     },
     "comparison": {
       "title": "Season Comparison",
@@ -686,7 +701,13 @@
       "description": "There is no match data for this season yet. Check back soon.",
       "action": "See fixtures"
     },
-    "seasonPicker": "Select season"
+    "seasonPicker": "Select season",
+    "leaderboard": {
+      "goals": "goals",
+      "assists": "assists",
+      "rank": "Rank {rank}",
+      "tiedRank": "Joint rank {rank}"
+    }
   },
   "History": {
     "metadata": {
@@ -750,7 +771,8 @@
     },
     "legends": {
       "appearances": "Appearances",
-      "goals": "Goals"
+      "goals": "Goals",
+      "close": "Close"
     },
     "stadium": {
       "fortress": "The Fortress",
@@ -779,7 +801,7 @@
       "years": "Winning years"
     },
     "eras": {
-      "jump": "Jump to an era",
+      "events": "{count, plural, one {# event} other {# events}}",
       "now": "now",
       "beginnings": {
         "name": "Beginnings",
@@ -813,6 +835,14 @@
       "description": "Anfield Daily is an unofficial Liverpool fan site that gathers the news from 20+ outlets and sums it up daily. Where the data comes from, and what the site is not."
     },
     "label": "About",
+    "eyebrow": {
+      "story": "The site",
+      "features": "Features",
+      "news": "News",
+      "ai": "AI",
+      "data": "Sources",
+      "support": "Chip in"
+    },
     "title": "Liverpool news, gathered and summed up",
     "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
     "whatIs": {
@@ -820,14 +850,38 @@
       "description": "Anfield Daily is a Liverpool fan’s site for reading the news fast. It gathers stories from more than 20 English and Vietnamese outlets, drops the duplicates and sums up the day in one short briefing, so you don’t have to open twenty tabs. Fixtures, results and the table sit alongside.",
       "featuresTitle": "What's on the site",
       "features": {
-        "squad": "The squad and a profile for each player.",
-        "season": "Premier League and Champions League tables, plus season stats.",
-        "fixtures": "Kick-off times in your time zone and results: Premier League, Champions League, FA Cup, EFL Cup.",
-        "news": "Quick news: headline, short excerpt and a link to the original. A daily digest drafted by AI.",
-        "history": "Club history, trophy cabinet, legends and Anfield.",
-        "profile": "An optional account to save favourite players and articles.",
-        "ai": "Reds AI: ask questions about Liverpool, sign-in required. Answers are AI-generated and can be wrong.",
-        "i18n": "Available in English and Vietnamese."
+        "gathered": {
+          "title": "Gathered news",
+          "body": "Stories from more than 20 English and Vietnamese outlets in one feed, each with a link to the original."
+        },
+        "dedupe": {
+          "title": "No duplicates",
+          "body": "The same story from five outlets shows up once, not five times."
+        },
+        "digest": {
+          "title": "Daily briefing",
+          "body": "The day’s stories in one short briefing, drafted by AI, so you can catch up fast."
+        },
+        "fixtures": {
+          "title": "Fixtures & results",
+          "body": "Kick-off times in your time zone and results: Premier League, Champions League, FA Cup, EFL Cup."
+        },
+        "spoiler": {
+          "title": "Spoiler-free",
+          "body": "Hide scores and results across the site until you choose to see them. Handy for replays."
+        },
+        "calendar": {
+          "title": "Calendar sync",
+          "body": "Every Liverpool match in your phone’s calendar at your local time, with a reminder before kick-off."
+        },
+        "predictions": {
+          "title": "Predictions & ratings",
+          "body": "Predict the score, rate the players and see how you rank against other fans. Sign-in required."
+        },
+        "club": {
+          "title": "Squad & club",
+          "body": "The squad with a profile for each player, league tables, club history and Anfield. An optional account saves your favourites."
+        }
       },
       "dataTitle": "Data sources",
       "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English and Vietnamese outlets, always with a link to the original story.",
@@ -902,14 +956,7 @@
       "rel": "Relegation",
       "r16": "Round of 16",
       "playoff": "Play-off round",
-      "elim": "Eliminated",
-      "win": "Win",
-      "draw": "Draw",
-      "loss": "Loss"
-    },
-    "comp": {
-      "pl": "Premier League",
-      "ucl": "Champions League"
+      "elim": "Eliminated"
     },
     "description": "The latest Premier League table.",
     "compLabel": "Competition",
@@ -962,7 +1009,10 @@
       "emptyTitle": "No matches yet",
       "noResults": "No finished matches for this competition yet.",
       "archive": "Past seasons",
-      "plWatch": "Where to watch depends on your country; match pages show the broadcaster where one is known."
+      "plWatch": "Where to watch depends on your country; match pages show the broadcaster where one is known.",
+      "zoneChip": "Your time · {zone}",
+      "later": "Later fixtures",
+      "matchCount": "{count, plural, one {# match} other {# matches}}"
     },
     "detail": {
       "back": "Back to fixtures",
@@ -1278,7 +1328,8 @@
         "yellow": "Yellow card",
         "red": "Red card"
       }
-    }
+    },
+    "formAria": "{count, plural, one {Last match} other {Last # matches}}: {results}"
   },
   "Footer": {
     "about": "{brand} — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
@@ -1296,7 +1347,7 @@
     },
     "info": "Info",
     "club": "The club",
-    "socialLabel": "Liverpool FC's official channels"
+    "socialLabel": "The club's own channels (external links)"
   },
   "Language": {
     "aria": {
@@ -1528,7 +1579,7 @@
     "win": "{team} win",
     "draw": "Draw",
     "mostPicked": "Most picked:",
-    "leaderboardLink": "See the prediction table",
+    "leaderboardLink": "See the prediction scores",
     "error": {
       "signIn": "Sign in first.",
       "closed": "Predictions for this match are closed.",
@@ -1554,7 +1605,7 @@
     },
     "page": {
       "eyebrow": "Fan predictions",
-      "title": "Prediction table",
+      "title": "Prediction scores",
       "description": "Predict every Liverpool score and see how you rank against other fans this season.",
       "rule": "{exact} points for the exact score, {result} for the right result. Predictions close at kick-off.",
       "nextLabel": "Next match to predict",
@@ -1566,6 +1617,7 @@
       "points": "Pts",
       "emptyTitle": "No points yet",
       "emptyDesc": "The table fills up once a predicted match has been played.",
+      "emptyAction": "Predict the next match",
       "unavailableTitle": "The table is unavailable",
       "unavailableDesc": "We could not load it. Try again in a few minutes."
     }

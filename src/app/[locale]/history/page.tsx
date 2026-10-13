@@ -22,6 +22,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
+import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params;
@@ -44,6 +45,16 @@ function Section({ id, children, deferred }: { id: string; children: ReactNode; 
     </section>
   );
 }
+
+/**
+ * Phones get one sideways row (snaps card by card, right edge fades); from `sm`
+ * the same list is a grid. Twelve managers, sixteen legends and the stadium cards
+ * stacked in one column made up three quarters of the page.
+ */
+const ROW =
+  "scroll-x-fade -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0";
+
+const ROW_ITEM = "w-72 shrink-0 snap-start sm:w-auto";
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -69,6 +80,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
   const historyEvents = isVi ? historyEventsVi : historyEventsEn;
   const legends = isVi ? legendsVi : legendsEn;
   const clubInfo = isVi ? clubInfoVi : clubInfoEn;
+  const legendPhotos = new Map(legends.flatMap((l) => (l.image ? [[l.name, l.image] as const] : [])));
 
   const founded = clubInfo.founded.match(/\d{4}/)?.[0] ?? "1892";
   const league = trophies[0];
@@ -160,27 +172,32 @@ export default async function HistoryPage({ params }: LocaleParams) {
         {/* ── Managers + legends ── */}
         <Section id="legends" deferred>
           <SectionHeader eyebrow={t("sections.masterminds")} title={t("sections.managers")} />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <ul className={cn(ROW, "sm:grid-cols-2")}>
             {clubInfo.managers.map((mgr) => (
-              <li key={mgr.name} className="surface flex min-h-[4.5rem] items-center gap-4 p-3 sm:p-4">
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-full bg-[var(--surface-3)]">
-                  <ManagerAvatar name={mgr.name} image={"image" in mgr ? (mgr.image as string | undefined) : undefined} />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-bebas text-2xl leading-none text-white">{mgr.name}</h3>
-                  <p className="mt-1 font-barlow text-xs font-bold uppercase tracking-widest text-brand">{mgr.years}</p>
-                  <p className="mt-1 text-xs text-stadium-muted">{mgr.trophies}</p>
+              <li key={mgr.name} className={cn(ROW_ITEM, "w-64")}>
+                <div className="group surface flex h-full min-h-[4.5rem] items-center gap-4 p-3 sm:p-4">
+                  <div className="relative isolate size-14 shrink-0 overflow-hidden rounded-full bg-[var(--surface-3)]">
+                    {/* The local portrait of a manager who is also a legend beats a statue or a remote thumbnail. */}
+                    <ManagerAvatar name={mgr.name} image={legendPhotos.get(mgr.name) ?? ("image" in mgr ? (mgr.image as string | undefined) : undefined)} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bebas text-2xl leading-none text-white">{mgr.name}</h3>
+                    <p className="mt-1 font-barlow text-xs font-bold uppercase tracking-widest text-brand">{mgr.years}</p>
+                    <p className="mt-1 text-xs text-stadium-muted">{mgr.trophies}</p>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
 
           <SectionHeader className="mt-12" eyebrow={t("sections.immortals")} title={t("sections.legends")} />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className={cn(ROW, "sm:grid-cols-3 lg:grid-cols-4")}>
             {legends.map((legend) => (
-              <LegendCard key={legend.name} legend={legend} />
+              <li key={legend.name} className="w-[9.5rem] shrink-0 snap-start sm:w-auto">
+                <LegendCard legend={legend} />
+              </li>
             ))}
-          </div>
+          </ul>
         </Section>
 
         {/* ── Stadium ── */}
@@ -214,9 +231,9 @@ export default async function HistoryPage({ params }: LocaleParams) {
           </div>
 
           <SectionHeader className="mt-12" eyebrow={t("sections.layout")} title={t("sections.stands")} />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <ul className={cn(ROW, "sm:grid-cols-2")}>
             {clubInfo.stadium.stands.map((stand) => (
-              <li key={stand.name} className="surface p-4 sm:p-5">
+              <li key={stand.name} className={cn(ROW_ITEM, "surface p-4 sm:p-5")}>
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="font-bebas text-2xl text-white">{stand.name}</h3>
                   <p className="shrink-0 text-right">
@@ -233,9 +250,9 @@ export default async function HistoryPage({ params }: LocaleParams) {
           <StadiumShowcase label={t("sections.stadiumImages")} />
 
           <SectionHeader className="mt-12" eyebrow={t("sections.iconic")} title={t("sections.anfield")} />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <ul className={cn(ROW, "sm:grid-cols-2 lg:grid-cols-3")}>
             {clubInfo.stadium.landmarks.map((landmark) => (
-              <li key={landmark.name} className="surface border-b-2 border-b-lfc-red/60 p-4 sm:p-5">
+              <li key={landmark.name} className={cn(ROW_ITEM, "surface border-b-2 border-b-lfc-red/60 p-4 sm:p-5")}>
                 <h3 className="font-bebas text-xl text-white">{landmark.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-stadium-muted">{landmark.description}</p>
               </li>
@@ -243,9 +260,9 @@ export default async function HistoryPage({ params }: LocaleParams) {
           </ul>
 
           <SectionHeader className="mt-12" eyebrow={t("sections.culture")} title={t("sections.traditions")} />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          <ul className={cn(ROW, "sm:grid-cols-2")}>
             {clubInfo.traditions.map((tradition: { name: string; description: string; songUrl?: string }) => (
-              <li key={tradition.name} className="surface flex flex-col gap-3 p-4 sm:p-5">
+              <li key={tradition.name} className={cn(ROW_ITEM, "surface flex flex-col gap-3 p-4 sm:p-5")}>
                 <h3 className="font-bebas text-2xl text-white">{tradition.name}</h3>
                 <p className="border-l-2 border-lfc-red/40 pl-4 text-sm leading-relaxed text-stadium-muted">{tradition.description}</p>
                 {tradition.songUrl && (
@@ -268,14 +285,14 @@ export default async function HistoryPage({ params }: LocaleParams) {
         {/* ── Club profile ── */}
         <Section id="profile">
           <SectionHeader eyebrow={t("sections.profile")} title={t("sections.facts")} />
-          <dl className="grid grid-cols-1 gap-px border border-[var(--line)] bg-[var(--line)] sm:grid-cols-2 lg:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-px border border-[var(--line)] bg-[var(--line)] lg:grid-cols-4">
             {facts.map(([label, value]) => (
               <div key={label} className="bg-stadium-bg p-4">
                 <dt className="font-barlow text-xs font-bold uppercase tracking-[0.16em] text-stadium-muted">{label}</dt>
                 <dd className="mt-1.5 text-sm font-semibold text-white">{value}</dd>
               </div>
             ))}
-            <div className="bg-stadium-bg p-4">
+            <div className="col-span-2 bg-stadium-bg p-4 lg:col-span-1">
               <dt className="font-barlow text-xs font-bold uppercase tracking-[0.16em] text-stadium-muted">{t("facts.colours")}</dt>
               <dd className="mt-1.5 flex items-center gap-3 text-sm font-semibold text-white">
                 <span className="flex items-center gap-2">

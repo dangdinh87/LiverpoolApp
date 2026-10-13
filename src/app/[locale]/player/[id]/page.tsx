@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, ChevronDown, Trophy } from "lucide-react";
 import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
@@ -55,6 +55,9 @@ function summarize(text: string, max = 155): string {
   if (clean.length <= max) return clean;
   return `${clean.slice(0, clean.lastIndexOf(" ", max - 1))}…`;
 }
+
+/** Paragraphs of the biography shown before "Read more". */
+const BIO_LEAD = 2;
 
 /**
  * Split a bio into paragraphs. Bios with blank-line breaks keep them; a bio
@@ -151,8 +154,17 @@ export default async function PlayerPage({ params }: PageProps) {
     getPlayerFanRating(player.name).catch(() => null),
   ]);
 
+  // Whole rows only: 6 or 3 on the 3-column grid, 4 or 2 on the 2-column one, never an orphan card.
+  const newsCounts = {
+    base: Math.min(mentions.length, 3),
+    sm: mentions.length >= 4 ? 4 : mentions.length >= 2 ? 2 : mentions.length,
+    lg: mentions.length >= 6 ? 6 : mentions.length >= 3 ? 3 : mentions.length,
+  };
+
   const bio = getPlayerBio(player.slug, locale);
   const bioParagraphs = toParagraphs(bio).slice(0, 6);
+  const bioLead = bioParagraphs.slice(0, BIO_LEAD);
+  const bioRest = bioParagraphs.slice(BIO_LEAD);
 
   const facts: { label: string; value: string; highlight?: boolean }[] = [
     { label: t("info.nationality"), value: `${flag} ${nationality}` },
@@ -182,16 +194,9 @@ export default async function PlayerPage({ params }: PageProps) {
         }),
       ]} />
 
-      {/* ─── Hero: compact row on phones (photo left), split layout from md ─── */}
+      {/* ─── Hero: photo full width above the name on phones, split layout from sm ─── */}
       <header className="relative isolate overflow-hidden border-b border-[var(--line)]">
         <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-[var(--surface-2)] via-stadium-bg to-stadium-bg" />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -right-2 bottom-0 -z-10 select-none font-bebas leading-[0.8] text-white/[0.05]"
-          style={{ fontSize: "clamp(12rem, 38vw, 28rem)" }}
-        >
-          {player.shirtNumber}
-        </span>
         <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+1.5rem)]">
           <Link
             href="/squad"
@@ -201,20 +206,27 @@ export default async function PlayerPage({ params }: PageProps) {
             {t("backSquad")}
           </Link>
 
-          <div className="flex items-end gap-4 sm:gap-8 md:items-center">
-            {/* Photo box: fixed aspect, object-contain so square or missing body shots never crop badly */}
-            <div className="relative aspect-[4/5] w-32 shrink-0 sm:w-56 md:w-72 lg:w-80 md:order-2 md:ml-auto">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-8 md:items-center">
+            {/* Photo box: capped at ~58% of the screen height on phones; object-contain so square or missing body shots never crop badly */}
+            <div className="relative isolate h-[min(58vh,26rem)] w-full shrink-0 sm:aspect-[4/5] sm:h-auto sm:w-56 md:order-2 md:ml-auto md:w-72 lg:w-80">
+              {/* The shirt number sits behind the player, centred, so nothing clips it */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 bottom-[6%] select-none text-center font-bebas text-[min(62vw,15rem)] leading-[0.8] text-white/[0.07] sm:text-[min(30vw,11rem)] md:text-[14rem] lg:text-[16rem]"
+              >
+                {player.shirtNumber}
+              </span>
               <span aria-hidden className={cn("absolute inset-x-[12%] bottom-0 h-1/2 rounded-full opacity-25 blur-3xl", accent.bg)} />
               <PlayerPhoto
                 src={player.localBodyShot}
                 fallback={player.localPhoto}
                 alt={player.name}
-                sizes="(min-width:1024px) 320px, (min-width:768px) 288px, (min-width:640px) 224px, 128px"
+                sizes="(min-width:1024px) 320px, (min-width:768px) 288px, (min-width:640px) 224px, 390px"
                 priority
               />
             </div>
 
-            <div className="min-w-0 flex-1 pb-1 md:order-1 md:pb-0">
+            <div className="min-w-0 flex-1 md:order-1 md:pb-0 sm:pb-1">
               <div className="mb-3 flex flex-wrap items-center gap-2 font-barlow text-xs font-bold uppercase tracking-[0.12em]">
                 <span className={cn("px-2.5 py-1", accent.bg, accent.text)}>{t(`positions.${player.position}`)}</span>
                 {player.onLoan && <span className="bg-amber-500 px-2.5 py-1 text-black">{t("status.onLoan")}</span>}
@@ -271,8 +283,17 @@ export default async function PlayerPage({ params }: PageProps) {
           <section>
             <SectionHeader title={t("sections.news", { name: surname })} href="/news" linkLabel={t("sections.allNews")} />
             <div className="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {mentions.map((a) => (
-                <NewsCard key={a.link} article={a} nowMs={renderedAt} />
+              {mentions.map((a, i) => (
+                <div
+                  key={a.link}
+                  className={cn(
+                    i < newsCounts.base ? "block" : "hidden",
+                    i < newsCounts.sm ? "sm:block" : "sm:hidden",
+                    i < newsCounts.lg ? "lg:block" : "lg:hidden",
+                  )}
+                >
+                  <NewsCard article={a} nowMs={renderedAt} />
+                </div>
               ))}
             </div>
           </section>
@@ -283,11 +304,26 @@ export default async function PlayerPage({ params }: PageProps) {
           <section>
             <SectionHeader title={t("sections.biography")} />
             <div className="max-w-[65ch] space-y-4">
-              {bioParagraphs.map((paragraph, i) => (
+              {bioLead.map((paragraph, i) => (
                 <p key={i} className="text-base leading-[1.7] text-white/85 sm:text-[17px]">
                   {paragraph.trim()}
                 </p>
               ))}
+              {bioRest.length > 0 && (
+                // Native <details>: the rest of the biography stays in the HTML for search engines.
+                <details className="group space-y-4">
+                  <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-brand outline-none hover:text-white focus-visible:ring-2 focus-visible:ring-lfc-red [&::-webkit-details-marker]:hidden">
+                    <span className="group-open:hidden">{t("bio.more")}</span>
+                    <span className="hidden group-open:inline">{t("bio.less")}</span>
+                    <ChevronDown size={16} aria-hidden className="transition-transform group-open:rotate-180" />
+                  </summary>
+                  {bioRest.map((paragraph, i) => (
+                    <p key={i} className="text-base leading-[1.7] text-white/85 sm:text-[17px]">
+                      {paragraph.trim()}
+                    </p>
+                  ))}
+                </details>
+              )}
             </div>
           </section>
         )}

@@ -47,6 +47,9 @@ export function SquadGrid({ players }: SquadGridProps) {
     );
   }, [players, search]);
 
+  // The group being read; before the first scroll event, the first group.
+  const current = groups.some((g) => g.pos === active) ? active : (groups[0]?.pos ?? null);
+
   // Highlight the chip of the group being read.
   useEffect(() => {
     const targets = groups
@@ -69,10 +72,10 @@ export function SquadGrid({ players }: SquadGridProps) {
   // Keep the active chip visible in the strip (never scrolls the page).
   useEffect(() => {
     const strip = chipsRef.current;
-    const chip = active ? strip?.querySelector<HTMLElement>(`[data-pos="${active}"]`) : null;
+    const chip = current ? strip?.querySelector<HTMLElement>(`[data-pos="${current}"]`) : null;
     if (!strip || !chip) return;
     strip.scrollTo({ left: Math.max(0, chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2), behavior: "auto" });
-  }, [active]);
+  }, [current]);
 
   return (
     <div>
@@ -93,26 +96,25 @@ export function SquadGrid({ players }: SquadGridProps) {
       {groups.length > 1 && (
         <nav
           aria-label={t("positionsLabel")}
-          className="sticky top-[var(--header-h)] z-30 -mx-4 mt-4 border-b border-[var(--line)] bg-stadium-bg/90 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
+          className="sticky top-[var(--header-h)] z-30 -mx-4 mt-4 border-b border-[var(--line)] bg-stadium-bg/90 px-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8"
         >
-          <ul ref={chipsRef} className="scroll-x scroll-x-fade flex gap-1.5 sm:gap-2">
+          <ul ref={chipsRef} className="scroll-x scroll-x-fade flex gap-1 sm:gap-2">
             {groups.map(({ pos, items }) => {
-              const isActive = active === pos;
+              const isActive = current === pos;
               return (
                 <li key={pos} data-pos={pos} className="min-w-0 flex-1 sm:flex-none">
                   <a
                     href={`#pos-${pos}`}
                     aria-current={isActive ? "true" : undefined}
                     className={cn(
-                      "flex min-h-11 w-full items-center justify-center gap-1.5 border px-1.5 font-barlow text-[13px] font-semibold uppercase tracking-[0.06em] whitespace-nowrap sm:inline-flex sm:w-auto sm:px-4 sm:text-sm sm:tracking-[0.08em]",
+                      // Same tab look as the history page nav: a red underline marks the group being read.
+                      "flex min-h-12 w-full items-center justify-center gap-1.5 border-b-2 px-1.5 font-barlow text-[13px] font-semibold uppercase tracking-[0.06em] whitespace-nowrap sm:inline-flex sm:w-auto sm:px-4 sm:text-sm sm:tracking-[0.12em]",
                       "transition-colors duration-[var(--dur-base)] ease-[var(--ease-out)]",
-                      isActive
-                        ? "border-lfc-red bg-lfc-red text-white"
-                        : "border-[var(--line-strong)] bg-[var(--surface-1)] text-stadium-muted hover:border-white/40 hover:text-white",
+                      isActive ? "border-lfc-red text-white" : "border-transparent text-stadium-muted hover:text-white",
                     )}
                   >
                     {t(`groups.${pos}`)}
-                    <span className={cn("hidden text-xs tabular-nums sm:inline", isActive ? "text-white" : "text-stadium-muted")}>{items.length}</span>
+                    <span className="hidden text-xs tabular-nums text-stadium-muted sm:inline">{items.length}</span>
                   </a>
                 </li>
               );

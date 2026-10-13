@@ -25,18 +25,23 @@ export async function StandingsSummary({ context, nextFixtureId }: { context: St
   ];
 
   return (
-    <section aria-label={t("label")} className="mb-6 border border-[var(--line)] bg-[var(--surface-2)]">
-      {/* 1px gaps over the line colour draw the dividers in both the 2x2 and the 1x4 layout. */}
+    <section aria-label={t("label")} className="mb-5 border border-[var(--line)] bg-[var(--surface-2)] sm:mb-6">
+      {/* 1px gaps over the line colour draw the dividers in both the 2x2 and the 1x4 layout.
+          Each item is a term then its figure (valid <dl> order); the figure is drawn first:
+          beside the label on a phone, above it from `sm`. */}
       <dl className="grid grid-cols-2 gap-px bg-[var(--line)] sm:grid-cols-4">
         {items.map((item, i) => (
-          <div key={i} className="bg-[var(--surface-2)] p-4">
-            <dd className={`font-bebas text-4xl leading-none tabular-nums ${i === 0 ? "text-brand" : "text-white"}`}>{item.value}</dd>
-            <dt className="mt-1.5 text-[13px] leading-snug text-stadium-muted">{item.label}</dt>
+          <div
+            key={i}
+            className="flex flex-row-reverse items-center justify-end gap-3 bg-[var(--surface-2)] p-3 sm:flex-col-reverse sm:items-start sm:justify-start sm:gap-0 sm:p-4"
+          >
+            <dt className="text-[13px] leading-snug text-stadium-muted sm:mt-1.5">{item.label}</dt>
+            <dd className={`w-9 shrink-0 text-center font-bebas text-3xl leading-none tabular-nums sm:w-auto sm:text-left sm:text-4xl ${i === 0 ? "text-brand" : "text-white"}`}>{item.value}</dd>
           </div>
         ))}
       </dl>
       {opponent && (
-        <p className="border-t border-[var(--line)] px-4 py-3 text-sm text-white/85">
+        <p className="border-t border-[var(--line)] px-3 py-2.5 text-[13px] leading-snug text-white/85 sm:px-4 sm:py-3 sm:text-sm">
           {t.rich("next", {
             team: displayTeamName(opponent.name),
             rank: opponent.rank,

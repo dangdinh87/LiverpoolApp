@@ -179,7 +179,7 @@ export default async function DigestPage({
         buildBreadcrumbJsonLd([
           { name: tNews("breadcrumb.home"), url: getCanonical("/") },
           { name: tNews("title"), url: getCanonical("/news") },
-          { name: "Liverpool Daily", url: getCanonical(`/news/digest/${date}`) },
+          { name: cleanTitle(digest.title), url: getCanonical(`/news/digest/${date}`) },
         ]),
         buildNewsArticleJsonLd({
           title: displayTitle,

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChipBar } from "@/components/fixtures/chip-bar";
 import { StandingsTable } from "./standings-table";
 import type { Standing } from "@/lib/types/football";
+import { competitionName } from "@/lib/competition-labels";
 
 interface StandingsCompTabsProps {
   plStandings: Standing[];
@@ -15,6 +16,7 @@ interface StandingsCompTabsProps {
 
 export function StandingsCompTabs({ plStandings, uclStandings, nextOpponentId }: StandingsCompTabsProps) {
   const t = useTranslations("Standings");
+  const locale = useLocale();
   const [comp, setComp] = useState<"pl" | "ucl">("pl");
   const hasUcl = uclStandings.length > 0;
 
@@ -27,8 +29,8 @@ export function StandingsCompTabs({ plStandings, uclStandings, nextOpponentId }:
           active={comp}
           onSelect={(k) => setComp(k as "pl" | "ucl")}
           items={[
-            { key: "pl", label: t("comp.pl") },
-            { key: "ucl", label: t("comp.ucl") },
+            { key: "pl", label: competitionName("pl", locale) },
+            { key: "ucl", label: competitionName("ucl", locale) },
           ]}
         />
       )}

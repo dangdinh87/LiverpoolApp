@@ -5,10 +5,13 @@ import type { LocaleParams } from "@/i18n/routing";
 import { getNewsFromDB, getVideoItemsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
 import type { NewsArticle } from "@/lib/news/types";
-import { getLatestDigest } from "@/lib/news/digest";
+import { getCachedLatestDigest, getDigestHeadline } from "@/lib/news/latest-digest";
+import { clusterStories } from "@/lib/news/story-clusters";
 import { NewsFeed } from "@/components/news/news-feed";
 import { VideoStrip } from "@/components/news/video-strip";
 import { DigestCard } from "@/components/news/digest-card";
+import { NewStoriesCount } from "@/components/news/new-since";
+import { cleanTitle } from "@/components/news/news-text";
 import { PageHero } from "@/components/ui/page-hero";
 import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -36,12 +39,6 @@ const getCachedNewsList = unstable_cache(
   { revalidate: 300, tags: ["news"] },
 );
 
-const getCachedNewsDigest = unstable_cache(
-  async () => getLatestDigest(),
-  ["news-page-digest-v1"],
-  { revalidate: 1800, tags: ["news-digest"] },
-);
-
 // Videos are excluded from the feed queries on purpose (see NON_ARTICLE_SOURCES);
 // this is the only reader that wants them. An empty list is a fine thing to
 // cache here — the site runs without YOUTUBE_API_KEY and the strip hides itself.
@@ -67,14 +64,21 @@ export default async function NewsPage({ params }: LocaleParams) {
 
   const [allArticles, digest, videos] = await Promise.all([
     getCachedNewsList().catch((): NewsArticle[] => []),
+    // The same cached read as the homepage: both lead with the same day's briefing.
     // getLatestDigest throws on a DB error so the failure is not cached.
-    getCachedNewsDigest().catch(() => null),
+    getCachedLatestDigest().catch(() => null),
     getCachedVideoItems().catch((): NewsArticle[] => []),
   ]);
   const nowMs = new Date().getTime();
 
   const localArticles = allArticles.filter((a) => a.language === "vi");
   const globalArticles = allArticles.filter((a) => a.language === "en");
+  // When each story of the default view came out, so "N new stories" can count
+  // them against the reader's previous visit in the browser (NewsFeed clusters
+  // the same articles the same way, so the count matches the divider).
+  const storyTimes = clusterStories(userLang === "vi" ? localArticles : globalArticles).map((s) =>
+    new Date(s.lead.pubDate).getTime(),
+  );
 
   return (
     <div className="min-h-screen">
@@ -83,22 +87,15 @@ export default async function NewsPage({ params }: LocaleParams) {
         { name: t("title"), url: getCanonical("/news") },
       ])} />
 
-      <PageHero
-        eyebrow={t("tagline")}
-        title={t("title")}
-        description={t("heroDesc")}
-        image="/assets/lfc/fans/fans-anfield.webp"
-      />
+      <PageHero compact title={t("title")} description={t("heroDesc")} actions={<NewStoriesCount storyTimes={storyTimes} />} />
 
       {digest && (
-        <div className="page-container pb-4 pt-4 sm:pb-6 sm:pt-6">
+        <div className="page-container py-3 sm:py-4">
           <DigestCard
             as="h2"
             date={digest.digest_date}
-            title={digest.title}
-            summary={digest.summary}
+            title={cleanTitle(getDigestHeadline(digest))}
             articleCount={digest.article_count}
-            generatedAt={digest.generated_at}
           />
         </div>
       )}

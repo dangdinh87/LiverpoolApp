@@ -15,7 +15,7 @@ import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
 import { BrandLogo } from "./brand-mark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { MATCH_PATHS, SQUAD_PATHS, isActiveAny, isActivePath } from "./nav-items";
+import { MATCH_PATHS, SQUAD_PATHS, TABS, isActiveAny, isActivePath } from "./nav-items";
 import { useMenuStore } from "./menu-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -200,15 +200,17 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   ];
   const clubActive = isActivePath(pathname, "/history") || isActivePath(pathname, "/gallery");
 
-  // Menu sheet. Below md the bottom tab bar already holds the main sections, so
-  // the sheet lists only the secondary pages there; from md (tablets, which have
-  // no bar) the main links come first.
+  // Menu sheet. Below md the bottom tab bar already holds some main sections, so
+  // the sheet skips exactly those there (Analysis has no tab and stays); from md
+  // (tablets, which have no bar) every main link is listed.
   const sheetLinks = [
-    ...mainLinks.map(({ href, label, paths }) => ({ href, label, paths, primary: true })),
-    { href: "/history", label: t("history"), paths: ["/history"], primary: false },
-    { href: "/gallery", label: t("clubGallery"), paths: ["/gallery"], primary: false },
-    { href: "/about", label: t("about"), paths: ["/about"], primary: false },
-    { href: "/legal", label: t("legal"), paths: ["/legal"], primary: false },
+    ...mainLinks.map(({ href, label, paths }) => ({
+      href, label, paths, inTabBar: TABS.some((tab) => tab.href === href),
+    })),
+    { href: "/history", label: t("history"), paths: ["/history"], inTabBar: false },
+    { href: "/gallery", label: t("clubGallery"), paths: ["/gallery"], inTabBar: false },
+    { href: "/about", label: t("about"), paths: ["/about"], inTabBar: false },
+    { href: "/legal", label: t("legal"), paths: ["/legal"], inTabBar: false },
   ];
 
   const avatar = (size: number) =>
@@ -465,10 +467,10 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                 </div>
 
                 <ul className="px-4 py-2">
-                  {sheetLinks.map(({ href, label, paths, primary }) => {
+                  {sheetLinks.map(({ href, label, paths, inTabBar }) => {
                     const active = isActiveAny(pathname, paths);
                     return (
-                      <li key={href} className={cn("border-b border-[var(--line)]", primary && "max-md:hidden")}>
+                      <li key={href} className={cn("border-b border-[var(--line)]", inTabBar && "max-md:hidden")}>
                         <SheetClose asChild>
                           <Link
                             href={href}

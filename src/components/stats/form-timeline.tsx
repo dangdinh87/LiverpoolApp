@@ -1,20 +1,22 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { RESULT_BADGE, RESULT_SWATCH } from "@/lib/result-style";
+import { FormSquare } from "@/components/ui/form-badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { FormEntry } from "@/lib/football/season-stats";
 
 interface Props {
   entries: FormEntry[];
   legendLabels?: { win: string; draw: string; loss: string };
-  /** Single-letter markers in the viewer's language (T/H/B in Vietnamese). */
-  letters?: Record<"W" | "D" | "L", string>;
 }
 
-const RESULT_COLORS: Record<string, string> = RESULT_BADGE;
+const WORD = { W: "win", D: "draw", L: "loss" } as const;
 
-export function FormTimeline({ entries, legendLabels, letters }: Props) {
+/**
+ * Every recent result as a lettered square (the same marker as the standings
+ * form and the overview strip), oldest to newest, each with the score and
+ * opponent on hover or focus.
+ */
+export function FormTimeline({ entries, legendLabels }: Props) {
   if (entries.length === 0) return null;
 
   return (
@@ -24,13 +26,11 @@ export function FormTimeline({ entries, legendLabels, letters }: Props) {
           <Tooltip key={`${entry.date}-${i}`}>
             <TooltipTrigger asChild>
               <button
-                className={cn(
-                  "size-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-[filter] duration-[var(--dur-base)] hover:brightness-110",
-                  RESULT_COLORS[entry.result] ?? "bg-gray-500 text-white"
-                )}
-                aria-label={`${legendLabels?.[({ W: "win", D: "draw", L: "loss" } as const)[entry.result]] ?? entry.result}: ${entry.score} vs ${entry.opponent}`}
+                type="button"
+                className="shrink-0 transition-[filter] duration-(--dur-base) hover:brightness-110"
+                aria-label={`${legendLabels?.[WORD[entry.result]] ?? entry.result}: ${entry.score} vs ${entry.opponent}`}
               >
-                {letters?.[entry.result] ?? entry.result}
+                <FormSquare result={entry.result} size="md" />
               </button>
             </TooltipTrigger>
             <TooltipContent className="bg-stadium-surface border-stadium-border">
@@ -44,11 +44,14 @@ export function FormTimeline({ entries, legendLabels, letters }: Props) {
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-3 mt-3 text-xs text-stadium-muted">
-        <span className="flex items-center gap-1"><span className={cn("size-2.5 rounded-full", RESULT_SWATCH.W)} />{legendLabels?.win ?? "Win"}</span>
-        <span className="flex items-center gap-1"><span className={cn("size-2.5 rounded-full", RESULT_SWATCH.D)} />{legendLabels?.draw ?? "Draw"}</span>
-        <span className="flex items-center gap-1"><span className={cn("size-2.5 rounded-full", RESULT_SWATCH.L)} />{legendLabels?.loss ?? "Loss"}</span>
+      {/* Legend: the letter and the word, so the colour is never the only cue */}
+      <div className="mt-3 flex gap-4 text-xs text-stadium-muted">
+        {(["W", "D", "L"] as const).map((r) => (
+          <span key={r} className="flex items-center gap-1.5">
+            <FormSquare result={r} />
+            {legendLabels?.[WORD[r]] ?? r}
+          </span>
+        ))}
       </div>
     </TooltipProvider>
   );

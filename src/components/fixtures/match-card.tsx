@@ -12,25 +12,13 @@ import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { MatchCountdown } from "./match-countdown";
 import { useLiveMatch } from "./use-live-match";
 import { LiveClock, LiveEdgeTrack, LiveEventColumns, LiveScore, LiveStats, LiveStatusBadge, LiveTicker } from "./live-match-panel";
+import { CompetitionTag } from "./competition-tag";
 import { roundLabel } from "./round-label";
 import { displayTeamName } from "./team-name";
 
 export const LFC_TEAM_ID = 40;
 const FINISHED = ["FT", "AET", "PEN"];
 const LIVE = ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"];
-
-/** Short competition tag + accent (dot colour only; text stays AA-contrast). */
-const COMP_TAG: Record<string, { short: string; dot: string }> = {
-  "Premier League": { short: "PL", dot: "bg-purple-400" },
-  "UEFA Champions League": { short: "UCL", dot: "bg-sky-400" },
-  "Champions League": { short: "UCL", dot: "bg-sky-400" },
-  "FA Cup": { short: "FA Cup", dot: "bg-amber-400" },
-  "EFL Cup": { short: "EFL Cup", dot: "bg-emerald-400" },
-  "Carabao Cup": { short: "EFL Cup", dot: "bg-emerald-400" },
-  "League Cup": { short: "EFL Cup", dot: "bg-emerald-400" },
-  "Community Shield": { short: "Shield", dot: "bg-rose-400" },
-  "FA Community Shield": { short: "Shield", dot: "bg-rose-400" },
-};
 
 const RESULT_STYLE = {
   W: { strip: "bg-green-500", badge: "border-green-500/40 bg-green-500/10 text-green-400" },
@@ -92,7 +80,6 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
   const lfcSide = teams.home.id === LFC_TEAM_ID ? "home" : teams.away.id === LFC_TEAM_ID ? "away" : null;
   const result = getMatchResult(fixture);
   const resultStyle = result === "NS" ? null : RESULT_STYLE[result];
-  const comp = COMP_TAG[league.name];
 
   const date = new Date(f.date);
   const locale = t("locale_code") === "vi-VN" ? "vi" : "en";
@@ -132,11 +119,7 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
         {/* Meta row: competition · round on the left, state badge on the right */}
         <div className="mb-3 flex min-h-6 items-center justify-between gap-3 lg:contents">
           <p className="flex min-w-0 items-center gap-2 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted lg:col-start-1 lg:row-start-1 lg:self-end">
-            {comp && <span aria-hidden className={cn("size-1.5 shrink-0 rounded-full", comp.dot)} />}
-            <span className="truncate">
-              <span className="text-white/90">{comp?.short ?? league.name}</span>
-              {round && <span> · {round}</span>}
-            </span>
+            <CompetitionTag name={league.name} round={round} />
           </p>
 
           <div
@@ -206,10 +189,8 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
                 </p>
               </>
             ) : (
-              <>
-                <p className="font-bebas text-3xl leading-none tracking-wide text-white tabular-nums sm:text-4xl">{timeStr}</p>
-                <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">{zoneLabel}</p>
-              </>
+              // The zone is stated once above the list (and in the aria-label), not under every kick-off.
+              <p className="font-bebas text-3xl leading-none tracking-wide text-white tabular-nums sm:text-4xl">{timeStr}</p>
             )}
           </div>
 

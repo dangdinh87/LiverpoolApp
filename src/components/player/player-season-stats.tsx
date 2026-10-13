@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 import { SectionHeader } from "@/components/ui/section-header";
-import { EmptyState } from "@/components/ui/empty-state";
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -45,14 +44,14 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
   // No stats available or insufficient game time
   if (statistics.length === 0 || !fplStats || fplStats.minutes < 90) {
     return (
-      <section>
-        <SectionHeader title={t("seasonStats", { season: getCurrentSeasonLabel() })} />
-        <EmptyState
-          className="py-8 sm:py-10"
-          icon={<BarChart3 className="size-8" aria-hidden />}
-          title={t("noStatsTitle")}
-          description={t("noStatsDescription")}
-        />
+      <section aria-label={t("seasonStats", { season: getCurrentSeasonLabel() })}>
+        {/* A backup keeper has nothing to show yet: one muted line, not a card. */}
+        <p className="flex items-start gap-2.5 text-sm leading-relaxed text-stadium-muted">
+          <BarChart3 size={16} aria-hidden className="mt-0.5 shrink-0" />
+          <span>
+            <span className="font-semibold text-white/80">{t("noStatsTitle")}.</span> {t("noStatsDescription")}
+          </span>
+        </p>
       </section>
     );
   }

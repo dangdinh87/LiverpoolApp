@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { QrCode } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -13,8 +14,9 @@ export function MomoModal() {
       <DialogTrigger asChild>
         <button
           type="button"
-          className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#ae2070] px-6 font-barlow text-sm font-bold uppercase tracking-[0.12em] text-white transition-opacity hover:opacity-90"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[var(--line-strong)] px-5 font-barlow text-sm font-bold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/40"
         >
+          <QrCode size={16} aria-hidden />
           MoMo
         </button>
       </DialogTrigger>

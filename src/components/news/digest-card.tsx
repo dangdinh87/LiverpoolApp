@@ -1,69 +1,61 @@
 import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
-import { keepDatesTogether, leadSentences } from "@/components/news/news-text";
+import { keepDatesTogether } from "@/components/news/news-text";
 import { formatMatchDayMonth } from "@/lib/format-match-date";
-import { LocalTimeOfDay } from "@/components/ui/local-time";
 import { BRAND } from "@/lib/brand";
 
 interface DigestProps {
   date: string;
   title: string;
-  summary: string;
   articleCount: number;
-  generatedAt?: string;
   /** Heading level; the news page uses h2, sections that already have an h2 use h3. */
   as?: "h2" | "h3";
 }
 
 /**
- * Featured card for the daily digest (the site's own piece, so it leads the news
- * list). Server-rendered: no client state, and every time uses the fixed Vietnam
- * zone, so it cannot disagree with its own hydration.
+ * The daily digest as a banner above the feed: who wrote it and which day, its
+ * headline, and the button to read it, in one row (~85px). It used to be a
+ * 260px card with an excerpt that pushed the first headline off the first screen.
+ * The title is the one the digest page opens with (see getDigestHeadline).
+ *
+ * Server-rendered: no client state, and the date uses the fixed Vietnam zone,
+ * so it cannot disagree with its own hydration.
  */
-export function DigestCard({ date, title, summary, articleCount, generatedAt, as: Heading = "h3" }: DigestProps) {
+export function DigestCard({ date, title, articleCount, as: Heading = "h3" }: DigestProps) {
   const t = useTranslations("News.digest");
   const locale = useLocale() === "vi" ? "vi" : "en";
   const dateText = formatMatchDayMonth(new Date(`${date}T00:00:00+07:00`), locale);
-  const lead = leadSentences(summary, 260);
-  // The time is a node, not a string: it renders in the viewer's own zone.
-  // Printing it server-side meant labelling it from the interface language —
-  // "Posted at 18:18 UK time" to an English reader anywhere on earth.
-  const meta: React.ReactNode[] = [
-    articleCount > 0 ? t("articleCount", { count: articleCount }) : null,
-    generatedAt
-      ? t.rich("generatedAt", { t: () => <LocalTimeOfDay iso={generatedAt} locale={locale} /> })
-      : null,
-  ].filter(Boolean);
+  const href = `/news/digest/${date}`;
 
   return (
-    <section className="surface relative border-l-4 border-l-lfc-red p-4 sm:p-6">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} compact />
-        <span className="text-[13px] text-stadium-muted">{dateText}</span>
-      </div>
-      <Heading className="mt-3 text-balance font-bebas text-[30px] leading-[1.05] text-white sm:text-4xl">{keepDatesTogether(title)}</Heading>
-      {lead && <p className="mt-2 max-w-2xl text-base leading-[1.55] text-white/80 line-clamp-2 sm:line-clamp-3">{lead}</p>}
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-        <Link
-          href={`/news/digest/${date}`}
-          className="inline-flex min-h-12 items-center justify-center gap-2 bg-lfc-red px-6 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark sm:min-h-11"
-        >
-          {t("readFull")}
-          <ArrowRight className="size-4" aria-hidden />
-        </Link>
-        {meta.length > 0 && (
-          <span className="hidden text-[13px] text-stadium-muted sm:inline">
-            {meta.map((part, i) => (
-              <span key={i}>
-                {i > 0 && " · "}
-                {part}
-              </span>
-            ))}
+    <section className="surface flex items-center gap-3 border-l-4 border-l-lfc-red py-3 pl-4 pr-3 sm:gap-6 sm:py-3.5 sm:pl-5 sm:pr-4">
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+          <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} compact />
+          <span className="text-xs text-stadium-muted">
+            {dateText}
+            {articleCount > 0 && <span className="max-sm:hidden"> · {t("articleCount", { count: articleCount })}</span>}
           </span>
-        )}
+        </p>
+        <Heading className="mt-1 line-clamp-2 text-balance font-bebas text-[22px] leading-[1.08] text-white sm:text-[26px]">
+          <Link href={href} className="hover:text-white/90">
+            {keepDatesTogether(title)}
+          </Link>
+        </Heading>
       </div>
+      <Button
+        asChild
+        size="lg"
+        className="min-h-11 shrink-0 font-barlow text-sm font-semibold uppercase tracking-[0.1em] max-sm:size-11 max-sm:px-0"
+      >
+        <Link href={href}>
+          <span className="max-sm:sr-only">{t("readFull")}</span>
+          <ArrowRight aria-hidden />
+        </Link>
+      </Button>
     </section>
   );
 }

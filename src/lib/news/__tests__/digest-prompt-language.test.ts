@@ -57,6 +57,13 @@ describe("digest prompt", () => {
     expect(withoutComments(SOURCE)).not.toContain("LFCVN");
   });
 
+  it("titles the briefing with the site's own name", () => {
+    // The template said "Liverpool Daily", a name the site never had; readers saw it on 90 pages.
+    const prompt = digestPrompt();
+    expect(prompt).not.toContain("Liverpool Daily");
+    expect(prompt).toContain('"title": "${BRAND.name} —');
+  });
+
   it("takes the site URL from configuration, not a literal", () => {
     // Both the prompt and the stored record had the previous domain baked in.
     expect(SOURCE).not.toContain("liverpoolfcvn.blog");

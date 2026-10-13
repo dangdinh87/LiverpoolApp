@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Loader2, Newspaper, Search, SearchX, SlidersHorizontal, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
 import { SOURCE_CONFIG, type ArticleCategory, type NewsSource } from "@/lib/news-config";
 import { useUrlSearchParam } from "@/hooks/use-url-search-param";
 import { getReadArticles } from "@/lib/news/read-history";
+import { useNewsBaseline, watchNewsVisit } from "@/lib/news/last-visit";
 import { loadMoreNews } from "@/app/actions/news";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Sheet, SheetClose, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
 import { NewsCardSkeleton } from "./news-card";
+import { NewSinceDivider } from "./new-since";
 import { StoryCard } from "./story-card";
 import { clusterStories } from "@/lib/news/story-clusters";
 import { cleanTitle } from "./news-text";
@@ -38,6 +40,9 @@ const CATEGORIES: { value: CategoryFilter; labelKey: string }[] = [
   { value: "analysis", labelKey: "catAnalysis" },
   { value: "opinion", labelKey: "catOpinion" },
 ];
+
+/** A story is new when its newest article came out after the previous visit. */
+const isNewSince = (story: { lead: NewsArticle }, since: number) => new Date(story.lead.pubDate).getTime() > since;
 
 const categoryChip = (active: boolean) =>
   `inline-flex min-h-11 cursor-pointer items-center border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors ${
@@ -76,6 +81,10 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
   const [loadFailed, setLoadFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement>(null);
+  // Time of the previous visit (null until mounted, and on a first visit).
+  const lastVisit = useNewsBaseline();
+
+  useEffect(() => watchNewsVisit(), []);
 
   useEffect(() => {
     // Read history lives in localStorage, so it can only be read after mount.
@@ -408,16 +417,24 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="sm:grid sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+            {/* Headlines first: rows of text with a small picture, two columns from lg. Only the top story gets a big picture. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
               {shown.map((story, i) => (
-                <StoryCard
-                  key={story.lead.link}
-                  lead={story.lead}
-                  related={story.related}
-                  nowMs={nowMs}
-                  priority={i < 3}
-                  isRead={readSet.has(story.lead.link)}
-                />
+                <Fragment key={story.lead.link}>
+                  {lastVisit !== null && i > 0 && isNewSince(shown[i - 1], lastVisit) && !isNewSince(story, lastVisit) && (
+                    <NewSinceDivider baseline={lastVisit} locale={locale} />
+                  )}
+                  <div className={i === 0 ? "min-w-0 lg:col-span-2" : "min-w-0"}>
+                    <StoryCard
+                      lead={story.lead}
+                      related={story.related}
+                      nowMs={nowMs}
+                      priority={i < 3}
+                      isRead={readSet.has(story.lead.link)}
+                      variant={i === 0 ? "lead" : "row"}
+                    />
+                  </div>
+                </Fragment>
               ))}
               {pending && Array.from({ length: 6 }, (_, i) => <NewsCardSkeleton key={`sk-${i}`} />)}
             </div>

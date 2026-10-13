@@ -1,9 +1,11 @@
 import { ArrowRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { CategoryTag } from "@/components/news/category-tag";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { cleanTitle, keepDatesTogether, leadSentences } from "@/components/news/news-text";
 import { getSeoArticleFromDigest, getVisibleDigestSections, type DigestRecord } from "@/lib/news/digest";
+import { getDigestHeadline } from "@/lib/news/latest-digest";
 import { CATEGORY_CONFIG } from "@/lib/news-config";
 import { formatMatchDayMonth } from "@/lib/format-match-date";
 import { BRAND } from "@/lib/brand";
@@ -22,7 +24,7 @@ export async function DigestFeature({ digest, locale }: { digest: DigestRecord; 
   // come from the model, which only ever produced one language.
   const tCat = await getTranslations("News.categories");
   const seo = getSeoArticleFromDigest(digest);
-  const title = cleanTitle(seo?.title || digest.title);
+  const title = cleanTitle(getDigestHeadline(digest));
   const intro = leadSentences(seo?.excerpt || digest.summary, 200);
   const stories = getVisibleDigestSections(digest.sections).slice(0, STORIES_SHOWN);
   const href = `/news/digest/${digest.digest_date}`;
@@ -64,8 +66,8 @@ export async function DigestFeature({ digest, locale }: { digest: DigestRecord; 
                       <span className="w-5 shrink-0 font-bebas text-3xl leading-none text-lfc-gold tabular-nums">{i + 1}</span>
                       <span className="min-w-0">
                         {cat && (
-                          <span className={`mb-1.5 inline-block px-1.5 py-0.5 font-barlow text-[11px] font-bold uppercase tracking-wider ${cat.color}`}>
-                            {tCat(story.category)}
+                          <span className="mb-1.5 flex">
+                            <CategoryTag label={tCat(story.category)} className={cat.color} />
                           </span>
                         )}
                         <span className="block text-[15px] font-semibold leading-snug text-white decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline">

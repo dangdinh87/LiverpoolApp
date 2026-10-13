@@ -1,8 +1,8 @@
-import { Fragment } from "react";
+import { Fragment, type SVGProps } from "react";
 // Locale-aware Link: plain next/link emitted unprefixed hrefs, which sent
 // English readers through a 307 on every footer link.
 import { Link } from "@/i18n/navigation";
-import { Facebook, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import { Facebook, Instagram, Youtube } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { BRAND, brandTagline } from "@/lib/brand";
 import { SOURCE_CONFIG } from "@/lib/news-config";
@@ -15,9 +15,8 @@ import { BrandLogo } from "./brand-mark";
 const SOCIAL_LINKS = [
   { Icon: Facebook, href: "https://facebook.com/LiverpoolFC", label: "Facebook" },
   { Icon: Instagram, href: "https://instagram.com/liverpoolfc", label: "Instagram" },
-  { Icon: Twitter, href: "https://twitter.com/lfc", label: "X" },
+  { Icon: XIcon, href: "https://x.com/lfc", label: "X" },
   { Icon: Youtube, href: "https://youtube.com/liverpoolfc", label: "YouTube" },
-  { Icon: Linkedin, href: "https://linkedin.com/company/liverpool-football-club", label: "LinkedIn" },
 ] as const;
 
 /** Outlets the news feed reads from. Names come from the shared source table. */
@@ -41,7 +40,15 @@ function sourceIdsFor(locale: string): NewsSource[] {
     : [...EN_SOURCE_IDS, ...VI_SOURCE_IDS];
 }
 
-/* ── TikTok icon (not in lucide-react) ───────────────────────────── */
+/* ── Brand icons lucide-react does not ship: X and TikTok ────────── */
+
+function XIcon({ size = 18, ...props }: SVGProps<SVGSVGElement> & { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
 
 function TikTokIcon({ size = 18 }: { size?: number }) {
   return (

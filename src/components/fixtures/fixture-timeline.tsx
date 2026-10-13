@@ -3,47 +3,42 @@
 import { useMemo, useState } from "react";
 import { useUrlSearchParam } from "@/hooks/use-url-search-param";
 import { Link } from "@/i18n/navigation";
-import { CalendarX } from "lucide-react";
+import { CalendarX, Clock } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { MatchCard } from "./match-card";
+import { CompactMatchRow } from "./compact-match-row";
 import { ChipBar } from "./chip-bar";
 import { MatchCentreNav } from "./match-centre-nav";
 import { AddToCalendar } from "./add-to-calendar";
 import { SpoilerToggle } from "./spoiler-controls";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Fixture } from "@/lib/types/football";
 import { defaultTimeZoneForLocale, formatMonthYear, formatZoneOffset } from "@/lib/format-match-date";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
-
-// Normalize competition names (FDO/ESPN may use different names for the same comp).
-const COMP_ALIASES: Record<string, string> = {
-  "Premier League": "Premier League",
-  "UEFA Champions League": "UEFA Champions League",
-  "Champions League": "UEFA Champions League",
-  "FA Cup": "FA Cup",
-  "EFL Cup": "Carabao Cup",
-  "Carabao Cup": "Carabao Cup",
-  "League Cup": "Carabao Cup",
-  "Community Shield": "Community Shield",
-  "FA Community Shield": "Community Shield",
-};
-
-const COMP_ORDER = ["Premier League", "UEFA Champions League", "FA Cup", "Carabao Cup", "Community Shield"];
-
-const COMP_SHORT: Record<string, string> = {
-  "Premier League": "Premier League",
-  "UEFA Champions League": "Champions League",
-  "FA Cup": "FA Cup",
-  "Carabao Cup": "Carabao Cup",
-  "Community Shield": "Community Shield",
-};
+import { COMPETITION_ORDER, competitionKey, competitionName } from "@/lib/competition-labels";
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
-const normalizeComp = (name: string) => COMP_ALIASES[name] ?? name;
 const time = (f: Fixture) => new Date(f.fixture.date).getTime();
 
+/** Next match + the following four stay full cards; later ones fold into months as compact rows. */
+const FULL_CARDS = 5;
+
 type View = "upcoming" | "results";
+
+/** Group a list by calendar month in the viewer's zone, keeping list order. */
+function groupByMonth(items: Fixture[], locale: string, timeZone: string) {
+  const out: { key: string; label: string; items: Fixture[] }[] = [];
+  for (const f of items) {
+    const label = formatMonthYear(new Date(f.fixture.date), locale, timeZone);
+    const last = out[out.length - 1];
+    if (last && last.label === label) last.items.push(f);
+    else out.push({ key: label, label, items: [f] });
+  }
+  return out;
+}
 
 interface FixtureTimelineProps {
   fixtures: Fixture[];
@@ -79,8 +74,8 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   };
 
   const availableComps = useMemo(() => {
-    const set = new Set(fixtures.map((f) => normalizeComp(f.league.name)));
-    return COMP_ORDER.filter((c) => set.has(c));
+    const set = new Set(fixtures.map((f) => competitionKey(f.league.name)));
+    return COMPETITION_ORDER.filter((c) => set.has(c));
   }, [fixtures]);
 
   // The next unplayed match overall (not just within the filter) gets the countdown.
@@ -92,7 +87,7 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   }, [fixtures]);
 
   const { upcoming, results } = useMemo(() => {
-    const scoped = comp === "All" ? fixtures : fixtures.filter((f) => normalizeComp(f.league.name) === comp);
+    const scoped = comp === "All" ? fixtures : fixtures.filter((f) => competitionKey(f.league.name) === comp);
     const sorted = [...scoped].sort((a, b) => time(a) - time(b));
     return {
       upcoming: sorted.filter((f) => !FINISHED.has(f.fixture.status.short)),
@@ -100,30 +95,28 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
     };
   }, [fixtures, comp]);
 
-  const list = view === "upcoming" ? upcoming : results;
+  const viewerZone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
+  const zoneOffset = formatZoneOffset(new Date(fixtures[0]?.fixture.date ?? 0), viewerZone);
 
-  // Group by calendar month (Vietnam time), keeping list order.
-  const groups = useMemo(() => {
-    const out: { key: string; label: string; items: Fixture[] }[] = [];
-    for (const f of list) {
-      const label = formatMonthYear(new Date(f.fixture.date), locale);
-      const last = out[out.length - 1];
-      if (last && last.label === label) last.items.push(f);
-      else out.push({ key: label, label, items: [f] });
-    }
-    return out;
-  }, [list, locale]);
+  // Upcoming is ~40 matches: a few full cards, the rest as compact rows folded by month.
+  const { groups, laterGroups, laterCount } = useMemo(() => {
+    const list = view === "upcoming" ? upcoming : results;
+    const featured = view === "upcoming" ? list.slice(0, FULL_CARDS) : list;
+    const later = view === "upcoming" ? list.slice(FULL_CARDS) : [];
+    return {
+      groups: groupByMonth(featured, locale, viewerZone),
+      laterGroups: groupByMonth(later, locale, viewerZone),
+      laterCount: later.length,
+    };
+  }, [view, upcoming, results, locale, viewerZone]);
 
   const compItems = [
     { key: "All", label: t("filter.all") },
-    ...availableComps.map((c) => ({ key: c, label: COMP_SHORT[c] ?? c })),
+    ...availableComps.map((c) => ({ key: c, label: competitionName(c, locale) })),
   ];
-  const viewerZone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
-  const zoneOffset = formatZoneOffset(new Date(fixtures[0]?.fixture.date ?? 0), viewerZone);
-  // The hint is country-independent now — it points at the match pages, which
+  // The watch hint is country-independent: it points at the match pages, which
   // resolve the broadcaster for wherever the reader is.
-  const showWatchHint =
-    view === "upcoming" && upcoming.some((f) => f.league.name === "Premier League");
+  const showWatchHint = view === "upcoming" && upcoming.some((f) => competitionKey(f.league.name) === "pl");
 
   return (
     <div>
@@ -140,11 +133,23 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
         </div>
       )}
 
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <p className="text-[13px] leading-snug text-stadium-muted">
-          {t("gmtHint", { zone: zoneOffset })}
-          {showWatchHint && <> {t("plWatch")}</>}
-        </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        {/* The zone is said once here, not under every kick-off. */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-1)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
+            >
+              <Clock size={14} aria-hidden />
+              {t("zoneChip", { zone: zoneOffset })}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-72 text-[13px] leading-snug text-stadium-muted">
+            <p>{t("gmtHint", { zone: zoneOffset })}</p>
+            {showWatchHint && <p className="mt-2">{t("plWatch")}</p>}
+          </PopoverContent>
+        </Popover>
         <div className="flex shrink-0 flex-wrap gap-2">
           <SpoilerToggle />
           {!season && <AddToCalendar />}
@@ -174,6 +179,36 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
               </ul>
             </section>
           ))}
+
+          {laterGroups.length > 0 && (
+            <section aria-label={t("later")}>
+              <h2 className="mb-1 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white">
+                {t("later")}
+                <span className="ml-2 text-stadium-muted">{laterCount}</span>
+              </h2>
+              <Accordion type="multiple" className="border-t border-[var(--line)]">
+                {laterGroups.map((group) => (
+                  <AccordionItem key={group.key} value={group.key} className="border-[var(--line)]">
+                    <AccordionTrigger className="min-h-12 items-center rounded-none py-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white hover:no-underline [&>svg]:translate-y-0">
+                      <span className="flex flex-1 items-baseline justify-between gap-3">
+                        {group.label}
+                        <span className="text-xs font-medium tracking-[0.1em] text-stadium-muted">{t("matchCount", { count: group.items.length })}</span>
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3">
+                      <ul className="space-y-2">
+                        {group.items.map((fixture) => (
+                          <li key={fixture.fixture.id}>
+                            <CompactMatchRow fixture={fixture} />
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </section>
+          )}
         </div>
       )}
 

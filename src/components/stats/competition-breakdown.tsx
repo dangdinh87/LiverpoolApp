@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { CompetitionStats } from "@/lib/football/season-stats";
 import { Trophy } from "lucide-react";
+import { useLocale } from "next-intl";
+import { competitionLabel } from "@/lib/competition-labels";
 
 // Competition logos already exist locally
 const COMP_LOGOS: Record<string, string> = {
@@ -8,12 +10,6 @@ const COMP_LOGOS: Record<string, string> = {
   "UEFA Champions League": "/assets/lfc/champions-league.png",
   "FA Cup": "/assets/lfc/fa-cup.png",
   "Carabao Cup": "/assets/lfc/carabao-cup.png",
-};
-
-/** Card titles: the provider's formal names do not fit a half-width card on a phone. */
-const COMP_SHORT: Record<string, string> = {
-  "UEFA Champions League": "Champions League",
-  "Carabao Cup": "Carabao Cup",
 };
 
 interface Props {
@@ -25,6 +21,7 @@ interface Props {
 
 
 export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
+  const locale = useLocale();
   if (competitions.length === 0) return null;
 
   return (
@@ -48,7 +45,7 @@ export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
               ) : (
                 <Trophy size={16} className="text-stadium-muted" aria-hidden />
               )}
-              <span className="font-inter text-xs sm:text-sm font-semibold text-white truncate">{COMP_SHORT[comp.name] ?? comp.name}</span>
+              <span className="font-inter text-xs sm:text-sm font-semibold text-white truncate">{competitionLabel(comp.name, locale)}</span>
             </div>
 
             {/* W/D/L */}

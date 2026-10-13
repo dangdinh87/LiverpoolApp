@@ -13,19 +13,9 @@ const box = (h: string) =>
     return <Skeleton className={`w-full ${h}`} />;
   };
 
-export const LazyStatChart = dynamic(() => import("./stat-chart").then((m) => m.StatChart), {
-  ssr: false,
-  loading: box("h-[280px]"),
-});
-
 export const LazyGoalsByMonthChart = dynamic(() => import("./goals-by-month-chart").then((m) => m.GoalsByMonthChart), {
   ssr: false,
-  loading: box("h-[250px]"),
-});
-
-export const LazyHomeAwayChart = dynamic(() => import("./home-away-chart").then((m) => m.HomeAwayChart), {
-  ssr: false,
-  loading: box("h-[250px]"),
+  loading: box("h-[260px]"),
 });
 
 export const LazySeasonComparison = dynamic(() => import("./season-comparison").then((m) => m.SeasonComparison), {

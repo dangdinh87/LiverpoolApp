@@ -6,6 +6,7 @@ import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
 import { getServiceClient } from "./supabase-service";
 import { describeDigestWindow } from "./digest-window";
+import { cleanDigestText } from "./digest-text";
 import { analyzeArticleRelevance } from "./relevance";
 import { buildCurrentFactsBlock } from "@/lib/prompts/current-facts";
 import type { NewsArticle } from "./types";
@@ -122,7 +123,7 @@ const DIGEST_SYSTEM_PROMPT = `You are a football editor who follows Liverpool cl
 Input: recent articles with title, summary, source and category.
 Output: a JSON object shaped like this:
 {
-  "title": "Liverpool Daily — {date in English, e.g. 12 October 2026}",
+  "title": "${BRAND.name} — {date in English, e.g. 12 October 2026}",
   "summary": "4-6 sentences. Open with the most important story, then move through the rest. Name players, give scores, keep the detail.",
   "sections": [
     {
@@ -453,7 +454,7 @@ export async function generateDigestFromArticles(
 
   const parsed = core.value;
 
-  return {
+  return cleanDigestText({
     title: parsed.title,
     summary: parsed.summary,
     sections: parsed.sections,
@@ -461,7 +462,7 @@ export async function generateDigestFromArticles(
     articleCount: articles.length,
     tokensUsed: core.tokens + (seo?.tokens ?? 0),
     model: core.model,
-  };
+  });
 }
 
 const CORE_ONLY_SUFFIX = `OUTPUT: return ONLY a JSON object with "title", "summary" and "sections". No "seoArticle" field.`;
@@ -559,7 +560,7 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
   // Throw rather than return null: callers cache the result for 30 min, and a
   // thrown error is not cached — a null would hide the digest after one bad read.
   if (error) throw error;
-  return data;
+  return data && cleanDigestText(data);
 }
 
 export const getDigestByDate = cache(async function getDigestByDate(
@@ -571,7 +572,7 @@ export const getDigestByDate = cache(async function getDigestByDate(
     .select("*")
     .eq("digest_date", date)
     .maybeSingle();
-  return data;
+  return data && cleanDigestText(data);
 });
 
 /** Lightweight query for sitemap: all digest dates + generated timestamps */

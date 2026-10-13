@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { SectionHeader } from "@/components/ui/section-header";
 import { POSITION_DISPLAY, type PlayerPosition } from "@/lib/squad-data";
+import { playerSurname } from "@/lib/player-surname";
 
 interface CarouselPlayer {
   id: number;
@@ -39,7 +40,7 @@ export async function SquadCarousel({ players }: { players: CarouselPlayer[] }) 
                 </span>
               </div>
               <div className="px-3 py-2">
-                <p className="truncate text-sm font-semibold text-white">{p.name.split(" ").slice(-1)[0]}</p>
+                <p className="truncate text-sm font-semibold text-white">{playerSurname(p.name)}</p>
                 <p className="font-barlow text-xs uppercase tracking-wider text-stadium-muted">
                   {POSITION_DISPLAY[p.position]}
                 </p>

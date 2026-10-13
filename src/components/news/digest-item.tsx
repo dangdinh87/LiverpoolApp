@@ -1,5 +1,6 @@
 import { ChevronDown, ExternalLink } from "lucide-react";
 import type { NewsSource } from "@/lib/news/types";
+import { CategoryTag } from "./category-tag";
 import { NewsThumb } from "./news-thumb";
 
 export interface DigestItemSource {
@@ -65,9 +66,7 @@ export function DigestItem({ id, number, category, categoryClass, headline, para
 
       <p className="mb-3 flex items-center gap-3">
         <span className="font-bebas text-3xl leading-none text-lfc-gold tabular-nums">{number}</span>
-        {category && (
-          <span className={`px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider ${categoryClass ?? ""}`}>{category}</span>
-        )}
+        {category && <CategoryTag label={category} className={categoryClass} />}
       </p>
       <h2 className="text-balance font-inter text-[24px] font-extrabold leading-[1.22] text-white sm:text-[28px]">{headline}</h2>
 

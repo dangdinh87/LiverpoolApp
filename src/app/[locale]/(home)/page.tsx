@@ -6,7 +6,8 @@ import { unstable_cache } from "next/cache";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
-import { getLatestDigest } from "@/lib/news/digest";
+import { getCachedLatestDigest } from "@/lib/news/latest-digest";
+import type { DigestRecord } from "@/lib/news/digest";
 import { getSiteSetting, SITE_SETTINGS_CACHE_TAG } from "@/lib/gallery/queries";
 import { Hero } from "@/components/home/hero";
 import { NextMatchWidget } from "@/components/home/next-match-widget";
@@ -37,7 +38,7 @@ function getOptimizedHeroUrl(url: string): string {
 }
 
 /** "Tin nhanh" shows this many headlines; the query takes a few extra so the language mix can still fill it. */
-const HOME_NEWS_SHOWN = 5;
+const HOME_NEWS_SHOWN = 7;
 const HOME_NEWS_LIMIT = 12;
 
 const getCachedHomeFixtures = unstable_cache(
@@ -56,12 +57,6 @@ const getCachedHomeNews = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true })),
   ["home-news-vi-first-v3"],
   { revalidate: 300, tags: ["news"] },
-);
-
-const getCachedHomeDigest = unstable_cache(
-  async () => getLatestDigest(),
-  ["home-digest-v1"],
-  { revalidate: 1800, tags: ["news-digest"] },
 );
 
 // Errors resolve to null *inside* the cache: unstable_cache never stores a
@@ -165,7 +160,7 @@ export default async function HomePage({ params }: LocaleParams) {
       getCachedHomeFixtures(),
       getCachedHomeStandings(),
       getCachedHomeNews(),
-      getCachedHomeDigest(),
+      getCachedLatestDigest(),
       getCachedHomeHeroSetting(),
     ]);
 
@@ -178,10 +173,7 @@ export default async function HomePage({ params }: LocaleParams) {
     newsResult,
     [],
   );
-  const digest = getSettledValue<Awaited<ReturnType<typeof getLatestDigest>>>(
-    digestResult,
-    null,
-  );
+  const digest = getSettledValue<DigestRecord | null>(digestResult, null);
   const heroSetting = getSettledValue<
     { gallery_image_id: string; cloudinary_url: string } | null
   >(heroSettingResult, null);

@@ -42,17 +42,19 @@ export const SOURCE_CONFIG: Record<
   goal: { label: "GOAL", color: "bg-[#00234B] text-white" },
 };
 
-export const CATEGORY_CONFIG: Record<
-  ArticleCategory,
-  { label: string; color: string }
-> = {
-  "match-report": { label: "Match Report", color: "bg-green-500/20 text-green-400" },
-  transfer: { label: "Transfer", color: "bg-blue-500/20 text-blue-400" },
-  injury: { label: "Injury", color: "bg-red-500/20 text-red-400" },
-  opinion: { label: "Opinion", color: "bg-violet-500/20 text-violet-400" },
-  "team-news": { label: "Team News", color: "bg-cyan-500/20 text-cyan-400" },
-  analysis: { label: "Analysis", color: "bg-indigo-500/20 text-indigo-400" },
-  general: { label: "General", color: "bg-gray-500/20 text-gray-400" },
+/**
+ * Topic tag classes for the daily briefing (used with the outline Badge).
+ * Neutral on purpose: six hues at 11px read as noise next to the headline.
+ * Red only for injuries, the one topic a reader may need to act on. `general`
+ * is absent: "General" says nothing, so a story in it gets no tag at all.
+ */
+export const CATEGORY_CONFIG: Partial<Record<ArticleCategory, { label: string; color: string }>> = {
+  "match-report": { label: "Match Report", color: "border-stadium-border text-stadium-muted" },
+  transfer: { label: "Transfer", color: "border-stadium-border text-stadium-muted" },
+  injury: { label: "Injury", color: "border-lfc-red/50 text-brand" },
+  opinion: { label: "Opinion", color: "border-stadium-border text-stadium-muted" },
+  "team-news": { label: "Team News", color: "border-stadium-border text-stadium-muted" },
+  analysis: { label: "Analysis", color: "border-stadium-border text-stadium-muted" },
 };
 
 /**
