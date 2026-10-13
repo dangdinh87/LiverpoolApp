@@ -18,26 +18,30 @@ static copies of the art are in `public/brand/`. Change them there, nowhere else
 
 | | Vietnamese | English |
 |---|---|---|
-| Tagline | Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày | Liverpool news, fast · Gathered and summed up daily |
-| Home headline | Khỏi mở 20 tab. / Tin Liverpool ở đây. | Skip the twenty tabs. / Liverpool news, here. |
+| Tagline | Tin Liverpool mới nhất, đầy đủ ở một nơi | The latest Liverpool news, all in one place |
+| Home headline | Tin Liverpool mới nhất, / đầy đủ ở một nơi. | The latest Liverpool news, / all in one place. |
 | One sentence | Anfield Daily gom tin từ {n} tờ báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt thành bản tin mỗi ngày. | Anfield Daily gathers the news from {n} English and Vietnamese outlets, drops the duplicates and sums it up in a daily briefing. |
 
 `{n}` is `NEWS_OUTLET_COUNT` (counted from the feed config), never a typed number.
 
 ## Logo
 
-**Mark:** two pages folded into an "A" — the front page white, the page behind
-in a pale shade of the fold — with a gold rule as the crossbar (the headline
-rule of a front page), on a red rounded tile. It says "newspaper" and its A is
-Anfield's initial. Drawn from `MARK` in `src/lib/brand.ts`; component
-`BrandMark`. Every static copy is generated: run
-`npx tsx scripts/build-brand-icons.ts` after changing `MARK`.
+**Mark:** a pitch's centre circle seen from above — the halfway line, the
+circle and the centre spot — white on a Liverpool-red rounded tile. Football at
+a glance, and readable at 16 px. The halfway line is vertical and runs the full
+height of the tile; never horizontal, because a bar across a ring is the London
+Underground roundel. Drawn from `MARK` in `src/lib/brand.ts`; component
+`BrandMark` (also used by both share images). Every static copy is generated:
+run `npx tsx scripts/build-brand-icons.ts` after changing `MARK`.
 
 | File | Shape |
 |---|---|
 | `public/brand/icon.svg`, `favicon-32.png`, `icon-192.png`, `icon-512.png`, `src/app/favicon.ico` | Rounded tile, transparent corners |
 | `apple-touch-icon.png` | Full square (iOS rounds it; transparent corners would turn black) |
-| `icon-maskable-512.png` | Full bleed, art at 88% inside the safe zone |
+| `icon-maskable-512.png` | Full bleed; circle and spot at 88% inside the safe zone, halfway line edge to edge |
+
+Google Search uses a favicon only if its size is a multiple of 48 px, so the
+192 px PNG is declared alongside the SVG and the 32 px PNG.
 
 **Wordmark:** ANFIELD DAILY in League Gothic caps, letter-spacing 0.18em, a red
 rule under the first letters (19% of the width). Live text on the site
@@ -51,10 +55,11 @@ rule under the first letters (19% of the width). Live text on the site
 | Smallest mark | 16 px (favicon) |
 | Smallest wordmark | 80 px wide |
 | Clear space | ¼ of the mark's width on every side |
-| App icon | maskable copy keeps every corner of the art inside the 0.4-radius zone (tested) |
+| App icon | maskable copy keeps the circle inside the 0.4-radius zone (tested) |
 
-**Don't:** use the club crest, Liver bird or "YNWA" as our mark · recolour the
-pages or the rule · stretch, rotate or unfold the A · set the wordmark in another font ·
+**Don't:** use the club crest, Liver bird, Hillsborough flames or "YNWA" as our
+mark · turn the halfway line horizontal · put text inside the tile · recolour the
+tile or the lines · stretch or rotate the mark · set the wordmark in another font ·
 put the logo on a busy photo without a dark scrim.
 
 ## Colour
@@ -63,7 +68,7 @@ put the logo on a busy photo without a dark scrim.
 |---|---|---|
 | Red | `#C8102E` | Fills: mark tile, primary buttons, rules, live strip |
 | Red (text) | `#FF3347` | Red text on dark (`text-brand`): passes AA (4.8:1 on surface) |
-| Gold | `#F6EB61` | Sparingly: the mark's rule, highlights, "next" markers |
+| Gold | `#F6EB61` | No longer a brand colour or part of the mark; kept for a few on-page highlights until the theme work decides its fate |
 | Ink | `#0D0D0D` | Page background |
 | Surface | `#1A1A1A` / `#252525` | Cards, raised surfaces |
 | Muted | `#A0A0A0` | Secondary text |
@@ -76,8 +81,9 @@ The old pink text tint (`#FF5C75`) is retired.
 
 | Face | Role |
 |---|---|
-| League Gothic (`font-bebas`) | Wordmark, page titles, scores, big numbers |
-| Inter (`font-inter`) | Body, headlines of stories, UI |
+| League Gothic (`font-bebas`) | Wordmark, section titles, scores, big numbers |
+| Newsreader (`font-serif`) | Story and page headlines: home strapline, briefing, article titles, news cards |
+| Inter (`font-inter`) | Body, UI |
 | Barlow Condensed (`font-barlow`) | Short labels, buttons, table headers |
 
 ## Voice

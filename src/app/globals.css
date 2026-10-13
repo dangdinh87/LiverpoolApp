@@ -11,6 +11,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-bebas);
+  /* Story and page headlines (Newsreader). League Gothic stays for the wordmark, scores and big numbers. */
+  --font-serif: var(--font-newsreader);
 
   /* Liverpool color tokens (available as Tailwind classes) */
   --color-lfc-red: #c8102e;

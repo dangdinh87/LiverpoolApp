@@ -3,9 +3,9 @@
  * is a change to this file only: the header, footer, metadata, manifest,
  * JSON-LD and share image all read from here.
  *
- * Identity rules (see plans/261007-1000-brand-ux-upgrade/design-spec.md):
+ * Identity rules (see docs/superpowers/specs/2026-10-14-brand-refresh-design.md):
  * - The mark is the "Anfield Daily" wordmark set in League Gothic, plus the red
- *   tile with two pages folded into an "A" and a gold crossbar (MARK below). The club crest /
+ *   tile with a pitch's centre circle seen from above (MARK below). The club crest /
  *   Liver bird is never the site's own logo; crests appear only as match data.
  * - The site is for reading Liverpool news fast (gathered, de-duplicated,
  *   summed up daily) — not "for fans abroad". Copy and art say news.
@@ -19,8 +19,8 @@ export const BRAND = {
   /** Display name. */
   name: "Anfield Daily",
   tagline: {
-    vi: "Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày",
-    en: "Liverpool news, fast · Gathered and summed up daily",
+    vi: "Tin Liverpool mới nhất, đầy đủ ở một nơi",
+    en: "The latest Liverpool news, all in one place",
   },
   /** Meta description: the tagline expanded to one readable sentence. */
   description: {
@@ -36,8 +36,6 @@ export const BRAND = {
   contactEmail: "nguyendangdinh47@gmail.com",
   /** Brand colour (fills only; use the `text-brand` utility for red text). */
   red: "#c8102e",
-  /** Accent used sparingly — the crossbar of the mark's A. */
-  gold: "#f6eb61",
   /** Static copies of the mark live in public/brand/. */
   assets: {
     wordmark: "/brand/anfield-daily-wordmark.svg",
@@ -51,20 +49,21 @@ export const BRAND = {
 } as const;
 
 /**
- * The mark: two pages folded into an "A" — the front page white, the page
- * behind it in a shade of the fold — with a gold rule for the crossbar, the
- * headline rule of a front page. Red rounded tile, 512 box. One source for
- * BrandMark, the share image and the files in public/brand/ (tested to match).
+ * The mark: a pitch's centre circle seen from above — the halfway line, the
+ * circle and the spot — white on a red rounded tile, 512 box. One source for
+ * BrandMark, the share images and the files in public/brand/ (tested to match).
+ *
+ * The halfway line is vertical and runs the full height of the tile. Never
+ * horizontal: a bar across a ring is the London Underground roundel.
  */
 export const MARK = {
   size: 512,
-  radius: 112,
-  /** The page behind, drawn first so the front page keeps a clean apex. */
-  back: "232,92 280,92 400,420 328,420",
-  front: "232,92 280,92 184,420 112,420",
-  backFill: "#f3d3d9",
-  rule: { x: 196, y: 296, width: 124, height: 36 },
-  /** The maskable app icon shrinks the art to this, inside the 0.4-radius safe zone. */
+  radius: 120,
+  /** Halfway line: centred, full height, drawn at full size even on the maskable icon. */
+  line: { x: 239.2, width: 33.6 },
+  circle: { r: 112, stroke: 33.6 },
+  spot: { r: 32 },
+  /** The maskable app icon shrinks the circle and spot to this, inside the 0.4-radius safe zone. */
   maskableScale: 0.88,
 } as const;
 

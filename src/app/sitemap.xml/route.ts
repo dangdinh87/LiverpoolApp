@@ -40,7 +40,7 @@ export async function GET() {
   // ─── Dynamic routes from DB (graceful fallback if DB unavailable) ─────────
   let digests: { digest_date: string; generated_at: string }[] = [];
   let fixtureUrls: { id: number; date: string; label: string }[] = [];
-  let ownArticles: { slug: string; published_at: string }[] = [];
+  let ownArticles: { slug: string; published_at: string; locales: string[] }[] = [];
 
   try {
     const [digestData, fixtures, articles] = await Promise.allSettled([
@@ -55,7 +55,15 @@ export async function GET() {
     if (digestData.status === "fulfilled") digests = digestData.value;
     if (articles.status === "fulfilled") {
       ownArticles = articles.value.flatMap((a) =>
-        a.published_at ? [{ slug: a.slug, published_at: a.published_at }] : [],
+        a.published_at
+          ? [{
+              slug: a.slug,
+              published_at: a.published_at,
+              // Only the languages it was written in: the other locale serves
+              // the same text and canonicalises to this one.
+              locales: [...(a.content_en ? ["en"] : []), ...(a.content_vi ? ["vi"] : [])],
+            }]
+          : [],
       );
     }
     if (fixtures.status === "fulfilled") {
@@ -87,8 +95,9 @@ export async function GET() {
     lastmod: string | null,
     changefreq: string,
     priority: string,
+    locales?: readonly string[],
   ): string[] {
-    const { languages } = getHreflangAlternates(path);
+    const { languages } = getHreflangAlternates(path, undefined, locales);
     const alternates = [
       ...Object.entries(languages).map(
         ([lang, href]) =>
@@ -101,7 +110,7 @@ export async function GET() {
       .map((lang) =>
         [
           `  <url>`,
-          `    <loc>${escapeXml(languages[lang as keyof typeof languages])}</loc>`,
+          `    <loc>${escapeXml(languages[lang as keyof typeof languages] ?? "")}</loc>`,
           // Only real modification dates: Google ignores lastmod once it proves
           // unreliable, and "today on every request" (static pages) or a future
           // kickoff date (fixtures) both are.
@@ -150,7 +159,7 @@ export async function GET() {
   // The site's own articles: original content, unlike the /news mirrors, so
   // these are the pages here that are actually worth crawling.
   for (const a of ownArticles) {
-    urls.push(...urlEntries(`/analysis/${a.slug}`, a.published_at.slice(0, 10), "monthly", "0.8"));
+    urls.push(...urlEntries(`/analysis/${a.slug}`, a.published_at.slice(0, 10), "monthly", "0.8", a.locales));
   }
 
   // Digest pages

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { League_Gothic, Inter, Barlow_Condensed } from "next/font/google";
+import { League_Gothic, Inter, Barlow_Condensed, Newsreader } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
 import { hasLocale } from 'next-intl';
@@ -36,6 +36,14 @@ const leagueGothic = League_Gothic({
 const inter = Inter({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-inter",
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+});
+
+// Newsreader — story and page headlines (the "paper" half of the brand)
+const newsreader = Newsreader({
+  weight: ["500", "600"],
+  variable: "--font-newsreader",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
@@ -111,6 +119,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       icon: [
         { url: BRAND.assets.icon, type: "image/svg+xml" },
         { url: BRAND.assets.favicon32, sizes: "32x32", type: "image/png" },
+        // Google Search only uses a favicon whose size is a multiple of 48px; 32x32 does not qualify.
+        { url: BRAND.assets.icon192, sizes: "192x192", type: "image/png" },
       ],
       apple: [{ url: BRAND.assets.appleTouchIcon, sizes: "180x180", type: "image/png" }],
     },
@@ -133,7 +143,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={[leagueGothic.variable, inter.variable, barlowCondensed.variable].join(" ")}
+      className={[leagueGothic.variable, inter.variable, newsreader.variable, barlowCondensed.variable].join(" ")}
       suppressHydrationWarning
     >
       <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>

@@ -56,9 +56,7 @@
     ".build-live/types/**/*.ts",
     ".build-live/dev/types/**/*.ts",
     ".build-prodcheck/types/**/*.ts",
-    ".build-prodcheck/dev/types/**/*.ts",
-    ".next-seo-check/types/**/*.ts",
-    ".next-seo-check/dev/types/**/*.ts"
+    ".build-prodcheck/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

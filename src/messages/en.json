@@ -74,7 +74,7 @@
     }
   },
   "Hero": {
-    "tagline": "Liverpool news, fast · Gathered and summed up daily",
+    "tagline": "The latest Liverpool news, all in one place",
     "title": "Liverpool news in one place",
     "subtitle": "Anfield Daily — Liverpool news, gathered and summed up",
     "description": "<b>{brand}</b> gathers the news from {count} English outlets, drops the duplicates and sums it up in a daily briefing.",
@@ -82,9 +82,8 @@
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings",
-    "headlineTop": "Skip the twenty tabs.",
-    "headlineBottom": "Liverpool news, here.",
-    "ctaNews": "Read today’s news"
+    "headlineTop": "The latest Liverpool news,",
+    "headlineBottom": "all in one place."
   },
   "Home": {
     "breaking": {
@@ -99,7 +98,6 @@
       "seconds": "s",
       "noMatchHint": "As soon as the next match is confirmed, its kick-off time will show here.",
       "started": "Match under way",
-      "allFixtures": "Fixtures",
       "viewerTime": "Your time"
     },
     "results": {
@@ -124,9 +122,6 @@
       "emptyDescription": "The table could not be loaded. It will refresh on its own.",
       "emptyAction": "Open the table",
       "viewAll": "Full table"
-    },
-    "squad": {
-      "viewAll": "Full squad"
     },
     "metadata": {
       "title": "Liverpool kick-off times in your time zone, results, quick news",

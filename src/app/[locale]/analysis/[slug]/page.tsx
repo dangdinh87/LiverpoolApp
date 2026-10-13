@@ -33,20 +33,34 @@ export async function generateStaticParams() {
 
 type Params = Promise<{ slug: string; locale: string }>;
 
-/** The reader's language, falling back to whichever version exists. */
-function pick(
-  row: { content_en: SiteArticleContent | null; content_vi: SiteArticleContent | null },
-  locale: string,
-): SiteArticleContent | null {
-  return (locale === "vi" ? row.content_vi : row.content_en) ?? row.content_en ?? row.content_vi;
+type ArticleRow = { content_en: SiteArticleContent | null; content_vi: SiteArticleContent | null };
+
+/** The reader's language, falling back to whichever version exists — and which language that is. */
+function pick(row: ArticleRow, locale: string): { content: SiteArticleContent; lang: "en" | "vi" } | null {
+  const order = locale === "vi" ? (["vi", "en"] as const) : (["en", "vi"] as const);
+  for (const lang of order) {
+    const content = lang === "vi" ? row.content_vi : row.content_en;
+    if (content) return { content, lang };
+  }
+  return null;
+}
+
+/**
+ * Languages the article was actually written in. A locale missing from this
+ * list still renders (in the fallback language), but it is not a translation:
+ * advertising it in hreflang offered search engines a duplicate under a
+ * Vietnamese label, so it canonicalises to the version that exists instead.
+ */
+function writtenIn(row: ArticleRow): string[] {
+  return [...(row.content_en ? ["en"] : []), ...(row.content_vi ? ["vi"] : [])];
 }
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug, locale } = await params;
   const row = await getSiteArticleBySlug(slug);
-  const content = row ? pick(row, locale) : null;
-  const alternates = getHreflangAlternates(`/analysis/${slug}`, locale);
-  if (!content) return { title: "Not found", robots: { index: false } };
+  const content = row ? pick(row, locale)?.content : null;
+  if (!row || !content) return { title: "Not found", robots: { index: false } };
+  const alternates = getHreflangAlternates(`/analysis/${slug}`, locale, writtenIn(row));
 
   return {
     title: content.metaTitle || content.title,
@@ -56,7 +70,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       type: "article",
       title: content.metaTitle || content.title,
       description: content.metaDescription || content.excerpt,
-      ...(row?.published_at && { publishedTime: row.published_at }),
+      url: alternates.canonical,
+      ...(row.published_at && { publishedTime: row.published_at }),
       siteName: BRAND.name,
       // Declared rather than left to the file convention. Next builds that URL
       // from the matched `[locale]` segment, so the default locale came out as
@@ -74,18 +89,21 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
   const { slug, locale } = await params;
   const row = await getSiteArticleBySlug(slug);
   if (!row) notFound();
-  const content = pick(row, locale);
-  if (!content) notFound();
+  const picked = pick(row, locale);
+  if (!picked) notFound();
+  const { content, lang } = picked;
 
   const t = await getTranslations({ locale, namespace: "Analysis" });
   const related = (await listSiteArticles(4, row.kind))
     .filter((r) => r.slug !== row.slug)
     .slice(0, 3);
 
-  const url = getLocalizedUrl(`/analysis/${slug}`, locale);
+  // The version actually shown: on a locale without its own text this is the
+  // fallback language's URL, which is also the page's canonical.
+  const url = getLocalizedUrl(`/analysis/${slug}`, lang);
 
   return (
-    <article className="min-h-screen bg-stadium-bg pb-16 pt-24">
+    <article lang={lang} className="min-h-screen bg-stadium-bg pb-16 pt-24">
       <JsonLd
         data={[
           {
@@ -97,7 +115,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             description: content.excerpt,
             url,
             mainEntityOfPage: url,
-            inLanguage: locale,
+            inLanguage: lang,
             // The share card this route generates. Article markup without an
             // image is the commonest reason a story is passed over.
             image: [`${url}/opengraph-image`],
@@ -170,7 +188,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             <h2 className="section-label mb-3 text-brand">{t("related")}</h2>
             <ul className="grid gap-3">
               {related.map((r) => {
-                const c = pick(r, locale);
+                const c = pick(r, locale)?.content;
                 return c ? (
                   <li key={r.id}>
                     <ArticleCard

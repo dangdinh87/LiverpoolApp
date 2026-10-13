@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
-import { BRAND, MARK, WORDMARK, brandTagline, brandUnofficial } from "@/lib/brand";
+import { BRAND, WORDMARK, brandTagline, brandUnofficial } from "@/lib/brand";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { leagueGothicFontData } from "@/assets/fonts/league-gothic-base64";
 
 // Node runtime (the Edge runtime is deprecated). Everything is drawn from code:
@@ -9,19 +10,6 @@ import { leagueGothicFontData } from "@/assets/fonts/league-gothic-base64";
 export const alt = `${BRAND.name} — ${BRAND.tagline.en}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-
-/** The mark tile (MARK in src/lib/brand.ts, same drawing as public/brand/icon.svg). */
-function LogoMark({ size: s }: { size: number }) {
-  const { size, radius, back, front, backFill, rule } = MARK;
-  return (
-    <svg width={s} height={s} viewBox={`0 0 ${size} ${size}`}>
-      <rect width={size} height={size} rx={radius} fill={BRAND.red} />
-      <polygon points={back} fill={backFill} />
-      <polygon points={front} fill="#ffffff" />
-      <rect x={rule.x} y={rule.y} width={rule.width} height={rule.height} fill={BRAND.gold} />
-    </svg>
-  );
-}
 
 export default function OGImage() {
   const wordmarkSize = 132;
@@ -44,7 +32,7 @@ export default function OGImage() {
         <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 16, background: BRAND.red }} />
 
         <div style={{ display: "flex", alignItems: "center", gap: 36, marginBottom: 40 }}>
-          <LogoMark size={132} />
+          <BrandMark size={132} />
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div
               style={{

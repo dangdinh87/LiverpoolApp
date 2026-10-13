@@ -3,20 +3,31 @@ import { cn } from "@/lib/utils";
 import { BrandWordmark } from "./brand-wordmark";
 
 /**
- * The mark: two pages folded into an "A" with a gold crossbar, on a red rounded
+ * The mark: a pitch's centre circle seen from above, white on a red rounded
  * tile (MARK in src/lib/brand.ts). Same drawing as `public/brand/icon.svg`,
  * inlined so it scales crisply, makes no request and needs no `next/image`.
  *
+ * `size` sets pixel width/height for the share images (Satori ignores classes);
+ * the site sizes it with `className`.
+ *
  * Decorative: name the surrounding link with `aria-label={BRAND.name}`.
  */
-export function BrandMark({ className }: { className?: string }) {
-  const { size, radius, back, front, backFill, rule } = MARK;
+export function BrandMark({ className, size: px }: { className?: string; size?: number }) {
+  const { size, radius, line, circle, spot } = MARK;
+  const c = size / 2;
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} aria-hidden focusable="false" className={cn("shrink-0", className)}>
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      width={px}
+      height={px}
+      aria-hidden
+      focusable="false"
+      className={className === undefined && px !== undefined ? undefined : cn("shrink-0", className)}
+    >
       <rect width={size} height={size} rx={radius} fill={BRAND.red} />
-      <polygon points={back} fill={backFill} />
-      <polygon points={front} fill="#ffffff" />
-      <rect x={rule.x} y={rule.y} width={rule.width} height={rule.height} fill={BRAND.gold} />
+      <rect x={line.x} y={0} width={line.width} height={size} fill="#ffffff" />
+      <circle cx={c} cy={c} r={circle.r} fill="none" stroke="#ffffff" strokeWidth={circle.stroke} />
+      <circle cx={c} cy={c} r={spot.r} fill="#ffffff" />
     </svg>
   );
 }

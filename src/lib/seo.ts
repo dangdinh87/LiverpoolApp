@@ -127,23 +127,33 @@ export function getLocalizedUrl(
  * page declaring the Vietnamese page as its canonical (telling search engines
  * to drop the English version) and gave Google no way to discover /en at all.
  *
- * @param path   Unprefixed path, e.g. "/squad".
- * @param locale Locale the page is being rendered for; decides the canonical.
+ * @param path    Unprefixed path, e.g. "/squad".
+ * @param locale  Locale the page is being rendered for; decides the canonical.
+ * @param written Locales the page really exists in. Defaults to all of them;
+ *                pass fewer for content written in only some languages (the
+ *                site's own articles), so a locale serving another language's
+ *                text is not advertised as a translation.
  */
 export function getHreflangAlternates(
   path: string,
   locale: string = routing.defaultLocale,
+  written: readonly string[] = routing.locales,
 ) {
+  const available: readonly string[] = routing.locales.filter((l) => written.includes(l));
   const languages = Object.fromEntries(
-    routing.locales.map((l) => [l, getLocalizedUrl(path, l)]),
-  ) as Record<(typeof routing.locales)[number], string>;
+    available.map((l) => [l, getLocalizedUrl(path, l)]),
+  ) as Partial<Record<(typeof routing.locales)[number], string>>;
+  const fallback = available.includes(routing.defaultLocale)
+    ? routing.defaultLocale
+    : (available[0] ?? routing.defaultLocale);
 
   return {
-    canonical: getLocalizedUrl(path, locale),
+    // A locale without its own version canonicalises to one that has it.
+    canonical: getLocalizedUrl(path, available.includes(locale) ? locale : fallback),
     languages: {
       ...languages,
       // The default locale is what an unmatched visitor gets.
-      "x-default": getLocalizedUrl(path, routing.defaultLocale),
+      "x-default": getLocalizedUrl(path, fallback),
     },
   };
 }

@@ -68,7 +68,7 @@ export function DigestItem({ id, number, category, categoryClass, headline, para
         <span className="font-bebas text-3xl leading-none text-lfc-gold tabular-nums">{number}</span>
         {category && <CategoryTag label={category} className={categoryClass} />}
       </p>
-      <h2 className="text-balance font-inter text-[24px] font-extrabold leading-[1.22] text-white sm:text-[28px]">{headline}</h2>
+      <h2 className="text-balance font-serif text-[25px] font-semibold leading-[1.2] tracking-tight text-white sm:text-[30px]">{headline}</h2>
 
       <div className="article-prose mt-4 [&>p:first-child]:text-[1.1875rem] [&>p:first-child]:leading-[1.6] [&>p:first-child]:text-white sm:[&>p:first-child]:text-[1.25rem]">
         {paragraphs.map((paragraph, i) => (

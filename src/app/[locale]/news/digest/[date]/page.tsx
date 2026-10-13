@@ -4,16 +4,15 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllDigestDates, getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleRefsByUrls } from "@/lib/news";
-import { detectSource } from "@/lib/news/source-detect";
-import { CATEGORY_CONFIG, SOURCE_CONFIG } from "@/lib/news-config";
-import type { NewsSource } from "@/lib/news/types";
+import { CATEGORY_CONFIG } from "@/lib/news-config";
 import { makePageMeta, buildNewsArticleJsonLd, getHreflangAlternates, getLocalizedUrl } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { DigestNav } from "@/components/news/digest-nav";
-import { DigestItem, type DigestItemImage, type DigestItemSource } from "@/components/news/digest-item";
+import { DigestItem, type DigestItemSource } from "@/components/news/digest-item";
+import { outletName, pickStoryImages } from "@/components/news/digest-images";
 import { DigestToc } from "@/components/news/digest-toc";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsBackLink } from "@/components/news/article-parts";
@@ -139,11 +138,6 @@ export default async function DigestPage({
   // Titles and pictures for every source link across the stories.
   const refs = await getArticleRefsByUrls(sections.flatMap((s) => s.articleUrls));
 
-  const outletName = (url: string) => {
-    const detected = detectSource(url);
-    return (detected.id !== "unknown" && SOURCE_CONFIG[detected.id]?.label) || detected.name;
-  };
-
   const sourcesOf = (urls: string[]): DigestItemSource[] =>
     urls.filter(isHttpUrl).map((url, i) => ({
       url,
@@ -151,19 +145,8 @@ export default async function DigestPage({
       title: refs[url] ? cleanTitle(refs[url].title) : t("sourceArticle", { n: i + 1 }),
     }));
 
-  // One picture per story: the first source that has one and has not been used
-  // by an earlier story, so the page never shows the same photo twice.
-  const usedImages = new Set<string>();
-  const images: (DigestItemImage | undefined)[] = sections.map((section) => {
-    for (const url of section.articleUrls) {
-      const src = refs[url]?.image;
-      if (!isHttpUrl(src) || usedImages.has(src)) continue;
-      usedImages.add(src);
-      const detected = detectSource(url);
-      return { src, source: (detected.id === "unknown" ? "bbc" : detected.id) as NewsSource, credit: outletName(url) };
-    }
-    return undefined;
-  });
+  // One picture per story, never the same photo twice (shared with the homepage briefing).
+  const images = pickStoryImages(sections, refs);
   // The first story's picture leads the page; that story then goes without one.
   const heroImage = images[0];
 
@@ -218,7 +201,7 @@ export default async function DigestPage({
               <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} />
               <span className="text-sm text-white/65">{formatMatchDayMonth(digestDate, uiLocale, true)}</span>
             </div>
-            <h1 className="text-balance font-bebas text-[40px] font-normal leading-[1.02] tracking-wide text-white sm:text-6xl lg:text-7xl">
+            <h1 className="text-balance font-serif text-[32px] font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
               {keepDatesTogether(displayTitle)}
             </h1>
             {intro && <p className="mt-5 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>}

@@ -39,7 +39,7 @@ function NoUpcomingMatch() {
   const h = useTranslations("Home.match");
   return (
     <div className={cn(CARD, "p-5")}>
-      <p className="section-label text-brand">{t("title")}</p>
+      <p className="section-label shrink-0 whitespace-nowrap text-brand">{t("title")}</p>
       <p className="mt-3 font-bebas text-3xl leading-none text-white">{t("noMatch")}</p>
       <p className="mt-2 text-sm text-stadium-muted">{h("noMatchHint")}</p>
       <Link
@@ -99,12 +99,12 @@ function Countdown({ target }: { target: number }) {
 function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
-      <span className="relative size-11 sm:size-16">
+      <span className="relative size-10 sm:size-12">
         <Image
           src={crest(team)}
           alt=""
           fill
-          sizes="64px"
+          sizes="48px"
           className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
         />
       </span>
@@ -133,11 +133,11 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
 
   return (
     <div ref={ref} className={cn(CARD, "p-4 sm:p-5", isLive && !ended && "border-lfc-red/60")}>
-      <div className="mb-4 flex flex-col items-start gap-1 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between min-[390px]:gap-3">
+      <div className="mb-3 flex flex-col items-start gap-1 min-[390px]:flex-row min-[390px]:items-center min-[390px]:justify-between min-[390px]:gap-3">
         {isLive ? (
           <LiveStatusBadge status={f.status.short} ended={ended} />
         ) : (
-          <p className="section-label text-brand">{t("title")}</p>
+          <p className="section-label shrink-0 whitespace-nowrap text-brand">{t("title")}</p>
         )}
         <p className="flex min-w-0 items-center gap-2 text-xs text-stadium-muted">
           {league.logo && (
@@ -167,7 +167,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
               />
             </>
           ) : (
-            <span className="font-bebas text-4xl leading-none text-white sm:text-5xl">{formatMatchTime(date, zone)}</span>
+            <span className="font-bebas text-3xl leading-none text-white sm:text-4xl">{formatMatchTime(date, zone)}</span>
           )}
           {!isLive && <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>}
           {!isLive && <span className="text-xs text-stadium-muted">{h("viewerTime")} · {formatZoneOffset(date, zone)}</span>}
@@ -191,20 +191,13 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
 
       <WhereToWatch competition={league.name} className="mt-3 justify-center" />
 
-      <div className="mt-3 flex gap-2 sm:mt-4">
-        <Link
-          href={detailHref}
-          className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
-        >
-          {t("viewMatch")}
-        </Link>
-        <Link
-          href="/fixtures"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
-        >
-          {h("allFixtures")}
-        </Link>
-      </div>
+      {/* One action: the full fixture list is a nav item away, so the hero card stays short. */}
+      <Link
+        href={detailHref}
+        className="mt-3 flex min-h-10 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
+      >
+        {t("viewMatch")}
+      </Link>
 
       {isLive && live && <LiveEdgeTrack live={live} ended={ended} />}
     </div>

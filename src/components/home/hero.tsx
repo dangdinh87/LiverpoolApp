@@ -1,7 +1,5 @@
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
-import { Newspaper } from "lucide-react";
-import { Link } from "@/i18n/navigation";
 import { BRAND } from "@/lib/brand";
 import { NEWS_OUTLET_COUNT } from "@/lib/news/config";
 import type { ReactNode } from "react";
@@ -49,31 +47,25 @@ export async function Hero({ backgroundUrl, children }: HeroProps) {
         unoptimized={heroImage.includes("res.cloudinary.com")}
         className="-z-20 object-cover object-center"
       />
-      {/* Top scrim keeps the fixed header legible; the rest keeps text AA on any photo. */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/80 via-black/60 to-stadium-bg" />
-      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/60 to-transparent" />
+      {/* Light scrims: enough for the fixed header and AA text on the left, while the stadium still reads as a photo. */}
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-b from-black/60 via-black/25 to-stadium-bg" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
 
-      <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+2.5rem)]">
+      <div className="page-container pb-5 pt-[calc(var(--header-h)+0.75rem)] sm:pb-6 sm:pt-[calc(var(--header-h)+1.25rem)]">
         <div className="grid gap-5 lg:grid-cols-12 lg:items-center lg:gap-12">
           <div className="reveal min-w-0 lg:col-span-7">
-            <h1 className="font-bebas text-[1.75rem] leading-[1.05] text-white sm:text-[2rem] lg:text-4xl">
-              <span>{t("headlineTop")} </span>
-              <span className="text-brand">{t("headlineBottom")}</span>
+            <h1 className="font-serif text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-white [text-shadow:0_2px_12px_rgba(0,0,0,0.5)] sm:text-[2rem] lg:text-4xl">
+              {/* Two set lines, never a free wrap: left to wrap, the red half broke with one word ("place.") alone on line two. */}
+              <span className="block">{t("headlineTop")}</span>
+              <span className="block text-brand">{t("headlineBottom")}</span>
             </h1>
-            <p className="mt-2.5 max-w-lg text-[13px] leading-relaxed text-white/75 sm:text-sm">
+            <p className="mt-2.5 max-w-lg text-[13px] leading-relaxed text-white/85 [text-shadow:0_1px_8px_rgba(0,0,0,0.6)] sm:text-sm">
               {t.rich("description", {
                 brand: BRAND.name,
                 count: NEWS_OUTLET_COUNT,
                 b: (chunks) => <strong className="font-semibold text-white">{chunks}</strong>,
               })}
             </p>
-            <Link
-              href="/news"
-              className="mt-3.5 inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-black/30 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white backdrop-blur-sm transition-colors hover:border-white/50 hover:bg-white/10 active:bg-white/15"
-            >
-              <Newspaper className="size-4" aria-hidden />
-              {t("ctaNews")}
-            </Link>
           </div>
           <div className="reveal reveal-delay-1 min-w-0 lg:col-span-5">{children}</div>
         </div>

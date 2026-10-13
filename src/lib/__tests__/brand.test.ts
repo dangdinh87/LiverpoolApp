@@ -6,8 +6,8 @@ import { BRAND, MARK, WORDMARK, brandDescription, brandLocale, brandTagline, bra
 describe("brand constant", () => {
   it("keeps the display name and tagline in one place", () => {
     expect(BRAND.name).toBe("Anfield Daily");
-    expect(brandTagline("vi")).toBe("Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày");
-    expect(brandTagline("en")).toBe("Liverpool news, fast · Gathered and summed up daily");
+    expect(brandTagline("vi")).toBe("Tin Liverpool mới nhất, đầy đủ ở một nơi");
+    expect(brandTagline("en")).toBe("The latest Liverpool news, all in one place");
   });
 
   it("falls back to English, the default locale", () => {
@@ -42,27 +42,23 @@ describe("brand constant", () => {
 });
 
 describe("mark", () => {
-  const points = (list: string) => list.split(" ").map((p) => p.split(",").map(Number) as [number, number]);
-
   it("public/brand/icon.svg draws the same mark as MARK (run scripts/build-brand-icons.ts after changing it)", () => {
     const svg = readFileSync(join(process.cwd(), "public/brand/icon.svg"), "utf8");
-    expect(svg).toContain(`points="${MARK.back}"`);
-    expect(svg).toContain(`points="${MARK.front}"`);
-    const { x, y, width, height } = MARK.rule;
-    expect(svg).toContain(`<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${BRAND.gold}"/>`);
+    const { size, line, circle, spot } = MARK;
+    const c = size / 2;
+    expect(svg).toContain(`<rect x="${line.x}" y="0" width="${line.width}" height="${size}" fill="#ffffff"/>`);
+    expect(svg).toContain(`<circle cx="${c}" cy="${c}" r="${circle.r}" fill="none" stroke="#ffffff" stroke-width="${circle.stroke}"/>`);
+    expect(svg).toContain(`<circle cx="${c}" cy="${c}" r="${spot.r}" fill="#ffffff"/>`);
   });
 
-  it("keeps the art inside the maskable safe zone once shrunk", () => {
-    const { size, maskableScale, rule } = MARK;
-    const c = size / 2;
-    const corners = [
-      ...points(MARK.back),
-      ...points(MARK.front),
-      [rule.x, rule.y],
-      [rule.x + rule.width, rule.y + rule.height],
-    ];
-    for (const [x, y] of corners) {
-      expect(Math.hypot((x - c) * maskableScale, (y - c) * maskableScale)).toBeLessThanOrEqual(size * 0.4);
-    }
+  it("keeps the halfway line vertical and centred, so the mark never reads as the Underground roundel", () => {
+    const { size, line } = MARK;
+    expect(line.x + line.width / 2).toBeCloseTo(size / 2);
+    expect(line.width).toBeLessThan(MARK.circle.r);
+  });
+
+  it("keeps the circle inside the maskable safe zone once shrunk (the halfway line is meant to bleed off)", () => {
+    const { size, maskableScale, circle } = MARK;
+    expect((circle.r + circle.stroke / 2) * maskableScale).toBeLessThanOrEqual(size * 0.4);
   });
 });

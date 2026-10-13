@@ -50,6 +50,8 @@ const jsonLd = {
       "@type": "WebSite",
       "@id": SCHEMA_IDS.website,
       name: BRAND.name,
+      // Google's site-name system reads name + alternateName; without a fallback it shows the domain.
+      alternateName: BRAND.name.replace(/\s+/g, ""),
       url: SITE_URL,
       description: brandDescription(DEFAULT_LOCALE),
       inLanguage: [...routing.locales],

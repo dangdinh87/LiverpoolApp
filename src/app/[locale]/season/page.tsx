@@ -47,9 +47,7 @@ export async function generateMetadata({
   const selected = resolveSeason(seasonParam);
   const isCurrent = selected === getCurrentSeasonYear();
   const title = t("title");
-  // The season shown, not the current one: every archive page carried the
-  // current season's description, so they were duplicates of each other in results.
-  const description = t("description", { season: seasonLabel(selected) });
+  const description = t("description", { season: seasonLabel(getCurrentSeasonYear()) });
   // The current season is the same content as /fixtures; only past seasons are this page's own.
   return {
     title,

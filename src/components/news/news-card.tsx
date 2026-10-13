@@ -80,7 +80,7 @@ export function NewsCard({ article, nowMs, isRead = false, priority = false, var
       <div className={cn("order-1 flex min-w-0 flex-1 flex-col gap-1.5", s.body)}>
         <h3
           className={cn(
-            "line-clamp-3 font-inter text-base font-bold leading-[1.35] decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline",
+            "line-clamp-3 font-serif text-[17px] font-semibold leading-[1.3] tracking-[-0.01em] decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline",
             isRead ? "text-white/60" : "text-white",
             s.title,
           )}

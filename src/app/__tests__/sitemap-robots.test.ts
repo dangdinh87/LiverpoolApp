@@ -29,9 +29,21 @@ vi.mock("@/lib/football", () => ({
 }));
 vi.mock("@/lib/site-articles/db", () => ({
   listSiteArticles: async () => [
-    { slug: "liverpool-v-man-city-review-2026-10-11", published_at: "2026-10-11T20:00:00Z" },
+    {
+      slug: "liverpool-v-man-city-review-2026-10-11",
+      published_at: "2026-10-11T20:00:00Z",
+      content_en: { title: "Review" },
+      content_vi: { title: "Nhận định" },
+    },
+    // Written in English only: the /vi URL serves the same English text.
+    {
+      slug: "english-only-preview",
+      published_at: "2026-10-10T20:00:00Z",
+      content_en: { title: "Preview" },
+      content_vi: null,
+    },
     // A draft with no date must not reach the sitemap.
-    { slug: "unpublished", published_at: null },
+    { slug: "unpublished", published_at: null, content_en: { title: "Draft" }, content_vi: null },
   ],
 }));
 
@@ -54,8 +66,12 @@ beforeAll(async () => {
 });
 
 describe("sitemap.xml", () => {
+  // Pages that exist in every language; an article written in one language is
+  // checked on its own below.
+  const bilingual = () => entries.filter((e) => !locOf(e).includes("english-only-preview"));
+
   it("lists every page once per locale, not just the default one", () => {
-    const locs = entries.map(locOf);
+    const locs = bilingual().map(locOf);
     const vi = locs.filter((l) => /\/vi(\/|$)/.test(l));
     expect(vi.length).toBeGreaterThan(0);
     // Each page contributes exactly one URL per locale.
@@ -64,7 +80,7 @@ describe("sitemap.xml", () => {
   });
 
   it("points each hreflang at that language's own URL", () => {
-    for (const block of entries) {
+    for (const block of bilingual()) {
       const alts = altsOf(block);
       expect(Object.keys(alts).sort()).toEqual(["en", "vi", "x-default"]);
       // The bug: all three were the same string.
@@ -88,6 +104,14 @@ describe("sitemap.xml", () => {
     expect(locs.some((l) => l.includes("/vi/analysis/liverpool-v-man-city-review-2026-10-11"))).toBe(true);
     // Unpublished rows have no date and must not be submitted.
     expect(locs.some((l) => l.includes("unpublished"))).toBe(false);
+  });
+
+  it("lists an article only in the languages it was written in", () => {
+    const own = entries.filter((e) => locOf(e).includes("/analysis/english-only-preview"));
+    expect(own.map(locOf)).toEqual([expect.stringMatching(/\/analysis\/english-only-preview$/)]);
+    expect(own.map(locOf)[0]).not.toContain("/vi/");
+    // No hreflang offers a Vietnamese version that does not exist.
+    expect(Object.keys(altsOf(own[0]))).toEqual(["en", "x-default"]);
   });
 
   it("keeps the scraped news mirrors out", () => {

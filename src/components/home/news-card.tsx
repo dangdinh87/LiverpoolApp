@@ -25,7 +25,7 @@ export function NewsHeadline({ article, locale }: NewsHeadlineProps) {
       className="group flex min-h-[5.25rem] items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-3)]"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="text-[15px] font-semibold leading-snug text-white line-clamp-3 transition-colors group-hover:text-lfc-gold sm:text-base">
+        <p className="font-serif text-base font-semibold leading-snug text-white line-clamp-3 transition-colors group-hover:text-lfc-gold sm:text-[17px]">
           {title}
         </p>
         <p className="flex items-center gap-2 text-[13px] text-stadium-muted">

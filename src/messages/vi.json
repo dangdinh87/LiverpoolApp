@@ -74,7 +74,7 @@
     }
   },
   "Hero": {
-    "tagline": "Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày",
+    "tagline": "Tin Liverpool mới nhất, đầy đủ ở một nơi",
     "title": "Tin Liverpool gọn ở một nơi",
     "subtitle": "Anfield Daily — tin Liverpool tổng hợp và tóm tắt",
     "description": "<b>{brand}</b> gom tin từ {count} tờ báo Anh, lọc trùng và tóm tắt thành bản tin mỗi ngày.",
@@ -82,9 +82,8 @@
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng",
-    "headlineTop": "Khỏi mở 20 tab.",
-    "headlineBottom": "Tin Liverpool ở đây.",
-    "ctaNews": "Đọc tin hôm nay"
+    "headlineTop": "Tin Liverpool mới nhất,",
+    "headlineBottom": "đầy đủ ở một nơi."
   },
   "Home": {
     "breaking": {
@@ -99,7 +98,6 @@
       "seconds": "giây",
       "noMatchHint": "Khi có lịch trận tiếp theo, giờ đá sẽ hiện ở đây.",
       "started": "Trận đã bắt đầu",
-      "allFixtures": "Lịch đấu",
       "viewerTime": "Giờ của bạn"
     },
     "results": {
@@ -124,9 +122,6 @@
       "emptyDescription": "Chưa tải được bảng xếp hạng. Trang sẽ tự cập nhật lại.",
       "emptyAction": "Xem bảng xếp hạng",
       "viewAll": "Xem cả bảng"
-    },
-    "squad": {
-      "viewAll": "Xem cả đội"
     },
     "metadata": {
       "title": "Giờ đá Liverpool theo múi giờ của bạn, kết quả, tin nhanh",
