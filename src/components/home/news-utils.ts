@@ -1,4 +1,5 @@
 import type { NewsArticle } from "@/lib/news/types";
+import { clusterStories } from "@/lib/news/story-clusters";
 
 const NAMED_ENTITIES: Record<string, string> = {
   amp: "&",
@@ -53,9 +54,17 @@ const time = (a: NewsArticle) => new Date(a.pubDate).getTime();
  *
  * Freshness is measured against the newest article held, not the wall clock, so
  * the result is a pure function of its input (stable across ISR and hydration).
+ *
+ * One card per story. /news has grouped rewrites of the same story since the
+ * clusterer shipped, but this list never did, so seven slots could hold three
+ * versions of one injury update — Liverpool Echo, liverpool.com and the Mirror
+ * are all Reach plc and syndicate within the group, so the feed receives those
+ * rewrites as a matter of course. `clusterStories` is pure, so it runs here on
+ * the server exactly as it does on the client.
  */
 export function selectHomeNews(articles: NewsArticle[], lang: "vi" | "en", count = TARGET_COUNT): NewsArticle[] {
-  const sortedAll = [...articles].sort((a, b) => time(b) - time(a));
+  const leads = clusterStories(articles).map((story) => story.lead);
+  const sortedAll = [...leads].sort((a, b) => time(b) - time(a));
   if (sortedAll.length === 0) return [];
 
   const nowMs = time(sortedAll[0]);

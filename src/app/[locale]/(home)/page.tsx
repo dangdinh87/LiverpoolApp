@@ -16,10 +16,8 @@ import { FormWidget, pickRecentResults } from "@/components/home/form-widget";
 import { NewsSection } from "@/components/home/news-section";
 import { selectHomeNews } from "@/components/home/news-utils";
 import { StandingsPreview } from "@/components/home/standings-preview";
-import { SquadCarousel } from "@/components/home/squad-carousel";
 import { DigestFeature } from "@/components/home/digest-feature";
 import { PredictCta } from "@/components/home/predict-cta";
-import { getSquadPlayers } from "@/lib/squad-data";
 import { JsonLd } from "@/components/seo/json-ld";
 import { DEFAULT_OG_IMAGE, getCanonical, getLocalizedUrl, makePageMeta, SCHEMA_IDS } from "@/lib/seo";
 import type { Fixture } from "@/lib/types/football";
@@ -39,7 +37,9 @@ function getOptimizedHeroUrl(url: string): string {
 
 /** "Tin nhanh" shows this many headlines; the query takes a few extra so the language mix can still fill it. */
 const HOME_NEWS_SHOWN = 7;
-const HOME_NEWS_LIMIT = 12;
+// Enough headroom that seven slots still fill after same-story rewrites collapse
+// into one card each (see selectHomeNews). One cached query, so the cost is flat.
+const HOME_NEWS_LIMIT = 24;
 
 const getCachedHomeFixtures = unstable_cache(
   async () => getFixtures(),
@@ -186,9 +186,6 @@ export default async function HomePage({ params }: LocaleParams) {
   // The next match still open for predictions (not the live one).
   const upcoming = liveMatch ? null : nextMatch && nextMatch.fixture.id > 0 ? nextMatch : null;
   const topNews = selectHomeNews(allNews, uiLocale, HOME_NEWS_SHOWN);
-  const squadTeaser = getSquadPlayers()
-    .sort((a, b) => a.shirtNumber - b.shirtNumber)
-    .slice(0, 12);
 
   return (
     <>
@@ -210,9 +207,6 @@ export default async function HomePage({ params }: LocaleParams) {
             {upcoming && <PredictCta fixture={upcoming} />}
             <StandingsPreview standings={standings} />
           </div>
-        </div>
-        <div className="mt-10 sm:mt-14">
-          <SquadCarousel players={squadTeaser} />
         </div>
       </div>
     </>
