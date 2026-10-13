@@ -62,3 +62,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /blob-report/
+
+# Output of the SEO check build, committed by accident (2181 files).
+.next-seo-check/

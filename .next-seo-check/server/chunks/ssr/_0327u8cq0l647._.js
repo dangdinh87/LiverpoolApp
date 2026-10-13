@@ -1,3 +1,0 @@
-(()=>{"use strict";module.exports=[438617,a=>{let b=(0,a.i(170106).f)("bookmark",[["path",{d:"M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z",key:"oz39mx"}]]);a.s(["f",0,b],438617)},149419,a=>{var b=a.i(405050);let c=(0,b.createServerReference)("70a97e431cd6f215f789dd3a0d9a16955b173242a4",b.callServer,void 0,b.findSourceMapURL,"toggleFavouritePlayer");a.s(["f",0,c])},562474,a=>{a.s(["S",0,{goalkeeper:"GK",defender:"DEF",midfielder:"MID",forward:"FWD"},"O",0,{goalkeeper:0,defender:1,midfielder:2,forward:3}])}]})();
-
-//# sourceMappingURL=_0327u8cq0l647._.js.map

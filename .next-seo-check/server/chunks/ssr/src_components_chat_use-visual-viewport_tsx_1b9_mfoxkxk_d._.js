@@ -1,3 +1,0 @@
-module.exports=[425794,a=>{"use strict";var b=a.i(572131);a.s(["ChatViewportSync",0,function(){return!function(a=!0){(0,b.useEffect)(()=>{let b=window.visualViewport;if(!a||!b)return;let c=document.documentElement,d=()=>{c.style.setProperty("--vvh",`${Math.round(b.height)}px`),c.style.setProperty("--vvt",`${Math.round(b.offsetTop)}px`)};return d(),b.addEventListener("resize",d),b.addEventListener("scroll",d),()=>{b.removeEventListener("resize",d),b.removeEventListener("scroll",d),c.style.removeProperty("--vvh"),c.style.removeProperty("--vvt")}},[a])}(),null}])}];
-
-//# sourceMappingURL=src_components_chat_use-visual-viewport_tsx_1b9_mfoxkxk_d._.js.map

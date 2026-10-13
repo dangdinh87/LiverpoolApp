@@ -1,3 +1,0 @@
-module.exports=[748691,a=>{"use strict";let b=(0,a.i(211857).registerClientReference)(function(){throw Error("Attempted to call the default export of [project]/src/app/[locale]/fixtures/error.tsx from the server, but it's on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/src/app/[locale]/fixtures/error.tsx","default");a.s(["default",0,b])},85922,a=>{"use strict";var b=a.i(748691);a.n(b)},194841,function(a){a.n(a.i(85922))}];
-
-//# sourceMappingURL=src_app_%5Blocale%5D_fixtures_error_tsx_0utjlysk1sqe1._.js.map
