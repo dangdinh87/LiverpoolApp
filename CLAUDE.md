@@ -236,9 +236,13 @@ src/
   60s; the prompt starts with `buildCurrentFactsBlock()` (head coach, squad, season).
   Generated **only** by `/api/news/digest/generate` (daily cron + hourly retry step in the news
   sync workflow). Pages read the latest digest with `getLatestDigest()` and never generate it.
-- **Article Rendering Components:**
-  - `ArticleHtmlBody` — renders `htmlContent` with imperatively-mounted video player React portals (avoids dangerouslySetInnerHTML conflicts)
-  - `ArticleVideoPlayer` — HLS.js + fallback to native HTML5 video; supports HLS and MP4 formats
+- **No full-article rendering.** `/news/<slug>` shows a headline, a short excerpt and a
+  link to the original — the excerpt-only stance from f17f100. `ArticleHtmlBody` and
+  `ArticleVideoPlayer` were the components that rendered a scraped body and played its
+  video; nothing has imported them since, so both are gone along with `hls.js`.
+  The extractor still writes `class="article-video-player"` into `htmlContent` and
+  `/news/<slug>` still reads that string to set `hasVideo` for the readability check —
+  that is a marker in scraped HTML, not a component.
 
 ### i18n
 
