@@ -1,4 +1,4 @@
-import { test, expect, type BrowserContext } from "@playwright/test";
+import { test, expect, type BrowserContext, type Locator } from "@playwright/test";
 import { waitForHeader } from "./support/wait-for-header";
 
 /**
@@ -31,16 +31,38 @@ test.describe("fixtures filter chips", () => {
     }).toPass({ timeout: 15_000 });
     await expect(first).not.toHaveAttribute("aria-current", "true");
 
-    // The number printed on the chip equals the number of match cards listed.
-    const printed = Number((await second.innerText()).replace(/\D+/g, ""));
     const cards = page.locator("main section[aria-label] ul > li");
-    await expect(cards).toHaveCount(printed);
+    const chipCount = async (chip: Locator) =>
+      Number((await chip.innerText()).replace(/\D+/g, ""));
+
+    /**
+     * Upcoming is ~40 matches and the list is deliberately not flat: the next
+     * five stay full cards and the rest fold into collapsible months. Radix
+     * removes a closed section's rows from the DOM, so counting `li` straight
+     * after load sees five of forty and looks like the chip is lying. Open
+     * every month first, then the count covers every match on offer.
+     */
+    const expandMonths = async () => {
+      // Indexed off the unfiltered set on purpose: a `[data-state="closed"]`
+      // locator shrinks as each click opens a month, so its own nth(4) stops
+      // resolving half way through the loop.
+      const triggers = page.locator('main [data-slot="accordion-trigger"]');
+      for (let i = 0; i < (await triggers.count()); i++) {
+        const trigger = triggers.nth(i);
+        if ((await trigger.getAttribute("data-state")) === "closed") await trigger.click();
+      }
+      await expect(page.locator('main [data-slot="accordion-trigger"][data-state="closed"]')).toHaveCount(0);
+    };
+
+    // The number printed on the chip equals the number of matches listed.
+    await expandMonths();
+    await expect(cards).toHaveCount(await chipCount(second));
 
     // Back to the first view.
     await first.click();
     await expect(first).toHaveAttribute("aria-current", "true");
-    const printedFirst = Number((await first.innerText()).replace(/\D+/g, ""));
-    await expect(cards).toHaveCount(printedFirst);
+    await expandMonths();
+    await expect(cards).toHaveCount(await chipCount(first));
   });
 
   test("competition chips narrow the list and never exceed the unfiltered count", async ({ page }) => {

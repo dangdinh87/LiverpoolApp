@@ -150,7 +150,11 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
             {showWatchHint && <p className="mt-2">{t("plWatch")}</p>}
           </PopoverContent>
         </Popover>
-        <div className="flex shrink-0 flex-wrap gap-2">
+        {/* `shrink-0` only once there is room beside the hint. On a 320px phone
+            it kept this row at its max-content width — both buttons plus the gap
+            — so `flex-wrap` never got the chance to wrap and the page scrolled
+            sideways by 44px. */}
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
           <SpoilerToggle />
           {!season && <AddToCalendar />}
         </div>
