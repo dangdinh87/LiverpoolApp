@@ -84,7 +84,7 @@ const ogLocale = (locale: string) => OG_LOCALES[locale] ?? OG_LOCALES[routing.de
 
 // ─── Canonical & Hreflang ───────────────────────────────────────────────────
 
-/** Build full canonical URL from a path (e.g. "/squad" → "https://...liverpoolfcvn.blog/squad") */
+/** Build full canonical URL from a path (e.g. "/squad" → `${SITE_URL}/squad`). */
 export function getCanonical(path: string): string {
   // Normalize: ensure leading slash, strip trailing slash (except root)
   const normalized = path === "/" ? "" : path.replace(/\/+$/, "");
