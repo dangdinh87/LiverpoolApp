@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { getFixtures } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { buildFixturesIcs } from "@/lib/calendar/fixtures-ics";
 import { routing, withLocalePrefix } from "@/i18n/routing";
 
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const locale = lang && (routing.locales as readonly string[]).includes(lang) ? lang : routing.defaultLocale;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? origin;
 
-  const [fixtures, t] = await Promise.all([getFixtures(), getTranslations({ locale, namespace: "Calendar" })]);
+  const [fixtures, t] = await Promise.all([getCachedFixtures(), getTranslations({ locale, namespace: "Calendar" })]);
   const body = buildFixturesIcs(fixtures, {
     siteUrl,
     matchPath: (id) => withLocalePrefix(`/fixtures/${id}`, locale),

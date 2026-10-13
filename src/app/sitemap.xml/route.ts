@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 import { getAllPlayers } from "@/lib/squad-data";
 import { getAllDigestDates } from "@/lib/news/digest";
-import { getFixtures } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { getCurrentSeasonYear, getSelectableSeasons } from "@/lib/football/current-season";
 import { listSiteArticles } from "@/lib/site-articles/db";
 import { getHreflangAlternates } from "@/lib/seo";
@@ -45,7 +45,7 @@ export async function GET() {
   try {
     const [digestData, fixtures, articles] = await Promise.allSettled([
       getAllDigestDates(),
-      getFixtures(),
+      getCachedFixtures(),
       // These were declared and never fetched, so the one set of pages this
       // site writes itself — the only original content here — was missing from
       // the sitemap entirely while every scraped mirror was deliberately kept

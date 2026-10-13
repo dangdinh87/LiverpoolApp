@@ -5,7 +5,7 @@ import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEnga
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
-import { getFixtures } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { LocalPublishedTime } from "@/components/ui/local-time";
 import type { NewsArticle } from "@/lib/news/types";
 import type { Fixture } from "@/lib/types/football";
@@ -164,7 +164,9 @@ export default async function ArticlePage({
     dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
     // Shared across every article page instead of a 100-row query per render.
     getCachedNewsFeed(100),
-    getFixtures(),
+    // Only used to name the next match. Shared, or every article page spends its
+    // own Football-Data request (10/min on the free tier).
+    getCachedFixtures(),
     // One shared snapshot covers every article, so this is ~2 queries per TTL
     // for the whole site rather than two per page view. See lib/news/engagement.
     getArticleEngagement(url),
