@@ -4,7 +4,8 @@ import type { LocaleParams } from "@/i18n/routing";
 import { calculateAge, getSquadPlayers } from "@/lib/squad-data";
 import { PageHero } from "@/components/ui/page-hero";
 import { SquadGrid } from "@/components/squad/squad-grid";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
@@ -40,10 +41,7 @@ export default async function SquadPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: "Squad", url: getCanonical("/squad") },
-      ])} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "squad", path: "/squad" }])} />
       <PageHero
         eyebrow={t("season", { season: getCurrentSeasonLabel() })}
         title={t("title")}

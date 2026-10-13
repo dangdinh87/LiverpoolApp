@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BongdaplusAdapter } from "../bongdaplus-adapter";
 import { RssAdapter } from "../rss-adapter";
 import { NEWS_USER_AGENT } from "../../http";
 import { RSS_FEEDS } from "../../config";
@@ -15,46 +14,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-const BDP_HTML = `
-<ul class="lst">
-  <li class="news">
-    <a class="thumb" href="/ngoai-hang-anh/liverpool-thang-lon-5242452610.html"><img alt="Liverpool thắng lớn trước Chelsea" src="https://cdn.bongdaplus.vn/a.jpg" /></a>
-    <a class="title" href="/ngoai-hang-anh/liverpool-thang-lon-5242452610.html">
-      Liverpool thắng lớn trước Chelsea
-    </a>
-    <span class="info"><span> 15 giờ trước</span></span>
-  </li>
-  <li class="news">
-    <a class="thumb" href="/ngoai-hang-anh/liverpool-mua-tien-ve-5241972610.html"><img alt="Liverpool mua tiền vệ mới từ Bundesliga" src="https://cdn.bongdaplus.vn/b.jpg" /></a>
-    <span class="info"><span>18:20 ngày 03/10/2026</span></span>
-  </li>
-  <li class="news">
-    <a class="thumb" href="/ngoai-hang-anh/arsenal-thang-5241000000.html"><img alt="Arsenal thắng trận" src="https://cdn.bongdaplus.vn/c.jpg" /></a>
-    <a class="title" href="/ngoai-hang-anh/arsenal-thang-5241000000.html">Arsenal thắng trận</a>
-  </li>
-</ul>`;
-
-describe("BongdaplusAdapter", () => {
-  it("takes titles from a.title or img[alt] (not the empty a.thumb) and parses dates", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-10-04T15:30:00.000Z"));
-    const fetchMock = stubFetch(BDP_HTML);
-
-    const items = await new BongdaplusAdapter().fetch();
-    // Both configured URLs return the same HTML; compare the first page only.
-    const first = items.slice(0, 2);
-    expect(first[0].title).toBe("Liverpool thắng lớn trước Chelsea");
-    expect(first[0].pubDate).toBe("2026-10-04T00:30:00.000Z");
-    expect(first[1].title).toBe("Liverpool mua tiền vệ mới từ Bundesliga"); // img[alt] fallback
-    expect(first[1].pubDate).toBe("2026-10-03T11:20:00.000Z");
-    expect(items.every((i) => i.title.length >= 10)).toBe(true);
-    expect(fetchMock.mock.calls[0][1].headers["User-Agent"]).toBe(NEWS_USER_AGENT);
-  });
-});
 
 function rssXml(pubDate: string) {
   return `<?xml version="1.0"?><rss version="2.0"><channel><title>t</title>
-  <item><title>Liverpool news</title><link>https://tuoitre.vn/a-1.htm</link><pubDate>${pubDate}</pubDate><description>Liverpool</description></item>
+  <item><title>Liverpool news</title><link>https://www.bbc.co.uk/sport/football/a-1</link><pubDate>${pubDate}</pubDate><description>Liverpool</description></item>
   </channel></rss>`;
 }
 
@@ -91,6 +54,10 @@ describe("RSS_FEEDS", () => {
     expect(urls).not.toContain("https://www.skysports.com/rss/12040");
     expect(urls.some((u) => u.includes("independent.co.uk/topic"))).toBe(false);
     expect(urls.some((u) => u.includes("webthethao.vn") || u.includes("thethao247.vn"))).toBe(false);
-    expect(urls).toContain("https://vietnamnet.vn/rss/the-thao/bong-da-quoc-te.rss");
+  });
+
+  it("is English-only: the Vietnamese feeds were dropped for a global audience", () => {
+    expect(RSS_FEEDS.length).toBeGreaterThan(0);
+    expect(RSS_FEEDS.every((f) => f.language === "en")).toBe(true);
   });
 });

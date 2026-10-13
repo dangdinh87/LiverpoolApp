@@ -2,7 +2,6 @@ import "server-only";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
-import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
 import { YouTubeChannelAdapter } from "./youtube-data-api";
 import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
@@ -599,7 +598,6 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
   const adapters = [
     new LfcAdapter(),
     ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
-    new BongdaplusAdapter(),
     // Inert without YOUTUBE_API_KEY, and reports "ok" in that case so a site
     // running without the key does not trip the workflow's failure alert.
     new YouTubeChannelAdapter(),

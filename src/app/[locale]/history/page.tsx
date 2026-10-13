@@ -20,7 +20,8 @@ import { ManagerAvatar } from "@/components/history/manager-avatar";
 import { StadiumShowcase } from "@/components/history/stadium-showcase";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
 
@@ -119,10 +120,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
   return (
     <div className="bg-stadium-bg text-white">
       <JsonLd
-        data={buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "History", url: getCanonical("/history") },
-        ])}
+        data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "history", path: "/history" }])}
       />
 
       <PageHero

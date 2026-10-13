@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { makePageMeta, buildBreadcrumbJsonLd, buildImageGalleryJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta, buildImageGalleryJsonLd } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { GalleryPage as GalleryClient } from "@/components/gallery/gallery-page";
 import { unstable_cache } from "next/cache";
@@ -123,17 +124,15 @@ export default async function GalleryRoute({ params }: LocaleParams) {
   return (
     <div className="bg-stadium-bg text-white">
       <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "Gallery", url: getCanonical("/gallery") },
-        ]),
+        await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "gallery", path: "/gallery" }]),
         buildImageGalleryJsonLd(
           images.slice(0, 20).map((img) => ({
             src: img.src,
             alt: img.alt,
             width: img.width,
             height: img.height,
-          }))
+          })),
+          locale,
         ),
       ]} />
       <PageHero eyebrow={t("label")} title={t("title")} description={t("subtitle")} />

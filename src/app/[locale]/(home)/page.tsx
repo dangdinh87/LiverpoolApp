@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { BRAND, brandDescription, brandTitle } from "@/lib/brand";
+import { brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
 import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
@@ -21,8 +21,7 @@ import { DigestFeature } from "@/components/home/digest-feature";
 import { PredictCta } from "@/components/home/predict-cta";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { JsonLd } from "@/components/seo/json-ld";
-import { buildBreadcrumbJsonLd, DEFAULT_OG_IMAGE, getCanonical, makePageMeta } from "@/lib/seo";
-import { getArticleUrl } from "@/lib/news-config";
+import { DEFAULT_OG_IMAGE, getCanonical, getLocalizedUrl, makePageMeta, SCHEMA_IDS } from "@/lib/seo";
 import type { Fixture } from "@/lib/types/football";
 
 function getOptimizedHeroUrl(url: string): string {
@@ -56,9 +55,13 @@ const getCachedHomeStandings = unstable_cache(
   { revalidate: 3600, tags: [FOOTBALL_CACHE_TAG] },
 );
 
+// No language preference: the feed is English-only since the Vietnamese sources
+// were dropped, so asking for a Vietnamese-first mix bought nothing — and it
+// cost a second cache entry, because the key included the preference and the
+// two locales could not share one snapshot.
 const getCachedHomeNews = unstable_cache(
-  async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true })),
-  ["home-news-vi-first-v3"],
+  async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, undefined, { skipSync: true })),
+  ["home-news-v4"],
   // The "news" tag makes this fresh on sync; the window is the fallback.
   { revalidate: 1800, tags: ["news"] },
 );
@@ -110,54 +113,32 @@ function getSettledValue<T>(result: PromiseSettledResult<T>, fallback: T): T {
   return fallback;
 }
 
-function buildHomeJsonLd(articles: Awaited<ReturnType<typeof getNewsFromDB>>, locale: string) {
-  const canonical = getCanonical("/");
-  const homeTitle = brandTitle(locale);
-  const homeDescription = brandDescription(locale);
-  const newsItems = articles.slice(0, 6).map((article, index) => ({
-    "@type": "ListItem",
-    position: index + 1,
-    url: getCanonical(getArticleUrl(article.link)),
-    name: article.title,
-    ...(article.thumbnail && { image: article.thumbnail }),
-    ...(article.pubDate && { datePublished: article.pubDate }),
-  }));
-
-  return [
-    {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      name: homeTitle,
-      description: homeDescription,
-      url: canonical,
-      inLanguage: ["vi", "en"],
-      isPartOf: {
-        "@type": "WebSite",
-        name: BRAND.name,
-        url: canonical,
-      },
-      about: {
-        "@type": "SportsTeam",
-        name: "Liverpool FC",
-        sport: "Football",
-      },
-      primaryImageOfPage: {
-        "@type": "ImageObject",
-        url: getCanonical(DEFAULT_OG_IMAGE.url),
-      },
+/**
+ * The home page as a node of the site-wide graph (see StructuredData).
+ *
+ * It used to restate the WebSite and the club as fresh anonymous entities,
+ * declare itself in both languages at the English URL whichever locale was
+ * served, carry a one-item breadcrumb, and list the latest headlines as an
+ * ItemList of /news mirror pages — pages that are noindex on purpose.
+ */
+function buildHomeJsonLd(locale: string) {
+  const url = getLocalizedUrl("/", locale);
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${url}#webpage`,
+    name: brandTitle(locale),
+    description: brandDescription(locale),
+    url,
+    inLanguage: locale,
+    isPartOf: { "@id": SCHEMA_IDS.website },
+    about: { "@id": SCHEMA_IDS.club },
+    publisher: { "@id": SCHEMA_IDS.publisher },
+    primaryImageOfPage: {
+      "@type": "ImageObject",
+      url: getCanonical(DEFAULT_OG_IMAGE.url),
     },
-    buildBreadcrumbJsonLd([{ name: "Home", url: canonical }]),
-    ...(newsItems.length
-      ? [
-          {
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            name: "Latest Liverpool FC news",
-            itemListElement: newsItems,
-          },
-        ]
-      : []),
-  ];
+  };
 }
 
 export default async function HomePage({ params }: LocaleParams) {
@@ -211,7 +192,7 @@ export default async function HomePage({ params }: LocaleParams) {
 
   return (
     <>
-      <JsonLd data={buildHomeJsonLd(allNews, locale)} />
+      <JsonLd data={buildHomeJsonLd(locale)} />
       <Hero backgroundUrl={heroBackgroundUrl}>
         <NextMatchWidget fixture={nextMatch} />
       </Hero>

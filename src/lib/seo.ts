@@ -39,8 +39,20 @@ export const DEFAULT_OG_IMAGE = {
   alt: SITE_NAME,
 };
 
+/**
+ * `@id`s of the site-wide entities declared once in <StructuredData />.
+ * Page-level schema refers to these instead of restating them, so the
+ * publisher, website and club are each one node in the graph, not several.
+ */
+export const SCHEMA_IDS = {
+  publisher: `${SITE_URL}/#publisher`,
+  website: `${SITE_URL}/#website`,
+  club: `${SITE_URL}/#club`,
+};
+
 const PUBLISHER = {
   "@type": "Organization" as const,
+  "@id": SCHEMA_IDS.publisher,
   name: SITE_NAME,
   url: SITE_URL,
   logo: {
@@ -92,13 +104,19 @@ export function getCanonical(path: string): string {
 }
 
 /**
- * The public URL path for a locale.
+ * Absolute URL of `path` as served in `locale`, e.g. ("/squad", "vi") → `${SITE_URL}/vi/squad`.
  *
- * Which locale carries a prefix comes from the routing config; hard-coding it
- * here is how every English page ended up claiming the Vietnamese URL as its
- * canonical when the default locale moved.
+ * Use this, not getCanonical, for any URL written into a localized page
+ * (JSON-LD `url`, breadcrumb items): getCanonical knows nothing about locales,
+ * so every Vietnamese page's structured data used to point at the English one.
+ * Which locale carries a prefix comes from the routing config, never a literal.
  */
-const localizedPath = withLocalePrefix;
+export function getLocalizedUrl(
+  path: string,
+  locale: string = routing.defaultLocale,
+): string {
+  return getCanonical(withLocalePrefix(path, locale));
+}
 
 /**
  * Generate canonical + hreflang alternates for Next.js metadata.
@@ -117,15 +135,15 @@ export function getHreflangAlternates(
   locale: string = routing.defaultLocale,
 ) {
   const languages = Object.fromEntries(
-    routing.locales.map((l) => [l, getCanonical(localizedPath(path, l))]),
+    routing.locales.map((l) => [l, getLocalizedUrl(path, l)]),
   ) as Record<(typeof routing.locales)[number], string>;
 
   return {
-    canonical: getCanonical(localizedPath(path, locale)),
+    canonical: getLocalizedUrl(path, locale),
     languages: {
       ...languages,
       // The default locale is what an unmatched visitor gets.
-      "x-default": getCanonical(localizedPath(path, routing.defaultLocale)),
+      "x-default": getLocalizedUrl(path, routing.defaultLocale),
     },
   };
 }
@@ -163,7 +181,7 @@ export function makePageMeta(
         .filter((l) => l !== (options?.locale ?? routing.defaultLocale))
         .map(ogLocale),
       ...(options?.path && {
-        url: getCanonical(localizedPath(options.path, options?.locale ?? routing.defaultLocale)),
+        url: getLocalizedUrl(options.path, options?.locale),
       }),
       images: options?.image ? [{ url: options.image }] : [DEFAULT_OG_IMAGE],
       ...(options?.publishedTime && {
@@ -217,6 +235,7 @@ export function buildNewsArticleJsonLd(article: {
   publishedAt?: string;
   modifiedAt?: string;
   sourceName?: string;
+  inLanguage?: string;
 }) {
   return {
     "@context": "https://schema.org",
@@ -224,14 +243,17 @@ export function buildNewsArticleJsonLd(article: {
     headline: article.title,
     description: article.description,
     url: article.url,
+    mainEntityOfPage: article.url,
+    ...(article.inLanguage && { inLanguage: article.inLanguage }),
     ...(article.image && {
       image: [article.image],
     }),
     ...(article.publishedAt && {
       datePublished: article.publishedAt,
     }),
-    ...(article.modifiedAt && {
-      dateModified: article.modifiedAt,
+    // Google asks for both dates; without one it assumes the story was never updated.
+    ...((article.modifiedAt || article.publishedAt) && {
+      dateModified: article.modifiedAt ?? article.publishedAt,
     }),
     author: {
       "@type": article.sourceName ? "Organization" : "Person",
@@ -240,6 +262,13 @@ export function buildNewsArticleJsonLd(article: {
     publisher: PUBLISHER,
   };
 }
+
+/** Fixture status codes that change a match's schema.org eventStatus; anything else is scheduled. */
+const EVENT_STATUS: Record<string, string> = {
+  PST: "EventPostponed",
+  CANC: "EventCancelled",
+  ABD: "EventCancelled",
+};
 
 /** SportsEvent — for match/fixture rich results */
 export function buildSportsEventJsonLd(event: {
@@ -253,12 +282,18 @@ export function buildSportsEventJsonLd(event: {
   homeScore?: number | null;
   awayScore?: number | null;
   status?: string;
+  /** The match page's own (localized) URL. */
+  url?: string;
 }) {
+  const home = { "@type": "SportsTeam", name: event.homeTeam };
+  const away = { "@type": "SportsTeam", name: event.awayTeam };
   return {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: event.name,
+    ...(event.url && { url: event.url }),
     startDate: event.startDate,
+    eventStatus: `https://schema.org/${EVENT_STATUS[event.status ?? ""] ?? "EventScheduled"}`,
     sport: "Football",
     ...(event.venue && {
       location: {
@@ -278,10 +313,9 @@ export function buildSportsEventJsonLd(event: {
         name: event.competition,
       },
     }),
-    competitor: [
-      { "@type": "SportsTeam", name: event.homeTeam },
-      { "@type": "SportsTeam", name: event.awayTeam },
-    ],
+    homeTeam: home,
+    awayTeam: away,
+    competitor: [home, away],
     // Include result if match is finished
     ...(event.homeScore != null &&
       event.awayScore != null && {
@@ -324,13 +358,14 @@ export function buildPersonJsonLd(player: {
 
 /** ImageGallery — for gallery page */
 export function buildImageGalleryJsonLd(
-  images: { src: string; alt: string; width?: number; height?: number }[]
+  images: { src: string; alt: string; width?: number; height?: number }[],
+  locale: string = routing.defaultLocale,
 ) {
   return {
     "@context": "https://schema.org",
     "@type": "ImageGallery",
     name: `${SITE_NAME} Photo Gallery`,
-    url: getCanonical("/gallery"),
+    url: getLocalizedUrl("/gallery", locale),
     image: images.map((img) => ({
       "@type": "ImageObject",
       contentUrl: img.src,

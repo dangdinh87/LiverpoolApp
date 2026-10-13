@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /chat
+Disallow: /profile
+Disallow: /auth/
+Disallow: /vi/chat
+Disallow: /vi/profile
+Disallow: /vi/auth/
+
+Sitemap: https://anfielddaily.com/sitemap.xml

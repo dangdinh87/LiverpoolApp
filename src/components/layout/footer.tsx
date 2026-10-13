@@ -19,26 +19,22 @@ const SOCIAL_LINKS = [
   { Icon: Youtube, href: "https://youtube.com/liverpoolfc", label: "YouTube" },
 ] as const;
 
-/** Outlets the news feed reads from. Names come from the shared source table. */
-const VI_SOURCE_IDS: NewsSource[] = [
-  "vnexpress", "tuoitre", "thanhnien", "dantri", "zingnews", "vietnamnet", "bongda", "bongdaplus", "24h",
-  "bongda24h", "soha",
-];
-const EN_SOURCE_IDS: NewsSource[] = [
-  "lfc", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky", "goal",
-];
-
 /**
- * The outlet list, the reader's own language first.
+ * Outlets the news feed reads from. Names come from the shared source table.
  *
- * It was Vietnamese-first for everyone, which left an English reader looking at
- * eleven Vietnamese mastheads before the first one they recognise.
+ * One list, not one per locale: the eleven Vietnamese feeds were dropped in
+ * October 2026 and the feed is English for every reader, so there is no longer
+ * a reader-first ordering to pick.
+ *
+ * It must match what the pipeline actually fetches. It cannot be derived from
+ * `RSS_FEEDS` — that module is `server-only` and this is a client component —
+ * so the two are kept in step by hand. It previously listed GOAL, which has no
+ * feed, and omitted five outlets that do.
  */
-function sourceIdsFor(locale: string): NewsSource[] {
-  return locale === "vi"
-    ? [...VI_SOURCE_IDS, ...EN_SOURCE_IDS]
-    : [...EN_SOURCE_IDS, ...VI_SOURCE_IDS];
-}
+const SOURCE_IDS: NewsSource[] = [
+  "lfc", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky",
+  "mirror", "independent", "anfieldindex", "liverpoolcom", "espn",
+];
 
 /* ── Brand icons lucide-react does not ship: X and TikTok ────────── */
 
@@ -138,7 +134,7 @@ export function Footer() {
               <h2 className="section-label mb-1 text-white">{t("newsSources")}</h2>
               <p className="max-w-3xl font-inter text-sm leading-relaxed text-stadium-muted">
                 {/* Names never break across lines ("Liverpool Echo" stays together). */}
-                {sourceIdsFor(locale).map((id, i) => (
+                {SOURCE_IDS.map((id, i) => (
                   <Fragment key={id}>
                     {i > 0 && " · "}
                     <span className="whitespace-nowrap">{SOURCE_CONFIG[id].label}</span>

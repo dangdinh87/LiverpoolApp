@@ -15,7 +15,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { BarChart3 } from "lucide-react";
-import { buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { competitionName } from "@/lib/competition-labels";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -105,10 +105,7 @@ export async function StatsSeasonView({
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: "Stats", url: getCanonical("/stats") },
-      ])} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "stats", path: "/stats" }])} />
       <PageHero
         eyebrow={`${t("hero.seasonLabel")} ${seasonLabel}`}
         title={t("hero.title")}

@@ -1,3 +1,5 @@
+import { routing, withLocalePrefix } from "@/i18n/routing";
+
 export function GET() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   // `Disallow: /*?*` used to sit here and blocked every URL carrying a query
@@ -7,12 +9,16 @@ export function GET() {
   // would have folded it into the clean page. Blocking replaced a signal that
   // works with no signal at all. The pages that genuinely must stay out are
   // noindex in their own metadata (/chat, /profile, /auth, the scraped mirrors).
+  // Each private section is listed under every locale's prefix: written as bare
+  // paths only, /vi/chat, /vi/profile and /vi/auth/ were open to crawlers.
+  const privatePaths = ["/chat", "/profile", "/auth/"];
+  const disallow = [
+    "/api/",
+    ...routing.locales.flatMap((locale) => privatePaths.map((p) => withLocalePrefix(p, locale))),
+  ];
   const body = `User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /chat
-Disallow: /profile
-Disallow: /auth/
+${disallow.map((p) => `Disallow: ${p}`).join("\n")}
 
 Sitemap: ${siteUrl}/sitemap.xml
 `;

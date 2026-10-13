@@ -3,7 +3,8 @@ import Image from "next/image";
 import { User } from "lucide-react";
 import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement } from "@/lib/news";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
-import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
+import { getHreflangAlternates } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { LocalPublishedTime } from "@/components/ui/local-time";
@@ -249,22 +250,13 @@ export default async function ArticlePage({
   return (
     <article className="min-h-screen">
       <ReadTracker articleUrl={url} />
-      <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: tNews("breadcrumb.home"), url: getCanonical("/") },
-          { name: tNews("title"), url: getCanonical("/news") },
-          { name: title, url: getCanonical(canonicalPath) },
-        ]),
-        buildNewsArticleJsonLd({
-          title,
-          description: content.description || content.paragraphs[0]?.slice(0, 160) || "",
-          url: getCanonical(canonicalPath),
-          image: content.heroImage,
-          author: content.author,
-          publishedAt: content.publishedAt,
-          sourceName: content.sourceName,
-        }),
-      ]} />
+      {/* Breadcrumb only. This page is another publisher's story shown as an
+          excerpt; NewsArticle markup here named this site as its publisher,
+          which is the one claim the excerpt-only stance exists to avoid. */}
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [
+        { name: tNews("title"), path: "/news" },
+        { name: title, path: canonicalPath },
+      ])} />
 
       <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
         <NewsBackLink label={t("backToNews")} />

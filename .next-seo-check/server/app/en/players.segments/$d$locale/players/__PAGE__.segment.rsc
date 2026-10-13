@@ -1,0 +1,27 @@
+3:"$Sreact.fragment"
+4:"/_next/static/chunks/0a-rekt06v0sv.js"
+5:I[339756,["$4"],"default"]
+6:I[837457,["$4"],"default"]
+c:I[897367,["$4"],"OutletBoundary"]
+d:"$Sreact.suspense"
+10:"ViewportBoundary"
+11:I[897367,["$4"],"$10"]
+12:"MetadataBoundary"
+13:I[897367,["$4"],"$12"]
+14:I[27201,["$4"],"IconMark"]
+8:X
+8:C
+9:X
+a:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$3","c",{"children":["$Lb",null,["$","$Lc",null,{"children":["$","$d",null,{"name":"Next.MetadataOutlet","children":"$@e"}]}]]}],"p":"$@f","v":null,"s":"$9"}}]]
+2:[["children",{"s":"players","h":64,"d":{"r":["$","$3","c",{"children":[null,["$","$L5",null,{"parallelRouterKey":"children","template":["$","$L6",null,{}]}]]}],"p":"$@7","v":"$8","s":"$9"},"c":"$Qa"}]]
+1:[["children",{"s":{"n":"locale","t":"d","k":"en","s":["actions","api","auth","llms.txt","robots.txt","sitemap.xml"]},"h":32,"c":"$Q2"}]]
+0:{"t":{"t":{"s":"","h":80,"c":"$Q1"},"h":{"r":["$","$3","h",{"children":[null,["$","$L11",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","$L13",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Anfield Daily — Liverpool news, fast · Gathered and summed up daily"}],["$","meta","1",{"name":"description","content":"Liverpool news from across the English press, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site."}],["$","meta","2",{"name":"application-name","content":"Anfield Daily"}],["$","link","3",{"rel":"author","href":"https://anfielddaily.com"}],["$","meta","4",{"name":"author","content":"Anfield Daily"}],["$","link","5",{"rel":"manifest","href":"/manifest.webmanifest"}],["$","meta","6",{"name":"keywords","content":"Anfield Daily,Liverpool FC,LFC,The Reds,The Kop,Anfield,YNWA,Liverpool kick-off time,Liverpool fixtures,Liverpool results,Liverpool squad,Premier League table,Liverpool news,Liverpool transfers,Premier League,where to watch Liverpool,You'll Never Walk Alone"}],["$","meta","7",{"name":"creator","content":"Anfield Daily"}],["$","meta","8",{"name":"publisher","content":"Anfield Daily"}],["$","meta","9",{"name":"robots","content":"index, follow"}],["$","meta","10",{"name":"googlebot","content":"index, follow, max-video-preview:-1, max-image-preview:large, max-snippet:-1"}],["$","meta","11",{"name":"category","content":"sports"}],["$","meta","12",{"property":"og:title","content":"Anfield Daily — Liverpool news, fast · Gathered and summed up daily"}],["$","meta","13",{"property":"og:description","content":"Liverpool news from across the English press, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site."}],["$","meta","14",{"property":"og:url","content":"https://anfielddaily.com"}],["$","meta","15",{"property":"og:site_name","content":"Anfield Daily"}],["$","meta","16",{"property":"og:locale","content":"en_GB"}],["$","meta","17",{"property":"og:image","content":"https://anfielddaily.com/opengraph-image"}],["$","meta","18",{"property":"og:image:width","content":"1200"}],["$","meta","19",{"property":"og:image:height","content":"630"}],["$","meta","20",{"property":"og:image:alt","content":"Anfield Daily"}],["$","meta","21",{"property":"og:locale:alternate","content":"vi_VN"}],["$","meta","22",{"property":"og:type","content":"website"}],["$","meta","23",{"name":"twitter:card","content":"summary_large_image"}],["$","meta","24",{"name":"twitter:title","content":"Anfield Daily — Liverpool news, fast · Gathered and summed up daily"}],["$","meta","25",{"name":"twitter:description","content":"Liverpool news from across the English press, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site."}],["$","meta","26",{"name":"twitter:image","content":"https://anfielddaily.com/opengraph-image"}],["$","link","27",{"rel":"icon","href":"/favicon.ico?favicon.1ytmj16wxqqb6.ico","sizes":"48x48","type":"image/x-icon"}],["$","link","28",{"rel":"icon","href":"/brand/icon.svg","type":"image/svg+xml"}],["$","link","29",{"rel":"icon","href":"/brand/favicon-32.png","sizes":"32x32","type":"image/png"}],["$","link","30",{"rel":"apple-touch-icon","href":"/brand/apple-touch-icon.png","sizes":"180x180","type":"image/png"}],["$","$L14","31",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@15","v":null,"s":"$9"}},"a":"$@16","u":"$@17","b":"W8_MLIJvcQUgjUQVHRrh1"}
+b:E{"digest":"NEXT_REDIRECT;replace;/squad;308;"}
+e:null
+17:true
+9:300
+9:C
+16:0
+7:"$undefined"
+15:"$undefined"
+f:"$undefined"

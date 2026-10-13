@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getSiteArticleBySlug, listSiteArticles } from "@/lib/site-articles/db";
-import { getHreflangAlternates, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { getHreflangAlternates, getLocalizedUrl, SCHEMA_IDS } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalMatchDay } from "@/components/ui/local-time";
 import { ArticleCard } from "@/components/site-articles/article-card";
@@ -81,7 +82,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
     .filter((r) => r.slug !== row.slug)
     .slice(0, 3);
 
-  const url = getCanonical(`/analysis/${slug}`);
+  const url = getLocalizedUrl(`/analysis/${slug}`, locale);
 
   return (
     <article className="min-h-screen bg-stadium-bg pb-16 pt-24">
@@ -95,6 +96,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             headline: content.title,
             description: content.excerpt,
             url,
+            mainEntityOfPage: url,
             inLanguage: locale,
             // The share card this route generates. Article markup without an
             // image is the commonest reason a story is passed over.
@@ -109,12 +111,11 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             // Points at the single publisher entity declared site-wide rather
             // than restating it, so the two cannot describe the same thing
             // differently.
-            publisher: { "@id": `${getCanonical("/")}/#publisher` },
+            publisher: { "@id": SCHEMA_IDS.publisher },
           },
-          buildBreadcrumbJsonLd([
-            { name: "Home", url: getCanonical("/") },
-            { name: t("metadata.title"), url: getCanonical("/analysis") },
-            { name: content.title, url },
+          await buildLocalizedBreadcrumbJsonLd(locale, [
+            { nav: "analysis", path: "/analysis" },
+            { name: content.title, path: `/analysis/${slug}` },
           ]),
         ]}
       />

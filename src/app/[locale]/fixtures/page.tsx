@@ -6,7 +6,8 @@ import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
@@ -30,10 +31,7 @@ export default async function FixturesPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: "Fixtures", url: getCanonical("/fixtures") },
-      ])} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "fixtures", path: "/fixtures" }])} />
       <PageHero
         eyebrow={t("hero.season", { season: getCurrentSeasonLabel() })}
         title={t("hero.title")}

@@ -20,7 +20,8 @@ import {
 import { MomoModal } from "./momo-modal";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { BRAND } from "@/lib/brand";
 
@@ -59,10 +60,7 @@ export default async function AboutPage({ params }: LocaleParams) {
   return (
     <div className="bg-stadium-bg text-white">
       <JsonLd
-        data={buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "About", url: getCanonical("/about") },
-        ])}
+        data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "about", path: "/about" }])}
       />
       <PageHero eyebrow={t("label")} title={t("title")} description={t("tagline")} />
 

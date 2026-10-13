@@ -128,80 +128,35 @@ export const getNewsFromDB = cache(
       // Use service client for public article reads (no auth needed, avoids cookie issues in ISR)
       const supabase = getServiceClient();
 
-      if (preferLang) {
-        const localLimit = Math.max(1, Math.ceil(limit * PREFERRED_LANGUAGE_SHARE));
-        const globalLimit = Math.max(1, limit - localLimit);
-        const [localRes, globalRes] = await Promise.all([
-          supabase
-            .from("articles")
-            .select(ARTICLE_COLUMNS)
-            .eq("is_active", true)
-            .not("published_at", "is", null)
-            .not("source", "in", NON_ARTICLE_FILTER)
-            .eq("language", preferLang)
-            .order("published_at", { ascending: false, nullsFirst: false })
-            .order("relevance", { ascending: false, nullsFirst: false })
-            .limit(localLimit),
-          supabase
-            .from("articles")
-            .select(ARTICLE_COLUMNS)
-            .eq("is_active", true)
-            .not("published_at", "is", null)
-            .not("source", "in", NON_ARTICLE_FILTER)
-            .neq("language", preferLang)
-            .order("published_at", { ascending: false, nullsFirst: false })
-            .order("relevance", { ascending: false, nullsFirst: false })
-            .limit(globalLimit),
-        ]);
+      // One query, newest first, then relevance. There used to be two: a quota
+      // split between the preferred language and the rest (80/20), plus a
+      // balanced EN/VI pair when no language was preferred. Both broke the day
+      // the Vietnamese feeds were dropped — with one language in the corpus the
+      // other side of every quota came back empty and was never topped up, so
+      // `limit` 12 returned 2 on the home page and half of `limit` everywhere
+      // else. Ordering by date first is language-neutral anyway, which is what
+      // the quota was there to protect: the original concern was a *relevance*
+      // sort burying one language, and relevance is only the tie-break here.
+      const { data, error } = await supabase
+        .from("articles")
+        .select(ARTICLE_COLUMNS)
+        .eq("is_active", true)
+        .not("published_at", "is", null)
+        .not("source", "in", NON_ARTICLE_FILTER)
+        .order("published_at", { ascending: false, nullsFirst: false })
+        .order("relevance", { ascending: false, nullsFirst: false })
+        .limit(limit);
 
-        if (localRes.error) console.error("[news/db] Local error:", localRes.error.message);
-        if (globalRes.error) console.error("[news/db] Global error:", globalRes.error.message);
+      if (error) console.error("[news/db] error:", error.message);
+      const articles = onlyRelevantArticles((data ?? []) as ArticleRow[]);
+      if (!preferLang) return articles;
 
-        // (A "backfill" pass used to re-run these exact queries when the pool was
-        // sparse. Same filters, order and limit return the same rows, so it only
-        // doubled the database round-trips — removed.)
-        const local = onlyRelevantArticles((localRes.data ?? []) as ArticleRow[]);
-        const global = onlyRelevantArticles((globalRes.data ?? []) as ArticleRow[]);
-        const combined = [...local, ...global].slice(0, limit);
-
-        return combined;
-      }
-
-      // Balanced fetch: get top articles per language so both EN & VI are represented
-      // (relevance scores differ across languages, pure relevance sort excludes VI)
-      const perLang = Math.ceil(limit / 2);
-      const [enRes, viRes] = await Promise.all([
-        supabase
-          .from("articles")
-          .select(ARTICLE_COLUMNS)
-          .eq("is_active", true)
-          .not("published_at", "is", null)
-          .not("source", "in", NON_ARTICLE_FILTER)
-          .eq("language", "en")
-          .order("published_at", { ascending: false, nullsFirst: false })
-          .order("relevance", { ascending: false, nullsFirst: false })
-          .limit(perLang),
-        supabase
-          .from("articles")
-          .select(ARTICLE_COLUMNS)
-          .eq("is_active", true)
-          .not("published_at", "is", null)
-          .not("source", "in", NON_ARTICLE_FILTER)
-          .eq("language", "vi")
-          .order("published_at", { ascending: false, nullsFirst: false })
-          .order("relevance", { ascending: false, nullsFirst: false })
-          .limit(perLang),
-      ]);
-
-      if (enRes.error) console.error("[news/db] EN error:", enRes.error.message);
-      if (viRes.error) console.error("[news/db] VI error:", viRes.error.message);
-
-      // No backfill pass: see the note in the preferLang branch above.
-      const enArticles = onlyRelevantArticles((enRes.data ?? []) as ArticleRow[]);
-      const viArticles = onlyRelevantArticles((viRes.data ?? []) as ArticleRow[]);
-      const combined = [...enArticles, ...viArticles].slice(0, limit);
-
-      return combined;
+      // A preference, not a quota: the reader's language first, each group
+      // keeping its own order, and nothing dropped when a language is absent.
+      return [
+        ...articles.filter((a) => a.language === preferLang),
+        ...articles.filter((a) => a.language !== preferLang),
+      ];
     } catch (err) {
       console.error("[news/db] Fatal:", err);
       return [];

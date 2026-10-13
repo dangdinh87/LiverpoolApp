@@ -21,38 +21,20 @@ export const RSS_FEEDS: FeedConfig[] = [
   // English — general feeds with keyword filter
   { url: "https://www.liverpoolecho.co.uk/all-about/liverpool-fc/?service=rss", source: "echo", language: "en" },
   { url: "https://www.espn.com/espn/rss/soccer/news", source: "espn", language: "en", filter: "lfc" },
-  // Vietnamese — Liverpool-specific feed (best source, ~50 articles)
-  { url: "https://bongda.com.vn/liverpool.rss", source: "bongda", language: "vi" },
-  // Vietnamese — general sport feeds filtered by LFC_KEYWORDS
-  { url: "https://cdn.24h.com.vn/upload/rss/bongda.rss", source: "24h", language: "vi", filter: "lfc" },
-  { url: "https://vnexpress.net/rss/the-thao.rss", source: "vnexpress", language: "vi", filter: "lfc" },
-  { url: "https://tuoitre.vn/rss/the-thao.rss", source: "tuoitre", language: "vi", filter: "lfc" },
-  { url: "https://thanhnien.vn/rss/the-thao.rss", source: "thanhnien", language: "vi", filter: "lfc" },
-  // Vietnamese — 5 new sources
-  { url: "https://dantri.com.vn/rss/the-thao.rss", source: "dantri", language: "vi", filter: "lfc" },
-  { url: "https://znews.vn/rss/the-thao.rss", source: "zingnews", language: "vi", filter: "lfc" },
-  // ~1000 unsorted items (~900 KB), dates are modified-times: longer timeout, sorted + age-cut in the adapter.
-  { url: "https://vietnamnet.vn/rss/the-thao/bong-da-quoc-te.rss", source: "vietnamnet", language: "vi", filter: "lfc", timeoutMs: 10_000 },
-  // Vietnamese — additional football feeds researched May 2026
-  { url: "https://bongda24h.vn/RSS/172.rss", source: "bongda24h", language: "vi", filter: "lfc" },
-  { url: "https://bongda24h.vn/RSS/187.rss", source: "bongda24h", language: "vi", filter: "lfc" },
-  // soha's section is dormant (months-old items): tight age cutoff.
-  { url: "https://soha.vn/rss/the-thao/anh.rss", source: "soha", language: "vi", filter: "lfc", maxAgeDays: 7 },
 ];
 
 /**
- * Distinct outlets the news pipeline reads: every RSS source plus the two that
- * have their own adapters (LFC official site, Bongdaplus). The homepage quotes
- * this number, so it stays true when a feed is added or dropped.
+ * Distinct outlets the news pipeline reads: every RSS source plus the one that
+ * has its own adapter (the LFC official site). The homepage quotes this number,
+ * so it stays true when a feed is added or dropped.
+ *
+ * The eleven Vietnamese feeds and the Bongdaplus scraper were dropped in
+ * October 2026: the site reads for a global audience, so the feed is English.
+ * Their hosts stay in source-hosts.ts and their labels in news-config.ts —
+ * articles already stored under those sources must keep rendering and their
+ * URLs must keep resolving.
  */
-export const NEWS_OUTLET_COUNT = new Set([...RSS_FEEDS.map((f) => f.source), "lfc", "bongdaplus"]).size;
-
-// Bongdaplus scraper config
-// Tag pages list Liverpool stories only; the section pages (ngoai-hang-anh, c1) were ~95% other clubs.
-export const BONGDAPLUS_URLS = [
-  "https://bongdaplus.vn/liverpool-tags",
-  "https://bongdaplus.vn/tin-chuyen-nhuong-liverpool",
-];
+export const NEWS_OUTLET_COUNT = new Set([...RSS_FEEDS.map((f) => f.source), "lfc"]).size;
 
 /** Single source of truth for LFC keyword matching + relevance scoring */
 export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [

@@ -1,0 +1,3 @@
+{
+  "/api/news/digest/generate/route": "app/api/news/digest/generate/route.js"
+}

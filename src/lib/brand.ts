@@ -24,8 +24,8 @@ export const BRAND = {
   },
   /** Meta description: the tagline expanded to one readable sentence. */
   description: {
-    vi: "Tin Liverpool từ hơn 20 tờ báo tiếng Anh và tiếng Việt, gom về một chỗ, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng. Trang fan không chính thức.",
-    en: "Liverpool news from more than 20 English and Vietnamese outlets, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site.",
+    vi: "Tin Liverpool từ các báo Anh, gom về một chỗ, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng. Trang fan không chính thức.",
+    en: "Liverpool news from across the English press, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site.",
   },
   /** One-line notice for places without room for the full footer text (share image). */
   unofficial: {

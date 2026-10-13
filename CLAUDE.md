@@ -1,6 +1,6 @@
 # Anfield Daily — Liverpool news site
 
-Trang tin Liverpool để đọc nhanh: gom tin từ 20+ báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt mỗi ngày (bản tin AI). Lịch thi đấu, kết quả, bảng xếp hạng, thống kê, đội hình, lịch sử CLB và trợ lý AI chat đi kèm. Thiết kế "Dark Stadium", song ngữ Anh-Việt.
+Trang tin Liverpool để đọc nhanh: gom tin từ các báo Anh, lọc trùng và tóm tắt mỗi ngày (bản tin AI). Lịch thi đấu, kết quả, bảng xếp hạng, thống kê, đội hình, lịch sử CLB và trợ lý AI chat đi kèm. Thiết kế "Dark Stadium", song ngữ Anh-Việt.
 
 **Định vị (do chủ site chốt, 10/2026):** site là nơi xem tin nhanh và đọc tóm tắt. KHÔNG định vị là "cho fan ở xa / xa nhà / ngoài nước Anh / khắp thế giới", không dùng "ở đâu cũng là Anfield". Chữ trên site nói về tin tức: tổng hợp, lọc trùng, tóm tắt.
 
@@ -10,7 +10,7 @@ Trang tin Liverpool để đọc nhanh: gom tin từ 20+ báo tiếng Anh và ti
 - **Styling:** Tailwind CSS v4 + shadcn/ui (Radix primitives)
 - **Backend:** Supabase (Auth + PostgreSQL + Storage)
 - **Football Data:** Football-Data.org (primary, free: 10 req/min) + ESPN (cup fixtures, free)
-- **News:** 17+ RSS sources synced to Supabase, VietAPI for translation + daily digest
+- **News:** 12 English RSS sources + the LFC site adapter, synced to Supabase; VietAPI for translation + daily digest
 - **AI Chat:** VietAPI (OpenAI-compatible) via Vercel AI SDK (`ai` package) + `assistant-ui` components
 - **Gallery:** Cloudinary image hosting + lightbox viewer
 - **i18n:** next-intl (EN/VI), detected via cookie `NEXT_LOCALE` or `Accept-Language` header
@@ -199,17 +199,23 @@ src/
 
 ### News System
 
-- 17+ RSS sources in 2 languages:
-  - **EN:** LFC Official, BBC Sport, The Guardian, Liverpool Echo, Anfield Watch, Empire of the Kop, Sky Sports, GOAL
-  - **VI:** VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Bóng Đá 24h, Soha
+- 13 outlets, English only (`NEWS_OUTLET_COUNT` derives the number the homepage prints):
+  LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch,
+  Empire of the Kop, Sky Sports, Mirror, Independent, Anfield Index, Liverpool.com, ESPN.
+  - **The eleven Vietnamese feeds and the Bongdaplus scraper were dropped (Oct 2026)** — the site
+    reads for a global audience. The `vi` *interface* stays; only the sources are English.
+    Their hosts stay in `source-hosts.ts` and their labels in `news-config.ts`, because articles
+    already stored under those sources must keep rendering and their URLs keep resolving.
+    The language filter chips are derived from the articles present, so the Vietnamese chip
+    hides itself and would return on its own if a Vietnamese source were ever added back.
   - Hosts and aliases for every source live in one table: `src/lib/news/source-hosts.ts`
     (used by slug encode/decode, `isKnownNewsSourceUrl` and `detectSource`).
   - Scraping uses the honest `NEWS_USER_AGENT` (`src/lib/news/http.ts`) — Reach sites and ESPN
     block spoofed browser UAs. This Is Anfield blocks every UA, so it is link-out only.
-  - Zone-less dates from Vietnamese feeds are read as +07:00; future dates are clamped to fetch time.
+  - Zone-less dates are read as +07:00 (kept for the stored Vietnamese articles); future dates are
+    clamped to fetch time.
     Zone names V8 cannot parse are resolved explicitly (Sky `BST` = +01:00; ESPN `EST` = -04:00 from March to November).
-  - Source list changes (Oct 2026): Manchester Evening News feed dropped (~2 items); Bongdaplus scrapes
-    `/liverpool-tags` + `/tin-chuyen-nhuong-liverpool`; Mirror / Independent / MEN are no longer "trusted
+  - Source list changes (Oct 2026): Manchester Evening News feed dropped (~2 items); Mirror / Independent / MEN are no longer "trusted
     Liverpool" sources in `relevance.ts`; LFC adapter skips Women / Academy / Media Watch / retail; Sky videos
     and liveblogs and Guardian `/live/` pages are dropped at ingest.
   - Each adapter records a fetch status (`ok | http_error | timeout | parse_error | error`); the sync result and

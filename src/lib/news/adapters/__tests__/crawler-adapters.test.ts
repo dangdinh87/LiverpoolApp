@@ -1,11 +1,9 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { monthEndMsFromBongdaplusUrl, parseBongdaplusList, parseListDateText } from "../bongdaplus-adapter";
 import { isSkippedLfcItem, parseLfcNewsHtml } from "../lfc-adapter";
 import { RssAdapter } from "../rss-adapter";
-import { BongdaplusAdapter } from "../bongdaplus-adapter";
-import { BONGDAPLUS_URLS, RSS_FEEDS } from "../../config";
+import { RSS_FEEDS } from "../../config";
 
 const fixture = (name: string) => readFileSync(path.resolve(__dirname, "../../__tests__/fixtures", name), "utf8");
 const NOW = Date.parse("2026-10-05T01:00:00Z");
@@ -13,45 +11,6 @@ const NOW = Date.parse("2026-10-05T01:00:00Z");
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
-});
-
-describe("bongdaplus list parsing (saved liverpool-tags / chuyển nhượng HTML)", () => {
-  const items = parseBongdaplusList(fixture("bongdaplus-list.html"), NOW);
-
-  it("keeps Liverpool items only, once each (slider duplicates dropped)", () => {
-    const links = items.map((i) => i.link);
-    expect(new Set(links).size).toBe(links.length);
-    expect(items.some((i) => /Andy Carroll/.test(i.title))).toBe(false); // no Liverpool signal
-    expect(items.some((i) => /Wirtz để mua Cherki/.test(i.title))).toBe(true);
-  });
-  it("never puts comment counters into titles", () => {
-    expect(items.every((i) => !/\s\d$/.test(i.title) && i.title.length >= 10)).toBe(true);
-  });
-  it("a bare comment count is not a date (it became year 2001)", () => {
-    expect(parseListDateText("1", NOW)).toBeNull();
-    expect(parseListDateText("4", NOW)).toBeNull();
-    expect(items.every((i) => !i.pubDate || new Date(i.pubDate).getUTCFullYear() === 2026)).toBe(true);
-  });
-  it("parses absolute and relative date text", () => {
-    expect(new Date(parseListDateText("21:24 ngày 03/10/2026", NOW)!).toISOString()).toBe("2026-10-03T14:24:00.000Z");
-    expect(new Date(parseListDateText("09 giờ trước", NOW)!).toISOString()).toBe("2026-10-04T16:00:00.000Z");
-  });
-  it("drops undated items whose id month is past retention, keeps current-month ones", () => {
-    expect(monthEndMsFromBongdaplusUrl("https://bongdaplus.vn/x/slug-5237102609.html")).toBe(Date.UTC(2026, 9, 1) - 7 * 3_600_000);
-    const sep = items.filter((i) => /-\d+2609\.html$/.test(i.link) && !i.pubDate);
-    // Sep-2026 undated items are still inside 14 days on Oct 5; the same list a month later drops them.
-    expect(parseBongdaplusList(fixture("bongdaplus-list.html"), Date.parse("2026-11-20T00:00:00Z")).filter((i) => !i.pubDate).length).toBe(0);
-    expect(sep.length).toBeGreaterThanOrEqual(0);
-  });
-  it("scrapes the Liverpool tag pages", () => {
-    expect(BONGDAPLUS_URLS).toEqual(["https://bongdaplus.vn/liverpool-tags", "https://bongdaplus.vn/tin-chuyen-nhuong-liverpool"]);
-  });
-  it("adapter reports status and survives an HTTP error", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => "" }));
-    const a = new BongdaplusAdapter();
-    expect(await a.fetch()).toEqual([]);
-    expect(a.status).toMatchObject({ state: "http_error", httpStatus: 503 });
-  });
 });
 
 describe("LFC adapter", () => {
@@ -136,7 +95,7 @@ describe("feed config", () => {
     expect(urls).toContain("https://www.thisisanfield.com/feed/");
     expect(urls).toContain("https://www.mirror.co.uk/all-about/liverpool-fc/?service=rss");
     expect(urls.some((u) => u.includes("manchestereveningnews"))).toBe(false);
-    expect(RSS_FEEDS.find((f) => f.source === "vietnamnet")?.timeoutMs).toBeGreaterThan(3500);
-    expect(RSS_FEEDS.find((f) => f.source === "soha")?.maxAgeDays).toBeLessThanOrEqual(7);
+    // The feed list is English-only now: no Vietnamese source to assert on.
+    expect(RSS_FEEDS.every((f) => f.language === "en")).toBe(true);
   });
 });

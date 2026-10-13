@@ -14,7 +14,8 @@ import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { matchCentreHref, type MatchCentreTab } from "@/components/fixtures/match-centre-links";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   formatSeasonLabel,
@@ -46,7 +47,9 @@ export async function generateMetadata({
   const selected = resolveSeason(seasonParam);
   const isCurrent = selected === getCurrentSeasonYear();
   const title = t("title");
-  const description = t("description", { season: seasonLabel(getCurrentSeasonYear()) });
+  // The season shown, not the current one: every archive page carried the
+  // current season's description, so they were duplicates of each other in results.
+  const description = t("description", { season: seasonLabel(selected) });
   // The current season is the same content as /fixtures; only past seasons are this page's own.
   return {
     title,
@@ -92,9 +95,9 @@ export default async function SeasonPage({
   return (
     <div className="min-h-screen">
       {/* The one page in the sitemap that carried no structured data. */}
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: t("title"), url: getCanonical("/season") },
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [
+        // The page's own canonical: the current season is /fixtures, see generateMetadata.
+        { name: t("title"), path: selectedSeason === currentYear ? "/fixtures" : `/season?season=${selectedSeason}` },
       ])} />
       <PageHero
         eyebrow={t("hero.eyebrow", { season: seasonLabel(selectedSeason) })}

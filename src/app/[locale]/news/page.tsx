@@ -13,7 +13,8 @@ import { DigestCard } from "@/components/news/digest-card";
 import { NewStoriesCount } from "@/components/news/new-since";
 import { cleanTitle } from "@/components/news/news-text";
 import { PageHero } from "@/components/ui/page-hero";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -86,10 +87,7 @@ export default async function NewsPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: t("breadcrumb.home"), url: getCanonical("/") },
-        { name: t("title"), url: getCanonical("/news") },
-      ])} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/news" }])} />
 
       <PageHero compact title={t("title")} description={t("heroDesc")} actions={<NewStoriesCount storyTimes={storyTimes} />} />
 

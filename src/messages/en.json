@@ -77,7 +77,7 @@
     "tagline": "Liverpool news, fast · Gathered and summed up daily",
     "title": "Liverpool news in one place",
     "subtitle": "Anfield Daily — Liverpool news, gathered and summed up",
-    "description": "<b>{brand}</b> gathers the news from {count} English and Vietnamese outlets, drops the duplicates and sums it up in a daily briefing.",
+    "description": "<b>{brand}</b> gathers the news from {count} English outlets, drops the duplicates and sums it up in a daily briefing.",
     "badge": "Liverpool news, gathered daily",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
@@ -130,7 +130,7 @@
     },
     "metadata": {
       "title": "Liverpool kick-off times in your time zone, results, quick news",
-      "description": "Liverpool news from 20+ English and Vietnamese outlets, de-duplicated and summed up daily. Plus fixtures, results and the table."
+      "description": "Liverpool news from across the English press, de-duplicated and summed up daily. Plus fixtures, results and the table."
     },
     "digest": {
       "kicker": "Today’s briefing",
@@ -827,7 +827,7 @@
   "About": {
     "metadata": {
       "title": "About",
-      "description": "Anfield Daily is an unofficial Liverpool fan site that gathers the news from 20+ outlets and sums it up daily. Where the data comes from, and what the site is not."
+      "description": "Anfield Daily is an unofficial Liverpool fan site that gathers the news from across the English press and sums it up daily. Where the data comes from, and what the site is not."
     },
     "label": "About",
     "eyebrow": {
@@ -842,12 +842,12 @@
     "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
     "whatIs": {
       "title": "What is {brand}?",
-      "description": "Anfield Daily is a Liverpool fan’s site for reading the news fast. It gathers stories from more than 20 English and Vietnamese outlets, drops the duplicates and sums up the day in one short briefing, so you don’t have to open twenty tabs. Fixtures, results and the table sit alongside.",
+      "description": "Anfield Daily is a Liverpool fan’s site for reading the news fast. It gathers stories from across the English press, drops the duplicates and sums up the day in one short briefing, so you don’t have to open twenty tabs. Fixtures, results and the table sit alongside.",
       "featuresTitle": "What's on the site",
       "features": {
         "gathered": {
           "title": "Gathered news",
-          "body": "Stories from more than 20 English and Vietnamese outlets in one feed, each with a link to the original."
+          "body": "Stories from across the English press in one feed, each with a link to the original."
         },
         "dedupe": {
           "title": "No duplicates",
@@ -879,7 +879,7 @@
         }
       },
       "dataTitle": "Data sources",
-      "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English and Vietnamese outlets, always with a link to the original story.",
+      "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English outlets, always with a link to the original story.",
       "techTitle": "Tech Stack",
       "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
     },
@@ -1091,7 +1091,7 @@
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. Quick news takes headlines and short excerpts from the publishers' public RSS feeds, with a link to the original story — English sources include LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop and GOAL; Vietnamese sources include VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h and Webthethao. AI chat, article translation and the daily digest are powered by VietAPI; the daily digest is drafted by AI and may contain mistakes. Live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. Quick news takes headlines and short excerpts from the publishers' public RSS feeds, with a link to the original story — Sources are LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com and ESPN. AI chat, article translation and the daily digest are powered by VietAPI; the daily digest is drafted by AI and may contain mistakes. Live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
       }
     },
     "toc": "On this page"

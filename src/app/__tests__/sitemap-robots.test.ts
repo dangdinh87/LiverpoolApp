@@ -127,6 +127,12 @@ describe("robots.txt", () => {
     expect(robots).toContain("Allow: /");
   });
 
+  it("blocks the private routes under the Vietnamese prefix too", () => {
+    for (const path of ["/vi/chat", "/vi/profile", "/vi/auth/"]) {
+      expect(robots).toContain(`Disallow: ${path}`);
+    }
+  });
+
   it("advertises the sitemap on an absolute URL", () => {
     const line = /^Sitemap: (\S+)$/m.exec(robots);
     expect(line).not.toBeNull();

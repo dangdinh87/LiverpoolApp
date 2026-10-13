@@ -37,7 +37,8 @@ import { LiveDetailBadge, LiveDetailScore, LiveDetailStats, LiveDetailTimeline }
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
-import { buildBreadcrumbJsonLd, buildSportsEventJsonLd, getCanonical, makePageMeta } from "@/lib/seo";
+import { buildSportsEventJsonLd, getLocalizedUrl, makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { LocalMatchDay, LocalMatchTime, LocalZoneOffset } from "@/components/ui/local-time";
@@ -228,13 +229,13 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   return (
     <div className="min-h-screen pb-16 pt-[calc(var(--header-h)+1rem)] sm:pt-[calc(var(--header-h)+1.5rem)]">
       <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "Fixtures", url: getCanonical("/fixtures") },
-          { name: `${teams.home.name} vs ${teams.away.name}`, url: getCanonical(`/fixtures/${id}`) },
+        await buildLocalizedBreadcrumbJsonLd(locale, [
+          { nav: "fixtures", path: "/fixtures" },
+          { name: `${teams.home.name} vs ${teams.away.name}`, path: `/fixtures/${id}` },
         ]),
         buildSportsEventJsonLd({
           name: `${teams.home.name} vs ${teams.away.name}`,
+          url: getLocalizedUrl(`/fixtures/${id}`, locale),
           startDate: f.date,
           venue: f.venue?.name,
           venueCity: f.venue?.city,

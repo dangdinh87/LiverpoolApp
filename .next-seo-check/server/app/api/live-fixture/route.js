@@ -1,0 +1,13 @@
+var R=require("../../../chunks/[turbopack]_runtime.js")("server/app/api/live-fixture/route.js")
+R.c("server/chunks/[root-of-the-server]__20e_rsuutijrp._.js")
+R.c("server/chunks/_1zakraaa7gf48._.js")
+R.c("server/chunks/node_modules_next_1lo724y0ayaf6._.js")
+R.c("server/chunks/node_modules_next_dist_0asya_d53xspt._.js")
+R.c("server/chunks/[root-of-the-server]__139kw7dkv--rc._.js")
+R.c("server/chunks/node_modules_next_19ry06wptsy95._.js")
+R.c("server/chunks/src_18j2smd7ykcaa._.js")
+R.c("server/chunks/node_modules_next_dist_20tx7-cuj7_ko._.js")
+R.c("server/chunks/src_lib_football_index_ts_1fifimxo8q_y1._.js")
+R.c("server/chunks/_next-internal_server_app_api_live-fixture_route_actions_0p3ibhjzyy075.js")
+R.m(808369)
+module.exports=R.m(808369).exports

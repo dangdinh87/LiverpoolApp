@@ -6,7 +6,8 @@ import { StandingsSummary } from "@/components/standings/standings-summary";
 import { PageHero } from "@/components/ui/page-hero";
 import { StandingsCompTabs } from "@/components/standings/standings-comp-tabs";
 import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 
@@ -43,10 +44,7 @@ export default async function StandingsPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: "Standings", url: getCanonical("/standings") },
-      ])} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "standings", path: "/standings" }])} />
       <PageHero
         eyebrow={t("hero.season", { season: getCurrentSeasonLabel() })}
         title={t("hero.title")}

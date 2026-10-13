@@ -105,6 +105,19 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
 
   const byLang = useMemo(() => (lang === "all" ? loaded : loaded.filter((a) => a.language === lang)), [loaded, lang]);
 
+  /**
+   * Only the languages actually present, the same way `availableSources` works
+   * below: a chip that can only ever lead to an empty list is a dead control.
+   * The Vietnamese feeds were dropped in October 2026 for a global audience, so
+   * "vi" normally has nothing — and if a Vietnamese source is ever added back,
+   * its chip returns on its own. The group hides entirely when there is no
+   * choice left to make.
+   */
+  const availableLangs = useMemo(() => {
+    const present = new Set(loaded.map((a) => a.language));
+    return LANGS.filter((l) => l.value === "all" || present.has(l.value));
+  }, [loaded]);
+
   const availableSources = useMemo(() => {
     const present = new Set(byLang.map((a) => a.source));
     return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter((s) => present.has(s));
@@ -183,8 +196,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
               role="group"
               aria-label={t("langGroupLabel")}
               className="flex min-w-0 flex-1 border border-[var(--line-strong)] sm:max-w-sm sm:flex-none sm:basis-80"
+              hidden={availableLangs.length < 3}
             >
-              {LANGS.map(({ value, labelKey }) => {
+              {availableLangs.map(({ value, labelKey }) => {
                 const active = lang === value;
                 return (
                   <button

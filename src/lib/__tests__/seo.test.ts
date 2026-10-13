@@ -7,6 +7,7 @@ const {
   DEFAULT_OG_IMAGE,
   getCanonical,
   getHreflangAlternates,
+  getLocalizedUrl,
   makePageMeta,
   buildBreadcrumbJsonLd,
   buildNewsArticleJsonLd,
@@ -27,6 +28,18 @@ describe("getCanonical", () => {
 
   it("strips trailing slash", () => {
     expect(getCanonical("/news/")).toBe("https://www.liverpoolfcvn.blog/news");
+  });
+});
+
+describe("getLocalizedUrl", () => {
+  it("keeps the default locale unprefixed", () => {
+    expect(getLocalizedUrl("/squad")).toBe("https://www.liverpoolfcvn.blog/squad");
+  });
+
+  it("prefixes the Vietnamese URL, including home", () => {
+    // Structured data on /vi pages used getCanonical and pointed at English URLs.
+    expect(getLocalizedUrl("/squad", "vi")).toBe("https://www.liverpoolfcvn.blog/vi/squad");
+    expect(getLocalizedUrl("/", "vi")).toBe("https://www.liverpoolfcvn.blog/vi");
   });
 });
 
@@ -112,6 +125,8 @@ describe("buildNewsArticleJsonLd", () => {
     expect(result["@type"]).toBe("NewsArticle");
     expect(result.headline).toBe("Liverpool win PL");
     expect(result.publisher["@type"]).toBe("Organization");
+    // Linked to the site-wide publisher node rather than a second, anonymous one.
+    expect(result.publisher["@id"]).toBe("https://www.liverpoolfcvn.blog/#publisher");
   });
 
   it("includes optional fields when provided", () => {
@@ -154,6 +169,32 @@ describe("buildSportsEventJsonLd", () => {
     expect(result.sport).toBe("Football");
     expect(result.competitor).toHaveLength(2);
     expect(result.location?.name).toBe("Anfield");
+  });
+
+  it("names home and away sides and the event status", () => {
+    const result = buildSportsEventJsonLd({
+      name: "Liverpool vs Everton",
+      startDate: "2026-03-20T15:00:00Z",
+      homeTeam: "Liverpool",
+      awayTeam: "Everton",
+      status: "PST",
+      url: "https://www.liverpoolfcvn.blog/vi/fixtures/1",
+    });
+    expect(result.homeTeam.name).toBe("Liverpool");
+    expect(result.awayTeam.name).toBe("Everton");
+    expect(result.eventStatus).toBe("https://schema.org/EventPostponed");
+    expect(result.url).toBe("https://www.liverpoolfcvn.blog/vi/fixtures/1");
+  });
+
+  it("defaults the event status to scheduled", () => {
+    const result = buildSportsEventJsonLd({
+      name: "Liverpool vs Everton",
+      startDate: "2026-03-20T15:00:00Z",
+      homeTeam: "Liverpool",
+      awayTeam: "Everton",
+      status: "FT",
+    });
+    expect(result.eventStatus).toBe("https://schema.org/EventScheduled");
   });
 
   it("includes result when scores provided", () => {
@@ -219,6 +260,10 @@ describe("buildImageGalleryJsonLd", () => {
     expect(result.image[0].contentUrl).toBe("https://example.com/1.jpg");
     expect(result.image[0].width).toBe(800);
     expect(result.image[1].width).toBeUndefined();
+  });
+
+  it("uses the gallery URL of the page's locale", () => {
+    expect(buildImageGalleryJsonLd([], "vi").url).toBe("https://www.liverpoolfcvn.blog/vi/gallery");
   });
 });
 

@@ -1,0 +1,75 @@
+{
+  "node": {
+    "0027c3b0c29d0e0ed5e3c3d50831312485054385a1": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "logout",
+      "filename": "src/app/actions/auth.ts"
+    },
+    "4079758688f3af600e2172f1048ce89d8cfd2106d5": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "loginWithEmail",
+      "filename": "src/app/actions/auth.ts"
+    },
+    "40cb8b666250e2d69298173482fada395e349dbb9a": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "registerWithEmail",
+      "filename": "src/app/actions/auth.ts"
+    },
+    "40762ebfedb29555cb191f0847dac9c577f8d942f8": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "getPredictionState",
+      "filename": "src/app/actions/predictions.ts"
+    },
+    "709df1cea18030d7821412fe81747d9bc50f3e72d5": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "savePrediction",
+      "filename": "src/app/actions/predictions.ts"
+    },
+    "408bd78b1e1062823a52bf8dae967955eaacfa4eeb": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "getRatingsState",
+      "filename": "src/app/actions/predictions.ts"
+    },
+    "60ec70913e11074b0da245b39c4c6ed5ce319fee50": {
+      "workers": {
+        "app/[locale]/fixtures/[id]/page": {
+          "moduleId": 157345,
+          "async": false
+        }
+      },
+      "exportedName": "saveRatings",
+      "filename": "src/app/actions/predictions.ts"
+    }
+  },
+  "edge": {}
+}

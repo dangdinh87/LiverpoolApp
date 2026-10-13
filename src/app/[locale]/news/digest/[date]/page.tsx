@@ -7,7 +7,8 @@ import { getArticleRefsByUrls } from "@/lib/news";
 import { detectSource } from "@/lib/news/source-detect";
 import { CATEGORY_CONFIG, SOURCE_CONFIG } from "@/lib/news-config";
 import type { NewsSource } from "@/lib/news/types";
-import { makePageMeta, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical, getHreflangAlternates } from "@/lib/seo";
+import { makePageMeta, buildNewsArticleJsonLd, getHreflangAlternates, getLocalizedUrl } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
@@ -177,18 +178,20 @@ export default async function DigestPage({
   return (
     <article className="min-h-screen">
       <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: tNews("breadcrumb.home"), url: getCanonical("/") },
-          { name: tNews("title"), url: getCanonical("/news") },
-          { name: cleanTitle(digest.title), url: getCanonical(`/news/digest/${date}`) },
+        await buildLocalizedBreadcrumbJsonLd(locale, [
+          { name: tNews("title"), path: "/news" },
+          { name: cleanTitle(digest.title), path: `/news/digest/${date}` },
         ]),
         buildNewsArticleJsonLd({
           title: displayTitle,
           description: displayDescription,
-          url: getCanonical(`/news/digest/${date}`),
+          url: getLocalizedUrl(`/news/digest/${date}`, locale),
+          inLanguage: locale,
           publishedAt: digest.generated_at,
           sourceName: seoArticle?.sourceName,
-          image: heroImage?.src,
+          // This briefing's own share card, not the lead story's photo: that
+          // photo belongs to the outlet that ran the story.
+          image: `${getLocalizedUrl(`/news/digest/${date}`, locale)}/opengraph-image`,
         }),
       ]} />
 

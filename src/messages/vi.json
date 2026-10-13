@@ -77,7 +77,7 @@
     "tagline": "Tin Liverpool nhanh · Tổng hợp và tóm tắt mỗi ngày",
     "title": "Tin Liverpool gọn ở một nơi",
     "subtitle": "Anfield Daily — tin Liverpool tổng hợp và tóm tắt",
-    "description": "<b>{brand}</b> gom tin từ {count} tờ báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt thành bản tin mỗi ngày.",
+    "description": "<b>{brand}</b> gom tin từ {count} tờ báo Anh, lọc trùng và tóm tắt thành bản tin mỗi ngày.",
     "badge": "Tin Liverpool tổng hợp mỗi ngày",
     "scroll": "Cuộn",
     "fixtures": "Lịch thi đấu & Kết quả",
@@ -130,7 +130,7 @@
     },
     "metadata": {
       "title": "Giờ đá Liverpool theo múi giờ của bạn, kết quả, tin nhanh",
-      "description": "Tin Liverpool từ hơn 20 báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng."
+      "description": "Tin Liverpool từ các báo Anh, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng."
     },
     "digest": {
       "kicker": "Bản tin hôm nay",
@@ -827,7 +827,7 @@
   "About": {
     "metadata": {
       "title": "Giới thiệu",
-      "description": "Anfield Daily là trang fan Liverpool không chính thức, gom tin từ hơn 20 tờ báo và tóm tắt mỗi ngày. Dữ liệu lấy từ đâu, và trang này không phải cái gì."
+      "description": "Anfield Daily là trang fan Liverpool không chính thức, gom tin từ các báo Anh và tóm tắt mỗi ngày. Dữ liệu lấy từ đâu, và trang này không phải cái gì."
     },
     "label": "Giới thiệu",
     "eyebrow": {
@@ -842,12 +842,12 @@
     "disclaimer": "{brand} là trang fan <status>độc lập, không chính thức</status>. Trang không liên kết với, không được tài trợ hay xác nhận bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các tờ báo được dẫn link. Tên, logo và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
       "title": "{brand} là gì?",
-      "description": "Anfield Daily là trang của một fan Liverpool, làm ra để đọc tin cho nhanh. Trang gom tin từ hơn 20 tờ báo tiếng Anh và tiếng Việt, bỏ các bài trùng nhau và tóm tắt cả ngày thành một bản tin ngắn, để bạn khỏi phải mở hai mươi tab. Lịch thi đấu, kết quả và bảng xếp hạng nằm ngay bên cạnh.",
+      "description": "Anfield Daily là trang của một fan Liverpool, làm ra để đọc tin cho nhanh. Trang gom tin từ các báo Anh và tiếng Việt, bỏ các bài trùng nhau và tóm tắt cả ngày thành một bản tin ngắn, để bạn khỏi phải mở hai mươi tab. Lịch thi đấu, kết quả và bảng xếp hạng nằm ngay bên cạnh.",
       "featuresTitle": "Trong trang có gì",
       "features": {
         "gathered": {
           "title": "Tin gom sẵn",
-          "body": "Tin từ hơn 20 tờ báo tiếng Anh và tiếng Việt trong một dòng tin, mỗi tin kèm link sang bài gốc."
+          "body": "Tin từ các báo Anh trong một dòng tin, mỗi tin kèm link sang bài gốc."
         },
         "dedupe": {
           "title": "Lọc bài trùng",
@@ -879,7 +879,7 @@
         }
       },
       "dataTitle": "Nguồn dữ liệu",
-      "dataSources": "Lịch đấu, kết quả, bảng xếp hạng: football-data.org và ESPN. Thống kê cầu thủ: Fantasy Premier League (API công khai). Đội hình và hồ sơ cầu thủ: liverpoolfc.com. Tiêu đề tin: RSS công khai của các báo Anh và Việt Nam, luôn kèm link bài gốc.",
+      "dataSources": "Lịch đấu, kết quả, bảng xếp hạng: football-data.org và ESPN. Thống kê cầu thủ: Fantasy Premier League (API công khai). Đội hình và hồ sơ cầu thủ: liverpoolfc.com. Tiêu đề tin: RSS công khai của các báo Anh, luôn kèm link bài gốc.",
       "techTitle": "Công nghệ",
       "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
     },
@@ -1091,7 +1091,7 @@
       },
       "sources": {
         "title": "Nguồn dữ liệu",
-        "content": "Bảng xếp hạng, lịch thi đấu và kết quả được cung cấp bởi Football-Data.org. Lịch thi đấu cúp và diễn biến trận đấu được bổ sung từ ESPN. Thống kê cầu thủ lấy từ Fantasy Premier League (API công khai); đội hình và hồ sơ cầu thủ lấy từ liverpoolfc.com. Tin nhanh lấy tiêu đề và đoạn trích ngắn từ RSS công khai của các báo, kèm liên kết tới bài gốc — tiếng Anh gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, Sky Sports, Anfield Watch, Empire of the Kop, GOAL; tiếng Việt gồm VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Webthethao. Chat AI, dịch bài viết và bản tin tổng hợp hằng ngày được hỗ trợ bởi VietAPI; bản tin tổng hợp do AI soạn nháp nên có thể có sai sót. Tìm kiếm web trong chat dùng Groq. Hình ảnh gallery được lưu trữ trên Cloudinary. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên dựa trên các nguồn công khai."
+        "content": "Bảng xếp hạng, lịch thi đấu và kết quả được cung cấp bởi Football-Data.org. Lịch thi đấu cúp và diễn biến trận đấu được bổ sung từ ESPN. Thống kê cầu thủ lấy từ Fantasy Premier League (API công khai); đội hình và hồ sơ cầu thủ lấy từ liverpoolfc.com. Tin nhanh lấy tiêu đề và đoạn trích ngắn từ RSS công khai của các báo, kèm liên kết tới bài gốc — gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com và ESPN. Chat AI, dịch bài viết và bản tin tổng hợp hằng ngày được hỗ trợ bởi VietAPI; bản tin tổng hợp do AI soạn nháp nên có thể có sai sót. Tìm kiếm web trong chat dùng Groq. Hình ảnh gallery được lưu trữ trên Cloudinary. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên dựa trên các nguồn công khai."
       }
     },
     "toc": "Trong trang này"

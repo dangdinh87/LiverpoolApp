@@ -40,8 +40,8 @@ These pages are this site's own work and are the ones to cite.
 
 ## Gathered from elsewhere
 
-- [News roundup](${siteUrl}/news): headlines from 20+ English and Vietnamese
-  outlets, each shown as a headline, a short excerpt and a link to the
+- [News roundup](${siteUrl}/news): headlines from across the English
+  press, each shown as a headline, a short excerpt and a link to the
   original. The full article always lives with the publisher who wrote it.
 
 Those roundup pages carry \`noindex\` on purpose. They are a way to find the

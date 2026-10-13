@@ -3,7 +3,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronDown, Trophy } from "lucide-react";
-import { getLocale, getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { BRAND } from "@/lib/brand";
@@ -15,7 +15,8 @@ import { PlayerPhoto } from "@/components/player/player-photo";
 import { SectionHeader } from "@/components/ui/section-header";
 import { PlayerSeasonStats } from "@/components/player/player-season-stats";
 import { cn } from "@/lib/utils";
-import { getHreflangAlternates, buildBreadcrumbJsonLd, buildPersonJsonLd, getCanonical } from "@/lib/seo";
+import { getHreflangAlternates, buildPersonJsonLd, getLocalizedUrl } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getArticlesMentioning } from "@/lib/news";
 import { getPlayerFanRating } from "@/lib/fan-predictions/leaderboard";
@@ -86,24 +87,26 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+  const { id, locale } = await params;
   const player = getPlayerBySlug(id);
   if (!player) return { title: "Player" };
-  const locale = await getLocale();
-  // metaDescription is English-only; Vietnamese visitors (and Googlebot, which
-  // gets the default "vi") get the opening of the Vietnamese bio instead.
+  // metaDescription is English-only; the Vietnamese page gets the opening of
+  // the Vietnamese bio instead.
   const viSummary = locale === "vi" ? summarize(getPlayerBio(player.slug, "vi")) : "";
   const description =
     viSummary ||
     player.metaDescription ||
     `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
   const images = player.photoLg ? [{ url: player.photoLg, width: 400, height: 400 }] : [];
+  const alternates = getHreflangAlternates(`/player/${id}`, locale);
   return {
     title: player.name,
     description,
-    alternates: getHreflangAlternates(`/player/${id}`, locale),
+    alternates,
     openGraph: {
       title: player.name,
+      url: alternates.canonical,
+      locale: locale === "vi" ? "vi_VN" : "en_GB",
       description,
       type: "profile",
       ...(images.length > 0 && { images }),
@@ -179,17 +182,16 @@ export default async function PlayerPage({ params }: PageProps) {
   return (
     <div className="min-h-screen">
       <JsonLd data={[
-        buildBreadcrumbJsonLd([
-          { name: "Home", url: getCanonical("/") },
-          { name: "Squad", url: getCanonical("/squad") },
-          { name: player.name, url: getCanonical(`/player/${player.slug}`) },
+        await buildLocalizedBreadcrumbJsonLd(locale, [
+          { nav: "squad", path: "/squad" },
+          { name: player.name, path: `/player/${player.slug}` },
         ]),
         buildPersonJsonLd({
           name: player.name,
           birthDate: player.dateOfBirth,
           nationality: player.nationality,
           image: player.photoLg,
-          url: getCanonical(`/player/${player.slug}`),
+          url: getLocalizedUrl(`/player/${player.slug}`, locale),
           position: player.position,
         }),
       ]} />

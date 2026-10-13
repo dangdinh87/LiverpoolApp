@@ -1,0 +1,3 @@
+{
+  "/api/chat-groq/route": "app/api/chat-groq/route.js"
+}

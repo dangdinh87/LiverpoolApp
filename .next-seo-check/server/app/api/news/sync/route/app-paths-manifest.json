@@ -1,0 +1,3 @@
+{
+  "/api/news/sync/route": "app/api/news/sync/route.js"
+}

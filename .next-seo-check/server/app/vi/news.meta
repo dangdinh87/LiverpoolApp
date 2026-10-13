@@ -1,0 +1,40 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/[locale]/layout,_N_T_/[locale]/news/layout,_N_T_/[locale]/news/page,_N_T_/vi/news,news,news-digest"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/$d$locale",
+    "/$d$locale/news/__PAGE__"
+  ],
+  "prefetchHints": {
+    "hints": 64,
+    "slots": {
+      "children": {
+        "hints": 32,
+        "slots": {
+          "children": {
+            "hints": 64,
+            "slots": {
+              "children": {
+                "hints": 160,
+                "slots": null
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/f3567b99044e5b7b2bf87e609a57845cc1ebf58ceed5f17b697eace11e391234/$/vi/news",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/[locale]/news/page"
+    },
+    "isFallback": false
+  }
+}

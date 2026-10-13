@@ -3,7 +3,6 @@ import { cache } from "react";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
-import { BongdaplusAdapter } from "./adapters/bongdaplus-adapter";
 import { RSS_FEEDS } from "./config";
 import type { NewsArticle } from "./types";
 
@@ -33,7 +32,6 @@ export type { ArticleEngagement } from "./engagement";
 const adapters = [
   new LfcAdapter(),
   ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
-  new BongdaplusAdapter(),
 ];
 
 /** Fetch news directly from adapters (used by sync API). */

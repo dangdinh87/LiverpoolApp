@@ -4,7 +4,8 @@ import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ArticleCard } from "@/components/site-articles/article-card";
 import { listSiteArticles } from "@/lib/site-articles/db";
-import { makePageMeta, buildBreadcrumbJsonLd, getCanonical } from "@/lib/seo";
+import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import type { LocaleParams } from "@/i18n/routing";
 import type { SiteArticleContent } from "@/lib/site-articles/types";
@@ -36,10 +37,9 @@ export default async function AnalysisPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen bg-stadium-bg pb-16">
-      <JsonLd data={[buildBreadcrumbJsonLd([
-        { name: "Home", url: getCanonical("/") },
-        { name: t("metadata.title"), url: getCanonical("/analysis") },
-      ])]} />
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [
+        { nav: "analysis", path: "/analysis" },
+      ])} />
 
       <PageHero
         eyebrow={t("hero.eyebrow")}

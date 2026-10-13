@@ -1,0 +1,3 @@
+module.exports=[81111,(a,b,c)=>{b.exports=a.x("node:stream",()=>require("node:stream"))},648252,492665,a=>{"use strict";var b=a.i(245618);function c(a){let b=process.env[a]?.trim();return b&&b.length>0?b:void 0}a.s(["f",0,c],492665);var d=a.i(219252);a.s(["f",0,function(){let a=c("NEXT_PUBLIC_SUPABASE_URL"),e=c("SUPABASE_SERVICE_ROLE_KEY");if(!a||!e)throw Error("Missing Supabase env vars");return(0,b.f)(a,e,{global:{fetch:(0,d.f)()},db:{retry:!1}})}],648252)}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__03x82mud_516p._.js.map

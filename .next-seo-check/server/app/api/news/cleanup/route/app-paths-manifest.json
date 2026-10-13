@@ -1,0 +1,3 @@
+{
+  "/api/news/cleanup/route": "app/api/news/cleanup/route.js"
+}

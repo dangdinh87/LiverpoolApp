@@ -1,5 +1,6 @@
 import { BRAND, brandDescription } from "@/lib/brand";
 import { routing } from "@/i18n/routing";
+import { SCHEMA_IDS } from "@/lib/seo";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -20,8 +21,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
  * `sameAs` still names no club profile: linking the club's official accounts
  * from our own Organization would assert they are ours.
  */
-const PUBLISHER_ID = `${SITE_URL}/#publisher`;
-const CLUB_ID = `${SITE_URL}/#club`;
+// Shared with page-level schema, which refers to these nodes by @id.
+const PUBLISHER_ID = SCHEMA_IDS.publisher;
+const CLUB_ID = SCHEMA_IDS.club;
 
 // One language has to be chosen for a document served at a single URL; the
 // alternates are declared per page. It follows the default locale rather than
@@ -46,7 +48,7 @@ const jsonLd = {
     },
     {
       "@type": "WebSite",
-      "@id": `${SITE_URL}/#website`,
+      "@id": SCHEMA_IDS.website,
       name: BRAND.name,
       url: SITE_URL,
       description: brandDescription(DEFAULT_LOCALE),
