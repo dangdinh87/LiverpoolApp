@@ -14,6 +14,7 @@ import { updateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getFixtureById, getFixtureEvents, getFixtureLineups } from "@/lib/football";
 import { FAN_PREDICTIONS_CACHE_TAG } from "@/lib/fan-predictions/leaderboard";
+import { getPlayerSlugByName } from "@/lib/squad-data";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { summarisePredictions, type CommunityPrediction, type Score } from "@/lib/fan-predictions/scoring";
@@ -221,5 +222,12 @@ export async function saveRatings(
     return { ok: false, error: "unavailable" };
   }
   updateTag(FAN_PREDICTIONS_CACHE_TAG);
+  // Each rated player has their own page showing the fan average, and that page
+  // is ISR — the tag drops the cached query behind it but not its rendered HTML,
+  // so without this a new rating waited out the hour.
+  for (const name of Object.keys(ratings)) {
+    const slug = getPlayerSlugByName(name);
+    if (slug) revalidateLocalizedPath(`/player/${slug}`);
+  }
   return { ok: true };
 }

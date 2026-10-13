@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
   },
   images: {
     qualities: [75, 85],
+    // 31 days, up from the 4-hour default. Crests, Premier League player photos,
+    // Cloudinary gallery URLs and the Unsplash heroes are all effectively
+    // immutable, so re-optimising them six times a day bought nothing and was
+    // billed. There is no API to invalidate this cache, so it is only safe
+    // because nothing mutable is served from a fixed URL any more: avatars are
+    // the one case, and they now carry a `?v=` stamp (see avatar-upload.tsx).
+    minimumCacheTTL: 2678400,
     // Next rejects more than 50 entries (dev server refuses to start): prefer one
     // `*.domain` wildcard over several hosts of the same site. News article
     // images are rendered `unoptimized`, so only hosts that go through the

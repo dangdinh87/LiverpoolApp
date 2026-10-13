@@ -340,22 +340,76 @@ response giống nhau với mọi người, cache được về mặt kỹ thu�
 người vừa gửi comment không thấy comment của mình, mà lợi ích thì nhỏ với site ít
 truy cập (ít người xem cùng 1 bài trong cùng 1 phút). Đổi lấy rủi ro UX không đáng.
 
-## 8. Chưa làm — và vì sao
+## 8. Đã làm nốt (13/10, lượt 2)
 
-- **Gộp 3 wrapper feed thành một** (`home-news` 12 dòng vi-first, `news-page-list`,
-  `cached-feed` 100 dòng). Hiện là 3 cache entry = 3 query/TTL. Gộp được nữa, nhưng
-  2 cái cũ đang chạy đúng và có tag — không sửa code đang chạy tốt trong cùng một lượt.
-- **`images.minimumCacheTTL`** (§3.4): phải thêm `?v=` cho avatar trước, docs ghi image
-  cache **không có cách invalidate**.
-- **Tag `football`** cho fixtures/standings/FPL (§3.4).
+### 8.1 `/player/[id]` hết trễ 1 giờ sau khi chấm điểm
 
-## 9. Chưa chốt (cần anh trả lời)
+Thêm `getPlayerSlugByName()` vào `squad-data.ts`; `saveRatings` giờ revalidate
+path của từng cầu thủ được chấm. Khớp **đúng chuỗi tên**, cố ý: rating lưu theo
+tên từ feed lineup, còn `getPlayerFanRating` đọc lại bằng tên trong `squad.json`
+— hai bên chỉ gặp nhau khi chuỗi giống hệt, nên khớp lỏng hơn ở đây chỉ revalidate
+những trang vốn không thể hiện rating. (Việc tính năng phụ thuộc 2 nguồn đồng ý
+về cách viết tên là fragility **có từ trước**, không phải do lookup này.)
 
-1. **Cloudflare đang bật proxy (mây cam) hay DNS-only (mây xám)?** Runbook domain ghi
-   là DNS-only. Nếu **DNS-only** thì Cloudflare gần như không tốn lưu lượng gì
-   (chỉ truy vấn DNS) — mọi thứ đi trực tiếp Vercel, và cái cần siết là Vercel.
-   Nếu đang **bật proxy** thì nới `s-maxage` sẽ giảm hẳn request về origin.
-   Tôi không kiểm tra được từ đây.
-2. Supabase ở region nào? (ảnh hưởng quyết định giữ `sin1` ở §5)
-3. `/player/[id]` trễ 1 giờ sau khi chấm điểm — chấp nhận, hay muốn tôi map
-   `player_name` → route id để revalidate đúng path?
+### 8.2 Tag `football` + sửa một vòng import
+
+`home-fixtures`, `home-standings`, `fpl-lfc-player-stats` và `season-fixtures`
+giờ đều mang tag `FOOTBALL_CACHE_TAG`.
+
+Lần đầu tôi đặt hằng số này trong `cached-fixtures.ts` — **sai**, vì module đó
+import `./index`, mà `./index` lại re-export `fpl-stats`, nơi cũng cần tag:
+vòng `index → fpl-stats → cached-fixtures → index`. TypeScript cho phép vòng nên
+build không báo gì; lúc runtime, module thua cuộc đua khởi tạo sẽ đọc hằng số
+thành `undefined`, tức là cache entry **không có tag** mà không hề báo lỗi.
+Đã tách sang `src/lib/football/cache-tags.ts` (module lá, không import gì).
+
+### 8.3 Avatar cache-bust + `images.minimumCacheTTL` 4h → 31 ngày
+
+`avatar-upload.tsx` upload vào path cố định `${user.id}/avatar.${ext}` với
+`upsert: true` → **URL không đổi** khi đổi ảnh. Cả browser lẫn Next image
+optimizer đều key cache theo URL, và optimizer **không có API invalidate**.
+Giờ URL lưu vào DB có `?v=${Date.now()}`.
+
+Chỉ **sau** khi có cái đó mới nâng `minimumCacheTTL` lên 2678400 (31 ngày).
+Crest, ảnh cầu thủ PL, URL Cloudinary, hero Unsplash đều gần như bất biến —
+tối ưu lại 6 lần/ngày không được gì mà vẫn bị tính tiền. Ảnh bài báo render
+`unoptimized` nên không liên quan.
+
+## 9. Cố ý KHÔNG gộp 3 wrapper feed
+
+Ban đầu tôi xếp việc này vào "nên làm cho DRY". Đọc kỹ thì **không nên**:
+`requireNonEmptyNews` **throw** khi danh sách rỗng, và nó được gọi *bên trong*
+`unstable_cache` chính vì thế — exception không bao giờ bị cache, nên lỗi DB
+được thử lại ngay (đúng rule trong CLAUDE.md). Gộp vào một reader dùng chung sẽ
+mất tính chất đó, hoặc phải sinh ra 2 biến thể "strict/tolerant" — thêm API
+surface chứ không bớt trùng lặp. Ba wrapper khác nhau về limit, ưu tiên ngôn ngữ
+và cách xử lý rỗng; phần trùng thật sự rất nhỏ. Giữ nguyên.
+
+## 10. Ba câu hỏi mở — đã tự trả lời
+
+**1. Cloudflare: DNS-only, không proxy.** `dig anfielddaily.com` → `76.76.21.21`,
+đó là IP của **Vercel**; proxy Cloudflare sẽ là `104.21.x` / `172.67.x`. Đúng như
+runbook domain đã chốt. ⇒ **Cloudflare gần như không tốn gì** (chỉ truy vấn DNS,
+free và không tính lưu lượng). Toàn bộ traffic đi thẳng Vercel, nên chỗ cần siết
+là **Vercel + Supabase** — đúng cái §3/§7/§8 đã làm. Không cần tinh chỉnh CDN thêm.
+
+**2. Region Supabase: không xác định được từ đây, và giờ gần như không còn quan trọng.**
+`pg_settings` không chứa region (Postgres không biết region AWS của nó),
+`db.<ref>.supabase.co` không resolve, còn API host nằm sau Cloudflare
+(`104.18.38.10`) nên IP cũng không nói gì.
+Nhưng câu hỏi này đặt ra để quyết có giữ `regions: ["sin1"]` hay không, và nó đã
+mất phần lớn ý nghĩa: trang static/ISR do CDN toàn cầu của Vercel phục vụ bất kể
+function region, và sau §7 thì **khách đọc bài không gọi API nào nữa** — nên
+region của function hầu như không còn ảnh hưởng người đọc. Giữ `sin1`.
+Muốn biết chính xác: Supabase dashboard → Project Settings → Database, hostname
+pooler có chứa region (`aws-0-ap-southeast-1...`). Một cái nhìn là xong.
+
+**3. `/player/[id]`** — đã fix, xem §8.1.
+
+## 11. Còn lại (không có việc nào tôi làm được tiếp)
+
+- **Merge `feat/upgrade` → `master`** — chỉ `master` deploy (`vercel.json` → `ignoreCommand`).
+- Bật leaked-password protection trong Supabase dashboard (không set được bằng SQL).
+- Kiểm Googlebot không bị bot firewall trả 429 (Search Console → URL Inspection).
+- Đường "bài có comment" chưa được e2e phủ (cần seed dữ liệu + session).
+- Chưa có job sau trận để bust tag `football`; hiện timer vẫn là cơ chế duy nhất.

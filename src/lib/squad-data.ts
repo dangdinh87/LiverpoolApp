@@ -87,6 +87,21 @@ export function getPlayerBySlug(slug: string): LfcPlayer | null {
   return data.players.find((p) => p.slug === slug) ?? null;
 }
 
+/**
+ * Route slug for a player named exactly as the squad data names them.
+ *
+ * Matched on the exact string on purpose: fan ratings are stored under the name
+ * the match lineup feed gives, and `getPlayerFanRating` reads them back with
+ * `.eq("player_name", player.name)` using this file's spelling. The two only
+ * ever meet when those strings are identical, so a looser match here would
+ * revalidate pages that cannot show the rating anyway. (That the feature
+ * depends on two separate sources agreeing on a name is a pre-existing
+ * fragility, not something this lookup introduces.)
+ */
+export function getPlayerSlugByName(name: string): string | null {
+  return data.players.find((p) => p.name === name)?.slug ?? null;
+}
+
 /** Get the head coach */
 export function getCoach(): LfcCoach {
   return data.coach;

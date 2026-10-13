@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BRAND, brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
+import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
@@ -44,15 +45,15 @@ const HOME_NEWS_LIMIT = 12;
 const getCachedHomeFixtures = unstable_cache(
   async () => getFixtures(),
   ["home-fixtures-v1"],
-  // No tag busts this, so the timer is the only mechanism — but it must not sit
-  // below the page's own window, or every render re-queries by definition.
-  { revalidate: 1800 },
+  // The window must not sit below the page's own, or every render re-queries by
+  // definition. The tag is there so a post-match job could bust it from one place.
+  { revalidate: 1800, tags: [FOOTBALL_CACHE_TAG] },
 );
 
 const getCachedHomeStandings = unstable_cache(
   async () => getStandings(),
   ["home-standings-v1"],
-  { revalidate: 3600 },
+  { revalidate: 3600, tags: [FOOTBALL_CACHE_TAG] },
 );
 
 const getCachedHomeNews = unstable_cache(

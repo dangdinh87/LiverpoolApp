@@ -3,6 +3,7 @@ import {
   getAllPlayers,
   getPlayerBio,
   getPlayerBySlug,
+  getPlayerSlugByName,
   normalizeSquad,
   type SquadData,
 } from "@/lib/squad-data";
@@ -67,5 +68,30 @@ describe("getPlayerBio", () => {
   it("falls back to the English bio when a locale has none, still as plain text", () => {
     const missing = getAllPlayers().find((p) => getPlayerBio(p.slug, "vi") === getPlayerBio(p.slug, "en"));
     if (missing) expect(getPlayerBio(missing.slug, "vi")).not.toMatch(/<[a-z/]/i);
+  });
+});
+
+describe("getPlayerSlugByName", () => {
+  /**
+   * This decides which player pages get revalidated after a fan rating is
+   * saved. Ratings are stored under the name the match lineup feed supplies,
+   * and `getPlayerFanRating` reads them back using the name in squad.json, so
+   * the two only ever meet when the strings are identical.
+   */
+  it("returns the route slug for a name spelled as the squad data spells it", () => {
+    const player = getAllPlayers()[0];
+    expect(getPlayerSlugByName(player.name)).toBe(player.slug);
+  });
+
+  it("round-trips every player, so no page is silently unrevalidatable", () => {
+    for (const player of getAllPlayers()) {
+      expect(getPlayerSlugByName(player.name), player.name).toBe(player.slug);
+    }
+  });
+
+  it("returns null rather than a wrong slug for a name it does not know", () => {
+    // A feed naming someone "M. Salah" must not resolve to a teammate.
+    expect(getPlayerSlugByName("M. Salah")).toBeNull();
+    expect(getPlayerSlugByName("")).toBeNull();
   });
 });

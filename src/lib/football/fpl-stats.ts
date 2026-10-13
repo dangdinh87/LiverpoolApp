@@ -5,6 +5,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
+import { FOOTBALL_CACHE_TAG } from "./cache-tags";
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
@@ -230,7 +231,7 @@ async function fetchLfcFplStatsUncached(): Promise<FplPlayerStats[]> {
 const getCachedLfcFplStats = unstable_cache(
   fetchLfcFplStatsUncached,
   ["fpl-lfc-player-stats"],
-  { revalidate: REVALIDATE_SEC },
+  { revalidate: REVALIDATE_SEC, tags: [FOOTBALL_CACHE_TAG] },
 );
 
 /** Cached LFC FPL players — single fetch for all */

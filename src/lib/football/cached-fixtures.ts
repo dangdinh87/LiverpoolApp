@@ -14,6 +14,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { getFixtures } from "./index";
 import type { Fixture } from "@/lib/types/football";
+import { FOOTBALL_CACHE_TAG } from "./cache-tags";
 
 /**
  * 30 minutes. A fixture list only changes when a match is played or the
@@ -28,5 +29,5 @@ const FIXTURES_TTL_SEC = 1800;
 export const getCachedFixtures = unstable_cache(
   async (): Promise<Fixture[]> => getFixtures(),
   ["season-fixtures-v1"],
-  { revalidate: FIXTURES_TTL_SEC },
+  { revalidate: FIXTURES_TTL_SEC, tags: [FOOTBALL_CACHE_TAG] },
 );

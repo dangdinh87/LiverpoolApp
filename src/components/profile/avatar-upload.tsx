@@ -56,8 +56,16 @@ export function AvatarUpload({ currentUrl, username }: AvatarUploadProps) {
 
         const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
 
+        // The storage path is fixed per user and uploaded with `upsert`, so a new
+        // avatar reuses the same URL. Both the browser and the Next image
+        // optimizer key their caches on that URL, and the optimizer has no
+        // invalidation API at all — so without a version the old face kept being
+        // served for the whole of `images.minimumCacheTTL`. Stamping the URL is
+        // what makes a long TTL safe for every other image on the site.
+        const versionedUrl = `${publicUrl}?v=${Date.now()}`;
+
         // Update profile row via server action (tiny payload, no file)
-        const result = await updateAvatarUrl(publicUrl);
+        const result = await updateAvatarUrl(versionedUrl);
         if (result?.error) { setError(t("errorUpload")); setPreview(currentUrl); }
       } catch {
         setError(t("errorUpload"));
