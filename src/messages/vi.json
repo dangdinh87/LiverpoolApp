@@ -904,7 +904,7 @@
     },
     "ai": {
       "title": "AI trên {brand}",
-      "body": "Reds AI (chat), bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
+      "body": "Bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
     }
   },
   "Standings": {
@@ -1093,7 +1093,7 @@
   "Auth": {
     "login": {
       "title": "Chào mừng trở lại",
-      "subtitle": "Đăng nhập để lưu cầu thủ yêu thích, bài viết và dùng Reds AI.",
+      "subtitle": "Đăng nhập để lưu cầu thủ yêu thích và bài viết.",
       "email": "Địa chỉ Email",
       "password": "Mật khẩu",
       "button": "Đăng nhập",
@@ -1139,7 +1139,7 @@
     },
     "metadata": {
       "loginTitle": "Đăng nhập",
-      "loginDescription": "Đăng nhập {brand} để lưu cầu thủ yêu thích, bài viết đã lưu và dùng Reds AI.",
+      "loginDescription": "Đăng nhập {brand} để lưu cầu thủ yêu thích và bài viết đã lưu.",
       "registerTitle": "Tạo tài khoản",
       "registerDescription": "Tạo tài khoản {brand} miễn phí để lưu cầu thủ yêu thích và bài viết."
     }
