@@ -1,6 +1,6 @@
 # Anfield Daily — Liverpool news site
 
-Trang tin Liverpool để đọc nhanh: gom tin từ các báo Anh, lọc trùng và tóm tắt mỗi ngày (bản tin AI). Lịch thi đấu, kết quả, bảng xếp hạng, thống kê, đội hình, lịch sử CLB và trợ lý AI chat đi kèm. Thiết kế "Dark Stadium", song ngữ Anh-Việt.
+Trang tin Liverpool để đọc nhanh: gom tin từ các báo Anh, lọc trùng và tóm tắt mỗi ngày (bản tin AI). Lịch thi đấu, kết quả, bảng xếp hạng, thống kê, đội hình, và lịch sử CLB đi kèm. Thiết kế "Dark Stadium", song ngữ Anh-Việt.
 
 **Định vị (do chủ site chốt, 10/2026):** site là nơi xem tin nhanh và đọc tóm tắt. KHÔNG định vị là "cho fan ở xa / xa nhà / ngoài nước Anh / khắp thế giới", không dùng "ở đâu cũng là Anfield". Chữ trên site nói về tin tức: tổng hợp, lọc trùng, tóm tắt.
 
@@ -11,7 +11,6 @@ Trang tin Liverpool để đọc nhanh: gom tin từ các báo Anh, lọc trùng
 - **Backend:** Supabase (Auth + PostgreSQL + Storage)
 - **Football Data:** Football-Data.org (primary, free: 10 req/min) + ESPN (cup fixtures, free)
 - **News:** 12 English RSS sources + the LFC site adapter, synced to Supabase; VietAPI for translation + daily digest
-- **AI Chat:** VietAPI (OpenAI-compatible) via Vercel AI SDK (`ai` package) + `assistant-ui` components
 - **Gallery:** Cloudinary image hosting + lightbox viewer
 - **i18n:** next-intl (EN/VI), detected via cookie `NEXT_LOCALE` or `Accept-Language` header
 - **State:** Zustand (client stores), React Query / TanStack Query (server state)
@@ -57,7 +56,7 @@ Quy tắc:
 src/
 ├── app/                    # Next.js App Router pages & API routes
 │   ├── page.tsx            # Homepage — Hero + BentoGrid widgets
-│   ├── layout.tsx          # Root layout — fonts, ThemeProvider, NavbarAuth, Footer, GlobalChat
+│   ├── layout.tsx          # Root layout — fonts, ThemeProvider, NavbarAuth, Footer
 │   ├── api/
 │   │   ├── news/sync/      # Cron: sync RSS → Supabase
 │   │   ├── news/cleanup/   # Cron: deactivate old articles
@@ -65,14 +64,11 @@ src/
 │   │   ├── news/translate/ # On-demand article translation (Groq)
 │   │   ├── news/comments/  # Article comments CRUD
 │   │   ├── news/like/      # Article likes
-│   │   ├── chat-groq/      # AI chat streaming (VietAPI + assistant-ui; legacy path name)
 │   │   ├── gallery/        # Gallery API + homepage featured
 │   │   ├── saved-articles/ # User bookmarks
-│   │   ├── conversations/  # Chat history persistence
 │   │   ├── live-fixture/   # Live match polling
 │   │   └── streak/         # User activity streak
 │   ├── auth/               # /auth/login, /auth/register, /auth/callback (Supabase OAuth)
-│   ├── chat/               # AI chat page (BRO AI assistant)
 │   ├── fixtures/           # Match fixtures list + /fixtures/[id] detail
 │   ├── gallery/            # Photo gallery with lightbox
 │   ├── history/            # Club history — trophies, timeline, legends (fully static from JSON)
@@ -98,12 +94,10 @@ src/
 │   ├── stats/              # Stats charts, count-up
 │   ├── history/            # Trophy cabinet, timeline, legends, stadium-showcase
 │   ├── gallery/            # Gallery grid, lightbox
-│   ├── chat/               # GlobalChat (floating), chat thread
 │   ├── auth/               # Login/register forms
 │   ├── profile/            # Profile form, favourite list, avatar upload
 │   ├── season/             # Season archive components
 │   ├── providers/          # QueryProvider (TanStack)
-│   └── assistant-ui/       # assistant-ui chat primitives
 ├── lib/
 │   ├── football/           # Football data layer (server-only, React.cache)
 │   │   ├── index.ts        # Barrel — getSquad, getFixtures, getStandings, etc.
@@ -125,11 +119,10 @@ src/
 │   │   ├── types.ts        # Shared types (ArticleContent with htmlContent + videoUrl fields)
 │   │   └── db.ts           # News DB operations
 │   ├── gallery/            # Gallery helpers
-│   ├── prompts/            # AI system prompts (BRO AI)
 │   ├── tools/              # AI function-calling tools
 │   ├── types/              # TypeScript types (football.ts)
 │   ├── ai/
-│   │   └── vietapi.ts      # LLM provider (OpenAI-compatible) — chat, translation, digest
+│   │   └── vietapi.ts      # LLM provider (OpenAI-compatible) — translation, digest, analysis
 │   ├── supabase.ts         # Browser client + DB types (UserProfile, FavouritePlayer, SavedArticle)
 │   ├── supabase-fetch-with-timeout.ts # Bounded fetch + circuit breaker for all Supabase clients
 │   ├── supabase-server.ts  # Server client (import "server-only")
@@ -267,6 +260,18 @@ src/
 - Translation files: `src/messages/en.json`, `src/messages/vi.json`
 - Static data has `.vi.json` variants (trophies, history, legends, club-info, player-bios)
 
+## Removed: the AI chat (Oct 2026)
+
+The "Reds AI" chat is gone at the owner's request — the page, the floating
+widget, the header pill and its bird icon, `/api/chat-groq`, the conversation
+history routes, `src/lib/chat/`, the BRO AI system prompt and the web-search
+tool, plus `@ai-sdk/groq` and the three `@assistant-ui/*` packages.
+
+What stayed, because it is not the chat: the daily digest, on-demand article
+translation and the match analysis all still run on VietAPI through the `ai`
+package and `@ai-sdk/openai-compatible`. The `conversations` and `messages`
+tables are still in Supabase, now unused.
+
 ## Brand
 
 - Full brand rules (name, logo, colour, type, voice): `docs/brand.md`.
@@ -304,8 +309,7 @@ See `.env.example`. All required for full functionality:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin key (server-only) |
 | `FOOTBALL_DATA_ORG_KEY` | Football-Data.org API (free: 10 req/min) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL — SEO, metadataBase, OAuth redirects |
-| `VIETAPI_KEY` | VietAPI — AI chat + article translation + digest |
-| `GROQ_API_KEY` | Groq — live web search only (`openai/gpt-oss-20b` + `browser_search`; `compound-mini` was retired); chat works without it |
+| `VIETAPI_KEY` | VietAPI — article translation + daily digest + match analysis |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 — club video strip on `/news`. Optional; the source is skipped without it (that channel's RSS feed is disabled) |
 | `CRON_SECRET` | Protects cron endpoints (random string) |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
@@ -323,7 +327,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 5. `005_gallery.sql` — gallery images metadata
 6. `006_news_digests_seo_article.sql` — `news_digests` + SEO article payload
 7. `007_news_tables_rls_and_comment_privacy.sql` — RLS on `articles` / `sync_logs` / `news_digests`, missing comment columns, scrub emails from comment author names
-8. `chat_schema.sql` — `conversations`, `messages` for AI chat persistence
+8. `chat_schema.sql` — `conversations`, `messages`: left in place but unused since the AI chat was removed (Oct 2026); dropping the tables is a separate decision
 9. `012_fan_predictions_and_ratings.sql` — `match_predictions`, `player_ratings` (read-own RLS only; writes go through `src/app/actions/predictions.ts` with the service role)
 
 ## Scheduled Jobs
@@ -354,7 +358,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
   sitemap entry declared all three hreflangs as the English URL)
 - Scraped `/news/<slug>` mirrors are `index: false, follow: true` and stay out of the
   sitemap; `/analysis/<slug>` is the site's own writing and is listed
-- `robots.txt` blocks only `/api/`, `/chat`, `/profile`, `/auth/`. It must not blanket-
+- `robots.txt` blocks only `/api/`, `/profile`, `/auth/`. It must not blanket-
   block query strings: a disallowed URL is never fetched, so its `rel=canonical` is
   never read
 

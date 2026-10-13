@@ -10,7 +10,7 @@ import Image from "next/image";
 // pointed at the Vietnamese URL and only reached the right page via a 307, so
 // prefetches were wasted and each click paid a redirect.
 import { Link, usePathname } from "@/i18n/navigation";
-import { Menu, User, LogOut, Shield, ChevronDown, Flame, Bird, X } from "lucide-react";
+import { Menu, User, LogOut, Shield, ChevronDown, Flame, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
 import { BrandLogo } from "./brand-mark";
@@ -353,17 +353,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
         <div className="flex items-center gap-1.5 sm:gap-2 lg:gap-1 2xl:gap-2">
           {streakBadge}
 
-          {/* AI chat: pill on desktop; on phones it lives in the menu sheet */}
-          <Link
-            href="/chat"
-            aria-label="Reds AI"
-            className="ai-btn group relative hidden lg:flex items-center gap-1.5 min-h-11 min-w-11 justify-center whitespace-nowrap px-3 2xl:px-4 rounded-full text-sm font-barlow font-semibold uppercase tracking-wider"
-          >
-            <Bird size={16} className="relative z-1 text-white" aria-hidden />
-            {/* Label from 2xl; icon-only below so the row fits the page container */}
-            <span className="ai-btn-text hidden 2xl:inline">Reds AI</span>
-            <span className="ai-btn-sheen" />
-          </Link>
           <LanguageSwitcher />
 
           {/* Auth slot (desktop). Fixed width so the swap never shifts neighbours. */}
@@ -490,15 +479,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                 </ul>
 
                 <div className="mt-auto flex flex-col gap-3 px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-                  <SheetClose asChild>
-                    <Link
-                      href="/chat"
-                      className="flex min-h-12 items-center justify-center gap-2 border border-lfc-red/40 bg-lfc-red/10 font-barlow font-bold uppercase tracking-[0.12em] text-white"
-                    >
-                      <Bird size={18} aria-hidden />
-                      Reds AI
-                    </Link>
-                  </SheetClose>
                   <LanguageSwitcher variant="segmented" />
                   {!authReady ? (
                     <div className="min-h-12" />

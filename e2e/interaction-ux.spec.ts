@@ -169,24 +169,6 @@ test.describe("gallery lightbox", () => {
   });
 });
 
-test.describe("chat widget", () => {
-  test("is not rendered for a signed-out visitor, and the chat page hides the site chrome", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "signed-out behaviour is viewport independent");
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    // Let the header's auth check settle (it decides whether the widget shows).
-    await waitForHeader(page);
-    await page.waitForLoadState("load");
-    await expect(page.getByRole("button", { name: /open liverbird ai chat/i })).toHaveCount(0);
-
-    // /chat is a full-screen app on top of the site: header and footer must not
-    // stay reachable by keyboard behind it.
-    await page.goto("/chat", { waitUntil: "domcontentloaded" });
-    await expect(page.locator(".chat-shell")).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator("header.site-header")).toBeHidden();
-    await expect(page.locator("body > footer")).toBeHidden();
-  });
-});
-
 test.describe("reduced motion", () => {
   test("no decorative animation or smooth scroll runs when the user asks for less motion", async ({ browser, baseURL }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "media query behaviour; one project is enough");

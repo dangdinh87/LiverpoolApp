@@ -28,7 +28,6 @@ export const ROUTES: RouteUnderTest[] = [
   { path: "/history", expects: /history|lịch sử|trophy|danh hiệu/i },
   { path: "/about", expects: /about|giới thiệu/i },
   { path: "/legal", expects: /legal|privacy|điều khoản|riêng tư/i },
-  { path: "/chat", expects: /liverbird|ai assistant|trợ lý/i },
   { path: "/auth/login", expects: /sign in|đăng nhập/i },
   { path: "/auth/register", expects: /create account|join|đăng ký/i },
   { path: "/profile", expects: /sign in|đăng nhập/i, protected: true },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MATCH_PATHS, MORE_PATHS, SQUAD_PATHS, TABS, hidesBottomNav, isActiveAny, isActivePath } from "../nav-items";
+import { MATCH_PATHS, MORE_PATHS, SQUAD_PATHS, TABS, isActiveAny, isActivePath } from "../nav-items";
 
 describe("isActivePath", () => {
   it("matches the home page only exactly", () => {
@@ -44,10 +44,4 @@ describe("bottom tabs", () => {
     expect(TABS.map((tab) => tab.href)).toEqual(["/", "/fixtures", "/news", "/squad"]);
   });
 
-  it("is hidden on the full-screen chat app only", () => {
-    expect(hidesBottomNav("/chat")).toBe(true);
-    expect(hidesBottomNav("/chat/abc")).toBe(true);
-    expect(hidesBottomNav("/")).toBe(false);
-    expect(hidesBottomNav("/chatter")).toBe(false);
-  });
 });

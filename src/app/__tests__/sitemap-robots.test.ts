@@ -137,6 +137,8 @@ describe("sitemap.xml", () => {
   });
 });
 
+// /chat was in both lists until the AI chat was removed (Oct 2026); there is
+// no such route now, so blocking it would be fiction.
 describe("robots.txt", () => {
   it("does not blanket-block query strings", () => {
     // `Disallow: /*?*` kept Googlebot from ever fetching /news?source=… or
@@ -145,14 +147,14 @@ describe("robots.txt", () => {
   });
 
   it("blocks the routes that are meant to stay out, and allows the rest", () => {
-    for (const path of ["/api/", "/chat", "/profile", "/auth/"]) {
+    for (const path of ["/api/", "/profile", "/auth/"]) {
       expect(robots).toContain(`Disallow: ${path}`);
     }
     expect(robots).toContain("Allow: /");
   });
 
   it("blocks the private routes under the Vietnamese prefix too", () => {
-    for (const path of ["/vi/chat", "/vi/profile", "/vi/auth/"]) {
+    for (const path of ["/vi/profile", "/vi/auth/"]) {
       expect(robots).toContain(`Disallow: ${path}`);
     }
   });

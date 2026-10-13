@@ -13,7 +13,6 @@ import { NavProgress } from "@/components/layout/nav-progress";
 import { SkipLink } from "@/components/layout/skip-link";
 import { Footer } from "@/components/layout/footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { GlobalChat } from "@/components/chat/global-chat";
 import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -168,7 +167,6 @@ export default async function RootLayout({
               <BottomNav />
               <GlobalToast />
               <ScrollToTop />
-              <GlobalChat />
             </NextIntlClientProvider>
           </QueryProvider>
         </ThemeProvider>

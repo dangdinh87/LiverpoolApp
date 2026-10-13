@@ -28,5 +28,3 @@ export const TABS: readonly { id: TabId; href: string; paths: readonly string[] 
   { id: "squad", href: "/squad", paths: SQUAD_PATHS },
 ];
 
-/** The /chat page is a full-screen app: no bottom bar there. */
-export const hidesBottomNav = (pathname: string) => isActivePath(pathname, "/chat");

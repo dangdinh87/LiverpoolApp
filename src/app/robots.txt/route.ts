@@ -8,10 +8,10 @@ export function GET() {
   // is a URL Google never fetches — so it never reads the `rel=canonical` that
   // would have folded it into the clean page. Blocking replaced a signal that
   // works with no signal at all. The pages that genuinely must stay out are
-  // noindex in their own metadata (/chat, /profile, /auth, the scraped mirrors).
+  // noindex in their own metadata (/profile, /auth, the scraped mirrors).
   // Each private section is listed under every locale's prefix: written as bare
-  // paths only, /vi/chat, /vi/profile and /vi/auth/ were open to crawlers.
-  const privatePaths = ["/chat", "/profile", "/auth/"];
+  // paths only, /vi/profile and /vi/auth/ were open to crawlers.
+  const privatePaths = ["/profile", "/auth/"];
   const disallow = [
     "/api/",
     ...routing.locales.flatMap((locale) => privatePaths.map((p) => withLocalePrefix(p, locale))),

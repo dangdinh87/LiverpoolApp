@@ -4,7 +4,7 @@ import { CalendarDays, Ellipsis, House, Newspaper, Users, type LucideIcon } from
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
-import { MORE_PATHS, TABS, hidesBottomNav, isActiveAny, type TabId } from "./nav-items";
+import { MORE_PATHS, TABS, isActiveAny, type TabId } from "./nav-items";
 import { useMenuStore } from "./menu-store";
 
 const ICONS: Record<TabId, LucideIcon> = {
@@ -29,7 +29,6 @@ function ActiveMark() {
  * for the secondary pages. Rendered after the footer so keyboard order stays
  * header, content, footer, bar. It reserves space through `--bottom-nav-offset`
  * (see globals.css), which the footer, the chat button and scroll-to-top use.
- * Not shown on /chat, which is a full-screen app.
  */
 export function BottomNav() {
   const t = useTranslations("Common.nav");
@@ -37,7 +36,6 @@ export function BottomNav() {
   const menuOpen = useMenuStore((s) => s.open);
   const openFrom = useMenuStore((s) => s.openFrom);
 
-  if (hidesBottomNav(pathname)) return null;
 
   const moreActive = menuOpen || isActiveAny(pathname, MORE_PATHS);
 

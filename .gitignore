@@ -65,3 +65,7 @@ next-env.d.ts
 
 # Output of the SEO check build, committed by accident (2181 files).
 .next-seo-check/
+
+# Scratch build dirs (NEXT_DIST_DIR) — generated, never committed.
+.build-live/
+.build-prodcheck/
