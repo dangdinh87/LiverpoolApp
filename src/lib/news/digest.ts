@@ -68,7 +68,20 @@ export interface DigestRecord {
   generated_at: string;
 }
 
-export const DIGEST_TIME_ZONE = "Asia/Ho_Chi_Minh";
+/**
+ * Which calendar day a digest belongs to.
+ *
+ * Was Asia/Ho_Chi_Minh, from when the digest was written in Vietnamese for a
+ * Vietnamese audience. The digest is English-primary now and summarises the
+ * British press, so the day it covers is the day in Liverpool — and the value
+ * is not just a label: it goes into the prompt as "Today is <date> (<zone>)",
+ * which read as nonsense for an English briefing about English newspapers.
+ *
+ * Safe to change: the generator runs at 00:00 UTC, which falls on the same
+ * calendar date in both zones, so no date is skipped or generated twice at the
+ * switchover.
+ */
+export const DIGEST_TIME_ZONE = "Europe/London";
 
 export function getDigestDateKey(date = new Date()): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -81,8 +94,15 @@ export function getDigestDateKey(date = new Date()): string {
   return `${lookup.year}-${lookup.month}-${lookup.day}`;
 }
 
-function formatDigestDateVi(date = new Date()): string {
-  return new Intl.DateTimeFormat("vi-VN", {
+/**
+ * Today's date as the prompt states it.
+ *
+ * Was formatted with `vi-VN`, so an English briefing about the English press
+ * opened with "Today is Thứ Ba, 13 tháng 10, 2026" — left over from when the
+ * digest itself was Vietnamese.
+ */
+function formatDigestDate(date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone: DIGEST_TIME_ZONE,
     weekday: "long",
     day: "numeric",
@@ -424,7 +444,7 @@ export async function generateDigestFromArticles(
     )
     .join("\n\n");
 
-  const today = formatDigestDateVi(now);
+  const today = formatDigestDate(now);
 
   // Current facts (head coach, season, squad) come first and override the model's memory:
   // without them the model "knew" a previous head coach and contradicted the articles.
