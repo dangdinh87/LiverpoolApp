@@ -43,6 +43,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "framer-motion": "^12.35.0",
+    "hls.js": "^1.7.3",
     "js-cookie": "^3.0.8",
     "jsdom": "^28.1.0",
     "lucide-react": "^0.576.0",

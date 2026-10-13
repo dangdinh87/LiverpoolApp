@@ -16,7 +16,11 @@ export const GET = withCronAuth(async (req) => {
       enrichThumbnails: true,
       enrichLimit: deep ? 30 : 10,
       metaFetches: deep ? 30 : 0,
-      preScrapeContent: deep,
+      // Every run, not just ?deep=1: the article pages render the full body
+      // now, so having it already stored means the first reader does not wait
+      // on an on-demand scrape. `scrapeContentForRecentArticles` carries its
+      // own per-run budget and match-traffic mode, so this stays bounded.
+      preScrapeContent: true,
     });
 
     if (result.upserted > 0) {

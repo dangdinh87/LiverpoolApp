@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { Languages, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { getCachedTranslation, setCachedTranslation } from "@/lib/news/translation-cache";
-import { buildExcerpt } from "@/lib/news/excerpt";
 import { ArticleExcerpt } from "./article-parts";
 import { filterJunk } from "./news-text";
 
@@ -44,10 +43,7 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
 
     const cached = getCachedTranslation(articleUrl);
     if (cached) {
-      // Cap here too: this localStorage entry can be up to 7 days old, from
-      // before the excerpt limit shipped, and may still hold the full article.
-      const { excerpt } = buildExcerpt(filterJunk(cached.paragraphs.map(stripPrefix)));
-      setTranslated(excerpt);
+      setTranslated(filterJunk(cached.paragraphs.map(stripPrefix)));
       setShowTranslated(true);
       return;
     }
@@ -65,9 +61,11 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
       const data = await res.json();
       const titleVi = stripPrefix(data.title_vi || "");
       const descriptionVi = data.description_vi ? stripPrefix(data.description_vi) : null;
-      const { excerpt } = buildExcerpt(filterJunk((data.paragraphs || []).map((p: string) => stripPrefix(p))));
+      // No cap: the page shows the full article, so the translation must too,
+      // or toggling to Vietnamese would shrink what the reader had.
+      const translatedBody = filterJunk((data.paragraphs || []).map((p: string) => stripPrefix(p)));
       // An article with no body text is shown from its description; translate that instead.
-      const shown = excerpt.length > 0 ? excerpt : descriptionVi ? [descriptionVi] : [];
+      const shown = translatedBody.length > 0 ? translatedBody : descriptionVi ? [descriptionVi] : [];
       if (shown.length === 0) throw new Error("Empty translation");
 
       setTranslated(shown);

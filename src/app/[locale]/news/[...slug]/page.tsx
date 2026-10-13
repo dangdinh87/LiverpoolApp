@@ -21,7 +21,6 @@ import { detectSource as detectArticleSource, isLinkOutOnlyUrl, VI_SOURCES } fro
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BRAND } from "@/lib/brand";
-import { buildExcerpt } from "@/lib/news/excerpt";
 import "@/components/news/article-reader.css";
 import { ReadTracker } from "@/components/news/read-tracker";
 import { ArticleSidebar } from "@/components/news/article-sidebar";
@@ -29,6 +28,7 @@ import { ArticleNextMatch } from "@/components/news/article-end-sections";
 import { ArticleActions } from "@/components/news/article-actions";
 import { ArticleTitle } from "@/components/news/article-header";
 import { ArticleExcerpt, NewsBackLink, OriginalLinkButton, SourceBadge } from "@/components/news/article-parts";
+import { ArticleHtmlBody } from "@/components/news/article-html-body";
 import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
@@ -242,10 +242,13 @@ export default async function ArticlePage({
   // A page with (almost) no body text, such as a lone photo credit, falls back to
   // its description, capped the same way.
   const bodyChars = paragraphs.reduce((n, p) => n + p.length, 0);
-  const excerptSource = bodyChars >= 120 || !description ? paragraphs : [description];
-  const { excerpt, truncated } = buildExcerpt(excerptSource);
+  // Full text, by the owner's decision (Oct 2026), reversing the excerpt-only
+  // stance of f17f100. `htmlContent` keeps the publisher's own structure —
+  // sub-headings, lists, embedded video — and the paragraph array is the
+  // fallback for articles the extractor could only read as plain text.
+  const body = bodyChars >= 120 ? paragraphs : description ? [description] : [];
   const byline = content.author && !/^https?:/i.test(content.author) ? content.author : null;
-  const ctaHint = readability === "thin" ? t("thinContentMsg") : truncated ? t("excerptMsg") : undefined;
+  const ctaHint = readability === "thin" ? t("thinContentMsg") : undefined;
 
   return (
     <article className="min-h-screen">
@@ -281,19 +284,42 @@ export default async function ArticlePage({
               <ArticleTitle title={title} />
             </header>
 
-            {excerpt.length > 0 && (
+            {/* Above the body, not below it: the page reproduces the publisher's
+                article in full, so whose work it is belongs before the first
+                line of it rather than after the last. */}
+            <p className="mt-5 max-w-[42rem] border-l-2 border-brand pl-3 text-sm leading-relaxed text-stadium-muted">
+              {t.rich("sourcedFrom", {
+                sourceName,
+                source: (chunks) => (
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline underline-offset-2 hover:text-white">
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </p>
+
+            {/* The publisher's own markup when we have it: it carries the
+                sub-headings, lists and video the paragraph array flattens away. */}
+            {content.htmlContent ? (
               <div className="mt-5 max-w-[42rem]">
-                {isEnglishArticle ? (
-                  <TranslatableExcerpt articleUrl={url} paragraphs={excerpt} label={t("excerptLabel")} />
-                ) : (
-                  <section>
-                    <p className="section-label mb-3 text-stadium-muted">{t("excerptLabel")}</p>
-                    <div id="article-body">
-                      <ArticleExcerpt paragraphs={excerpt} />
-                    </div>
-                  </section>
-                )}
+                <div id="article-body">
+                  <ArticleHtmlBody html={content.htmlContent} />
+                </div>
               </div>
+            ) : (
+              body.length > 0 && (
+                <div className="mt-5 max-w-[42rem]">
+                  {isEnglishArticle ? (
+                    <TranslatableExcerpt articleUrl={url} paragraphs={body} label={t("excerptLabel")} />
+                  ) : (
+                    <section>
+                      <div id="article-body">
+                        <ArticleExcerpt paragraphs={body} />
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )
             )}
 
             <div className="mt-5 max-w-[42rem]">
@@ -330,17 +356,6 @@ export default async function ArticlePage({
                 }}
               />
             </div>
-
-            <p className="mt-8 max-w-[42rem] text-sm leading-relaxed text-stadium-muted">
-              {t.rich("sourcedFrom", {
-                sourceName,
-                source: (chunks) => (
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-brand underline underline-offset-2 hover:text-white">
-                    {chunks}
-                  </a>
-                ),
-              })}
-            </p>
 
             <RelatedArticles articles={related} />
             <CommentSection articleUrl={url} initialCommentCount={engagement.comments} />

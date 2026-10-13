@@ -23,7 +23,6 @@ export const NON_ARTICLE_SOURCES = ["lfctv"] as const;
 const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
 
 const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
-const PREFERRED_LANGUAGE_SHARE = 0.8; // Vietnamese locale should read VI-first, not 50/50.
 
 // DB row → NewsArticle mapping
 interface ArticleRow {

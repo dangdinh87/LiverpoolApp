@@ -161,18 +161,18 @@
   "News": {
     "metadata": {
       "title": "Điểm tin Liverpool",
-      "description": "Điểm tin Liverpool mỗi ngày: tiêu đề, vài dòng trích và link sang bài gốc, kèm bản tin tóm tắt trong ngày."
+      "description": "Điểm tin Liverpool mỗi ngày: toàn văn bài kèm link sang bài gốc, cùng bản tin tóm tắt trong ngày."
     },
     "tagline": "Tin nhanh về Liverpool",
     "title": "Điểm tin",
-    "heroDesc": "Tiêu đề, vài dòng trích và link sang bài gốc. Mỗi ngày có thêm một bản tin tóm tắt.",
+    "heroDesc": "Toàn văn bài kèm link sang bài gốc. Mỗi ngày có thêm một bản tin tóm tắt.",
     "description": "Tin tức Liverpool FC từ 10 nguồn bao gồm LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield và hơn thế nữa",
     "search": "Tìm kiếm tin tức...",
     "filter": "Lọc",
     "langAll": "Tất cả",
     "langGlobal": "Quốc tế",
     "viewAll": "Tất cả tin tức →",
-    "attribution": "Chúng mình chỉ đăng tiêu đề, vài dòng trích và link sang bài gốc. Bản quyền bài viết thuộc về các báo và trang tin được ghi ở từng tin. Đây là trang của fan, không liên kết với Liverpool FC hay các báo này.",
+    "attribution": "Bài được đăng toàn văn, có dẫn nguồn và link sang bài gốc. Bản quyền bài viết thuộc về các báo và trang tin được ghi ở từng tin. Đây là trang của fan, không liên kết với Liverpool FC hay các báo này.",
     "categories": {
       "all": "Tất cả",
       "official": "Chính thức",
@@ -216,14 +216,13 @@
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc đầy đủ trên {source}",
       "thinContentMsg": "Bài này nên đọc ở trang gốc để xem đủ nội dung.",
-      "excerptMsg": "Đây chỉ là đoạn trích. Phần còn lại nằm ở trang gốc.",
-      "sourcedFrom": "Đoạn trích từ <source>{sourceName}</source>. Bản quyền thuộc về nhà xuất bản gốc.",
+      "sourcedFrom": "Bài này do <source>{sourceName}</source> viết và đăng. Bản quyền thuộc về họ; bài được đăng lại đầy đủ kèm dẫn nguồn.",
       "videoUnavailable": "Không phát được video tại đây. Nhấn để xem trên trang gốc.",
       "linkOutMsg": "Bài này chỉ đọc đầy đủ được trên {source}. Bạn mở trang gốc để xem tiếp nhé.",
       "moreFrom": "Thêm từ {source}",
       "viewAll": "Xem tất cả",
       "readOriginalOn": "Đọc bài gốc tại {source}",
-      "excerptLabel": "Đoạn trích",
+      "excerptLabel": "Bài viết",
       "viewerTime": "Giờ của bạn"
     },
     "feed": {
@@ -906,7 +905,7 @@
     "tagline": "Tin nhanh, bản tin tóm tắt mỗi ngày, lịch thi đấu và kết quả cho fan Liverpool.",
     "news": {
       "title": "Tin tức được xử lý thế nào",
-      "body": "Mục tin nhanh chỉ hiện tiêu đề, một đoạn trích ngắn và link sang bài gốc. Muốn đọc đầy đủ, bạn mở bài trên trang của báo đó. {brand} không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
+      "body": "Mục tin nhanh hiện toàn văn bài đúng như báo gốc viết, có dẫn nguồn và link bài gốc. Muốn đọc trên trang của báo đó. {brand} không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
     },
     "ai": {
       "title": "AI trên {brand}",
@@ -1087,7 +1086,7 @@
       },
       "terms": {
         "title": "Điều khoản sử dụng",
-        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. {brand} là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin nhanh chỉ hiển thị tiêu đề, đoạn trích ngắn và liên kết tới bài gốc; mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc, và {brand} không đăng lại toàn văn. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi VietAPI, kèm Groq cho tìm kiếm web. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
+        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. {brand} là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin nhanh đăng lại toàn văn bài của các báo nêu dưới đây, mỗi bài đều dẫn nguồn và kèm link bài gốc. Mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc; {brand} không nhận quyền gì và sẽ gỡ bài khi báo gốc yêu cầu. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi VietAPI, kèm Groq cho tìm kiếm web. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
       },
       "sources": {
         "title": "Nguồn dữ liệu",

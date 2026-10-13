@@ -242,13 +242,20 @@ src/
   60s; the prompt starts with `buildCurrentFactsBlock()` (head coach, squad, season).
   Generated **only** by `/api/news/digest/generate` (daily cron + hourly retry step in the news
   sync workflow). Pages read the latest digest with `getLatestDigest()` and never generate it.
-- **No full-article rendering.** `/news/<slug>` shows a headline, a short excerpt and a
-  link to the original — the excerpt-only stance from f17f100. `ArticleHtmlBody` and
-  `ArticleVideoPlayer` were the components that rendered a scraped body and played its
-  video; nothing has imported them since, so both are gone along with `hls.js`.
-  The extractor still writes `class="article-video-player"` into `htmlContent` and
-  `/news/<slug>` still reads that string to set `hasVideo` for the readability check —
-  that is a marker in scraped HTML, not a component.
+- **Full-article rendering (owner's decision, Oct 2026).** `/news/<slug>` renders the
+  publisher's whole article: `htmlContent` through `ArticleHtmlBody` when the extractor
+  captured markup, otherwise the full `paragraphs` array. `ArticleVideoPlayer` plays the
+  embedded video (`hls.js`, loaded on demand), mounted into the
+  `class="article-video-player"` placeholders the extractor writes.
+  - This **reverses** the excerpt-only stance of f17f100, which existed to limit
+    copyright exposure. `src/lib/news/excerpt.ts` and its 480-character cap are gone;
+    the translation path is uncapped too, so a Vietnamese reader gets the whole body
+    (and it costs proportionally more tokens per article).
+  - Attribution is rendered **above** the body, not below it, and names the publisher
+    with a link to the original. Note that credit is not a licence: these pages
+    reproduce other outlets' work in full. They stay `noindex` and carry no ads.
+  - `preScrapeContent` runs on every sync, not just `?deep=1`, so the body is stored
+    before the first reader asks for it; the scrape keeps its own per-run budget.
 
 ### i18n
 

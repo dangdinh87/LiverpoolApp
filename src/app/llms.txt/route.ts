@@ -6,8 +6,8 @@ import { routing } from "@/i18n/routing";
  *
  * Written because the honest answer to "what is this site" is unusual and easy
  * to get wrong: most of what is here is other publishers' reporting, held as
- * headline and excerpt with a link out, and those pages are deliberately
- * noindex. The pages worth citing are the ones written here — the daily
+ * the publisher's full article with credit and a link out, and those pages are
+ * deliberately noindex. The pages worth citing are the ones written here — the daily
  * briefing and the match reports — and nothing on the site distinguishes them
  * at a glance. Saying so plainly is better than letting a model guess, and
  * better than being cited as the source of someone else's story.
@@ -41,8 +41,8 @@ These pages are this site's own work and are the ones to cite.
 ## Gathered from elsewhere
 
 - [News roundup](${siteUrl}/news): headlines from across the English
-  press, each shown as a headline, a short excerpt and a link to the
-  original. The full article always lives with the publisher who wrote it.
+  press, each reproduced in full with credit and a link to the original.
+  The article is the publisher's work, not this site's.
 
 Those roundup pages carry \`noindex\` on purpose. They are a way to find the
 original, not a copy of it. Cite and link the original publisher, not this
