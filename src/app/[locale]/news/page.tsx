@@ -32,11 +32,13 @@ const NEWS_PAGE_LIMIT = 72;
 // stays dynamic because it reads the locale cookie, but the article/digest/
 // engagement queries now hit the cache instead of Supabase on every load.
 // `lang` is part of the cache key so EN/VI keep separate entries. The "news"
-// tag is busted by the sync route, so a fresh sync shows up immediately.
+// tag is busted by the sync and cleanup routes, so a fresh sync shows up
+// immediately rather than waiting out the TTL below.
 const getCachedNewsList = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(NEWS_PAGE_LIMIT, undefined, { skipSync: true })),
   ["news-page-list-v4"],
-  { revalidate: 300, tags: ["news"] },
+  // Fresh via the "news" tag on sync; this window only bounds a silent sync.
+  { revalidate: 1800, tags: ["news"] },
 );
 
 // Videos are excluded from the feed queries on purpose (see NON_ARTICLE_SOURCES);
@@ -50,7 +52,9 @@ const getCachedVideoItems = unstable_cache(
 
 // Was fresh only because the root layout forced dynamic rendering; the cached
 // queries below revalidate on their own, this bounds the page itself.
-export const revalidate = 600;
+// 30 minutes is safe because the hourly sync busts the "news" tag the moment
+// it inserts anything, so a new article does not wait for this to expire.
+export const revalidate = 1800;
 
 // `?source=` used to be read here, which made every visit render on demand in a
 // single region. NewsFeed reads it after hydration instead, so both locales are

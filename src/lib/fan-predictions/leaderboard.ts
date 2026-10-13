@@ -1,5 +1,12 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
+
+/**
+ * Busted by the write actions in app/actions/predictions.ts. Without it a
+ * reader saw their own prediction only after the 10-minute window below, which
+ * reads as the vote not having registered.
+ */
+export const FAN_PREDICTIONS_CACHE_TAG = "fan-predictions";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { EXACT_POINTS, predictionPoints } from "./scoring";
@@ -63,7 +70,7 @@ export const getPredictionLeaderboard = unstable_cache(
     return top.map(([id, t], i) => ({ rank: i + 1, name: names.get(id)?.trim() || `Fan ${id.slice(0, 4).toUpperCase()}`, ...t }));
   },
   ["prediction-leaderboard-v1"],
-  { revalidate: 600 },
+  { revalidate: 600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
 );
 
 export interface PlayerFanRating {
@@ -94,5 +101,5 @@ export const getPlayerFanRating = unstable_cache(
     return { average, matches: means.length, votes: data.length };
   },
   ["player-fan-rating-v1"],
-  { revalidate: 600 },
+  { revalidate: 600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
 );

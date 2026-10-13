@@ -44,7 +44,9 @@ const HOME_NEWS_LIMIT = 12;
 const getCachedHomeFixtures = unstable_cache(
   async () => getFixtures(),
   ["home-fixtures-v1"],
-  { revalidate: 300 },
+  // No tag busts this, so the timer is the only mechanism — but it must not sit
+  // below the page's own window, or every render re-queries by definition.
+  { revalidate: 1800 },
 );
 
 const getCachedHomeStandings = unstable_cache(
@@ -56,7 +58,8 @@ const getCachedHomeStandings = unstable_cache(
 const getCachedHomeNews = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, "vi", { skipSync: true })),
   ["home-news-vi-first-v3"],
-  { revalidate: 300, tags: ["news"] },
+  // The "news" tag makes this fresh on sync; the window is the fallback.
+  { revalidate: 1800, tags: ["news"] },
 );
 
 // Errors resolve to null *inside* the cache: unstable_cache never stores a
@@ -72,7 +75,7 @@ const getCachedHomeHeroSetting = unstable_cache(
       return null;
     }),
   ["home-hero-setting-v2"],
-  { revalidate: 300, tags: [SITE_SETTINGS_CACHE_TAG] },
+  { revalidate: 1800, tags: [SITE_SETTINGS_CACHE_TAG] },
 );
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -93,8 +96,12 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   };
 }
 
-// Revalidate every 5 minutes — balances freshness vs performance
-export const revalidate = 300;
+// 30 minutes, not 5. News is the only thing here that moves, it syncs hourly,
+// and the sync busts the "news" tag — so freshness is event-driven and this
+// timer is just the fallback. At 300s this page re-rendered up to 12 times an
+// hour per locale, each render querying fixtures, standings, news and the hero
+// setting, for data that changes once an hour.
+export const revalidate = 1800;
 
 function getSettledValue<T>(result: PromiseSettledResult<T>, fallback: T): T {
   if (result.status === "fulfilled") return result.value;

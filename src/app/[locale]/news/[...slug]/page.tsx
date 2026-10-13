@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { User } from "lucide-react";
-import { scrapeArticle, getNewsFromDB, getArticleContentFromDB, getArticleByUrl } from "@/lib/news";
+import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement } from "@/lib/news";
+import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { getHreflangAlternates, buildBreadcrumbJsonLd, buildNewsArticleJsonLd, getCanonical } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getFixtures } from "@/lib/football";
@@ -33,7 +34,11 @@ import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
 import { assessReadability, cleanSnippet, cleanTitle, filterJunk, imageKey, isHttpUrl, pickTitle } from "@/components/news/news-text";
 
-export const revalidate = 600; // 10 minutes
+// 1 hour. The excerpt itself never changes, so this could be far longer — but
+// the page now renders the like count, and revalidateTag refreshes the data
+// cache behind it, not this HTML. An hour caps how stale that number can look
+// to a signed-out reader (a signed-in one still fetches the live value).
+export const revalidate = 3600;
 
 // Empty list = nothing prerendered at build, each path is rendered on first
 // request and then cached for `revalidate` (without it the route renders per request).
@@ -155,10 +160,14 @@ export default async function ArticlePage({
   if (!url || !isKnownNewsSourceUrl(url)) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
-  const [content, allArticles, fixtures, t, tNews] = await Promise.all([
+  const [content, allArticles, fixtures, engagement, t, tNews] = await Promise.all([
     dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
-    getNewsFromDB(100, undefined, { skipSync: true }),
+    // Shared across every article page instead of a 100-row query per render.
+    getCachedNewsFeed(100),
     getFixtures(),
+    // One shared snapshot covers every article, so this is ~2 queries per TTL
+    // for the whole site rather than two per page view. See lib/news/engagement.
+    getArticleEngagement(url),
     getTranslations("News.article"),
     getTranslations("News"),
   ]);
@@ -317,6 +326,7 @@ export default async function ArticlePage({
                 articleUrl={url}
                 articleTitle={title}
                 articleSlugUrl={articleSlugUrl}
+                initialLikeCount={engagement.likes}
                 articleMeta={{
                   snippet: content.description,
                   thumbnail: content.heroImage,

@@ -28,7 +28,9 @@ const getCachedLatestDigestDate = unstable_cache(
   { revalidate: 1800, tags: ["news-digest"] },
 );
 
-export const revalidate = 1800;
+// 6 hours: the digest is generated once a day and /api/news/digest/generate
+// busts the "news-digest" tag, so a new briefing appears without waiting.
+export const revalidate = 21600;
 
 /** /news/digest: jump to the newest briefing, or explain that none exists yet. */
 export default async function DigestIndexPage({ params }: LocaleParams) {

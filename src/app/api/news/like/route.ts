@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { ARTICLE_ENGAGEMENT_TAG } from "@/lib/news/engagement";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
 import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
@@ -88,6 +90,11 @@ export async function POST(req: NextRequest) {
       article_url: canonicalUrl,
     });
   }
+
+  // The article page renders the count from a snapshot shared by every
+  // article, so without this a new like stays invisible to everyone else until
+  // that snapshot's TTL runs out.
+  revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
 
   // Return updated count
   const { count } = await supabase

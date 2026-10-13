@@ -10,7 +10,10 @@
  * `available: false` and the cards hide themselves rather than error.
  */
 
+import { updateTag } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getFixtureById, getFixtureEvents, getFixtureLineups } from "@/lib/football";
+import { FAN_PREDICTIONS_CACHE_TAG } from "@/lib/fan-predictions/leaderboard";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { summarisePredictions, type CommunityPrediction, type Score } from "@/lib/fan-predictions/scoring";
@@ -100,6 +103,16 @@ export async function savePrediction(
     console.error("[predictions] save failed:", error);
     return { ok: false, error: "unavailable" };
   }
+  // updateTag, not revalidateTag: this is the reader's own write, so the next
+  // request must wait for fresh data rather than be served the stale leaderboard
+  // that does not contain their prediction yet.
+  //
+  // The tag clears the data cache; /predictions is also ISR, and its cached HTML
+  // would still show the old table, so the page needs dropping too. The caller
+  // re-reads its own prediction directly, which is why their own view was never
+  // the broken part — the shared leaderboard was.
+  updateTag(FAN_PREDICTIONS_CACHE_TAG);
+  revalidateLocalizedPath("/predictions");
   return { ok: true };
 }
 
@@ -207,5 +220,6 @@ export async function saveRatings(
     console.error("[ratings] save failed:", error);
     return { ok: false, error: "unavailable" };
   }
+  updateTag(FAN_PREDICTIONS_CACHE_TAG);
   return { ok: true };
 }

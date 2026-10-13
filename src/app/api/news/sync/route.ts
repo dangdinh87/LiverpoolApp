@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { syncPipeline } from "@/lib/news/sync";
 import { withCronAuth } from "@/lib/cron";
@@ -18,9 +19,14 @@ export const GET = withCronAuth(async (req) => {
       preScrapeContent: deep,
     });
 
-    // Invalidate ISR cache so next visitor gets fresh data. The unstable_cache
-    // data layer (tag "news") refreshes on its own 5-min revalidate window.
     if (result.upserted > 0) {
+      // Order matters. revalidatePath only drops the rendered HTML; the
+      // unstable_cache entries behind it keep their own TTL. Without busting
+      // the tag first, the re-render this triggers reads the *previous* entry
+      // and caches last hour's articles for another full window — the fresh
+      // sync showed up 5-15 minutes late, and the most expensive thing we do
+      // (a full render) was spent on stale data.
+      revalidateTag("news", "max");
       revalidateLocalizedPath("/");
       revalidateLocalizedPath("/news");
     }

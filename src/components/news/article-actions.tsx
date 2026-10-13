@@ -30,6 +30,8 @@ interface ArticleActionsProps {
   articleUrl: string;
   articleTitle: string;
   articleSlugUrl: string;
+  /** Like count from the server render — the same number for every visitor, so it costs no request. */
+  initialLikeCount?: number;
   /** Optional metadata for DB save */
   articleMeta?: {
     snippet?: string;
@@ -44,6 +46,7 @@ export function ArticleActions({
   articleUrl,
   articleTitle,
   articleSlugUrl,
+  initialLikeCount = 0,
   articleMeta,
 }: ArticleActionsProps) {
   const t = useTranslations("News.actions");
@@ -52,7 +55,7 @@ export function ArticleActions({
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
+  const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [likeLoading, setLikeLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
@@ -60,12 +63,20 @@ export function ArticleActions({
   const [showConfirm, setShowConfirm] = useState(false);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  // Fetch like state from DB + saved state from localStorage
+  // Saved state from localStorage, then — only for a signed-in reader — the two
+  // things that actually depend on who is asking.
+  //
+  // Both requests used to fire for everyone on every article view. The count
+  // came back identical for all visitors (it now arrives with the HTML), and
+  // the saved check can only ever answer "no" for a guest, so a signed-out
+  // reader was paying four Supabase round-trips to learn nothing. Guests now
+  // make no request at all.
   useEffect(() => {
     // localStorage does not exist during the server render, so this first
     // value can only be read once we are on the client.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSaved(getLocalSaved().has(articleUrl));
+    if (!user) return;
 
     fetch(`/api/news/like?url=${encodeURIComponent(articleUrl)}`)
       .then((r) => r.json())
@@ -75,14 +86,13 @@ export function ArticleActions({
       })
       .catch(() => {});
 
-    // Check DB saved state
     fetch(`/api/saved-articles/check?url=${encodeURIComponent(articleUrl)}`)
       .then((r) => r.json())
       .then((data) => {
         if (data.saved) setSaved(true);
       })
       .catch(() => {});
-  }, [articleUrl]);
+  }, [articleUrl, user]);
 
   async function handleLike() {
     if (!user) { setShowLoginPrompt(true); return; }

@@ -26,7 +26,7 @@ export {
 } from "./db";
 
 // Re-export engagement helpers
-export { getArticleEngagement, HOT_THRESHOLD } from "./engagement";
+export { getArticleEngagement, ARTICLE_ENGAGEMENT_TAG } from "./engagement";
 export type { ArticleEngagement } from "./engagement";
 
 // Build adapter list

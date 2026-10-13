@@ -24,7 +24,8 @@ import { BRAND } from "@/lib/brand";
 
 type Params = Promise<{ date: string; locale: string }>;
 
-export const revalidate = 3600;
+// A dated briefing never changes once written.
+export const revalidate = 86400;
 
 // Empty list = nothing prerendered at build, each path is rendered on first
 // request and then cached for `revalidate` (without it the route renders per request).
