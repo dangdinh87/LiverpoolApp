@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { createClient } from "@/lib/supabase";
+import { hasSupabaseSession, loadSupabaseClient } from "@/lib/supabase-lazy";
 import { useToast } from "@/stores/toast-store";
 import { formatDayMonth } from "@/lib/format-match-date";
 
@@ -31,14 +31,21 @@ interface Comment {
 
 interface CommentSectionProps {
   articleUrl: string;
+  /**
+   * How many comments the server render knew about. Most articles have none,
+   * and asking the database to confirm that on every page view is the one
+   * request this component can avoid entirely. The comments routes revalidate
+   * this page when the count changes, so a zero here is a real zero.
+   */
+  initialCommentCount?: number;
 }
 
-export function CommentSection({ articleUrl }: CommentSectionProps) {
+export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentSectionProps) {
   const t = useTranslations("News.comments");
   const locale = useLocale();
   const toast = useToast();
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initialCommentCount > 0);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -49,11 +56,23 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   const [replyContent, setReplyContent] = useState("");
   const replyInputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Only a signed-in reader needs an identity here (it decides which comments
+  // show a delete button). Calling createClient() unconditionally pulled the
+  // ~60 KB Supabase browser client into every article page for every visitor,
+  // undoing the lazy-load the navbar does, and spent an auth round-trip to be
+  // told the guest is a guest.
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id ?? null);
-    });
+    if (!hasSupabaseSession()) return;
+    let cancelled = false;
+    loadSupabaseClient()
+      .then((supabase) => supabase.auth.getUser())
+      .then(({ data: { user } }) => {
+        if (!cancelled) setUserId(user?.id ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const fetchComments = useCallback(async () => {
@@ -73,11 +92,13 @@ export function CommentSection({ articleUrl }: CommentSectionProps) {
   }, [articleUrl]);
 
   useEffect(() => {
+    // Nothing to list: skip the request rather than confirm an empty table.
+    if (initialCommentCount === 0) return;
     // `fetchComments` is async: every setState inside it runs after an await,
     // so there is no synchronous cascade for the rule to prevent here.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchComments();
-  }, [fetchComments]);
+  }, [fetchComments, initialCommentCount]);
 
   // Open inline reply form for a specific comment
   function openReply(commentId: string) {

@@ -3,6 +3,10 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
 import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
+import { revalidateTag } from "next/cache";
+import { encodeArticleSlug } from "@/lib/news-config";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { ARTICLE_ENGAGEMENT_TAG } from "@/lib/news/engagement";
 
 // GET /api/news/comments?url=... — list comments for an article
 export async function GET(req: NextRequest) {
@@ -110,6 +114,12 @@ export async function POST(req: NextRequest) {
     console.error("[comments]", error.message);
     return NextResponse.json({ error: "Comments are unavailable right now" }, { status: 500 });
   }
+
+  // The article page renders the comment count and skips loading the list when
+  // it is zero, so a first comment has to reach that HTML or it stays hidden
+  // from everyone but its author until the page's ISR window expires.
+  revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
+  revalidateLocalizedPath(`/news/${encodeArticleSlug(url)}`);
 
   return NextResponse.json({
     comment: {

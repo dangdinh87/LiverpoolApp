@@ -351,7 +351,7 @@ export default async function ArticlePage({
             </p>
 
             <RelatedArticles articles={related} />
-            <CommentSection articleUrl={url} />
+            <CommentSection articleUrl={url} initialCommentCount={engagement.comments} />
           </div>
 
           <aside className="hidden lg:block">

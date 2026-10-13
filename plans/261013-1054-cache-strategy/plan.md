@@ -298,6 +298,48 @@ chính người vote chưa bao giờ bị lỗi. Cái bị lỗi là **bảng x�
 `/player/[id]` **vẫn còn trễ tới 1 giờ** (ISR 3600) — action chỉ có `player_name`,
 không có route id, nên không revalidate được path. Còn tồn tại, không phải đã xong.
 
+### 7.6 External request: `getFixtures` chỉ có `React.cache`
+
+`getFixtures` được gọi **thẳng** từ 11 chỗ và chỉ bọc `React.cache` (dedup trong
+**một** render). Nên mỗi lần render trang bài viết = **1 request Football-Data.org**,
+chỉ để biết "trận kế tiếp là gì". Free tier = **10 req/phút**. Đây gần như chắc chắn
+là nguồn lỗi 429 làm 2 e2e test fail ở đầu branch này — lúc đó tôi đã đoán sai là
+"chỉ do quota".
+
+Thêm `src/lib/football/cached-fixtures.ts` (`unstable_cache`, 1800s) và dùng cho
+3 caller nhiều lượt nhất: trang bài viết, `sitemap.xml` (force-dynamic, crawler gọi),
+và feed `.ics` (app lịch tự poll).
+
+**Cố ý giữ nguyên:** `/fixtures/[id]` và `/api/live-fixture` đọc trạng thái trận
+**đang diễn ra**, phải hỏi provider trực tiếp. `/standings` ISR 6h nên không đáng.
+
+### 7.7 Trang bài viết: comment
+
+Hai chi phí nữa mỗi lượt xem:
+
+- `comment-section.tsx` gọi `createClient()` **vô điều kiện** → kéo Supabase browser
+  client (~60KB gzip) vào **mọi** trang bài cho **mọi** khách, phá đúng cái lazy-load
+  mà navbar đã làm, cộng 1 request auth để được trả lời "bạn là khách". Giờ dùng
+  `hasSupabaseSession()` + `loadSupabaseClient()` như navbar.
+- `GET /api/news/comments` chạy mỗi lượt xem. **Hầu hết bài có 0 comment** → giờ
+  truyền `initialCommentCount` từ snapshot engagement (đã có sẵn, không thêm query)
+  và **bỏ hẳn fetch khi = 0**.
+
+**Bẫy đã chặn:** `engagement` ban đầu chỉ đếm 30 ngày. Khi con số chỉ để *hiển thị*
+thì sai cũng chỉ là số sai; nhưng khi nó **quyết định có fetch hay không** thì đếm
+thiếu = **comment thật biến mất**. Đã bỏ date cutoff, đổi sang `order(created_at desc)`
++ cap 500 dòng, và thêm 4 unit test (`lib/news/__tests__/engagement.test.ts`) khoá
+đúng 2 cách có thể sai: URL lưu ở dạng cũ, và cutoff theo ngày.
+
+`POST /api/news/comments` giờ bust tag + `revalidateLocalizedPath` trang bài đó, nên
+comment đầu tiên không bị số `0` trong HTML che lại. `DELETE` **không** cần: số giảm
+chỉ gây 1 fetch thừa, không che gì.
+
+**Không làm — cache `GET /api/news/comments` ở CDN.** RLS là `USING (true)` nên
+response giống nhau với mọi người, cache được về mặt kỹ thuật. Nhưng `s-maxage` sẽ làm
+người vừa gửi comment không thấy comment của mình, mà lợi ích thì nhỏ với site ít
+truy cập (ít người xem cùng 1 bài trong cùng 1 phút). Đổi lấy rủi ro UX không đáng.
+
 ## 8. Chưa làm — và vì sao
 
 - **Gộp 3 wrapper feed thành một** (`home-news` 12 dòng vi-first, `news-page-list`,

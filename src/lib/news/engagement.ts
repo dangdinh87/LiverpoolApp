@@ -21,10 +21,17 @@ export const ARTICLE_ENGAGEMENT_TAG = "article-engagement";
 /** How long the shared snapshot lives. A like counter may lag; it must not cost a query per view. */
 const ENGAGEMENT_TTL_SEC = 600;
 
-/** Rows younger than this are counted. Older engagement is not shown anywhere. */
-const WINDOW_DAYS = 30;
-
-/** Safety cap so one popular article cannot turn this into a full-table read. */
+/**
+ * Safety cap so this cannot become a full-table read.
+ *
+ * There is deliberately no date cutoff. An earlier version counted only the
+ * last 30 days, which is fine for a number on a page but not for the use the
+ * article page makes of it: it skips loading the comment list when the count is
+ * zero, so a cutoff would have hidden older comments completely. The counts
+ * are totals, and this cap — newest first — is the only bound. It is sized for
+ * a small site; if engagement ever approaches it, the oldest articles lose
+ * their counts first and this is the number to revisit.
+ */
 const ROW_CAP = 500;
 
 export interface ArticleEngagement {
@@ -51,11 +58,11 @@ const loadEngagement = unstable_cache(
 
     try {
       const supabase = getServiceClient();
-      const cutoff = new Date(Date.now() - WINDOW_DAYS * 86_400_000).toISOString();
+      const newestFirst = { ascending: false } as const;
 
       const [likes, comments] = await Promise.all([
-        supabase.from("article_likes").select("article_url").gte("created_at", cutoff).limit(ROW_CAP),
-        supabase.from("article_comments").select("article_url").gte("created_at", cutoff).limit(ROW_CAP),
+        supabase.from("article_likes").select("article_url").order("created_at", newestFirst).limit(ROW_CAP),
+        supabase.from("article_comments").select("article_url").order("created_at", newestFirst).limit(ROW_CAP),
       ]);
 
       for (const row of likes.data ?? []) bump(row.article_url, "likes");
