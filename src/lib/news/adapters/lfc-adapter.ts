@@ -136,12 +136,24 @@ class HttpError extends Error {
   }
 }
 
+// The category pages are ~570 KB, rendered per request (CDN BYPASS): 2.5-2.8s from a
+// laptop, and over the old 5s from Vercel while a dozen other feeds load alongside.
+const LFC_TIMEOUT_MS = 12_000;
+
 async function getText(url: string, accept: string): Promise<string> {
-  const res = await fetch(url, {
-    signal: AbortSignal.timeout(5000),
-    headers: { "User-Agent": NEWS_USER_AGENT, Accept: accept },
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      signal: AbortSignal.timeout(LFC_TIMEOUT_MS),
+      headers: { "User-Agent": NEWS_USER_AGENT, Accept: accept },
+      cache: "no-store",
+    });
+  } catch (err) {
+    // Name the page, so sync_logs says which of the three requests failed.
+    const failure = new Error(`${new URL(url).pathname}: ${err instanceof Error ? err.message : String(err)}`);
+    if (err instanceof Error) failure.name = err.name;
+    throw failure;
+  }
   if (!res.ok) throw new HttpError(res.status);
   return res.text();
 }
