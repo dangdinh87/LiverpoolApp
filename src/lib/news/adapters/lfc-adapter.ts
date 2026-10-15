@@ -141,6 +141,16 @@ class HttpError extends Error {
 const LFC_TIMEOUT_MS = 12_000;
 
 async function getText(url: string, accept: string): Promise<string> {
+  const path = new URL(url).pathname;
+  const started = Date.now();
+  // Name the page and the phase, so sync_logs says which request stalled and where.
+  const fail = (phase: "headers" | "body", err: unknown): Error => {
+    const message = err instanceof Error ? err.message : String(err);
+    const failure = new Error(`${path}: ${phase} after ${Date.now() - started}ms: ${message}`);
+    if (err instanceof Error) failure.name = err.name;
+    return failure;
+  };
+
   let res: Response;
   try {
     res = await fetch(url, {
@@ -149,13 +159,16 @@ async function getText(url: string, accept: string): Promise<string> {
       cache: "no-store",
     });
   } catch (err) {
-    // Name the page, so sync_logs says which of the three requests failed.
-    const failure = new Error(`${new URL(url).pathname}: ${err instanceof Error ? err.message : String(err)}`);
-    if (err instanceof Error) failure.name = err.name;
-    throw failure;
+    throw fail("headers", err);
   }
   if (!res.ok) throw new HttpError(res.status);
-  return res.text();
+  try {
+    const text = await res.text();
+    console.info(`[lfc-adapter] ${path} ${Date.now() - started}ms ${text.length}B`);
+    return text;
+  } catch (err) {
+    throw fail("body", err);
+  }
 }
 
 export class LfcAdapter implements FeedAdapter {

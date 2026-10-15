@@ -106,6 +106,21 @@ describe("LfcAdapter.fetch", () => {
     expect(adapter.status?.error).toContain("/news/category/men");
   });
 
+  it("names the page whose body stalled after the headers arrived", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
+      ok: true,
+      status: 200,
+      text: async () => {
+        if (url.endsWith("/news/category/club")) throw new DOMException("The operation was aborted due to timeout", "TimeoutError");
+        return pages[url] ?? "";
+      },
+    })));
+    const adapter = new LfcAdapter();
+    expect(await adapter.fetch()).toEqual([]);
+    expect(adapter.status?.state).toBe("timeout");
+    expect(adapter.status?.error).toMatch(/^\/news\/category\/club: body after \d+ms: The operation was aborted/);
+  });
+
   it("reports a parse error when the pages answer 200 but carry no items", async () => {
     stubPages({ "https://www.liverpoolfc.com/news/category/men": { status: 200, body: "<html></html>" }, "https://www.liverpoolfc.com/news/category/club": { status: 200, body: "<html></html>" } });
     const adapter = new LfcAdapter();
