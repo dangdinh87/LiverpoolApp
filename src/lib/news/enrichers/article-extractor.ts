@@ -1,9 +1,10 @@
 /**
- * Extractor Selector Reference (LFC/EOTK/Echo re-verified 2026-10-04)
+ * Extractor Selector Reference (EOTK/Echo re-verified 2026-10-04, LFC 2026-10-15)
  * ┌─────────────────────┬──────────────────────────────────────────────────┐
  * │ Source               │ Container Selectors (priority order)             │
  * ├─────────────────────┼──────────────────────────────────────────────────┤
- * │ liverpoolfc.com      │ __NEXT_DATA__ newsArticle.blocks → main         │
+ * │ liverpoolfc.com      │ [data-testid=rte-content] parent → legacy        │
+ * │                      │ __NEXT_DATA__ blocks → article, main             │
  * │ bbc.com              │ [data-component=text-block] → article, main     │
  * │ theguardian.com      │ article                                          │
  * │ empireofthekop.com   │ #article-body → .entry-content → article        │
@@ -642,9 +643,14 @@ function extractLfcOfficial(
     }
   }
 
-  const container = $(
-    "article, .article-body, [data-testid='article-body'], main"
-  ).first();
+  // App Router pages (Oct 2026+) have no __NEXT_DATA__: the prose sits in rte-content
+  // blocks inside the article body. The old selector list picked <main> (first in
+  // document order), which dragged in the app-store footer.
+  const rte = $('[data-testid="rte-content"]');
+  const container = rte.length
+    ? rte.first().parent()
+    : $("article, .article-body, [data-testid='article-body'], main").first();
+  container.find('[class*="tag-tray"]').remove();
 
   if (paragraphs.length === 0) {
     container.find("p").each((_, el) => {

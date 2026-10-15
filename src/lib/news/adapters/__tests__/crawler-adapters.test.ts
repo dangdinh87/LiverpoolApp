@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isSkippedLfcItem, parseLfcNewsHtml } from "../lfc-adapter";
+import { LfcAdapter, mergeLfcNews, parseLfcCategoryPage, parseLfcNewsSitemap } from "../lfc-adapter";
 import { RssAdapter } from "../rss-adapter";
 import { RSS_FEEDS } from "../../config";
 
@@ -13,20 +13,93 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+// liverpoolfc.com, captured 2026-10-14 after the site moved to the App Router (no __NEXT_DATA__).
 describe("LFC adapter", () => {
-  const items = parseLfcNewsHtml(fixture("lfc-news.html"));
-  it("skips Women / Academy / Media Watch and the retail promo", () => {
-    const titles = items.map((i) => i.title);
-    expect(titles.some((t) => /Gareth Taylor|LFC Women|Fowler Academy|Big Red Sale|Barcelona WILL sell/.test(t))).toBe(false);
-    expect(titles).toContain("Milos Kerkez scores first international goal with seven Liverpool players in action");
-    expect(isSkippedLfcItem({ category: "Women" })).toBe(true);
-    expect(isSkippedLfcItem({ category: "Club", kicker: "LFC Retail" })).toBe(true);
-    expect(isSkippedLfcItem({ category: "Men", kicker: "News" })).toBe(false);
+  const sitemap = parseLfcNewsSitemap(fixture("lfc-sitemap-news-2026-10-14.xml"));
+  const cards = [
+    ...parseLfcCategoryPage(fixture("lfc-category-men-2026-10-14.html")),
+    ...parseLfcCategoryPage(fixture("lfc-category-club-2026-10-14.html")),
+  ];
+  const items = mergeLfcNews(sitemap, cards);
+  const titles = items.map((i) => i.title);
+
+  it("reads every news-sitemap entry with its exact publication time", () => {
+    expect(sitemap).toHaveLength(32);
+    expect(sitemap[0]).toEqual({
+      url: "https://www.liverpoolfc.com/news/kostas-tsimikas-so-grateful-after-captaining-liverpool-at-lask",
+      title: "Kostas Tsimikas 'so grateful' after captaining Liverpool at LASK",
+      publishedAt: "2026-10-14T21:12:00.000Z",
+    });
   });
-  it("uses the byline standfirst, not the kicker, as the snippet", () => {
-    const kerkez = items.find((i) => /Kerkez/.test(i.title))!;
-    expect(kerkez.contentSnippet).toMatch(/first international goal to earn Hungary/);
-    expect(items.every((i) => !["News", "Round-up", "Guest blog", "Video"].includes(i.contentSnippet))).toBe(true);
+
+  it("reads the cards of a category page", () => {
+    expect(cards).toHaveLength(24);
+    expect(cards[0].url).toBe("https://www.liverpoolfc.com/news/kostas-tsimikas-so-grateful-after-captaining-liverpool-at-lask");
+  });
+
+  it("keeps Men and Club stories only: drops Women, Academy and Media Watch rumours", () => {
+    expect(titles).toContain("Bradley Barcola scores hat-trick as Liverpool hit six in win at LASK");
+    expect(titles).toContain("Team news: Confirmed Liverpool line-up v LASK");
+    // Media Watch: other outlets' rumours, which would read as the club's own word.
+    expect(titles.some((t) => /€70 million-plus Bundesliga star|strongly in the mix|Alex Scott sale/.test(t))).toBe(false);
+    // Women / Academy.
+    expect(titles.some((t) => /Gareth Taylor|Youth League|U19s|Cam Williams/.test(t))).toBe(false);
+  });
+
+  it("takes the date from the sitemap and the standfirst and image from the card page", () => {
+    const report = items.find((i) => i.title.startsWith("Bradley Barcola scores hat-trick"))!;
+    expect(report).toMatchObject({
+      link: "https://www.liverpoolfc.com/news/bradley-barcola-hat-trick-lask-liverpool-champions-league-match-report",
+      pubDate: "2026-10-14T18:42:00.000Z",
+      contentSnippet: "Bradley Barcola scored a hat-trick as Liverpool won 6-3 away at LASK in the Champions League.",
+      source: "lfc",
+      language: "en",
+    });
+    // The card's <img> asks for the 2338x1315 original; resized to card width.
+    expect(report.thumbnail).toBe(
+      "https://contentfulproxy.stadion.io/rm6ms1yxue4m/qmYnGJHLhk0Qjz5rNrNrF/057c9bd1ceff713cae82590e4a196747/LASK_match_report_cover_14-10-2026.jpg?fm=webp&fit=fill&f=top&w=640&h=360"
+    );
+  });
+
+  it("returns newest first", () => {
+    const dates = items.map((i) => Date.parse(i.pubDate));
+    expect(dates).toEqual([...dates].sort((a, b) => b - a));
+  });
+});
+
+describe("LfcAdapter.fetch", () => {
+  const pages: Record<string, string> = {
+    "https://www.liverpoolfc.com/sitemap-news.xml": fixture("lfc-sitemap-news-2026-10-14.xml"),
+    "https://www.liverpoolfc.com/news/category/men": fixture("lfc-category-men-2026-10-14.html"),
+    "https://www.liverpoolfc.com/news/category/club": fixture("lfc-category-club-2026-10-14.html"),
+  };
+  const stubPages = (override: Record<string, { status: number; body?: string }> = {}) =>
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const o = override[url];
+      const status = o?.status ?? (pages[url] ? 200 : 404);
+      return { ok: status === 200, status, text: async () => o?.body ?? pages[url] ?? "" };
+    }));
+
+  it("reports ok with the merged stories", async () => {
+    stubPages();
+    const adapter = new LfcAdapter();
+    const out = await adapter.fetch();
+    expect(out.length).toBeGreaterThan(10);
+    expect(adapter.status).toEqual({ state: "ok" });
+  });
+
+  it("reports the HTTP status when the sitemap is down", async () => {
+    stubPages({ "https://www.liverpoolfc.com/sitemap-news.xml": { status: 503 } });
+    const adapter = new LfcAdapter();
+    expect(await adapter.fetch()).toEqual([]);
+    expect(adapter.status).toEqual({ state: "http_error", httpStatus: 503 });
+  });
+
+  it("reports a parse error when the pages answer 200 but carry no items", async () => {
+    stubPages({ "https://www.liverpoolfc.com/news/category/men": { status: 200, body: "<html></html>" }, "https://www.liverpoolfc.com/news/category/club": { status: 200, body: "<html></html>" } });
+    const adapter = new LfcAdapter();
+    expect(await adapter.fetch()).toEqual([]);
+    expect(adapter.status?.state).toBe("parse_error");
   });
 });
 

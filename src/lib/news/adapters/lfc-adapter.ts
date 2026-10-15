@@ -1,70 +1,149 @@
+import * as cheerio from "cheerio";
 import type { FeedAdapter, SourceFetchStatus } from "./base";
 import { statusFromError } from "./base";
 import { cleanFeedText, cleanSnippet } from "../text";
 import { canonicalizeArticleUrl } from "../url";
 import { NEWS_USER_AGENT } from "../http";
+import { normalizeFeedDate } from "../date";
 import type { NewsArticle, NewsSource, NewsLanguage } from "../types";
 
-interface LfcNewsItem {
-  title: string;
+/*
+ * liverpoolfc.com moved to the App Router in October 2026: the listing page no
+ * longer carries `__NEXT_DATA__`, and its cards only show a day, not a time.
+ *
+ * - The Google News sitemap lists ~2 days of stories with exact UTC times.
+ * - It also lists Women, Academy and "Media Watch" (other outlets' transfer
+ *   rumours, which would read as the club's own word), so a story is kept only
+ *   when it also appears on the Men or Club category page. Those pages show the
+ *   12 newest cards each, plus a JSON-LD list with the standfirst and image.
+ */
+const LFC_ORIGIN = "https://www.liverpoolfc.com";
+const SITEMAP_URL = `${LFC_ORIGIN}/sitemap-news.xml`;
+const KEPT_CATEGORY_PAGES = ["men", "club"].map((c) => `${LFC_ORIGIN}/news/category/${c}`);
+const MAX_ITEMS = 30;
+
+export interface LfcSitemapItem {
   url: string;
+  title: string;
   publishedAt: string;
-  kicker?: string;
-  /** Section: Club / Men / Women / Academy / Media Watch. */
-  category?: string;
-  /** Standfirst (one-sentence summary) — the real snippet; `kicker` is just a label. */
-  byline?: string;
-  coverImage?: {
-    sizes?: {
-      sm?: { webpUrl?: string; url?: string };
-      md?: { webpUrl?: string; url?: string };
-    };
-  };
 }
 
-function sanitizeUrl(url: string | undefined): string | undefined {
-  if (!url) return undefined;
-  return /^https?:\/\//i.test(url) ? url : undefined;
+export interface LfcCard {
+  url: string;
+  snippet?: string;
+  image?: string;
 }
 
-// Not men's-team news: women's / academy teams, press-roundup links and retail promos.
-const SKIPPED_CATEGORIES = new Set(["women", "academy", "media watch"]);
-const SKIPPED_KICKERS = new Set(["lfc retail", "retail"]);
-
-export function isSkippedLfcItem(item: Pick<LfcNewsItem, "category" | "kicker">): boolean {
-  const category = (item.category ?? "").trim().toLowerCase();
-  const kicker = (item.kicker ?? "").trim().toLowerCase();
-  return SKIPPED_CATEGORIES.has(category) || SKIPPED_KICKERS.has(kicker);
+/** Story identity across the three spellings: `/news/x`, `…/news/x`, `…/en/news/x`. */
+function slugOf(url: string): string {
+  return url.replace(/[?#].*$/, "").replace(/\/+$/, "").split("/").pop() ?? "";
 }
 
-/** Parse the `__NEXT_DATA__` of liverpoolfc.com/news into articles (exported for tests). */
-export function parseLfcNewsHtml(html: string): NewsArticle[] {
-  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">(.+?)<\/script>/);
-  if (!match?.[1]) return [];
+function storyUrl(slug: string): string {
+  return canonicalizeArticleUrl(`${LFC_ORIGIN}/news/${slug}`);
+}
 
-  const data = JSON.parse(match[1]);
-  const results: LfcNewsItem[] = data?.props?.pageProps?.data?.newsPage?.results ?? [];
+const THUMB_WIDTH = 640;
 
-  return results
-    .filter((item) => item?.title && item?.url && !isSkippedLfcItem(item))
-    .slice(0, 30)
-    .map((item) => {
-      const img =
-        item.coverImage?.sizes?.sm?.webpUrl ??
-        item.coverImage?.sizes?.sm?.url ??
-        item.coverImage?.sizes?.md?.webpUrl ??
-        undefined;
+/** The card's `src` asks the Contentful proxy for the full-size original; ask for card width instead. */
+function thumbnailUrl(src: string | undefined): string | undefined {
+  if (!src || !/^https:\/\//i.test(src)) return undefined;
+  try {
+    const url = new URL(src);
+    const w = Number(url.searchParams.get("w"));
+    const h = Number(url.searchParams.get("h"));
+    if (w > THUMB_WIDTH && h > 0) {
+      url.searchParams.set("w", String(THUMB_WIDTH));
+      url.searchParams.set("h", String(Math.round((THUMB_WIDTH * h) / w)));
+    }
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
 
+export function parseLfcNewsSitemap(xml: string): LfcSitemapItem[] {
+  const $ = cheerio.load(xml, { xml: true });
+  return $("url")
+    .map((_, el) => {
+      const $el = $(el);
+      const slug = slugOf($el.children("loc").text().trim());
+      const title = cleanFeedText($el.find("news\\:title").text());
+      const publishedAt = normalizeFeedDate($el.find("news\\:publication_date").text().trim(), "en");
+      return slug && title && publishedAt ? { url: storyUrl(slug), title, publishedAt } : null;
+    })
+    .get()
+    .filter((item): item is LfcSitemapItem => item !== null);
+}
+
+export function parseLfcCategoryPage(html: string): LfcCard[] {
+  const $ = cheerio.load(html);
+
+  // The standfirst is only in the JSON-LD list (the cards show title, section and day).
+  const snippets = new Map<string, string>();
+  $('script[type="application/ld+json"]').each((_, el) => {
+    try {
+      const data = JSON.parse($(el).html() ?? "");
+      if (data?.["@type"] !== "CollectionPage" || !Array.isArray(data.hasPart)) return;
+      for (const part of data.hasPart) {
+        const snippet = cleanSnippet(part?.description ?? "");
+        if (typeof part?.url === "string" && snippet) snippets.set(slugOf(part.url), snippet);
+      }
+    } catch {
+      // A malformed block only costs the standfirst.
+    }
+  });
+
+  return $('article[data-testid="article-card"]')
+    .map((_, el): LfcCard | null => {
+      const $card = $(el);
+      const slug = slugOf($card.find('a[data-testid="article-card__link"]').attr("href") ?? "");
+      if (!slug) return null;
       return {
-        title: cleanFeedText(item.title),
-        link: canonicalizeArticleUrl(`https://www.liverpoolfc.com${item.url}`),
-        pubDate: item.publishedAt || new Date().toISOString(),
-        contentSnippet: cleanSnippet(item.byline ?? ""),
-        thumbnail: sanitizeUrl(img),
+        url: storyUrl(slug),
+        snippet: snippets.get(slug),
+        image: thumbnailUrl($card.find('[data-testid="article-card__media"] img').attr("src")),
+      };
+    })
+    .get()
+    .filter((card): card is LfcCard => card !== null);
+}
+
+/** Sitemap stories that also sit on a kept category page, newest first. */
+export function mergeLfcNews(sitemap: LfcSitemapItem[], cards: LfcCard[]): NewsArticle[] {
+  const kept = new Map(cards.map((card) => [card.url, card]));
+  return sitemap
+    .filter((item) => kept.has(item.url))
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+    .slice(0, MAX_ITEMS)
+    .map((item) => {
+      const card = kept.get(item.url)!;
+      return {
+        title: item.title,
+        link: item.url,
+        pubDate: item.publishedAt,
+        contentSnippet: card.snippet ?? "",
+        thumbnail: card.image,
         source: "lfc" as NewsSource,
         language: "en" as NewsLanguage,
       };
     });
+}
+
+class HttpError extends Error {
+  constructor(readonly httpStatus: number) {
+    super(`HTTP ${httpStatus}`);
+  }
+}
+
+async function getText(url: string, accept: string): Promise<string> {
+  const res = await fetch(url, {
+    signal: AbortSignal.timeout(5000),
+    headers: { "User-Agent": NEWS_USER_AGENT, Accept: accept },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new HttpError(res.status);
+  return res.text();
 }
 
 export class LfcAdapter implements FeedAdapter {
@@ -74,37 +153,31 @@ export class LfcAdapter implements FeedAdapter {
   async fetch(): Promise<NewsArticle[]> {
     this.status = undefined;
     try {
-      const res = await fetch("https://www.liverpoolfc.com/news", {
-        signal: AbortSignal.timeout(5000),
-        headers: {
-          "User-Agent": NEWS_USER_AGENT,
-          Accept: "text/html,application/xhtml+xml",
-        },
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        this.status = { state: "http_error", httpStatus: res.status };
-        return [];
-      }
+      const [xml, ...pages] = await Promise.all([
+        getText(SITEMAP_URL, "application/xml,text/xml"),
+        ...KEPT_CATEGORY_PAGES.map((url) => getText(url, "text/html,application/xhtml+xml")),
+      ]);
 
-      const html = await res.text();
-      let articles: NewsArticle[];
+      let sitemap: LfcSitemapItem[];
+      let cards: LfcCard[];
       try {
-        articles = parseLfcNewsHtml(html);
+        sitemap = parseLfcNewsSitemap(xml);
+        cards = pages.flatMap(parseLfcCategoryPage);
       } catch (err) {
         this.status = statusFromError(err, "parse");
         console.warn("[lfc-adapter] parse failed:", this.status.error);
         return [];
       }
-      // Zero items from a 200 means the page shape changed, not "no news".
-      this.status = articles.length > 0 ? { state: "ok" } : { state: "parse_error", error: "no items in __NEXT_DATA__" };
-      return articles;
+      // Zero items from a 200 means a page shape changed, not "no news".
+      if (sitemap.length === 0 || cards.length === 0) {
+        this.status = { state: "parse_error", error: `sitemap items: ${sitemap.length}, category cards: ${cards.length}` };
+        return [];
+      }
+      this.status = { state: "ok" };
+      return mergeLfcNews(sitemap, cards);
     } catch (err) {
-      this.status = statusFromError(err);
-      console.warn(
-        "[lfc-adapter] Failed:",
-        err instanceof Error ? err.message : err
-      );
+      this.status = err instanceof HttpError ? { state: "http_error", httpStatus: err.httpStatus } : statusFromError(err);
+      console.warn("[lfc-adapter] Failed:", err instanceof Error ? err.message : err);
       return [];
     }
   }

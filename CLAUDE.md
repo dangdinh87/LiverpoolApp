@@ -209,7 +209,9 @@ src/
     clamped to fetch time.
     Zone names V8 cannot parse are resolved explicitly (Sky `BST` = +01:00; ESPN `EST` = -04:00 from March to November).
   - Source list changes (Oct 2026): Manchester Evening News feed dropped (~2 items); Mirror / Independent / MEN are no longer "trusted
-    Liverpool" sources in `relevance.ts`; LFC adapter skips Women / Academy / Media Watch / retail; Sky videos
+    Liverpool" sources in `relevance.ts`; LFC adapter (rewritten Oct 15 2026, after liverpoolfc.com dropped
+    `__NEXT_DATA__`) reads `sitemap-news.xml` for titles + exact times and keeps only stories also on the Men /
+    Club category pages, which drops Women / Academy / Media Watch; Sky videos
     and liveblogs and Guardian `/live/` pages are dropped at ingest.
   - Each adapter records a fetch status (`ok | http_error | timeout | parse_error | error`); the sync result and
     `sync_logs.source_stats` carry it (`sourceFailures`, `consecutiveZeroInsertRuns`) and the news-sync workflow alerts on both.

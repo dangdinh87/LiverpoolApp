@@ -27,6 +27,19 @@ describe("extractor output on real pages (Oct 2026 article QA)", () => {
     expect(content.paragraphs.length).toBeGreaterThan(8);
   });
 
+  it("liverpoolfc.com after the App Router move (no __NEXT_DATA__): the body only, no footer or tag links", async () => {
+    const { content } = (await extractFromHtml(
+      fixture("lfc-article-koumas-2026-10-14"),
+      "https://www.liverpoolfc.com/news/lewis-koumas-matches-steven-gerrard-feat-in-the-champions-league",
+    ))!;
+    expect(content.paragraphs).toContain("Steven Gerrard was the first to achieve that feat for the club, doing so away at Dynamo Kyiv back in October 2001.");
+    expect(content.paragraphs.join(" ")).not.toMatch(/app stores|Official LFC Store/);
+    expect(text(content.htmlContent)).toContain("netting the Reds' sixth in the 72nd minute");
+    expect(content.htmlContent).not.toContain("/news/tag/");
+    expect(content.author).toBe("Glenn Price");
+    expect(content.publishedAt).toBe("2026-10-14T18:36:00.000Z");
+  });
+
   it("empireofthekop.com: the 'More Stories' rail and its pictures are gone, the stats table stays", async () => {
     const { content } = (await extractFromHtml(
       fixture("eotk-more-stories"),
