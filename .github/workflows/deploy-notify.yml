@@ -1,0 +1,31 @@
+name: Deploy notification
+
+# Vercel's Git integration reports every deploy back to GitHub as a deployment
+# status. When a production deploy goes live, send the same personal
+# "deploy succeeded" ping (@DeployCFBot) as cv-app — never the news-sync alert bot.
+# After the move to Cloudflare, call scripts/deploy-notify.sh from the deploy job instead.
+on: deployment_status
+
+jobs:
+  notify:
+    if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      # The checkout is a detached SHA; only master deploys to Production, so name
+      # the branch for the message's branch and commit links.
+      - run: git checkout -q -B master
+
+      - name: Notify deploy
+        continue-on-error: true
+        env:
+          DEPLOY_BOT_TOKEN: ${{ secrets.DEPLOY_BOT_TOKEN }}
+          DEPLOY_CHAT_ID: ${{ secrets.DEPLOY_CHAT_ID }}
+          DEPLOY_URL: https://anfielddaily.com
+          DEPLOY_ENV: production
+          DEPLOY_DASH_URL: ${{ github.event.deployment_status.target_url }}
+        run: bash scripts/deploy-notify.sh "Anfield Daily"
