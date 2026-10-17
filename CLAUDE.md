@@ -16,7 +16,8 @@ Trang tin Liverpool để đọc nhanh: gom tin từ các báo Anh, lọc trùng
 - **State:** Zustand (client stores), React Query / TanStack Query (server state)
 - **Animation:** Framer Motion
 - **Charts:** Recharts
-- **Deploy:** Vercel (Hobby plan, with cron jobs)
+- **Deploy:** Cloudflare Workers via OpenNext (since 2026-10-18; Vercel Hobby paused the site
+  on 2026-10-17 for exceeding Fast Origin Transfer). See "Cloudflare Workers" below.
 
 ## Commands
 
@@ -332,17 +333,31 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 8. `chat_schema.sql` — `conversations`, `messages`: left in place but unused since the AI chat was removed (Oct 2026); dropping the tables is a separate decision
 9. `012_fan_predictions_and_ratings.sql` — `match_predictions`, `player_ratings` (read-own RLS only; writes go through `src/app/actions/predictions.ts` with the service role)
 
+## Cloudflare Workers
+
+- Worker `liverpool-app` (account shared with cv-app, Workers Paid). Domains anfielddaily.com and
+  www are Worker custom domains (proxied); placement `aws:ap-southeast-1`, next to Supabase.
+- `open-next.config.ts`: R2 incremental cache (`liverpool-app-next-cache`) behind the regional
+  Cache API, D1 tag cache (`liverpool-app-tag-cache`), Durable Object queue, cache interception.
+- Build: `npm run cf:build` (`DEPLOY_TARGET=cloudflare`), deploy: `npm run cf:deploy`. Never build
+  from a tree with real `.env*` files; runtime secrets live in the Worker (`wrangler secret put`).
+- `scripts/cf-patch-middleware-trace.mjs` runs between `next build` and the OpenNext bundle: the
+  middleware trace omits `@opentelemetry/api/build/esm` and bundling proxy.ts fails without it.
+- Readability uses linkedom (jsdom does not run on workerd). Next's image optimizer is off on
+  Cloudflare builds (`images.unoptimized`): it would need a billed Images binding.
+- `s-maxage` on route handlers is not cached at the edge on Workers; use `export const revalidate`.
+
 ## Scheduled Jobs
 
 - **GitHub Actions (`.github/workflows/news-sync.yml`)** calls `/api/news/sync` hourly (`0 * * * *`) with `CRON_SECRET` bearer auth, then (01:00–16:59 UTC) calls `/api/news/digest/generate` as an idempotent retry for the daily digest.
-- **Vercel Cron (`vercel.json`)** keeps daily jobs for cleanup and digest only.
-- All routes require `CRON_SECRET` via `Authorization: Bearer` header (auto-sent by Vercel cron) only (the `?key=` query param was removed — URLs leak into logs).
+- **GitHub Actions (`.github/workflows/news-daily.yml`)** runs the two daily jobs that were Vercel crons: digest (00:07 UTC) and cleanup (03:17 UTC). `vercel.json` crons no longer run.
+- All routes require `CRON_SECRET` via `Authorization: Bearer` header only (the `?key=` query param was removed — URLs leak into logs).
 
 | Route | Scheduler | Schedule | maxDuration | Purpose |
 |---|---|---|---|---|
 | `/api/news/sync` | GitHub Actions | `0 * * * *` | 120s | Sync RSS feeds, pre-scrape article content, revalidate homepage |
-| `/api/news/cleanup` | Vercel cron | `0 3 * * *` (3 AM UTC) | default | Soft-delete >30d, clear cached content >60d, hard-delete >60d |
-| `/api/news/digest/generate` | Vercel cron | `0 0 * * *` (midnight UTC) | 60s | AI daily digest via VietAPI, skip if already generated |
+| `/api/news/cleanup` | GitHub Actions | `17 3 * * *` | default | Clear cached content >7d, hard-delete >14d, prune sync_logs >14d |
+| `/api/news/digest/generate` | GitHub Actions | `7 0 * * *` + hourly retry | (CPU limit in wrangler) | AI daily digest via VietAPI, skip if already generated |
 
 ## Protected Routes
 
