@@ -24,7 +24,11 @@ export const GET = withCronAuth(async (req) => {
       preScrapeContent: true,
     });
 
-    if (result.upserted > 0) {
+    // Only new articles or a live blog's new headline change what readers see.
+    // `upserted` also counts rows a feed merely re-sent, which is nearly every
+    // run; re-rendering on that wrote ~3 ISR entries for each one read.
+    const liveBlogsRefreshed = result.liveBlogsRefreshed ?? [];
+    if (result.inserted > 0 || liveBlogsRefreshed.length > 0) {
       // Order matters. revalidatePath only drops the rendered HTML; the
       // unstable_cache entries behind it keep their own TTL. Without busting
       // the tag first, the re-render this triggers reads the *previous* entry
@@ -35,7 +39,7 @@ export const GET = withCronAuth(async (req) => {
       revalidateLocalizedPath("/");
       revalidateLocalizedPath("/news");
       // Article pages are ISR'd for an hour; a live blog's fresh body would wait that long.
-      for (const url of result.liveBlogsRefreshed ?? []) revalidateLocalizedPath(getArticleUrl(url));
+      for (const url of liveBlogsRefreshed) revalidateLocalizedPath(getArticleUrl(url));
     }
 
     return NextResponse.json({

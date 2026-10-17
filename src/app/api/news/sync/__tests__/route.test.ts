@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * These tests pin the order-independent part of that fix: the tag is busted,
  * and only when something was actually inserted.
  */
-let syncResult: { upserted: number; liveBlogsRefreshed?: string[] };
+let syncResult: { inserted: number; upserted: number; liveBlogsRefreshed?: string[] };
 
 vi.mock("@/lib/news/sync", () => ({
   syncPipeline: vi.fn(async () => syncResult),
@@ -30,7 +30,7 @@ const call = () => (GET as unknown as (r: unknown) => Promise<Response>)(request
 
 beforeEach(() => {
   vi.clearAllMocks();
-  syncResult = { upserted: 2 };
+  syncResult = { inserted: 2, upserted: 5 };
 });
 
 describe("GET /api/news/sync", () => {
@@ -45,13 +45,22 @@ describe("GET /api/news/sync", () => {
 
   it("re-renders the page of each live blog whose headline moved on (pages are ISR'd for an hour)", async () => {
     const url = "https://www.liverpoolecho.co.uk/sport/football/football-news/brentford-liverpool-live-updates-32661234";
-    syncResult = { upserted: 3, liveBlogsRefreshed: [url] };
+    syncResult = { inserted: 0, upserted: 3, liveBlogsRefreshed: [url] };
     await call();
     expect(revalidateLocalizedPath).toHaveBeenCalledWith(getArticleUrl(url));
   });
 
+  it("invalidates nothing when the run only rewrote existing rows", async () => {
+    // Almost every run updates rows (feeds re-send items, live blogs re-date);
+    // re-rendering on that alone wrote ~3 ISR entries for every one read.
+    syncResult = { inserted: 0, upserted: 40 };
+    await call();
+    expect(revalidateTag).not.toHaveBeenCalled();
+    expect(revalidateLocalizedPath).not.toHaveBeenCalled();
+  });
+
   it("invalidates nothing when the run inserted no articles", async () => {
-    syncResult = { upserted: 0 };
+    syncResult = { inserted: 0, upserted: 0 };
     const res = await call();
     expect(res.status).toBe(200);
     expect(revalidateTag).not.toHaveBeenCalled();

@@ -6,16 +6,20 @@
 // are the most numerous page type on the site, one cache entry per URL. One
 // shared snapshot serves all of them instead.
 //
-// Tagged "news" so the hourly sync busts it (see api/news/sync); the TTL below
-// is only the fallback for a sync that inserted nothing.
+// NOT tagged "news". The sync busts that tag for the home page and /news; the
+// article pages read only this snapshot (for "related articles"), and sharing
+// the tag marked every one of them stale on every sync, so each page a bot
+// visited was rendered again: 287k ISR writes against 97k reads a month.
+// Article pages now refresh on their own 1 h ISR window; an article newer than
+// the snapshot is still found by getArticleByUrl on its page.
 
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { getNewsFromDB } from "./db";
 import type { NewsArticle } from "./types";
 
-/** Fallback window. Freshness comes from the "news" tag, not from this. */
-const FEED_TTL_SEC = 1800;
+/** Matches the article page's ISR window (inner TTL ≥ outer ISR, see revalidate there). */
+const FEED_TTL_SEC = 3600;
 
 /**
  * Cached feed read. `limit` and `preferLang` are function arguments, so each
@@ -30,5 +34,5 @@ export const getCachedNewsFeed = unstable_cache(
   async (limit: number, preferLang?: string): Promise<NewsArticle[]> =>
     getNewsFromDB(limit, preferLang, { skipSync: true }),
   ["news-feed-v1"],
-  { revalidate: FEED_TTL_SEC, tags: ["news"] },
+  { revalidate: FEED_TTL_SEC, tags: ["news-related"] },
 );
