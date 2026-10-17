@@ -1,0 +1,72 @@
+name: Deploy to Cloudflare Workers
+
+# Every push to master ships to production (anfielddaily.com), like cv-app.
+# Plans/docs-only pushes don't deploy.
+on:
+  push:
+    branches: [master]
+    paths-ignore: ["plans/**", "docs/**", "**/*.md"]
+  workflow_dispatch: {}
+
+concurrency:
+  group: cloudflare-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Typecheck, lint, unit tests
+        run: |
+          npx tsc --noEmit
+          npm run lint
+          npm test
+
+      # Runtime secrets live in the Worker (`wrangler secret put`), never in the
+      # build. The build needs NEXT_PUBLIC_* (inlined) and the read keys that
+      # prerender the ISR pages; they come from the environment, never a .env file.
+      - name: Build
+        run: npm run cf:build
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FOOTBALL_DATA_ORG_KEY: ${{ secrets.FOOTBALL_DATA_ORG_KEY }}
+
+      - name: Deploy
+        run: npm run cf:deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          for path in / /news /vi /fixtures /sitemap.xml; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-all-errors --retry-delay 5 \
+              -A "Mozilla/5.0 (deploy smoke test)" "https://anfielddaily.com${path}")
+            echo "${path} ${code}"
+            [ "$code" = 200 ]
+          done
+
+      # Personal "deploy succeeded" ping (@DeployCFBot), same as cv-app.
+      - name: Notify deploy
+        if: success()
+        continue-on-error: true
+        env:
+          DEPLOY_BOT_TOKEN: ${{ secrets.DEPLOY_BOT_TOKEN }}
+          DEPLOY_CHAT_ID: ${{ secrets.DEPLOY_CHAT_ID }}
+          DEPLOY_URL: https://anfielddaily.com
+          DEPLOY_ENV: production
+          DEPLOY_DASH_URL: https://dash.cloudflare.com/de108d2f4ff08dcd290e480579f99451/workers/services/view/liverpool-app/production/deployments
+        run: bash scripts/deploy-notify.sh "Anfield Daily"
