@@ -339,7 +339,11 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
   www are Worker custom domains (proxied); placement `aws:ap-southeast-1`, next to Supabase.
 - `open-next.config.ts`: R2 incremental cache (`liverpool-app-next-cache`) behind the regional
   Cache API, D1 tag cache (`liverpool-app-tag-cache`), Durable Object queue, cache interception.
-- Build: `npm run cf:build` (`DEPLOY_TARGET=cloudflare`), deploy: `npm run cf:deploy`. Never build
+- **Every push to master deploys** via `.github/workflows/deploy-cloudflare.yml` (typecheck, lint,
+  tests, build, deploy, smoke test, @DeployCFBot Telegram ping). Build values are repo secrets;
+  `CLOUDFLARE_API_TOKEN` is the "liverpool-app GitHub Actions deploy" token (Workers, R2, D1 edit;
+  Workers Routes on anfielddaily.com). The Vercel project is disconnected from the repo.
+- Manual: `npm run cf:build` (`DEPLOY_TARGET=cloudflare`), then `npm run cf:deploy`. Never build
   from a tree with real `.env*` files; runtime secrets live in the Worker (`wrangler secret put`).
 - `scripts/cf-patch-middleware-trace.mjs` runs between `next build` and the OpenNext bundle: the
   middleware trace omits `@opentelemetry/api/build/esm` and bundling proxy.ts fails without it.
