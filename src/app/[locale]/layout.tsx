@@ -19,7 +19,6 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { AdsenseGate } from "@/components/analytics/adsense-gate";
 import { StructuredData } from "@/components/analytics/structured-data";
-import { Analytics } from '@vercel/analytics/next';
 import { DEFAULT_OG_IMAGE, keywordsFor } from "@/lib/seo";
 import { BRAND, brandDescription, brandLocale, brandTitle } from "@/lib/brand";
 import "../globals.css";
@@ -170,7 +169,6 @@ export default async function RootLayout({
             </NextIntlClientProvider>
           </QueryProvider>
         </ThemeProvider>
-        <Analytics />
       </body>
     </html>
   );

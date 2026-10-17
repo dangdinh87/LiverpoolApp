@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];
   },
   images: {
+    // On Cloudflare Workers the Next optimizer needs an Images binding (billed per
+    // transformation). Serve originals instead: news images were already
+    // unoptimized, the large local assets are pre-compressed, and crests are tiny.
+    unoptimized: process.env.DEPLOY_TARGET === 'cloudflare',
     qualities: [75, 85],
     // 31 days, up from the 4-hour default. Crests, Premier League player photos,
     // Cloudinary gallery URLs and the Unsplash heroes are all effectively

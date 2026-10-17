@@ -26,12 +26,15 @@ export async function extractWithReadability(
   url: string
 ): Promise<ReadabilityResult | null> {
   try {
-    // Dynamic import to avoid ESM/CJS incompatibility with jsdom on Vercel
-    const { JSDOM, VirtualConsole } = await import("jsdom");
-    // Suppress "Could not parse CSS stylesheet" errors from jsdom
-    const virtualConsole = new VirtualConsole();
-    const dom = new JSDOM(html, { url, virtualConsole });
-    const reader = new Readability(dom.window.document);
+    // linkedom, not jsdom: jsdom does not run on Cloudflare Workers (workerd).
+    // linkedom's document has no URL of its own, so a <base> lets Readability
+    // resolve relative links and image paths against the article URL.
+    const { parseHTML } = await import("linkedom");
+    const withBase = /<base\s/i.test(html)
+      ? html
+      : html.replace(/<head(\s[^>]*)?>/i, (head) => `${head}<base href="${url.replace(/"/g, "&quot;")}">`);
+    const { document } = parseHTML(withBase);
+    const reader = new Readability(document as unknown as Document);
     const article = reader.parse();
     if (!article || (article.length ?? 0) < 200) return null;
 

@@ -1,0 +1,38 @@
+name: Daily News Jobs
+
+# The two daily jobs that ran as Vercel crons (vercel.json) before the move to
+# Cloudflare Workers: the cleanup and the first attempt at the day's digest.
+# The hourly news-sync workflow keeps retrying the digest from 01:00 UTC.
+on:
+  schedule:
+    - cron: "7 0 * * *" # digest, just after midnight UTC
+    - cron: "17 3 * * *" # cleanup
+  workflow_dispatch:
+    inputs:
+      job:
+        description: Which job to run
+        type: choice
+        options: [cleanup, digest]
+        default: cleanup
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: https://anfielddaily.com
+    steps:
+      - name: Call the job route
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then JOB="${{ inputs.job }}";
+          elif [ "${{ github.event.schedule }}" = "7 0 * * *" ]; then JOB=digest; else JOB=cleanup; fi
+          case "$JOB" in
+            digest) ROUTE=/api/news/digest/generate ;;
+            cleanup) ROUTE=/api/news/cleanup ;;
+          esac
+          echo "Running $JOB → $ROUTE"
+          HTTP_CODE="$(curl -sS -o response.json -w '%{http_code}' --max-time 120 --retry 2 --retry-delay 15 \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${SITE_URL}${ROUTE}")"
+          head -c 1500 response.json; echo
+          if [ "$HTTP_CODE" -ge 400 ]; then echo "::error::$ROUTE returned HTTP $HTTP_CODE"; exit 1; fi

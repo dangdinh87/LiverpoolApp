@@ -72,3 +72,8 @@ next-env.d.ts
 
 # repomix dumps (regenerate on demand)
 repomix-output.*
+
+# Cloudflare Workers (OpenNext)
+.open-next
+.wrangler
+.dev.vars*

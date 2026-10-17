@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "liverpool-app",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  // The news sync scrapes up to ~36 articles per run; most of its 20-35 s is I/O,
+  // but give it CPU headroom (Workers Paid allows up to 5 min).
+  "limits": { "cpu_ms": 60000 },
+  // Run next to Supabase and the old Vercel region (sin1); the CDN serves readers anyway.
+  "placement": { "region": "aws:ap-southeast-1" },
+  "observability": { "enabled": true },
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "liverpool-app" }],
+  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "liverpool-app-next-cache" }],
+  "d1_databases": [
+    { "binding": "NEXT_TAG_CACHE_D1", "database_name": "liverpool-app-tag-cache", "database_id": "42c9e72a-a311-462f-b2c0-72eaad9e84d9" }
+  ],
+  "durable_objects": { "bindings": [{ "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+  // Cut over from Vercel on 2026-10-18 (Vercel Hobby had paused the site).
+  "routes": [
+    { "pattern": "anfielddaily.com", "custom_domain": true },
+    { "pattern": "www.anfielddaily.com", "custom_domain": true }
+  ]
+}
