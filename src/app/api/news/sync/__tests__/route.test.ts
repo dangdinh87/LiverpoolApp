@@ -11,7 +11,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * These tests pin the order-independent part of that fix: the tag is busted,
  * and only when something was actually inserted.
  */
-let syncResult: { upserted: number };
+let syncResult: { upserted: number; liveBlogsRefreshed?: string[] };
 
 vi.mock("@/lib/news/sync", () => ({
   syncPipeline: vi.fn(async () => syncResult),
@@ -23,6 +23,7 @@ vi.mock("@/lib/cron", () => ({ withCronAuth: (fn: unknown) => fn }));
 import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { GET } from "../route";
+import { getArticleUrl } from "@/lib/news-config";
 
 const request = { nextUrl: { searchParams: new URLSearchParams() } };
 const call = () => (GET as unknown as (r: unknown) => Promise<Response>)(request);
@@ -40,6 +41,13 @@ describe("GET /api/news/sync", () => {
     expect(revalidateTag).toHaveBeenCalledWith("news", "max");
     expect(revalidateLocalizedPath).toHaveBeenCalledWith("/");
     expect(revalidateLocalizedPath).toHaveBeenCalledWith("/news");
+  });
+
+  it("re-renders the page of each live blog whose headline moved on (pages are ISR'd for an hour)", async () => {
+    const url = "https://www.liverpoolecho.co.uk/sport/football/football-news/brentford-liverpool-live-updates-32661234";
+    syncResult = { upserted: 3, liveBlogsRefreshed: [url] };
+    await call();
+    expect(revalidateLocalizedPath).toHaveBeenCalledWith(getArticleUrl(url));
   });
 
   it("invalidates nothing when the run inserted no articles", async () => {

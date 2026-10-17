@@ -2,6 +2,7 @@ import "server-only";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
+import { dropStaleLiveBlogContent, liveBlogsWithNewHeadline } from "./live-blog";
 import { YouTubeChannelAdapter } from "./youtube-data-api";
 import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
@@ -42,6 +43,8 @@ export interface SyncResult {
   /** Consecutive most-recent runs (this one included) that inserted nothing. */
   consecutiveZeroInsertRuns: number;
   thumbnailsFilled: number;
+  /** Live blogs whose headline changed: cached body dropped, their pages need a re-render. */
+  liveBlogsRefreshed: string[];
 }
 
 const SCRAPE_BATCH = 5;
@@ -255,7 +258,8 @@ function articleToRow(a: NewsArticle) {
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-const EXISTING_COLUMNS = "url,thumbnail,hero_image,fetched_at,published_at,is_active,read_count";
+// `title`: a live blog whose headline changed gets its cached body dropped (live-blog.ts).
+const EXISTING_COLUMNS = "url,title,thumbnail,hero_image,fetched_at,published_at,is_active,read_count";
 // Each row is looked up under every URL spelling (~3) and PostgREST puts the list in
 // the query string, so keep chunks small (≈5 KB of URLs).
 const EXISTING_LOOKUP_CHUNK = 15;
@@ -277,6 +281,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
   let upserted = 0;
   let failed = 0;
   const errors: { url: string; error: string }[] = [];
+  const liveBlogsRefreshed: string[] = [];
 
   // Upsert in batches of 50
   const batchSize = 50;
@@ -346,6 +351,11 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
         inserted += insertedCount;
         updated += existingCount;
         upserted += affected;
+        const changed = liveBlogsWithNewHeadline(rows, existingMap);
+        if (await dropStaleLiveBlogContent(supabase, changed)) {
+          liveBlogsRefreshed.push(...changed);
+          console.log(`[sync] ${changed.length} live blog(s) have a new headline; body will be re-scraped`);
+        }
         break;
       }
 
@@ -364,7 +374,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
     }
   }
 
-  return { inserted, updated, upserted, failed, errors };
+  return { inserted, updated, upserted, failed, errors, liveBlogsRefreshed };
 }
 
 /**
@@ -698,5 +708,6 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
     sourceFailures,
     consecutiveZeroInsertRuns,
     thumbnailsFilled: enriched,
+    liveBlogsRefreshed: upsertResult.liveBlogsRefreshed,
   };
 }

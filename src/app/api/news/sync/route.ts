@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { syncPipeline } from "@/lib/news/sync";
+import { getArticleUrl } from "@/lib/news-config";
 import { withCronAuth } from "@/lib/cron";
 
 export const maxDuration = 120;
@@ -33,6 +34,8 @@ export const GET = withCronAuth(async (req) => {
       revalidateTag("news", "max");
       revalidateLocalizedPath("/");
       revalidateLocalizedPath("/news");
+      // Article pages are ISR'd for an hour; a live blog's fresh body would wait that long.
+      for (const url of result.liveBlogsRefreshed ?? []) revalidateLocalizedPath(getArticleUrl(url));
     }
 
     return NextResponse.json({
