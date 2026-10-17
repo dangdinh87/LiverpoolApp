@@ -34,7 +34,7 @@ npm run seed:gallery # Seed gallery data (tsx scripts/seed-gallery.ts)
 **Ưu tiên dùng shadcn/ui cho mọi component UI.** Style: `new-york`, icon: `lucide`, base color: `neutral`.
 
 Installed components (`src/components/ui/`):
-`alert-dialog`, `avatar`, `badge`, `button`, `dialog`, `dropdown-menu`, `input`, `popover`, `scroll-area`, `select`, `sheet`, `skeleton`, `slider`, `switch`, `tabs`, `tooltip`
+`accordion`, `alert-dialog`, `badge`, `button`, `dialog`, `dropdown-menu`, `popover`, `sheet`, `skeleton`, `slider`, `switch`, `table`, `tooltip` (unused `avatar`, `input`, `scroll-area`, `select`, `tabs` removed Oct 2026 — re-add with the CLI when needed)
 
 Custom UI components: `error-boundary`, `lfc-loader`, `toast-notification`
 

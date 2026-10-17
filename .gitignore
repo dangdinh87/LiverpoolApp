@@ -69,3 +69,6 @@ next-env.d.ts
 # Scratch build dirs (NEXT_DIST_DIR) — generated, never committed.
 .build-live/
 .build-prodcheck/
+
+# repomix dumps (regenerate on demand)
+repomix-output.*
