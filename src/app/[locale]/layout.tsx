@@ -17,6 +17,7 @@ import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
+import { CloudflareWebAnalytics } from "@/components/analytics/cloudflare-web-analytics";
 import { AdsenseGate } from "@/components/analytics/adsense-gate";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { DEFAULT_OG_IMAGE, keywordsFor } from "@/lib/seo";
@@ -148,6 +149,7 @@ export default async function RootLayout({
         {/* Before anything paints: spoiler-free readers must never see a score flash up. */}
         <script dangerouslySetInnerHTML={{ __html: SPOILER_BOOT_SCRIPT }} />
         <GoogleTagManager />
+        <CloudflareWebAnalytics />
         <AdsenseGate />
         <StructuredData />
         <ThemeProvider
