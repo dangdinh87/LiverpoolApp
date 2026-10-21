@@ -10,7 +10,9 @@
   // Run next to Supabase and the old Vercel region (sin1); the CDN serves readers anyway.
   "placement": { "region": "aws:ap-southeast-1" },
   "observability": { "enabled": true },
-  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // html_handling "none": the default ("auto-trailing-slash") 307s /x.html to /x, and
+  // Search Console must fetch its verification file at the exact .html URL.
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS", "html_handling": "none" },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "liverpool-app" }],
   "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "liverpool-app-next-cache" }],
   "d1_databases": [

@@ -21,4 +21,11 @@ describe("Search Console verification file", () => {
     const proxy = readFileSync(join(process.cwd(), "src", "proxy.ts"), "utf8");
     expect(proxy).toContain(FILE.replace(".", "\\\\."));
   });
+
+  it("is served at its .html URL on Workers, not redirected to the extensionless path", () => {
+    // Workers Assets defaults to html_handling "auto-trailing-slash", which 307s
+    // /google….html to /google…; the verification fetch must get a 200.
+    const wrangler = readFileSync(join(process.cwd(), "wrangler.jsonc"), "utf8");
+    expect(wrangler).toMatch(/"assets":\s*\{[^}]*"html_handling":\s*"none"/);
+  });
 });
