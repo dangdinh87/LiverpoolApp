@@ -31,7 +31,9 @@ export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta
         "User-Agent": NEWS_USER_AGENT,
         Accept: "text/html",
       },
-      next: { revalidate: 86400 },
+      // no-store: on Workers a `revalidate` fetch writes the whole page to the R2
+      // incremental cache until the next deploy; the sync stores the OG fields itself.
+      cache: "no-store",
     });
     if (!res.ok) return {};
 

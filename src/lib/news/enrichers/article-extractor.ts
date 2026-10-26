@@ -1911,7 +1911,10 @@ export const scrapeArticle = cache(
           "User-Agent": NEWS_USER_AGENT,
           Accept: "text/html,application/xhtml+xml",
         },
-        next: { revalidate: 3600 },
+        // no-store: on Workers a `revalidate` fetch writes the whole page (~460 KB) to the
+        // R2 incremental cache, where it stays until the next deploy (5.5k pages, 2.6 GB in
+        // five days, 26/10/2026). The extracted text is already cached in the DB above.
+        cache: "no-store",
       });
       clearTimeout(timeoutId);
 
@@ -1957,7 +1960,8 @@ export const getOgImage = cache(
           "User-Agent": NEWS_USER_AGENT,
           Accept: "text/html",
         },
-        next: { revalidate: 86400 },
+        // no-store: see scrapeArticle — a cached fetch lands in R2 as a full page.
+        cache: "no-store",
       });
       clearTimeout(timeoutId);
       if (!res.ok) return undefined;

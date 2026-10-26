@@ -50,6 +50,15 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      # Every deploy uploads the prerender cache under a new build id and never removes old ones.
+      # Hand build folders older than the previous one to an R2 lifecycle rule. Never fails the deploy.
+      - name: Prune old R2 cache builds
+        continue-on-error: true
+        run: npx tsx scripts/cf-prune-r2-cache.ts --bucket liverpool-app-next-cache --apply
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Smoke test
         run: |
           set -euo pipefail
