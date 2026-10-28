@@ -41,6 +41,12 @@ import { assessReadability, cleanSnippet, cleanTitle, filterJunk, imageKey, isHt
 // to a signed-out reader (a signed-in one still fetches the live value).
 export const revalidate = 3600;
 
+// The page scrapes the source with a no-store fetch (so the scraped HTML stays out of
+// the R2 incremental cache). Without force-static, Next turns that fetch into "this
+// page is dynamic" at runtime, which an ISR page answers with a 500 (28/10/2026).
+// Nothing here reads cookies or headers, so forcing static changes no output.
+export const dynamic = "force-static";
+
 // Empty list = nothing prerendered at build, each path is rendered on first
 // request and then cached for `revalidate` (without it the route renders per request).
 export async function generateStaticParams() {
