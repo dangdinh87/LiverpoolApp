@@ -139,7 +139,8 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; }
     <div class="status">
       <span class="pill good"><span>Không có lỗi nào do vượt giới hạn</span></span>
       <span class="pill good"><span>R2, D1, Durable Objects trong mức miễn phí</span></span>
-      <span class="pill warn"><span>Bản sửa chưa deploy</span></span>
+      <span class="pill good"><span>Đã deploy 31/10, 02:20</span></span>
+      <span class="pill warn"><span>Supabase quá tải từ 22:41 tối 30/10</span></span>
     </div>
   </header>
 
@@ -217,7 +218,7 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; }
 
   <section>
     <span class="eyebrow">Đã sửa</span>
-    <h2>Sáu thay đổi, chưa deploy</h2>
+    <h2>Bảy thay đổi, đã deploy</h2>
     <div class="fixes">
       <div class="fix"><div>
         <h3>Trang bài báo render lại 6 lần mỗi giờ thay vì 1 lần</h3>
@@ -233,7 +234,8 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; }
         <h3>Bot mở link bài đã xoá khỏi DB</h3>
         <p>Bot vẫn bò lại link bài từ tháng 4 đến tháng 9. Mỗi lượt, Worker tải và phân tích trang gốc mất khoảng 450 ms CPU. Giờ Worker chỉ tải toàn văn cho bài còn trong DB.</p>
         <div class="meta"><span>Ảnh hưởng: <b>15% CPU</b> trong mẫu 25 phút</span></div>
-        <p class="trade">Đánh đổi: link bài cũ hơn 14 ngày không còn hiện toàn văn, mà hiện trang "đọc ở báo gốc" (xem thay đổi bên dưới). Nếu Supabase sập, bài chưa có trong cache cũng hiện trang này trong tối đa 1 giờ, thay vì toàn văn.</p>
+        <p class="trade">Đánh đổi: link bài cũ hơn 14 ngày không còn hiện toàn văn, mà hiện trang "đọc ở báo gốc" (xem thay đổi bên dưới).</p>
+        <p class="small muted">Bản đầu tiên coi "DB không trả lời" là "bài đã xoá", nên khi Supabase quá tải thì cả bài mới cũng mất toàn văn. Đã sửa trong commit <code>5733b8d</code>: chỉ bỏ qua việc tải khi DB trả lời chắc chắn là không có bài. Kiểm tra trên prod sau deploy: hai bài hôm nay hiện toàn văn, bài tháng 8 hiện trang đọc ở báo gốc.</p>
       </div></div>
       <div class="fix"><div>
         <h3>Máy quét WordPress nhận 404 ngay</h3>
@@ -251,9 +253,14 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; }
         <h3>Đọc thẻ meta đúng khi tiêu đề có dấu nháy</h3>
         <p>Bộ đọc thẻ <code>og:</code> cũ cắt mất tiêu đề như <code>Salah's late winner</code> ở dấu nháy. Đã sửa và thêm test. Ảnh và ngày đăng của sync hằng giờ cũng dùng bộ đọc này.</p>
       </div></div>
+      <div class="fix"><div>
+        <h3>Chặn công cụ SEO bằng robots.txt</h3>
+        <p>Trong 24 giờ tới 30/10, các crawler của công cụ SEO (Semrush, MJ12, SERanking, Ahrefs, DotBot…) chiếm 32% số request trang HTML. Chúng bò web để bán báo cáo backlink, không mang người đọc nào về site, và đều tuân <code>robots.txt</code>. Giờ chúng bị chặn trong file này. Có test để Google, Bing, Apple và OpenAI không bị chặn nhầm.</p>
+        <div class="meta"><span>Ảnh hưởng: <b>khoảng 1/3 số request trang</b> khi các bot đọc lại robots.txt (thường trong vòng một ngày)</span></div>
+      </div></div>
     </div>
     <div class="checks">
-      <span>Typecheck</span><span>Lint</span><span>713 unit test</span><span>Build production trên máy</span><span>3 file test mới khoá các mốc này</span>
+      <span>Typecheck</span><span>Lint</span><span>718 unit test</span><span>Build production trên máy</span><span>Kiểm tra trên prod sau deploy</span>
     </div>
   </section>
 
@@ -261,7 +268,9 @@ footer { border-top: 1px solid var(--line); padding-top: 20px; }
     <span class="eyebrow">Còn lại</span>
     <h2>Thấy nhưng chưa làm</h2>
     <ol class="next">
-      <li><strong>Deploy.</strong> Push lên <code>master</code> là CI tự deploy prod, nên cần chủ site đồng ý. Sau khoảng một ngày, đo lại CPU để so với số ở trên.</li>
+      <li><strong>Đo lại sau một ngày.</strong> So CPU, tỷ lệ bot và số trang ghi vào R2 với số ở trên.</li>
+      <li><strong>Supabase quá tải từ 22:41 tối 30/10</strong> (giờ VN). Truy vấn liên tục bị huỷ vì quá thời gian, PostgREST trả 503, trong khi trang status của Supabase vẫn báo bình thường. Lỗi bắt đầu trước khi deploy, không do code. Nếu đến sáng vẫn còn, mở dashboard Supabase xem CPU, RAM và số kết nối.</li>
+      <li><strong>Build CI hay lỗi font Newsreader.</strong> Google Fonts đôi khi trả link font không có đuôi file, và Turbopack của Next.js 16.4.2 không xử lý được trường hợp này (lỗi đã biết, issue #99114). Đêm 30/10, 2 trong 3 lần build lỗi vì nó; chạy lại thì qua. Cách bền nhất là tự chứa file Newsreader trong repo (<code>next/font/local</code>), như League Gothic đã làm.</li>
       <li><strong>Ba rule chặn bot trên Cloudflare</strong> (Bytespider, máy quét WordPress, UA "Android 5.0" giả). Rule chạy trước Worker nên không tốn CPU. Cần đăng nhập dashboard vì token hiện tại không có quyền sửa WAF.</li>
       <li><strong>Lịch sync tin.</strong> Lịch đặt mỗi giờ, nhưng GitHub thực tế chỉ chạy 3–7 lần mỗi ngày (giờ cao điểm GitHub hay bỏ lịch). Việc này làm tin lên chậm, không làm tăng tiền. Nếu muốn đúng giờ thì dùng Cron Trigger của Cloudflare để gọi sync.</li>
       <li><strong>Cảnh báo <code>metadataBase</code></strong> trong log: vài trang render lúc chạy không thấy <code>NEXT_PUBLIC_SITE_URL</code>. Kiểm tra trên prod, link ảnh chia sẻ vẫn đúng tên miền, nên đây chỉ là log bẩn. Nên thêm biến này vào Worker cho sạch.</li>
