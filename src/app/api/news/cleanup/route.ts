@@ -8,16 +8,11 @@ export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async () => {
   const supabase = getServiceClient();
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const fourteenDaysAgo = new Date(Date.now() - 14 * 86_400_000).toISOString();
 
-  // Free heavy cached content first; the list page only needs metadata.
-  const { count: contentCleared, error: contentError } = await supabase
-    .from("articles")
-    .update({ content_en: null, content_scraped_at: null }, { count: "exact" })
-    .lt("published_at", sevenDaysAgo)
-    .not("content_en", "is", null);
-
+  // The scraped body stays as long as its row. It used to be wiped at 7 days,
+  // so every article aged 7-14 days was scraped again on its next render —
+  // 11% of the Worker's CPU in a 30-minute sample (30/10/2026) — to save ~4 KB a row.
   // News is intentionally short-lived: keep only the last 14 days in DB.
   const { count: deleted, error: deleteError } = await supabase
     .from("articles")
@@ -41,7 +36,6 @@ export const GET = withCronAuth(async () => {
   // A down/failing DB must not look like a clean run ("ok, deleted 0"): answer 503 so
   // the scheduler records the failure and retries.
   const failures: { step: string; error: string }[] = [];
-  if (contentError) failures.push({ step: "content", error: contentError.message });
   if (deleteError) failures.push({ step: "articles", error: deleteError.message });
   if (undatedError) failures.push({ step: "articles-undated", error: undatedError.message });
   if (logsError) failures.push({ step: "sync_logs", error: logsError.message });
@@ -51,7 +45,6 @@ export const GET = withCronAuth(async () => {
       {
         ok: false,
         failures,
-        contentCleared: contentError ? null : contentCleared ?? 0,
         deleted: deleteError ? null : deleted ?? 0,
         undatedDeleted: undatedError ? null : undatedDeleted ?? 0,
         logsDeleted: logsError ? null : logsDeleted ?? 0,
@@ -66,11 +59,9 @@ export const GET = withCronAuth(async () => {
 
   return NextResponse.json({
     ok: true,
-    contentCleared: contentCleared ?? 0,
     deleted: deleted ?? 0,
     undatedDeleted: undatedDeleted ?? 0,
     logsDeleted: logsDeleted ?? 0,
     retentionDays: 14,
-    contentRetentionDays: 7,
   });
 });

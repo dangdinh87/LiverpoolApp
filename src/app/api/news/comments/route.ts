@@ -162,5 +162,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Comments are unavailable right now" }, { status: 500 });
   }
 
+  // The count is cached for an hour; a deleted comment must leave it now.
+  revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
+
   return NextResponse.json({ success: true });
 }

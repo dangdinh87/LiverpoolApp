@@ -101,5 +101,7 @@ export const getPlayerFanRating = unstable_cache(
     return { average, matches: means.length, votes: data.length };
   },
   ["player-fan-rating-v1"],
-  { revalidate: 600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
+  // The player page's ISR window. A shorter TTL here would cap that page at the
+  // same 10 minutes; saving a rating busts the tag and the page anyway.
+  { revalidate: 3600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
 );

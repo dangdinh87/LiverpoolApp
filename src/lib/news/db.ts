@@ -22,7 +22,9 @@ const ARTICLE_COLUMNS =
 export const NON_ARTICLE_SOURCES = ["lfctv"] as const;
 const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
 
-const FRESH_CONTENT_TTL_MS = 7 * 24 * 3600 * 1000; // 7 days
+// The row's whole life (cleanup deletes articles at 14 days). A shorter window
+// sent every older article back to the publisher for a fresh scrape on render.
+const FRESH_CONTENT_TTL_MS = 14 * 24 * 3600 * 1000;
 
 // DB row → NewsArticle mapping
 interface ArticleRow {

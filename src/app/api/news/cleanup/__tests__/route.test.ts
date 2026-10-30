@@ -46,7 +46,7 @@ describe("GET /api/news/cleanup", () => {
   it("returns 200 with counts when every step succeeds", async () => {
     const res = await call();
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ ok: true, contentCleared: 3, deleted: 3, undatedDeleted: 3, logsDeleted: 3 });
+    expect(await res.json()).toMatchObject({ ok: true, deleted: 3, undatedDeleted: 3, logsDeleted: 3 });
     expect(revalidatePath).toHaveBeenCalled();
   });
 
@@ -56,7 +56,7 @@ describe("GET /api/news/cleanup", () => {
     expect(res.status).toBe(503);
     const body = await res.json();
     expect(body.ok).toBe(false);
-    expect(body.failures).toHaveLength(4); // content, articles, undated, sync_logs
+    expect(body.failures).toHaveLength(3); // articles, undated, sync_logs
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 

@@ -18,8 +18,14 @@ import { articleUrlVariants } from "./url";
 /** Busted by the like route so a new like is not hidden for a whole TTL. */
 export const ARTICLE_ENGAGEMENT_TAG = "article-engagement";
 
-/** How long the shared snapshot lives. A like counter may lag; it must not cost a query per view. */
-const ENGAGEMENT_TTL_SEC = 600;
+/**
+ * How long the shared snapshot lives. It must be at least the article page's
+ * ISR window (1 h): Next lowers a page's revalidate to the shortest
+ * unstable_cache TTL it reads, so 600 s here re-rendered every article page six
+ * times as often as it asks for (30/10/2026). Likes and comments bust the tag,
+ * so a new one still shows at once.
+ */
+const ENGAGEMENT_TTL_SEC = 3600;
 
 /**
  * Safety cap so this cannot become a full-table read.

@@ -17,13 +17,16 @@ import type { Fixture } from "@/lib/types/football";
 import { FOOTBALL_CACHE_TAG } from "./cache-tags";
 
 /**
- * 30 minutes. A fixture list only changes when a match is played or the
- * calendar is rearranged, so this is generous; the point is that it is shared.
+ * 1 hour, the article page's ISR window. A fixture list only changes when a
+ * match is played or the calendar is rearranged; the point is that it is shared.
+ * It must not be shorter than that window: Next lowers a page's revalidate to
+ * the shortest unstable_cache TTL it reads, and at 30 minutes this alone would
+ * re-render every article page twice an hour.
  *
  * Not for the live path. `/api/live-fixture` and `/fixtures/[id]` read match
  * status while a game is on and must keep asking the provider directly.
  */
-const FIXTURES_TTL_SEC = 1800;
+const FIXTURES_TTL_SEC = 3600;
 
 /** Season fixture list for pages that only need the schedule, not live status. */
 export const getCachedFixtures = unstable_cache(

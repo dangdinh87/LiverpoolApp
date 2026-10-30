@@ -15,7 +15,17 @@ function addNoIndex(response: NextResponse): NextResponse {
   return response;
 }
 
+// Paths scanners probe for WordPress and other CMSs. None exists here, and each
+// probe rendered the full localized 404 page (300-1000 ms of Worker CPU): about
+// 20% of the Worker's CPU in a 25-minute sample (30/10/2026), one IP sweeping
+// /wp, /wordpress, /cms, /blog, /site, /press, each also with ?rest_route=.
+const SCANNER_PROBE = /^\/(?:wp|wordpress|cms|blog|site|press)(?:\/|$)|\.php$|^\/xmlrpc|^\/wp-/;
+
 export async function proxy(request: NextRequest) {
+  if (SCANNER_PROBE.test(request.nextUrl.pathname) || request.nextUrl.searchParams.has("rest_route")) {
+    return new NextResponse(null, { status: 404 });
+  }
+
   // Rewrites /x → /vi/x (or redirects to /en/x when the NEXT_LOCALE cookie or
   // Accept-Language asks for English) so pages can be prerendered per locale.
   const response = handleI18nRouting(request);
