@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { cache } from "react";
 import { User } from "lucide-react";
 import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement } from "@/lib/news";
+import { fetchOgMeta } from "@/lib/news/enrichers/og-meta";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { getHreflangAlternates } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
@@ -52,6 +54,35 @@ export const dynamic = "force-static";
 export async function generateStaticParams() {
   return [];
 }
+
+/**
+ * Scrape only articles the sync still keeps. The DB holds 14 days of news;
+ * crawlers keep requesting older slugs from old sitemaps and external links,
+ * and each one cost a full fetch + parse of the publisher's page (~450 ms CPU)
+ * for a page nobody can read through the feed any more — 15% of the Worker's
+ * CPU in a 30-minute sample (30/10/2026). Those slugs get the link-out page,
+ * which the page already shows whenever a scrape fails.
+ */
+async function scrapeIfStored(url: string) {
+  return (await getArticleByUrl(url)) ? scrapeArticle(url) : null;
+}
+
+/**
+ * Headline, summary and picture for an article the DB no longer holds, read
+ * from the publisher's <head> only (fetchOgMeta stops at </head>, ~50 KB, no
+ * DOM parse). Without it an expired slug showed "Couldn't open this story" with
+ * no title at all. Cheap enough for a page cached for an hour.
+ */
+const getExpiredArticleMeta = cache(async (url: string) => {
+  const og = await fetchOgMeta(url, 5000);
+  const title = cleanTitle(og.title);
+  if (!title) return null;
+  return {
+    title,
+    lead: cleanSnippet(og.description, og.title) ?? undefined,
+    heroImage: isHttpUrl(og.image) ? og.image : undefined,
+  };
+});
 
 /** The instant, if it parses. The wall-clock rendering belongs to the client. */
 function publishedInstant(dateStr: string): string | null {
@@ -115,12 +146,12 @@ export async function generateMetadata({
   // page body streams), so keep them out of the index explicitly.
   if (!url || !isKnownNewsSourceUrl(url)) return { title: "Article Not Found", robots: { index: false } };
 
-  const content = await getArticleContentFromDB(url) ?? await scrapeArticle(url);
+  const content = await getArticleContentFromDB(url) ?? await scrapeIfStored(url);
   if (!content) {
-    // Source blocked us: the page shows the stored headline with a "read original" link.
+    // Source blocked us, or the row expired: the page shows a headline with a "read original" link.
     const listing = await getArticleByUrl(url);
-    if (!listing) return { title: "Article Not Found", robots: { index: false } };
-    return { title: cleanTitle(listing.title), robots: { index: false } };
+    const title = listing ? cleanTitle(listing.title) : (await getExpiredArticleMeta(url))?.title;
+    return { title: title || "Article Not Found", robots: { index: false } };
   }
 
   const listing = await getArticleByUrl(url);
@@ -168,7 +199,7 @@ export default async function ArticlePage({
 
   const dbContent = await getArticleContentFromDB(url);
   const [content, allArticles, fixtures, engagement, t, tNews] = await Promise.all([
-    dbContent ? Promise.resolve(dbContent) : scrapeArticle(url),
+    dbContent ? Promise.resolve(dbContent) : scrapeIfStored(url),
     // Shared across every article page instead of a 100-row query per render.
     getCachedNewsFeed(100),
     // Only used to name the next match. Shared, or every article page spends its
@@ -197,13 +228,15 @@ export default async function ArticlePage({
 
   // Nothing extracted: still give the reader the headline we have and a way to the source.
   if (!content) {
+    const expired = listed ? null : await getExpiredArticleMeta(url);
     return (
       <ArticleLinkOut
         url={url}
-        title={listed ? cleanTitle(listed.title) : undefined}
-        lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : undefined}
-        heroImage={listed?.thumbnail ?? listed?.heroImage}
+        title={listed ? cleanTitle(listed.title) : expired?.title}
+        lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : expired?.lead}
+        heroImage={listed?.thumbnail ?? listed?.heroImage ?? expired?.heroImage}
         sourceName={sourceName}
+        related={getRelatedArticles(url, listed?.title ?? expired?.title ?? "", allArticles, source)}
       />
     );
   }
@@ -229,6 +262,7 @@ export default async function ArticlePage({
         lead={description ?? (paragraphs[0] || undefined)}
         heroImage={content.heroImage ?? listed?.thumbnail}
         sourceName={sourceName}
+        related={getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage))}
       />
     );
   }

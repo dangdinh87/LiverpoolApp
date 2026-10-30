@@ -1,0 +1,344 @@
+<title>Anfield Daily Worker Costs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Gothic&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; a verdict header, then the evidence in the order the reader asks for it (bill → where CPU goes → fixes → what is left). */
+:root {
+  --bg: #faf8f5;
+  --surface: #ffffff;
+  --ink: #161412;
+  --ink-2: #5b5650;
+  --ink-3: #8a847c;
+  --line: #e6e1d9;
+  --red: #c8102e;
+  --gold: #9a7b0a;
+  --good: #1f7a4d;
+  --warn: #9a5b00;
+  --red-soft: #fbe9ec;
+  --display: "League Gothic", "Oswald", "Arial Narrow", Impact, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0d0d; --surface: #171717; --ink: #f2efe9; --ink-2: #b8b2a8; --ink-3: #8c867d;
+    --line: #2a2a2a; --red: #e8364f; --gold: #b89a2c; --good: #4cc488; --warn: #e0a64a; --red-soft: #2a1216;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0d0d; --surface: #171717; --ink: #f2efe9; --ink-2: #b8b2a8; --ink-3: #8c867d;
+  --line: #2a2a2a; --red: #e8364f; --gold: #b89a2c; --good: #4cc488; --warn: #e0a64a; --red-soft: #2a1216;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 400 16px/1.6 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 72px;
+}
+.wrap { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+section { display: flex; flex-direction: column; gap: 16px; }
+h1, h2 { font-family: var(--display); font-weight: 400; letter-spacing: 0.01em; text-wrap: balance; margin: 0; line-height: 1; }
+h1 { font-size: clamp(44px, 8vw, 68px); }
+h2 { font-size: 34px; }
+h3 { font: 600 17px/1.35 var(--body); margin: 0; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 600 12px/1 var(--body); letter-spacing: 0.12em; text-transform: uppercase; color: var(--red); }
+.muted { color: var(--ink-2); }
+.small { font-size: 14px; }
+code, .num { font-family: var(--mono); font-size: 0.88em; }
+.num { font-variant-numeric: tabular-nums; }
+a { color: var(--red); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* Verdict */
+header { display: flex; flex-direction: column; gap: 18px; border-bottom: 1px solid var(--line); padding-bottom: 32px; }
+.verdict { font-size: 19px; line-height: 1.5; max-width: 60ch; }
+.verdict strong { color: var(--ink); }
+.status { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font: 500 13px/1.3 var(--body); border: 1px solid var(--line); background: var(--surface); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.good { color: var(--good); }
+.pill.warn { color: var(--warn); }
+.pill span { color: var(--ink); }
+
+/* Bill */
+.bill { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.bill > div { background: var(--surface); padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bill .k { font-size: 13px; color: var(--ink-2); }
+.bill .v { font: 400 40px/1 var(--display); letter-spacing: 0.01em; }
+.bill .s { font-size: 13px; color: var(--ink-3); }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 12px/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* CPU split bar */
+.split { display: flex; flex-direction: column; gap: 14px; }
+.split-row { display: grid; grid-template-columns: minmax(0, 1fr) 54px; gap: 4px 12px; align-items: center; }
+.split-row .lab { font-size: 14px; min-width: 0; }
+.split-row .lab small { display: block; color: var(--ink-3); font-size: 12.5px; }
+.split-row .pct { font: 500 14px/1 var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.track { grid-column: 1 / -1; height: 10px; background: var(--line); border-radius: 0 4px 4px 0; position: relative; }
+.fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--ink-3); }
+.fill.waste { background: var(--red); }
+.fill.read { background: var(--gold); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--ink-2); }
+.legend i { display: inline-block; width: 12px; height: 10px; border-radius: 0 3px 3px 0; margin-right: 6px; vertical-align: -1px; }
+
+/* Daily chart */
+.chart { background: var(--surface); border: 1px solid var(--line); padding: 16px 12px 8px; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; max-width: 100%; }
+.chart .ax { fill: var(--ink-3); font: 11px var(--mono); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .bar { fill: var(--red); }
+.chart .bar.dim { fill: var(--ink-3); }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .hit:hover + .bar, .chart .hit:focus + .bar { opacity: 0.75; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--bg); font: 12px/1.4 var(--body); padding: 6px 9px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, -110%); }
+
+/* Fixes */
+.fixes { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--line); }
+.fix { display: grid; grid-template-columns: 3px minmax(0, 1fr); gap: 0 18px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.fix::before { content: ""; background: var(--red); border-radius: 2px; }
+.fix.ux::before { background: var(--gold); }
+.fix > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fix .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-2); }
+.fix .meta b { color: var(--ink); font-weight: 600; }
+.trade { font-size: 14px; color: var(--warn); }
+
+.checks { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; }
+.checks span::before { content: "✓ "; color: var(--good); font-weight: 700; }
+
+ol.next { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; max-width: 65ch; }
+.note { font-size: 13px; color: var(--ink-3); max-width: 70ch; }
+footer { border-top: 1px solid var(--line); padding-top: 20px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .fill { transform-origin: left; animation: grow 700ms cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes grow { from { transform: scaleX(0.02); } to { transform: scaleX(1); } }
+}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <span class="eyebrow">anfielddaily.com · Cloudflare Workers · 31/10/2026</span>
+    <h1>Chi phí Worker của Anfield Daily</h1>
+    <p class="verdict">Hoá đơn đã thấp: cả tài khoản Cloudflare khoảng <strong>$5,3 một tháng</strong>, trong đó $5 là phí gói cố định. Phần tốn của liverpool-app là CPU, và hơn một nửa số CPU đó Worker dùng để <strong>render lại trang mà không ai cần</strong>. Bản sửa cắt phần lãng phí này. Số tiền bớt được nhỏ, nhưng sau khi sửa thì lượng truy cập có tăng gấp nhiều lần, hoá đơn cũng không tăng theo.</p>
+    <div class="status">
+      <span class="pill good"><span>Không có lỗi nào do vượt giới hạn</span></span>
+      <span class="pill good"><span>R2, D1, Durable Objects trong mức miễn phí</span></span>
+      <span class="pill warn"><span>Bản sửa chưa deploy</span></span>
+    </div>
+  </header>
+
+  <section>
+    <span class="eyebrow">Hoá đơn</span>
+    <h2>Trả bao nhiêu, cho cái gì</h2>
+    <div class="bill">
+      <div><span class="k">Phí gói Workers Paid</span><span class="v num">$5,00</span><span class="s">cố định, cho cả tài khoản</span></div>
+      <div><span class="k">CPU vượt mức có sẵn</span><span class="v num">~$0,30</span><span class="s">tháng 10; khoảng $0,90 nếu đủ 30 ngày</span></div>
+      <div><span class="k">R2 · D1 · Durable Objects</span><span class="v num">$0</span><span class="s">đều dưới mức miễn phí</span></div>
+    </div>
+    <p class="muted small">Gói có sẵn 30 triệu ms CPU mỗi tháng cho <em>cả tài khoản</em>. Tới 30/10 cv-app đã dùng 24,9 triệu ms, liverpool-app 17,5 triệu ms. Phần vượt tính $0,02 cho mỗi 1 triệu ms. Vượt mức thì chỉ trả thêm tiền, site không bị chặn.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Hạng mục (từ 18/10)</th><th class="r">liverpool-app</th><th class="r">Mức có sẵn / tháng</th></tr></thead>
+        <tbody>
+          <tr><td>Request vào Worker</td><td class="r">62.494</td><td class="r">10 triệu</td></tr>
+          <tr><td>CPU (ms)</td><td class="r">16,9 triệu</td><td class="r">30 triệu (cả tài khoản)</td></tr>
+          <tr><td>R2 đọc</td><td class="r">382.804</td><td class="r">10 triệu</td></tr>
+          <tr><td>R2 ghi</td><td class="r">73.136</td><td class="r">1 triệu</td></tr>
+          <tr><td>R2 dung lượng</td><td class="r">3,5 GB</td><td class="r">10 GB</td></tr>
+          <tr><td>D1 truy vấn đọc</td><td class="r">120.246</td><td class="r">25 tỷ dòng</td></tr>
+          <tr><td>Durable Objects request</td><td class="r">53.975</td><td class="r">1 triệu</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">CPU đi đâu</span>
+    <h2>Phần lớn không phải cho người đọc</h2>
+    <p>Nghe trực tiếp Worker 25 phút (206 request, 39,4 giây CPU). Mỗi request được xếp theo người gửi.</p>
+    <div class="legend" aria-hidden="true">
+      <span><i style="background:var(--red)"></i>Lãng phí, sửa được trong code</span>
+      <span><i style="background:var(--gold)"></i>Bot và người đọc thật</span>
+      <span><i style="background:var(--ink-3)"></i>Khác</span>
+    </div>
+    <div class="split" role="list">
+      <div class="split-row" role="listitem">
+        <span class="lab">Worker tự render lại trang hết hạn cache<small>51 lượt, phần lớn là trang bài báo</small></span><span class="pct">55%</span>
+        <div class="track"><div class="fill waste" style="width:55%"></div></div>
+      </div>
+      <div class="split-row" role="listitem">
+        <span class="lab">Request từ trình duyệt<small>trong đó 22% tổng CPU là máy quét dò /wp, /wordpress, /cms trả về 404</small></span><span class="pct">26%</span>
+        <div class="track"><div class="fill waste" style="width:26%"></div></div>
+      </div>
+      <div class="split-row" role="listitem">
+        <span class="lab">Bot tìm kiếm và AI<small>Amazonbot, Reflectionbot, Semrush, Bing, Google…</small></span><span class="pct">18%</span>
+        <div class="track"><div class="fill read" style="width:18%"></div></div>
+      </div>
+      <div class="split-row" role="listitem">
+        <span class="lab">Việc nền khác<small>hàng đợi cache, cron</small></span><span class="pct">1%</span>
+        <div class="track"><div class="fill" style="width:1%"></div></div>
+      </div>
+    </div>
+    <p class="note">Phần "trình duyệt" gộp cả người thật lẫn máy quét giả trình duyệt; số lượt người thật mở trang thành công chỉ chiếm vài phần trăm CPU.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Theo ngày</span>
+    <h2>CPU mỗi ngày của liverpool-app</h2>
+    <p class="muted small">Giây CPU mỗi ngày, từ khi chuyển sang Cloudflare. Ngày 21/10 cao vì đêm có trận Liverpool – Villarreal; 26–28/10 cao vì lỗi trang bài báo trả 500, đã sửa hôm 28/10.</p>
+    <div class="chart" id="daily">
+      <svg viewBox="0 0 640 230" role="img" aria-labelledby="daily-title">
+        <title id="daily-title">Giây CPU mỗi ngày từ 18/10 đến 30/10/2026, cao nhất 3.442 giây ngày 21/10</title>
+      </svg>
+    </div>
+    <details>
+      <summary class="small">Xem bảng số</summary>
+      <div class="table-wrap" style="margin-top:10px">
+        <table id="daily-table"><thead><tr><th>Ngày</th><th class="r">Request</th><th class="r">CPU (giây)</th><th class="r">Trung vị / request</th></tr></thead><tbody></tbody></table>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <span class="eyebrow">Đã sửa</span>
+    <h2>Sáu thay đổi, chưa deploy</h2>
+    <div class="fixes">
+      <div class="fix"><div>
+        <h3>Trang bài báo render lại 6 lần mỗi giờ thay vì 1 lần</h3>
+        <p>Trang bài báo khai báo cache 1 giờ. Nhưng bộ đếm like/bình luận mà trang đọc chỉ cache 10 phút, và Next.js tự hạ thời gian cache của cả trang xuống bằng con số ngắn nhất. Kiểm tra 183 trang bài báo trong R2: trang nào cũng mang <code>revalidate=600</code>. Giờ bộ đếm, danh sách bài liên quan và lịch thi đấu đều cache 1 giờ. Like, bình luận mới, kể cả bình luận vừa xoá, vẫn hiện ngay vì chúng tự làm mới cache.</p>
+        <div class="meta"><span>Ảnh hưởng: <b>phần lớn trong 55% CPU render lại</b></span><span>Trang cầu thủ bị cùng lỗi, đã sửa luôn</span></div>
+      </div></div>
+      <div class="fix"><div>
+        <h3>Bài 7–14 ngày tuổi bị tải lại từ báo gốc</h3>
+        <p>Job dọn dẹp mỗi đêm xoá nội dung bài ở ngày thứ 7 để tiết kiệm khoảng 4 KB mỗi dòng. Lần mở tiếp theo Worker phải tải và phân tích lại cả trang của báo. Giờ nội dung được giữ đến khi bài bị xoá ở ngày thứ 14.</p>
+        <div class="meta"><span>Ảnh hưởng: <b>11% CPU</b> trong mẫu 25 phút</span><span>Thêm khoảng 3 MB trong Supabase</span></div>
+      </div></div>
+      <div class="fix"><div>
+        <h3>Bot mở link bài đã xoá khỏi DB</h3>
+        <p>Bot vẫn bò lại link bài từ tháng 4 đến tháng 9. Mỗi lượt, Worker tải và phân tích trang gốc mất khoảng 450 ms CPU. Giờ Worker chỉ tải toàn văn cho bài còn trong DB.</p>
+        <div class="meta"><span>Ảnh hưởng: <b>15% CPU</b> trong mẫu 25 phút</span></div>
+        <p class="trade">Đánh đổi: link bài cũ hơn 14 ngày không còn hiện toàn văn, mà hiện trang "đọc ở báo gốc" (xem thay đổi bên dưới). Nếu Supabase sập, bài chưa có trong cache cũng hiện trang này trong tối đa 1 giờ, thay vì toàn văn.</p>
+      </div></div>
+      <div class="fix"><div>
+        <h3>Máy quét WordPress nhận 404 ngay</h3>
+        <p>Một IP dò lần lượt <code>/wp</code>, <code>/wordpress</code>, <code>/cms</code>, <code>/blog</code>, <code>/site</code>, <code>/press</code>, mỗi đường dẫn kèm thêm <code>?rest_route=</code>. Mỗi lượt render đủ trang 404 có layout, tốn 300–1.000 ms. Giờ các lượt dò này nhận 404 rỗng ở bước đầu tiên, trước khi Next.js render.</p>
+        <div class="meta"><span>Ảnh hưởng: <b>22% CPU</b> trong mẫu 25 phút</span><span>Có test: các trang thật vẫn đi qua bình thường</span></div>
+        <p class="small muted">Chạy thử bản build trên máy: <code>/wordpress?rest_route=</code>, <code>/wp-login.php</code>, <code>/blog</code> trả 404 trong 25–32 ms; <code>/news</code> và các trang thật vẫn 200.</p>
+      </div></div>
+      <div class="fix ux"><div>
+        <h3>Trang "đọc ở báo gốc" có tiêu đề, ảnh và tin liên quan</h3>
+        <p>Trước đây link bài đã hết hạn hiện "Chưa mở được bài này" mà không có tiêu đề. Giờ trang đọc tiêu đề, tóm tắt và ảnh từ phần <code>&lt;head&gt;</code> của báo gốc. Phần này chỉ khoảng 50 KB và không phải phân tích cả trang. Bên dưới thêm 4 tin liên quan để người đọc ở lại site.</p>
+        <div class="meta"><span>Rẻ hơn nhiều so với tải toàn văn; trang vẫn cache 1 giờ</span></div>
+        <p class="small muted">Chạy thử bản build trên máy, với một bài Empire of the Kop từ tháng 8: trang hiện đúng tiêu đề, một câu tóm tắt và ảnh của bài. Dòng quảng cáo app mà báo gắn vào phần tóm tắt đã được lọc bỏ. Danh sách tin liên quan chưa thử được, vì bản chạy trên máy không đọc được bài nào từ DB.</p>
+      </div></div>
+      <div class="fix ux"><div>
+        <h3>Đọc thẻ meta đúng khi tiêu đề có dấu nháy</h3>
+        <p>Bộ đọc thẻ <code>og:</code> cũ cắt mất tiêu đề như <code>Salah's late winner</code> ở dấu nháy. Đã sửa và thêm test. Ảnh và ngày đăng của sync hằng giờ cũng dùng bộ đọc này.</p>
+      </div></div>
+    </div>
+    <div class="checks">
+      <span>Typecheck</span><span>Lint</span><span>713 unit test</span><span>Build production trên máy</span><span>3 file test mới khoá các mốc này</span>
+    </div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Còn lại</span>
+    <h2>Thấy nhưng chưa làm</h2>
+    <ol class="next">
+      <li><strong>Deploy.</strong> Push lên <code>master</code> là CI tự deploy prod, nên cần chủ site đồng ý. Sau khoảng một ngày, đo lại CPU để so với số ở trên.</li>
+      <li><strong>Ba rule chặn bot trên Cloudflare</strong> (Bytespider, máy quét WordPress, UA "Android 5.0" giả). Rule chạy trước Worker nên không tốn CPU. Cần đăng nhập dashboard vì token hiện tại không có quyền sửa WAF.</li>
+      <li><strong>Lịch sync tin.</strong> Lịch đặt mỗi giờ, nhưng GitHub thực tế chỉ chạy 3–7 lần mỗi ngày (giờ cao điểm GitHub hay bỏ lịch). Việc này làm tin lên chậm, không làm tăng tiền. Nếu muốn đúng giờ thì dùng Cron Trigger của Cloudflare để gọi sync.</li>
+      <li><strong>Cảnh báo <code>metadataBase</code></strong> trong log: vài trang render lúc chạy không thấy <code>NEXT_PUBLIC_SITE_URL</code>. Kiểm tra trên prod, link ảnh chia sẻ vẫn đúng tên miền, nên đây chỉ là log bẩn. Nên thêm biến này vào Worker cho sạch.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <p class="note">Nguồn: Cloudflare GraphQL Analytics (Workers, R2, D1, Durable Objects) 18–30/10/2026; liệt kê toàn bộ 8.390 object trong bucket R2 và đọc mẫu 150 object; hai lần nghe <code>wrangler tail</code> (8 và 25 phút); bảng <code>articles</code> và <code>sync_logs</code> trong Supabase; lịch sử chạy GitHub Actions. Mẫu 25 phút là một lát cắt buổi tối giờ Việt Nam; tỷ lệ có thể khác vào ngày có trận.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  // Daily liverpool-app usage from Cloudflare GraphQL (workersInvocationsAdaptive), 18–30/10/2026.
+  var rows = [
+    ["18/10", 3770, 1021, 74], ["19/10", 3554, 703, 60], ["20/10", 3604, 753, 48], ["21/10", 6877, 3442, 328],
+    ["22/10", 4759, 1538, 96], ["23/10", 2962, 868, 94], ["24/10", 2439, 740, 101], ["25/10", 7339, 1050, 31],
+    ["26/10", 4665, 1425, 129], ["27/10", 5472, 1094, 76], ["28/10", 5757, 1454, 98], ["29/10", 7239, 1777, 84],
+    ["30/10", 4554, 1128, 58]
+  ];
+  var fmt = function (n) { return n.toLocaleString("vi-VN"); };
+
+  var tbody = document.querySelector("#daily-table tbody");
+  rows.forEach(function (r) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r[0] + "</td><td class='r'>" + fmt(r[1]) + "</td><td class='r'>" + fmt(r[2]) + "</td><td class='r'>" + r[3] + " ms</td>";
+    tbody.appendChild(tr);
+  });
+
+  var svg = document.querySelector("#daily svg");
+  var NS = "http://www.w3.org/2000/svg";
+  var W = 640, H = 230, L = 44, R = 8, T = 12, B = 28;
+  var max = 3500, step = 1000;
+  var y = function (v) { return T + (H - T - B) * (1 - v / max); };
+  var band = (W - L - R) / rows.length;
+  var bw = Math.max(6, band - 10);
+  function el(name, attrs, text) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (text != null) n.textContent = text;
+    svg.appendChild(n);
+    return n;
+  }
+  for (var v = 0; v <= max; v += step) {
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), "class": "grid" });
+    el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end", "class": "ax" }, v === 0 ? "0" : fmt(v));
+  }
+  var chart = document.getElementById("daily");
+  var tip = document.createElement("div");
+  tip.className = "tip"; tip.hidden = true; chart.appendChild(tip);
+
+  rows.forEach(function (r, i) {
+    var x = L + i * band + (band - bw) / 2;
+    var top = y(r[2]), h = y(0) - top;
+    var hit = el("rect", { x: L + i * band, y: T, width: band, height: H - T - B, "class": "hit", tabindex: "0" });
+    // Rounded data end, square baseline: a path, since rx would round both ends.
+    var rr = Math.min(4, h);
+    el("path", {
+      "class": "bar" + (i === 3 ? "" : " dim"),
+      d: "M" + x + "," + (top + h) + "V" + (top + rr) + "Q" + x + "," + top + " " + (x + rr) + "," + top +
+         "H" + (x + bw - rr) + "Q" + (x + bw) + "," + top + " " + (x + bw) + "," + (top + rr) + "V" + (top + h) + "Z"
+    });
+    if (i % 2 === 0 || i === rows.length - 1) el("text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle", "class": "ax" }, r[0]);
+    function show() {
+      var box = svg.getBoundingClientRect(), s = box.width / W;
+      tip.innerHTML = "<b>" + r[0] + "</b> · " + fmt(r[2]) + " giây CPU<br>" + fmt(r[1]) + " request · trung vị " + r[3] + " ms";
+      tip.style.left = Math.min(Math.max((x + bw / 2) * s, 70), box.width - 70) + "px";
+      tip.style.top = (top * s + 14) + "px";
+      tip.hidden = false;
+    }
+    hit.addEventListener("mouseenter", show);
+    hit.addEventListener("focus", show);
+    hit.addEventListener("mouseleave", function () { tip.hidden = true; });
+    hit.addEventListener("blur", function () { tip.hidden = true; });
+  });
+  // Direct label on the peak so the chart reads without hovering.
+  var pk = rows[3], px = L + 3 * band + band / 2;
+  el("text", { x: px + bw / 2 + 4, y: y(pk[2]) + 10, "class": "ax" }, "3.442 giây · trận Villarreal");
+})();
+</script>

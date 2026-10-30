@@ -5,18 +5,22 @@ import { NEWS_USER_AGENT } from "../http";
 interface OgMeta {
   image?: string;
   publishedAt?: string;
+  title?: string;
+  description?: string;
 }
 
 function extractMetaContent(html: string, name: string): string | undefined {
   const attr = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // The value runs to the quote that opened it: a headline such as
+  // content="Salah's goal" carries the other quote character inside.
   const patterns = [
-    new RegExp(`<meta[^>]+(?:property|name)=["']${attr}["'][^>]+content=["']([^"']+)["']`, "i"),
-    new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${attr}["']`, "i"),
+    new RegExp(`<meta[^>]+(?:property|name)=["']${attr}["'][^>]+content=(["'])(.*?)\\1`, "i"),
+    new RegExp(`<meta[^>]+content=(["'])(.*?)\\1[^>]+(?:property|name)=["']${attr}["']`, "i"),
   ];
 
   for (const pattern of patterns) {
     const match = html.match(pattern);
-    if (match?.[1]) return match[1];
+    if (match?.[2]) return match[2];
   }
 
   return undefined;
@@ -66,6 +70,8 @@ export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta
         extractMetaContent(html, "article:published_time") ||
         extractMetaContent(html, "pubdate") ||
         extractMetaContent(html, "date"),
+      title: extractMetaContent(html, "og:title") || extractMetaContent(html, "twitter:title"),
+      description: extractMetaContent(html, "og:description") || extractMetaContent(html, "description"),
     };
   } catch {
     return {};

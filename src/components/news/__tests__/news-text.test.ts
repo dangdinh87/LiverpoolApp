@@ -37,6 +37,10 @@ describe("cleanSnippet", () => {
     const s = "Liverpool secured a late winner at Goodison Park on Sunday. The post Liverpool beat Everton appeared first on Anfield Watch.";
     expect(cleanSnippet(s)).toBe("Liverpool secured a late winner at Goodison Park on Sunday.");
   });
+  it("drops a publisher's app promo from og:description", () => {
+    const s = "Neil Danns hopes to see his son, Jayden, force his way into the first-team setup. DOWNLOAD THE OFFICIAL EMPIRE OF THE KOP APP FOR ALL THE LATEST & BREAKING UPDATES…";
+    expect(cleanSnippet(s)).toBe("Neil Danns hopes to see his son, Jayden, force his way into the first-team setup.");
+  });
   it("returns null for thin or title-echo snippets", () => {
     expect(cleanSnippet("Short")).toBeNull();
     expect(cleanSnippet("Liverpool beat Everton at Goodison Park again tonight", title)).toBeNull();

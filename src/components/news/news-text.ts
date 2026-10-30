@@ -84,6 +84,8 @@ const SNIPPET_BOILERPLATE: RegExp[] = [
   /\bread more\b[\s\S]*$/i,
   /\bđọc tiếp\b[\s\S]*$/i,
   /\bxem thêm\b[\s\S]*$/i,
+  // Publisher app promos appended to og:description (Empire of the Kop).
+  /\bdownload the (?:official )?[\w\s]{0,40}\bapp\b[\s\S]*$/i,
   /\[\s*(…|\.\.\.)\s*\]\s*$/,
 ];
 

@@ -159,6 +159,17 @@ describe("robots.txt", () => {
     }
   });
 
+  it("shuts out SEO-tool crawlers but leaves search engines on the open group", () => {
+    const groups = robots.split(/\n\s*\n/);
+    const seo = groups.find((g) => /User-agent: SemrushBot/.test(g)) ?? "";
+    for (const bot of ["SemrushBot", "AhrefsBot", "MJ12bot", "SERankingBacklinksBot", "DotBot"]) {
+      expect(seo).toContain(`User-agent: ${bot}`);
+    }
+    expect(seo).toMatch(/^Disallow: \/$/m);
+    // A search engine named in that group would drop out of the index.
+    expect(robots).not.toMatch(/User-agent: (Googlebot|Bingbot|Applebot|OAI-SearchBot)/i);
+  });
+
   it("advertises the sitemap on an absolute URL", () => {
     const line = /^Sitemap: (\S+)$/m.exec(robots);
     expect(line).not.toBeNull();

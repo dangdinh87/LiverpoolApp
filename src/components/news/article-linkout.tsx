@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { ARTICLE_LEAD_CLASS, ARTICLE_TITLE_CLASS } from "./article-header";
 import { NewsBackLink, OriginalLinkButton, SourceBadge } from "./article-parts";
 import { isHttpUrl } from "./news-text";
+import { RelatedArticles } from "./related-articles";
+import type { NewsArticle } from "@/lib/news/types";
 
 interface ArticleLinkOutProps {
   url: string;
@@ -10,6 +12,8 @@ interface ArticleLinkOutProps {
   lead?: string;
   heroImage?: string;
   sourceName: string;
+  /** Headlines to keep the reader on the site after the dead end. */
+  related?: NewsArticle[];
 }
 
 /**
@@ -17,7 +21,7 @@ interface ArticleLinkOutProps {
  * article in-app (video/live pages, link-out-only publishers, nothing extracted).
  * Always has a way forward: the big original-article button, right under the headline.
  */
-export async function ArticleLinkOut({ url, title, lead, heroImage, sourceName }: ArticleLinkOutProps) {
+export async function ArticleLinkOut({ url, title, lead, heroImage, sourceName, related = [] }: ArticleLinkOutProps) {
   const t = await getTranslations("News.article");
 
   return (
@@ -44,6 +48,8 @@ export async function ArticleLinkOut({ url, title, lead, heroImage, sourceName }
             </div>
           )}
         </div>
+
+        <RelatedArticles articles={related} />
       </div>
     </div>
   );
