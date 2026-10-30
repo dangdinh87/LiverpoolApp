@@ -56,7 +56,8 @@ describe("article bodies are not scraped again needlessly", () => {
 
   it("the article page scrapes only articles the DB still holds", () => {
     const page = read("src/app/[locale]/news/[...slug]/page.tsx");
-    expect(page).toMatch(/return \(await getArticleByUrl\(url\)\) \? scrapeArticle\(url\) : null;/);
+    // `=== false`: a DB that cannot answer (null) must still let the scrape run.
+    expect(page).toMatch(/return \(await isArticleStored\(url\)\) === false \? null : scrapeArticle\(url\);/);
     // Every scrape on the page goes through that guard.
     expect(page.match(/scrapeArticle\(url\)/g)).toHaveLength(1);
   });

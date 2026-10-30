@@ -181,6 +181,27 @@ export const getArticleByUrl = cache(async (url: string): Promise<NewsArticle | 
   }
 });
 
+/**
+ * Whether the DB still holds this article: `null` when the DB could not answer.
+ *
+ * getArticleByUrl folds a failed query into "not found", which is fine for
+ * display but not for deciding to skip work: during the Supabase outage of
+ * 30/10/2026 every article looked expired and lost its body to the link-out page.
+ */
+export const isArticleStored = cache(async (url: string): Promise<boolean | null> => {
+  try {
+    const { data, error } = await getServiceClient()
+      .from("articles")
+      .select("url")
+      .in("url", articleUrlVariants(url))
+      .limit(1);
+    if (error) return null;
+    return (data?.length ?? 0) > 0;
+  } catch {
+    return null;
+  }
+});
+
 export const getArticleContentFromDB = cache(
   async (url: string): Promise<ArticleContent | null> => {
     try {

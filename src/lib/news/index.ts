@@ -22,6 +22,7 @@ export {
   getArticlesMentioning,
   getArticleContentFromDB,
   getArticleByUrl,
+  isArticleStored,
 } from "./db";
 
 // Re-export engagement helpers

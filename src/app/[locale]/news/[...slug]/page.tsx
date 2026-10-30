@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { cache } from "react";
 import { User } from "lucide-react";
-import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement } from "@/lib/news";
+import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement, isArticleStored } from "@/lib/news";
 import { fetchOgMeta } from "@/lib/news/enrichers/og-meta";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { getHreflangAlternates } from "@/lib/seo";
@@ -62,9 +62,12 @@ export async function generateStaticParams() {
  * for a page nobody can read through the feed any more — 15% of the Worker's
  * CPU in a 30-minute sample (30/10/2026). Those slugs get the link-out page,
  * which the page already shows whenever a scrape fails.
+ *
+ * Only a DB that answers "not here" skips the scrape. When the DB cannot answer,
+ * scrape as before: a reader must not lose the article to a database outage.
  */
 async function scrapeIfStored(url: string) {
-  return (await getArticleByUrl(url)) ? scrapeArticle(url) : null;
+  return (await isArticleStored(url)) === false ? null : scrapeArticle(url);
 }
 
 /**
