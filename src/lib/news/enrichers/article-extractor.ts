@@ -265,7 +265,7 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .the-article-link, .article-socal, .the-article-author, .the-article-tags, .pswp"
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .the-article-link, .article-socal, .the-article-author, .the-article-tags, .pswp, .detail-tab, .box-author-detail, .detail-author-bot"
   ).remove();
 
   // Source page chrome that duplicates what our own article layout already renders:
@@ -659,7 +659,18 @@ function extractLfcOfficial(
     });
   }
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title,
@@ -842,13 +853,19 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
   // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
   let htmlContent: string | undefined;
 
-  const sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim();
+  const sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim() || "";
   if (sapoText && sapoText.length > 20) {
     pushUnique(paragraphs, seenP, sapoText);
   }
 
   const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
   if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
@@ -901,8 +918,12 @@ function extractBongdaplus(
     /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
   const chrome = "nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright";
 
-  const sapoText = cleanFeedText($(".cont-view .summary, .summary, .detail-sapo, .sapo").first().text());
-  if (sapoText.length > 20 && !isSameText(sapoText, description)) pushUnique(paragraphs, seenP, sapoText);
+  let sapoText = cleanFeedText($(".cont-view .summary, .summary, .detail-sapo, .sapo").first().text());
+  if (sapoText.length > 20 && !isSameText(sapoText, description)) {
+    pushUnique(paragraphs, seenP, sapoText);
+  } else if (!sapoText || sapoText.length <= 20) {
+    sapoText = description || "";
+  }
 
   container
     .find("p, .sapo")
@@ -925,8 +946,15 @@ function extractBongdaplus(
 
   const contentClone = container.clone();
   contentClone.find(`${chrome}, .box-ads, .article-relate`).remove();
-  contentClone.find(".sapo, .detail-sapo").remove();
-  if (sapoText.length > 20 && !isSameText(sapoText, description)) {
+  contentClone.find(".cont-view .summary, .summary, .detail-sapo, .sapo").first().remove();
+
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
     contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(sapoText)}</strong></p>`);
   }
 
@@ -988,8 +1016,12 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Sapo/lead text
-  const sapo = $("#article_sapo").text().trim();
-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $("#article_sapo").text().trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
+  } else {
+    sapoText = description || "";
+  }
 
   // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
   const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>|To view this video)/i;
@@ -1057,9 +1089,18 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
-  if (sapo && sapo.length > 20) {
-    clone.find("#article_sapo").remove();
-    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  if ($("#article_sapo").length > 0) {
+    clone.find("#article_sapo").first().remove();
+  }
+
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    clone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
@@ -1184,7 +1225,18 @@ function extractAnfieldWatch(
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title,
@@ -1227,7 +1279,18 @@ function extractWordPress(
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title,
@@ -1279,7 +1342,18 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1326,6 +1400,20 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText) {
+    sapoText = description;
+  }
+
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1344,11 +1432,6 @@ function extractVietnameseGeneric(
   if (opts?.htmlContent !== false) {
     // Per-source junk that has no reusable class name (topic teasers, etc.)
     if (opts?.removeSelectors) contentClone.find(opts.removeSelectors).remove();
-    // The article layout already renders `description` as the lead paragraph, so
-    // re-inserting an identical sapo prints the same sentence twice on the page.
-    if (sapoText && !isSameText(sapoText, description)) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
-    }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
@@ -1459,7 +1542,18 @@ function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const contentClone = container.clone();
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1513,6 +1607,18 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
+
+  const sapoText = description || "";
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    clone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
@@ -1549,11 +1655,22 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $(".the-article-summary").first().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
     contentClone.find(".the-article-summary").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  } else {
+    sapoText = description || "";
+  }
+
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1602,13 +1719,24 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract lead/sapo text
   // `<span class="location-stamp">Anh</span>` is glued to the lead text; drop it.
-  const sapo = $("p.description").first().clone().find(".location-stamp").remove().end().text().trim();
-  if (sapo && sapo.length > 20) {
-    if (sapo !== description) {
-      pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $("p.description").first().clone().find(".location-stamp").remove().end().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    if (sapoText !== description) {
+      pushUnique(paragraphs, seenP, sapoText);
     }
     contentClone.find("p.description").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  } else {
+    sapoText = description || "";
+  }
+
+  if (sapoText && sapoText.length > 20) {
+    const normalizedSapo = sapoText.replace(/\s+/g, " ").trim();
+    contentClone.find("h2, p").each((_, el) => {
+      if ($(el).text().replace(/\s+/g, " ").trim() === normalizedSapo) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
