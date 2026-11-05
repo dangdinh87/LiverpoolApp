@@ -1,0 +1,1278 @@
+508:function extractAuthor($: cheerio.CheerioAPI): string | undefined {
+509-  // `article:author` is often a profile URL (Facebook, site author page): a URL is
+510-  // not a name, so move on to the next candidate instead of giving up.
+511-  // bongdaplus has two `author` metas, the first a Facebook URL: check them all.
+512-  const candidates: unknown[] = [];
+513-  $('meta[name="author"], meta[property="author"], meta[property="article:author"], meta[name="byl"]').each((_, el) => {
+514-    candidates.push($(el).attr("content"));
+515-  });
+516-  for (const c of candidates) {
+517-    const name = cleanAuthorName(c);
+518-    if (name) return name;
+519-  }
+520-  for (const node of readJsonLd($)) {
+521-    const name = authorFromJsonLd(node.author);
+522-    if (name) return name;
+523-  }
+524-  return (
+525-    cleanAuthorName($('[rel="author"]').first().text()) ||
+526-    cleanAuthorName($('[class*="author"]').first().text()) ||
+527-    undefined
+528-  );
+529-}
+530-
+531:function extractPublishedAt($: cheerio.CheerioAPI): string | undefined {
+532-  const candidates: unknown[] = [
+533-    $('meta[property="article:published_time"]').attr("content"),
+534-    $('meta[name="article:published_time"]').attr("content"),
+535-    $('meta[property="og:article:published_time"]').attr("content"),
+536-    $('meta[name="pubdate"]').attr("content"),
+537-    $('meta[name="date"]').attr("content"),
+538-    $('meta[itemprop="datePublished"]').attr("content"),
+539-  ];
+540-  for (const node of readJsonLd($)) candidates.push(node.datePublished);
+541-  candidates.push($("time[datetime]").first().attr("datetime"));
+542-  for (const c of candidates) {
+543-    const iso = toIsoDate(c);
+544-    if (iso) return iso;
+545-  }
+546-  return undefined;
+547-}
+548-
+549-// detectSourceName removed — use detectSource(url).name from source-detect.ts
+550-
+551-// --- Per-site extractors (cheerio fallbacks) ---
+552-
+553-const extractors: Record<string, Extractor> = {
+554-  "liverpoolfc.com": extractLfcOfficial,
+555-  "bbc.com": extractBBC,
+556-  "bbc.co.uk": extractBBC,
+557-  "theguardian.com": extractGuardian,
+558-  "bongda.com.vn": extractBongda,
+559-  "24h.com.vn": extract24h,
+560-  "bongdaplus.vn": extractBongdaplus,
+561-  "anfieldwatch.co.uk": extractAnfieldWatch,
+562-  "liverpoolecho.co.uk": extractLiverpoolEcho,
+563-  // Same Reach CMS as the Echo (verified clean offline on real pages).
+564-  "mirror.co.uk": extractLiverpoolEcho,
+565-  "manchestereveningnews.co.uk": extractLiverpoolEcho,
+566-  "liverpool.com": extractLiverpoolEcho,
+567-  "empireofthekop.com": extractWordPress,
+568-  "znews.vn": extractZnews,
+569-  "zingnews.vn": extractZnews, // feed links are mostly on lifestyle.zingnews.vn
+570-  "vnexpress.net": extractVnexpress,
+571-  "dantri.com.vn": extractDantri,
+572-  "vietnamnet.vn": extractVietnamnet,
+573-  "tuoitre.vn": extractTuoitre,
+574-  "thanhnien.vn": extractThanhnien,
+575-  "webthethao.vn": extractWebthethao,
+576-  "vietnam.vn": extractVietnamvn,
+577-  "bongda24h.vn": extractBongda24h,
+578-  "thethao247.vn": extractThethao247,
+579-  "soha.vn": extractSoha,
+580-};
+581-
+582:function extractLfcOfficial(
+583-  $: cheerio.CheerioAPI,
+584-  url: string
+585-): ArticleContent {
+586-  const ogTitle = $('meta[property="og:title"]')
+587-    .attr("content")
+588-    ?.replace(/\s*[-|]\s*Liverpool FC$/i, "");
+589-  const h1 = $("h1").first().clone();
+590-  h1.find("style, script").remove();
+591-  const title = ogTitle || h1.text().trim() || "Article";
+592-  const heroImage = $('meta[property="og:image"]').attr("content");
+593-  const description = $('meta[property="og:description"]').attr("content");
+594-
+595-  const nextDataScript = $("#__NEXT_DATA__").html();
+596-  const paragraphs: string[] = [];
+597-  const images: string[] = [];
+598-  const seenP = new Set<string>();
+599-  const seenI = new Set<string>();
+600-
+601-  let publishedAtLfc: string | undefined;
+602-  let authorLfc: string | undefined;
+603-  if (nextDataScript) {
+604-    try {
+605-      const pageProps = JSON.parse(nextDataScript)?.props?.pageProps;
+606-      // The page has no article:published_time meta; the data blob does.
+607-      publishedAtLfc = toIsoDate(pageProps?.newsArticle?.publishedAt);
+608-      const authors = pageProps?.newsArticle?.authors;
+609-      authorLfc = authorFromJsonLd(
+610-        Array.isArray(authors) ? authors.map((a: unknown) => (typeof a === "string" ? a : (a as { name?: string; fullName?: string })?.name ?? (a as { fullName?: string })?.fullName)) : authors
+611-      ) ?? (/^by\s+/i.test(pageProps?.newsArticle?.metaDescription ?? "") ? cleanAuthorName(pageProps.newsArticle.metaDescription) : undefined);
+612-      // Current shape: pageProps.newsArticle.blocks (formattedText HTML + image blocks).
+613-      const blocks = pageProps?.newsArticle?.blocks;
+614-      if (Array.isArray(blocks)) {
+615-        for (const block of blocks) {
+616-          if (block?.type === "formattedText" && typeof block.formattedText === "string") {
+617-            const $frag = cheerio.load(`<div id="lfc-blocks">${block.formattedText}</div>`);
+618-            $frag("#lfc-blocks").find("p, h2, h3, h4, li").each((_, el) => {
+619-              const text = $frag(el).text().trim();
+620-              if (text.length > 20) pushUnique(paragraphs, seenP, text);
+621-            });
+622-          } else if (block?.type === "image") {
+623-            const sizes = block.image?.sizes;
+624-            const img = sizes?.lg?.url ?? sizes?.xl?.url ?? sizes?.md?.url ?? sizes?.sm?.url ?? sizes?.xs?.url;
+625-            if (typeof img === "string" && img) pushUnique(images, seenI, img);
+626-          }
+627-        }
+628-      }
+629-      // Legacy shape (pre-2026): pageProps.data.article.body
+630-      const legacyBody = pageProps?.data?.article?.body;
+631-      if (paragraphs.length === 0 && Array.isArray(legacyBody)) {
+632-        for (const block of legacyBody) {
+633-          if (block.type === "paragraph" && typeof block.value === "string") {
+634-            const text = block.value.replace(/<[^>]+>/g, "").trim();
+635-            if (text.length > 20) pushUnique(paragraphs, seenP, text);
+636-          } else if (block.type === "image" && block.value?.url) {
+637-            pushUnique(images, seenI, block.value.url);
+638-          }
+639-        }
+640-      }
+641-    } catch {
+642-      // Fall through to cheerio
+643-    }
+644-  }
+645-
+646-  // App Router pages (Oct 2026+) have no __NEXT_DATA__: the prose sits in rte-content
+647-  // blocks inside the article body. The old selector list picked <main> (first in
+648-  // document order), which dragged in the app-store footer.
+649-  const rte = $('[data-testid="rte-content"]');
+650-  const container = rte.length
+651-    ? rte.first().parent()
+652-    : $("article, .article-body, [data-testid='article-body'], main").first();
+653-  container.find('[class*="tag-tray"]').remove();
+654-
+655-  if (paragraphs.length === 0) {
+656-    container.find("p").each((_, el) => {
+657-      const text = $(el).text().trim();
+658-      if (text.length > 20) pushUnique(paragraphs, seenP, text);
+659-    });
+660-  }
+661-
+662-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+663-
+664-  return {
+665-    title,
+666-    heroImage,
+667-    description,
+668-    publishedAt: publishedAtLfc ?? extractPublishedAt($),
+669-    author: authorLfc ?? extractAuthor($),
+670-    paragraphs,
+671-    htmlContent,
+672-    images,
+673-    sourceUrl: url,
+674-    sourceName: "LiverpoolFC.com",
+675-  };
+676-}
+677-
+678:function extractBBC($: cheerio.CheerioAPI, url: string): ArticleContent {
+679-  const title = $("h1").first().text().trim() ||
+680-    $('meta[property="og:title"]').attr("content") || "Article";
+681-  const heroImage = $('meta[property="og:image"]').attr("content");
+682-  const description = $('meta[property="og:description"]').attr("content");
+683-
+684-  const container = selectContainer($, "article, #main-content, [role=main], main");
+685-  const paragraphs: string[] = [];
+686-  const images: string[] = [];
+687-  const seenP = new Set<string>();
+688-  const seenI = new Set<string>();
+689-
+690-  // Body only: `article [data-testid=rich-text] p` + the `h2` sub-headlines. A bare
+691-  // `article p` also matched the hero <figcaption> ("Image caption, …") and became the
+692-  // lead paragraph; captions, bylines, topic lists and promo lists are not prose.
+693-  const body = container.clone();
+694-  body.find(
+695-    "figure, figcaption, [data-block='byline'], [data-block='metadata'], [data-block='topicList'], [data-block='promoList'], [data-block='headline'], [data-block='image'], [data-block='links'], [data-component='links-block']"
+696-  ).remove();
+697-
+698-  const readBlocks = (root: cheerio.Cheerio<AnyNode>) => {
+699-    root.find("[data-testid='rich-text'] p, [data-block='subheadline'] h2, [data-component='subheadline-block'] h2").each((_, el) => {
+700-      const $el = $(el);
+701-      const text = $el.text().trim();
+702-      const isHeading = el.tagName === "h2";
+703-      if (text.length <= (isHeading ? 5 : 20)) return;
+704-      // A paragraph that is nothing but a link is a "Read more" / related teaser.
+705-      const linkText = $el.find("a").text().trim();
+706-      if (linkText.length > 0 && linkText === text) return;
+707-      if (/^(Image (?:source|caption)|Related topics|More on this story)/i.test(text)) return;
+708-      pushUnique(paragraphs, seenP, text);
+709-    });
+710-  };
+711-  readBlocks(body);
+712-
+713-  // Older / non-standard BBC layouts: the text-block component.
+714-  if (paragraphs.length === 0) {
+715-    body.find("[data-component='text-block'] p").each((_, el) => {
+716-      const text = $(el).text().trim();
+717-      if (text.length > 20) pushUnique(paragraphs, seenP, text);
+718-    });
+719-  }
+720-
+721-  container.find("img").each((_, el) => {
+722-    const src = $(el).attr("src") || $(el).attr("data-src");
+723-    if (src && src.startsWith("http") && !src.includes("placeholder") && !src.includes("logo")) {
+724-      pushUnique(images, seenI, src);
+725-    }
+726-  });
+727-
+728-  // htmlContent from the same blocks, in document order.
+729-  const html = $("<div></div>");
+730-  body.find("[data-testid='rich-text'], [data-block='subheadline'] h2, [data-component='subheadline-block'] h2").each((_, el) => {
+731-    html.append($(el).clone());
+732-  });
+733-  const htmlContent = html.children().length ? buildHtmlContent(html, $, url) || undefined : undefined;
+734-
+735-  return {
+736-    title, heroImage, description,
+737-    publishedAt: extractPublishedAt($),
+738-    author: extractAuthor($),
+739-    paragraphs, htmlContent, images,
+740-    sourceUrl: url,
+741-    sourceName: "BBC Sport",
+742-  };
+743-}
+744-
+745:function extractGuardian($: cheerio.CheerioAPI, url: string): ArticleContent {
+746-  // Live pages have no <h1>: fall back to the og:title.
+747-  const title = $("h1").first().text().trim() ||
+748-    cleanFeedText($('meta[property="og:title"]').attr("content")) || "Article";
+749-  const heroImage = $('meta[property="og:image"]').attr("content");
+750-  const description = $('meta[property="og:description"]').attr("content");
+751-
+752-  // `#maincontent` is the article region; `aside` holds the newsletter promo
+753-  // ("Sign up to Football Daily"), `figure` the captions.
+754-  const container = selectContainer($, "#maincontent, article");
+755-  const clean = container.clone();
+756-  clean.find("aside, figure, gu-island:has(aside), [data-print-layout='hide']").remove();
+757-  const paragraphs: string[] = [];
+758-  const images: string[] = [];
+759-  const seenP = new Set<string>();
+760-  const seenI = new Set<string>();
+761-
+762-  clean.find("p").each((_, el) => {
+763-    const text = $(el).text().trim();
+764-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+765-  });
+766-
+767-  container.find("img[src*='guim']").each((_, el) => {
+768-    const src = $(el).attr("src");
+769-    if (src) pushUnique(images, seenI, src);
+770-  });
+771-
+772-  // Build htmlContent for rich figure/img/figcaption layout — figures stay, promos go.
+773-  const rich = container.clone();
+774-  rich.find("aside, gu-island:has(aside), [data-print-layout='hide']").remove();
+775-  const htmlContent = buildHtmlContent(rich, $, url) || undefined;
+776-
+777-  return {
+778-    title, heroImage, description,
+779-    publishedAt: extractPublishedAt($),
+780-    author: extractAuthor($),
+781-    paragraphs, htmlContent, images,
+782-    sourceUrl: url,
+783-    sourceName: "The Guardian",
+784-  };
+785-}
+786-
+787:function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
+788-  // The h1 is truncated with "…" on bongda.com.vn; og:title carries the full headline.
+789-  const title = cleanFeedText($('meta[property="og:title"]').attr("content")) ||
+790-    $("h1").first().text().trim() ||
+791-    $("article h2").first().text().trim();
+792-  const heroImage = $('meta[property="og:image"]').attr("content");
+793-  const description = $('meta[property="og:description"]').attr("content");
+794-
+795-  // bongda.com.vn uses <section class="contentDetail"> with <figure>/<figcaption>
+796-  const contentDetail = $("section.contentDetail");
+797-  const container = contentDetail.length > 0
+798-    ? contentDetail
+799-    : $("article").length > 0
+800-      ? $("article")
+801-      : $(".detail-content, .cms-body, .entry-body, #main-content");
+802-
+803-  // Remove junk elements before extraction (breadcrumbs, nav, sidebar widgets, forms)
+804-  container.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, script, style, .related-news, .tags").remove();
+805-
+806-  // Pattern to filter out breadcrumb lines, sidebar widget text, source prefixes
+807-  const junkPattern = /^(Mới nhất|Trang chủ|Bài viết|Phong độ|Thắng|Hòa|Thua|BongDa\.com\.vn|Tin liên quan|Xem thêm|Tags?:|Chia sẻ)/i;
+808-
+809-  const paragraphs: string[] = [];
+810-  const images: string[] = [];
+811-  const seenP = new Set<string>();
+812-  const seenI = new Set<string>();
+813-
+814-  // Extract from <figcaption> (player ratings, image captions with article text)
+815-  container.find("figcaption").each((_, el) => {
+816-    const text = $(el).text().trim();
+817-    if (text.length > 20 && !junkPattern.test(text)) pushUnique(paragraphs, seenP, text);
+818-  });
+819-
+820-  // Also extract from <p> tags (some articles use standard paragraphs)
+821-  container.find("p").each((_, el) => {
+822-    const text = $(el).text().trim();
+823-    if (text.length > 20 && !junkPattern.test(text)) {
+824-      pushUnique(paragraphs, seenP, text);
+825-    }
+826-  });
+827-
+828-  // Extract images from <figure> > <img> (player photos, article images)
+829-  container.find("figure img, img").each((_, el) => {
+830-    const src = resolveImageSrc($(el), url);
+831-    if (
+832-      src &&
+833-      src.startsWith("http") &&
+834-      src.includes("media.bongda") &&
+835-      !src.includes("team-logo") &&
+836-      !src.includes("logo")
+837-    ) {
+838-      pushUnique(images, seenI, src);
+839-    }
+840-  });
+841-
+842-  // Build htmlContent — strip junk, fix malformed nested figure/figcaption from bongda.com.vn
+843-  let htmlContent: string | undefined;
+844-
+845-  const sapoText = description?.trim() || $('meta[property="og:description"]').attr("content")?.trim();
+846-  if (sapoText && sapoText.length > 20) {
+847-    pushUnique(paragraphs, seenP, sapoText);
+848-  }
+849-
+850-  const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
+851-  if (sapoText && sapoText.length > 20) {
+852-    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+853-  }
+854-
+855-  if (contentDetail.length > 0) {
+856-    contentClone.find("nav, .breadcrumb, .breadcrumbs, .form-rating, .match-stats, .social-share, .related-news, .tags").remove();
+857-    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+858-  } else {
+859-    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+860-  }
+861-
+862-  return {
+863-    title,
+864-    heroImage,
+865-    description,
+866-    publishedAt: extractPublishedAt($),
+867-    author: extractAuthor($),
+868-    paragraphs,
+869-    htmlContent,
+870-    images,
+871-    sourceUrl: url,
+872-    sourceName: "Bongda.com.vn",
+873-  };
+874-}
+875-
+876:function extractBongdaplus(
+877-  $: cheerio.CheerioAPI,
+878-  url: string
+879-): ArticleContent {
+880-  const title =
+881-    $("h1").first().text().trim() ||
+882-    cleanFeedText($('meta[property="og:title"]').attr("content")) ||
+883-    $("title").text().replace(/\s*[-|].*/, "").trim();
+884-  const heroImage = $('meta[property="og:image"]').attr("content");
+885-  const description =
+886-    $('meta[property="og:description"]').attr("content") ||
+887-    $('meta[name="description"]').attr("content");
+888-
+889-  // `#postContent` is the body; the lead lives outside it in `.cont-view .summary`.
+890-  const container = selectContainer(
+891-    $,
+892-    "#postContent, .news-detail, .detail-body, .content-news, .cms-body, article, [role=main]"
+893-  );
+894-
+895-  const paragraphs: string[] = [];
+896-  const images: string[] = [];
+897-  const seenP = new Set<string>();
+898-  const seenI = new Set<string>();
+899-
+900-  const skipPatterns =
+901-    /Giấy phép|GP-BTTTT|Phụ trách|toà soạn|tòa soạn|Tổng biên tập|BONGDAPLUS\.VN|Bản quyền|Copyright|Khi đăng ký nhận tin tức qua email|Bạn chưa có tài khoản\s*\?\s*Đăng ký ngay/i;
+902-  const chrome = "nav, footer, .menu, .sidebar, .authen-nav, .footer, .banner, .copyright";
+903-
+904-  const sapoText = cleanFeedText($(".cont-view .summary, .summary, .detail-sapo, .sapo").first().text());
+905-  if (sapoText.length > 20 && !isSameText(sapoText, description)) pushUnique(paragraphs, seenP, sapoText);
+906-
+907-  container
+908-    .find("p, .sapo")
+909-    .each((_, el) => {
+910-      const $el = $(el);
+911-      if ($el.closest(chrome).length) return;
+912-      const text = $el.text().trim();
+913-      if (text.length > 20 && !skipPatterns.test(text)) pushUnique(paragraphs, seenP, text);
+914-    });
+915-
+916-  if (paragraphs.length === 0) {
+917-    $("p").each((_, el) => {
+918-      const $el = $(el);
+919-      if ($el.closest(chrome).length) return;
+920-      const text = $el.text().trim();
+921-      if (text.length > 40 && !skipPatterns.test(text))
+922-        pushUnique(paragraphs, seenP, text);
+923-    });
+924-  }
+925-
+926-  const contentClone = container.clone();
+927-  contentClone.find(`${chrome}, .box-ads, .article-relate`).remove();
+928-  contentClone.find(".sapo, .detail-sapo").remove();
+929-  if (sapoText.length > 20 && !isSameText(sapoText, description)) {
+930-    contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(sapoText)}</strong></p>`);
+931-  }
+932-
+933-  $("img").each((_, el) => {
+934-    const $el = $(el);
+935-    if ($el.closest(".thumb, [class*='banner'], [class*='sidebar'], [class*='related']").length > 0) return;
+936-
+937-    const src = $el.attr("src") || $el.attr("data-src");
+938-    if (
+939-      src &&
+940-      src.includes("cdn.bongdaplus.vn") &&
+941-      !src.includes("logo") &&
+942-      !src.includes("icon") &&
+943-      !src.includes("_m.")
+944-    ) {
+945-      pushUnique(images, seenI, src);
+946-    }
+947-  });
+948-
+949-  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+950-
+951-  return {
+952-    title,
+953-    heroImage,
+954-    description,
+955-    publishedAt: extractPublishedAt($),
+956-    author: extractAuthor($),
+957-    paragraphs,
+958-    htmlContent,
+959-    images,
+960-    sourceUrl: url,
+961-    sourceName: "Bongdaplus.vn",
+962-    isThinContent: paragraphs.length <= 1,
+963-  };
+964-}
+965-
+966-// 24h serves article photos from icdn.24h.com.vn, cdn.24h.com.vn, … and www.24h.com.vn/upload.
+967-const IMG_24H_UPLOAD = /(^|[./])24h\.com\.vn\/upload\//;
+968-
+969-// 24h.com.vn: uses #article_body for content, data-original for lazy images
+970:function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
+971-  const sourceName = "24h";
+972-  const title = $("h1").first().text().trim() ||
+973-    $('meta[property="og:title"]').attr("content") || "Article";
+974-  const heroImage = $('meta[property="og:image"]').attr("content");
+975-  const description = $('meta[property="og:description"]').attr("content") ||
+976-    $("#article_sapo").text().trim() || undefined;
+977-
+978-  // 24h nests article content inside .cate-24h-foot-arti-deta-info within #article_body
+979-  // Use cascading fallback — .first() picks first DOM element, not first selector
+980-  const container =
+981-    $(".cate-24h-foot-arti-deta-info").first().length ? $(".cate-24h-foot-arti-deta-info").first()
+982-    : $("#article_body").first().length ? $("#article_body").first()
+983-    : $(".detail-content, .cms-body, article").first();
+984-
+985-  const paragraphs: string[] = [];
+986-  const images: string[] = [];
+987-  const seenP = new Set<string>();
+988-  const seenI = new Set<string>();
+989-
+990-  // Sapo/lead text
+991-  const sapo = $("#article_sapo").text().trim();
+992-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+993-
+994-  // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
+995-  const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>|To view this video)/i;
+996-  const matchWidgetPattern = /^\S+\s*-\s*\S+\s+\d{1,2}\.\d{1,2}$/; // "Arsenal - Man City 22.03"
+997-
+998-  container.find("p, figcaption").each((_, el) => {
+999-    const $el = $(el);
+1000-    // Skip ad/promo/nav elements
+1001-    if ($el.closest("nav, .banner, .sidebar, .related-news, .box-game, [class*='banner'], [class*='game']").length) return;
+1002-    const text = $el.text().trim();
+1003-    const cleanText = text.replace(/\s+/g, ' ').trim();
+1004-    if (cleanText.length > 30 && !junkPattern.test(cleanText) && !matchWidgetPattern.test(cleanText)) {
+1005-      pushUnique(paragraphs, seenP, cleanText);
+1006-    }
+1007-  });
+1008-
+1009-  // 24h uses data-original for lazy-loaded images (src is a base64 placeholder)
+1010-  const tinyImgPattern = /height\d{1,2}\b|width\d{1,2}height/;
+1011-  container.find("img").each((_, el) => {
+1012-    const $el = $(el);
+1013-    if ($el.closest("[class*='banner'], [class*='game'], .ad-unit, .box-game, .bv-lq").length) return;
+1014-    const src = resolveImageSrc($el, url);
+1015-    if (
+1016-      src &&
+1017-      IMG_24H_UPLOAD.test(src) &&
+1018-      !src.includes("logo") &&
+1019-      !src.includes("icon") &&
+1020-      !src.includes("close.svg") &&
+1021-      !src.includes("banner") &&
+1022-      !src.includes("box-game") &&
+1023-      !tinyImgPattern.test(src)
+1024-    ) {
+1025-      pushUnique(images, seenI, src);
+1026-    }
+1027-  });
+1028-
+1029-  // Extract video info from JSON-LD or page metadata before building htmlContent
+1030-  // 24h has multiple ld+json blocks — iterate all to find VideoObject
+1031-  let videoThumbnail: string | undefined;
+1032-  let videoUrl: string | undefined;
+1033-  $('script[type="application/ld+json"]').each((_, el) => {
+1034-    if (videoUrl) return; // already found
+1035-    try {
+1036-      const raw = $(el).html();
+1037-      if (!raw) return;
+1038-      const ld = JSON.parse(raw);
+1039-      const videoObj = ld?.video || (ld?.["@type"] === "VideoObject" ? ld : undefined);
+1040-      if (videoObj) {
+1041-        videoThumbnail = videoObj.thumbnailUrl;
+1042-        const contentUrl = videoObj.contentUrl;
+1043-        if (contentUrl && /\.(m3u8|mp4)(\?|$)/i.test(contentUrl)) {
+1044-          videoUrl = contentUrl;
+1045-        }
+1046-      }
+1047-    } catch { /* ignore parse errors */ }
+1048-  });
+1049-  // Fallback: extract video URL from <source> tags in the page
+1050-  if (!videoUrl) {
+1051-    $("source[src]").each((_, el) => {
+1052-      if (videoUrl) return;
+1053-      const src = $(el).attr("src") || "";
+1054-      if (/\.(m3u8|mp4)(\?|$)/i.test(src)) videoUrl = src;
+1055-    });
+1056-  }
+1057-
+1058-  // Build htmlContent — preserve bold headings and inline images
+1059-  const clone = container.clone();
+1060-  if (sapo && sapo.length > 20) {
+1061-    clone.find("#article_sapo").remove();
+1062-    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+1063-  }
+1064-  // Remove junk: ads, scripts, related articles, minigame, banners
+1065-  clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
+1066-
+1067-  // Replace video player divs with inline video or clickable thumbnail
+1068-  clone.find(".viewVideoPlay").each((_, el) => {
+1069-    const $vp = $(el);
+1070-    const thumb = videoThumbnail || heroImage;
+--
+1149:function extractAnfieldWatch(
+1150-  $: cheerio.CheerioAPI,
+1151-  url: string
+1152-): ArticleContent {
+1153-  const title = $("h1").first().text().trim() ||
+1154-    $('meta[property="og:title"]').attr("content") || "Article";
+1155-  const heroImage = $('meta[property="og:image"]').attr("content");
+1156-  const ogDesc = $('meta[property="og:description"]').attr("content");
+1157-  // og:description is often "Read more." on AW — ignore it
+1158-  const description = ogDesc && ogDesc.length > 20 ? ogDesc : undefined;
+1159-
+1160-  // AW uses .main__article > .basic-text for content (not .entry-content or <article>)
+1161-  const container = $(".main__article, .basic-text, .post-content").first();
+1162-  const paragraphs: string[] = [];
+1163-  const images: string[] = [];
+1164-  const seenP = new Set<string>();
+1165-  const seenI = new Set<string>();
+1166-
+1167-  // Filter out store widget text, ad labels, and promotional links
+1168-  const junkPattern = /^(LFC x adidas|Shop the|ADVERTISEMENT|Ad$|🚨|🔴|👉)/;
+1169-
+1170-  container.find("p").each((_, el) => {
+1171-    const $el = $(el);
+1172-    // Skip store widgets and ad paragraphs
+1173-    if ($el.closest(".store-widget, .ad-unit, [class*='store']").length) return;
+1174-    const text = $el.text().trim();
+1175-    if (text.length > 20 && !junkPattern.test(text)) {
+1176-      pushUnique(paragraphs, seenP, text);
+1177-    }
+1178-  });
+1179-
+1180-  container.find("img").each((_, el) => {
+1181-    const src = $(el).attr("src") || $(el).attr("data-src");
+1182-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("favicon")) {
+1183-      pushUnique(images, seenI, src);
+1184-    }
+1185-  });
+1186-
+1187-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+1188-
+1189-  return {
+1190-    title,
+1191-    heroImage,
+1192-    description,
+1193-    publishedAt: extractPublishedAt($),
+1194-    author: extractAuthor($),
+1195-    paragraphs,
+1196-    htmlContent,
+1197-    images,
+1198-    sourceUrl: url,
+1199-    sourceName: "Anfield Watch",
+1200-  };
+1201-}
+1202-
+1203:function extractWordPress(
+1204-  $: cheerio.CheerioAPI,
+1205-  url: string
+1206-): ArticleContent {
+1207-  const title = $("h1").first().text().trim();
+1208-  const heroImage = $('meta[property="og:image"]').attr("content");
+1209-  const description = $('meta[property="og:description"]').attr("content");
+1210-
+1211-  // Empire of the Kop: body is #article-body; .entry-content is the older WordPress theme.
+1212-  const container = selectContainer($, "#article-body, .entry-content, .post-content, article");
+1213-  const paragraphs: string[] = [];
+1214-  const images: string[] = [];
+1215-  const seenP = new Set<string>();
+1216-  const seenI = new Set<string>();
+1217-
+1218-  container.find("p").each((_, el) => {
+1219-    const text = $(el).text().trim();
+1220-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+1221-  });
+1222-
+1223-  container.find("img").each((_, el) => {
+1224-    const src = $(el).attr("src") || $(el).attr("data-src");
+1225-    if (src && src.startsWith("http") && !src.includes("logo")) {
+1226-      pushUnique(images, seenI, src);
+1227-    }
+1228-  });
+1229-
+1230-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+1231-
+1232-  return {
+1233-    title,
+1234-    heroImage,
+1235-    description,
+1236-    publishedAt: extractPublishedAt($),
+1237-    author: extractAuthor($),
+1238-    paragraphs,
+1239-    htmlContent,
+1240-    images,
+1241-    sourceUrl: url,
+1242-    sourceName: detectSource(url).name,
+1243-  };
+1244-}
+1245-
+1246-// Liverpool Echo uses Reach CMS (shared with Mirror, Express, etc.)
+1247:function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleContent {
+1248-  const title = $("h1").first().text().trim() ||
+1249-    $('meta[property="og:title"]').attr("content") || "Article";
+1250-  const heroImage = $('meta[property="og:image"]').attr("content");
+1251-  const description = $('meta[property="og:description"]').attr("content");
+1252-
+1253-  // Echo (Reach) now renders <article id="article-body" data-testid="body"> with hashed classes.
+1254-  const container = selectContainer(
+1255-    $,
+1256-    "article#article-body, [data-testid='body'], [data-article-body], .article-body, article, [role=main], main"
+1257-  );
+1258-  const paragraphs: string[] = [];
+1259-  const images: string[] = [];
+1260-  const seenP = new Set<string>();
+1261-  const seenI = new Set<string>();
+1262-
+1263-  container.find("p").each((_, el) => {
+1264-    const text = $(el).text().trim();
+1265-    if (
+1266-      text.length > 20 &&
+1267-      !text.includes("Sign up") &&
+1268-      !text.includes("newsletter") &&
+1269-      !text.includes("Follow us")
+1270-    ) {
+1271-      pushUnique(paragraphs, seenP, text);
+1272-    }
+1273-  });
+1274-
+1275-  container.find("img").each((_, el) => {
+1276-    const src = $(el).attr("src") || $(el).attr("data-src");
+1277-    if (src && src.startsWith("http") && !src.includes("logo")) {
+1278-      pushUnique(images, seenI, src);
+1279-    }
+1280-  });
+1281-
+1282-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+1283-
+1284-  return {
+1285-    title, heroImage, description,
+1286-    publishedAt: extractPublishedAt($),
+1287-    author: extractAuthor($),
+1288-    paragraphs, htmlContent, images,
+1289-    sourceUrl: url,
+1290-    sourceName: detectSource(url).name || "Liverpool Echo",
+1291-  };
+1292-}
+1293-
+1294-// --- Shared Vietnamese extractor helper (DRY for dantri, vietnamnet, tuoitre, thanhnien) ---
+1295-
+1296:function extractVietnameseGeneric(
+1297-  $: cheerio.CheerioAPI,
+1298-  url: string,
+1299-  containerSelectors: string,
+1300-  sourceName: string,
+1301-  opts?: { sapoSelector?: string; htmlContent?: boolean; removeSelectors?: string }
+1302-): ArticleContent {
+1303-  const title = $("h1").first().text().trim() ||
+1304-    $('meta[property="og:title"]').attr("content") || "Article";
+1305-  const heroImage = $('meta[property="og:image"]').attr("content");
+1306-  const description = stripSourcePrefix($('meta[property="og:description"]').attr("content"));
+1307-
+1308-  const container = selectContainer($, containerSelectors);
+1309-  const contentClone = container.clone();
+1310-  const paragraphs: string[] = [];
+1311-  const images: string[] = [];
+1312-  const seenP = new Set<string>();
+1313-  const seenI = new Set<string>();
+1314-
+1315-  // Extract sapo/lead text
+1316-  let sapoText: string | undefined;
+1317-  if (opts?.sapoSelector) {
+1318-    const $sapo = $(opts.sapoSelector).first();
+1319-    let sapo = $sapo.text().trim();
+1320-    sapo = stripSourcePrefix(sapo);
+1321-    if (sapo && sapo.length > 20) {
+1322-      // The reader prints `description` as the lead: a body paragraph repeating it is a duplicate.
+1323-      if (!isSameText(sapo, description)) pushUnique(paragraphs, seenP, sapo);
+1324-      sapoText = sapo;
+1325-      contentClone.find(opts.sapoSelector).first().remove();
+1326-    }
+1327-  }
+1328-
+1329-  // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
+1330-  container.find("p, figcaption").each((_, el) => {
+1331-    const text = $(el).text().trim();
+1332-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+1333-  });
+1334-
+1335-  container.find("img, figure img").each((_, el) => {
+1336-    const src = resolveImageSrc($(el), url);
+1337-    if (src && !src.includes("logo") && !src.includes("icon")) {
+1338-      pushUnique(images, seenI, src);
+1339-    }
+1340-  });
+1341-
+1342-  // Build htmlContent when opted in
+1343-  let htmlContent: string | undefined;
+1344-  if (opts?.htmlContent !== false) {
+1345-    // Per-source junk that has no reusable class name (topic teasers, etc.)
+1346-    if (opts?.removeSelectors) contentClone.find(opts.removeSelectors).remove();
+1347-    // The article layout already renders `description` as the lead paragraph, so
+1348-    // re-inserting an identical sapo prints the same sentence twice on the page.
+1349-    if (sapoText && !isSameText(sapoText, description)) {
+1350-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+1351-    }
+1352-    htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+1353-  }
+1354-
+1355-  return {
+1356-    title, heroImage, description,
+1357-    publishedAt: extractPublishedAt($),
+1358-    author: extractAuthor($),
+1359-    paragraphs, images, htmlContent,
+1360-    sourceUrl: url,
+1361-    sourceName,
+1362-  };
+1363-}
+1364-
+1365-// Verified via DevTools: `article` tag (11p, 2fig), sapo in h2 tag
+1366:function extractDantri($: cheerio.CheerioAPI, url: string): ArticleContent {
+1367-  // `[data-slot=content]` is the body only; the sapo is a sibling `h2[data-slot=sapo]`
+1368-  // (choosing `article` put the sapo in both the container and the prepended lead).
+1369-  return extractVietnameseGeneric($, url,
+1370-    "[data-slot='content'], article, .dt-font-arial, .singular-content, .e-magazine__body, [role=main]",
+1371-    "Dân Trí",
+1372-    { sapoSelector: "h2[data-slot='sapo'], h2.singular-sapo, h2.e-magazine__sapo" }
+1373-  );
+1374-}
+1375-
+1376-// Verified via DevTools: `.maincontent` (17p, 2fig), figcaption for photo galleries
+1377:function extractVietnamnet($: cheerio.CheerioAPI, url: string): ArticleContent {
+1378-  return extractVietnameseGeneric($, url,
+1379-    ".maincontent, .content-detail, article, [role=main]",
+1380-    "VietNamNet"
+1381-  );
+1382-}
+1383-
+1384-// Verified via DevTools: `.detail-cmain` (20p, 2fig), sapo in `h2.detail-sapo`
+1385:function extractTuoitre($: cheerio.CheerioAPI, url: string): ArticleContent {
+1386-  return extractVietnameseGeneric($, url,
+1387-    ".detail-content.afcbc-body, .detail-cmain, .detail-content, article, [role=main]",
+1388-    "Tuổi Trẻ",
+1389-    { sapoSelector: "h2.detail-sapo" }
+1390-  );
+1391-}
+1392-
+1393-// Verified via DevTools: `.detail-content` (15p, 3fig), sapo in `.detail-sapo`
+1394:function extractThanhnien($: cheerio.CheerioAPI, url: string): ArticleContent {
+1395-  return extractVietnameseGeneric($, url,
+1396-    ".detail-content.afcbc-body, .detail-cmain, .detail-content, .detail__cmain-main, .detail__content, .article-body, article, [role=main]",
+1397-    "Thanh Niên",
+1398-    { sapoSelector: ".detail-sapo, .detail__sapo" }
+1399-  );
+1400-}
+1401-
+1402:function extractBongda24h($: cheerio.CheerioAPI, url: string): ArticleContent {
+1403-  return extractVietnameseGeneric($, url,
+1404-    ".the-article-content, .article-content, .news-detail-content, .detail-content, .content-detail, .article-body, article, [role=main]",
+1405-    "Bóng Đá 24h",
+1406-    {
+1407-      sapoSelector: ".the-article-content .summary, .article-sapo, .sapo, h2",
+1408-      // "Khám phá thêm nội dung hấp dẫn trong các chủ đề liên quan:" — the teaser
+1409-      // line above the club-crest tag strip. `.block` is too generic to strip
+1410-      // globally, so it is scoped to this source.
+1411-      removeSelectors: ".block, .clear1px",
+1412-    }
+1413-  );
+1414-}
+1415-
+1416:function extractThethao247($: cheerio.CheerioAPI, url: string): ArticleContent {
+1417-  return extractVietnameseGeneric($, url,
+1418-    ".content-detail, .article-content, .detail-content, .post-content, article, [role=main]",
+1419-    "Thể Thao 247",
+1420-    { sapoSelector: ".sapo, .article-sapo, h2" }
+1421-  );
+1422-}
+1423-
+1424:function extractSoha($: cheerio.CheerioAPI, url: string): ArticleContent {
+1425-  return extractVietnameseGeneric($, url,
+1426-    ".detail-content, .news-content, .article-content, .content-detail, article, [role=main]",
+1427-    "Soha",
+1428-    { sapoSelector: ".sapo, .news-sapo, h2" }
+1429-  );
+1430-}
+1431-
+1432-// vietnam.vn uses .post-detail-body for article content (Next.js SSR site)
+1433:function extractVietnamvn($: cheerio.CheerioAPI, url: string): ArticleContent {
+1434-  const title = $("h1").first().text().trim() ||
+1435-    $('meta[property="og:title"]').attr("content") || "Article";
+1436-  const heroImage = $('meta[property="og:image"]').attr("content");
+1437-  const description = $('meta[property="og:description"]').attr("content");
+1438-
+1439-  const container = $(".post-detail-body, .post-detail-container, .ant-layout-content, [role=main]").first();
+1440-  const paragraphs: string[] = [];
+1441-  const images: string[] = [];
+1442-  const seenP = new Set<string>();
+1443-  const seenI = new Set<string>();
+1444-
+1445-  // Filter footer/legal text
+1446-  const junkPattern = /^(Nguồn:|BỘ VĂN HÓA|Chịu trách nhiệm|Cục trưởng|Trụ sở|Giấy phép)/;
+1447-
+1448-  container.find("p").each((_, el) => {
+1449-    const text = $(el).text().trim();
+1450-    if (text.length > 20 && !junkPattern.test(text)) {
+1451-      pushUnique(paragraphs, seenP, text);
+1452-    }
+1453-  });
+1454-
+1455-  container.find("img").each((_, el) => {
+1456-    const src = $(el).attr("src") || $(el).attr("data-src");
+1457-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+1458-      pushUnique(images, seenI, src);
+1459-    }
+1460-  });
+1461-
+1462-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+1463-
+1464-  return {
+1465-    title, heroImage, description,
+1466-    publishedAt: extractPublishedAt($),
+1467-    author: extractAuthor($),
+1468-    paragraphs, images, htmlContent,
+1469-    sourceUrl: url,
+1470-    sourceName: "Vietnam.vn",
+1471-  };
+1472-}
+1473-
+1474-// Verified via DevTools: `#abody.shortcode-content.ck-content` (15p, 3img), no <article> tag
+1475-// Images are interleaved inside <p> tags — must produce htmlContent for inline rendering
+1476:function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
+1477-  const title = $("h1").first().text().trim() ||
+1478-    $('meta[property="og:title"]').attr("content") || "Article";
+1479-  const heroImage = $('meta[property="og:image"]').attr("content");
+1480-  const description = $('meta[property="og:description"]').attr("content");
+1481-
+1482-  const container = $(
+1483-    "#abody, .shortcode-content.ck-content, .detail-content, .article-content, [role=main]"
+1484-  ).first();
+1485-
+1486-  const paragraphs: string[] = [];
+1487-  const images: string[] = [];
+1488-  const seenP = new Set<string>();
+1489-  const seenI = new Set<string>();
+1490-
+1491-  // Junk patterns: promo links, section headers that aren't real content
+1492-  const junkPattern = /^(>>>|Xem thêm|Tags?:|Chia sẻ|Phong độ .+ \d+ trận|Lịch sử đối đầu)/i;
+1493-
+1494-  container.find("p, figcaption").each((_, el) => {
+1495-    const text = $(el).text().trim();
+1496-    if (text.length > 20 && !junkPattern.test(text)) {
+1497-      pushUnique(paragraphs, seenP, text);
+1498-    }
+1499-  });
+1500-
+1501-  container.find("img").each((_, el) => {
+1502-    const src = resolveImageSrc($(el), url);
+1503-    if (src && !src.includes("logo") && !src.includes("icon")) {
+1504-      pushUnique(images, seenI, src);
+1505-    }
+1506-  });
+1507-
+1508-  // Remove junk elements before building HTML
+1509-  const clone = container.clone();
+1510-  clone.find("script, style, .related-news, .tags, nav").remove();
+1511-  // Remove junk paragraphs from HTML
+1512-  clone.find("p").each((_, el) => {
+1513-    const text = $(el).text().trim();
+1514-    if (junkPattern.test(text)) $(el).remove();
+1515-  });
+1516-  const htmlContent = buildHtmlContent(clone, $, url) || undefined;
+1517-
+1518-  return {
+1519-    title, heroImage, description,
+1520-    publishedAt: extractPublishedAt($),
+1521-    author: extractAuthor($),
+1522-    paragraphs, htmlContent, images,
+1523-    sourceUrl: url,
+1524-    sourceName: "Webthethao",
+1525-  };
+1526-}
+1527-
+1528:function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
+1529-  const title = $("h1").first().text().trim() ||
+1530-    $('meta[property="og:title"]').attr("content") || "Article";
+1531-  const heroImage = $('meta[property="og:image"]').attr("content");
+1532-  const description = $('meta[property="og:description"]').attr("content");
+1533-
+1534-  // znews.vn uses .the-article-body as primary container (verified via DevTools)
+1535-  const container = $(
+1536-    ".the-article-body, .article-content, article, [role=main]"
+1537-  ).first();
+1538-
+1539-  // Remove related/junk elements embedded inside the container
+1540-  container.find(".inner-article, table.article, .notebox, .the-article-tags, .sidebar, .topics, .the-article-credit").remove();
+1541-
+1542-  // Clean up nested headers before cloning for htmlContent
+1543-  const contentClone = container.clone();
+1544-  contentClone.find("header.the-article-header, header").remove();
+1545-
+1546-  const paragraphs: string[] = [];
+1547-  const images: string[] = [];
+1548-  const seenP = new Set<string>();
+1549-  const seenI = new Set<string>();
+1550-
+1551-  // Extract lead/sapo text
+1552-  const sapo = $(".the-article-summary").first().text().trim();
+1553-  if (sapo && sapo.length > 20) {
+1554-    pushUnique(paragraphs, seenP, sapo);
+1555-    contentClone.find(".the-article-summary").first().remove();
+1556-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+1557-  }
+1558-
+1559-  container.find("p").each((_, el) => {
+1560-    const text = $(el).text().trim();
+1561-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+1562-  });
+1563-
+1564-  container.find("img, figure img").each((_, el) => {
+1565-    const src = resolveImageSrc($(el), url);
+1566-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+1567-      pushUnique(images, seenI, src);
+1568-    }
+1569-  });
+1570-
+1571-  // Build htmlContent for rich inline rendering
+1572-  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+1573-
+1574-  return {
+1575-    title, heroImage, description,
+1576-    publishedAt: extractPublishedAt($),
+1577-    author: extractAuthor($),
+1578-    paragraphs, htmlContent, images,
+1579-    sourceUrl: url,
+1580-    sourceName: "ZNews",
+1581-    isThinContent: paragraphs.length <= 2,
+1582-  };
+1583-}
+1584-
+1585:function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
+1586-  const title = $("h1").first().text().trim() ||
+1587-    $('meta[property="og:title"]').attr("content") || "Article";
+1588-  const heroImage = $('meta[property="og:image"]').attr("content");
+1589-  // og:description opens with the dateline stamp ("Anh- Dominik …"): strip it so it matches the sapo.
+1590-  const description = $('meta[property="og:description"]').attr("content")?.replace(/^[^\s-]{2,10}\s*-\s+/, "") ||
+1591-    $("p.description").first().text().trim();
+1592-
+1593-  // VnExpress uses .fck_detail as primary container (verified via DevTools)
+1594-  const container = $(
+1595-    ".fck_detail, article.fck_detail, .article-content, article, [role=main]"
+1596-  ).first();
+1597-  const contentClone = container.clone();
+1598-  const paragraphs: string[] = [];
+1599-  const images: string[] = [];
+1600-  const seenP = new Set<string>();
+1601-  const seenI = new Set<string>();
+1602-
+1603-  // Extract lead/sapo text
+1604-  // `<span class="location-stamp">Anh</span>` is glued to the lead text; drop it.
+1605-  const sapo = $("p.description").first().clone().find(".location-stamp").remove().end().text().trim();
+1606-  if (sapo && sapo.length > 20) {
+1607-    if (sapo !== description) {
+1608-      pushUnique(paragraphs, seenP, sapo);
+1609-    }
+1610-    contentClone.find("p.description").first().remove();
+1611-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+1612-  }
+1613-
+1614-  container.find("p").each((_, el) => {
+1615-    const text = $(el).text().trim();
+1616-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+1617-  });
+1618-
+1619-  container.find("img, figure img").each((_, el) => {
+1620-    const src = resolveImageSrc($(el), url);
+1621-    if (src && src.startsWith("http") && !src.includes("logo") && !src.includes("icon")) {
+1622-      pushUnique(images, seenI, src);
+1623-    }
+1624-  });
+1625-
+1626-  const htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
+1627-
+1628-  return {
+1629-    title, heroImage, description,
+1630-    publishedAt: extractPublishedAt($),
+1631-    author: extractAuthor($),
+1632-    paragraphs, images, htmlContent,
+1633-    sourceUrl: url,
+1634-    sourceName: "VnExpress",
+1635-  };
+1636-}
+1637-
+1638-/**
+1639- * Navigation-like = mostly links (site menu, "related" rail): a real article body is
+1640- * prose with a few links. `<body>` of a WordPress theme used to win here and the
+1641- * cached "article" of anfieldindex was the site menu.
+1642- */
+1643-export function isNavigationLike(
+1644-  $container: cheerio.Cheerio<AnyNode>,
+1645-  $: cheerio.CheerioAPI
+1646-): boolean {
+1647-  const text = $container.text().replace(/\s+/g, " ").trim();
+1648-  if (text.length === 0) return true;
+1649-  const linkText = $container.find("a").text().replace(/\s+/g, " ").trim();
+1650-  if (linkText.length / text.length > 0.5) return true;
+1651-  let proseChars = 0;
+1652-  $container.find("p").each((_, el) => {
+1653-    const t = $(el).text().trim();
+1654-    if (t.length > 20) proseChars += t.length;
+1655-  });
+1656-  return proseChars < 200 && $container.find("a").length > 15;
+1657-}
+1658-
+1659-// Fallback for known sources without a dedicated extractor (when Readability also fails).
+1660:function extractGeneric(
+1661-  $: cheerio.CheerioAPI,
+1662-  url: string
+1663-): ArticleContent {
+1664-  // A real article region only — NEVER `<body>` (menus, footers, comment forms).
+1665-  let container = selectContainer($, "article, main, [role=main], .entry-content, .post-content, .article-body");
+1666-  if (container.length > 0 && isNavigationLike(container, $)) container = $();
+1667-
+1668-  const paragraphs: string[] = [];
+1669-  const seenP = new Set<string>();
+1670-  container.find("p").each((_, el) => {
+1671-    const text = $(el).text().trim();
+1672-    if (text.length > 20) pushUnique(paragraphs, seenP, text);
+1673-  });
+1674-  const htmlContent = container.length ? buildHtmlContent(container.clone(), $, url) || undefined : undefined;
+1675-
+1676-  return {
+1677-    title:
+1678-      $("h1").first().text().trim() ||
+1679-      $('meta[property="og:title"]').attr("content") ||
+1680-      "Article",
+1681-    heroImage: $('meta[property="og:image"]').attr("content"),
+1682-    description: $('meta[property="og:description"]').attr("content"),
+1683-    paragraphs,
+1684-    htmlContent,
+1685-    images: [],
+1686-    sourceUrl: url,
+1687-    sourceName: detectSource(url).name || new URL(url).hostname,
+1688-  };
+1689-}
+1690-
+1691-function findExtractor(url: string): Extractor {
+1692-  const hostname = new URL(url).hostname;
+1693-  for (const [domain, fn] of Object.entries(extractors)) {
+1694-    if (hostname === domain || hostname.endsWith(`.${domain}`)) return fn;
+1695-  }
+1696-  return extractGeneric;
+1697-}
+1698-
+1699-// --- Pure extraction (no network, no DB): testable against saved HTML ---
+1700-
+1701-const BOT_CHALLENGE_TITLE = /^(just a moment|attention required|access denied|are you a (?:robot|human)|pardon our interruption|robot check|verifying you are human)/i;
+1702-const BOT_CHALLENGE_BODY = /javascript is (?:disabled|required)|enable javascript|verify (?:that )?you(?:'re| are) (?:a )?human|captcha|checking your browser|unusual traffic from your/i;
+1703-
+1704-/** A WAF / bot-check page served with HTTP 200 (ESPN: "JavaScript is disabled…"). */
+1705-export function isBotChallengePage($: cheerio.CheerioAPI): boolean {
+1706-  if (BOT_CHALLENGE_TITLE.test($("title").first().text().trim())) return true;
+1707-  const bodyText = $("body").text().replace(/\s+/g, " ").trim();
+1708-  return bodyText.length < 2500 && BOT_CHALLENGE_BODY.test(bodyText);
+1709-}
+1710-
+1711-/**
+1712- * Byline / timestamp / media-caption lines a body can open with. ESPN (Readability) yields
+1713- * "Beth LindopSep 30, 2026, 03:24 AM ETCloseBased in Liverpool, … is ESPN's correspondent…",
+1714- * a bare "Sep 27, 2026, 06:32 PM ET" and a video caption "Xavi reveals … (0:58)".
+1715- */
+1716-const LEADING_META_LINES: RegExp[] = [
+1717-  /\b\d{1,2}:\d{2}\s*(?:am|pm)\s*[a-z]{2,3}\b/i, // "03:24 AM ET"
+1718-  /\(\d{1,2}:\d{2}\)\s*$/, // "(0:58)" video duration
+1719-  /^by\s+\S/i,
+1720-  /^(?:updated|published|posted)\b/i,
+1721-  /\b\d+\s*min(?:ute)?s?\s+read\b/i,
+1722-  /\b(?:is|are)\s+espn'?s?\b.*\b(?:correspondent|writer|reporter|columnist|analyst)\b|^based in .{2,40}\b(?:espn|correspondent)/i,
+1723-];
+1724-
+1725-/** Drop up to 5 leading byline/timestamp/caption lines — short ones only, so a real lede is never eaten. */
+1726-export function stripLeadingMetaLines(paragraphs: string[]): string[] {
+1727-  let i = 0;
+1728-  while (i < 5 && i < paragraphs.length && paragraphs[i].length < 260 && LEADING_META_LINES.some((re) => re.test(paragraphs[i].trim()))) i++;
+1729-  return i ? paragraphs.slice(i) : paragraphs;
+1730-}
+1731-
+1732-/** True when `text` is the same prose as `lead`, or `lead` is an ellipsis-truncated start of it. */
+1733-function isLeadOf(text: string | undefined, lead: string | undefined): boolean {
+1734-  if (!text || !lead) return false;
+1735-  if (isSameText(text, lead)) return true;
+1736-  const norm = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+1737-  const l = norm(lead.replace(/(?:…|\.{2,})\s*$/, ""));
+1738-  const t = norm(text.replace(/(?:…|\.{2,})\s*$/, ""));
+1739-  // One is the opening of the other (og:description truncates, or extends, the first paragraph).
+1740-  return Math.min(l.length, t.length) > 40 && (t.startsWith(l) || l.startsWith(t));
+1741-}
+1742-
+1743-/** The reader prints `description` as the lead: remove an identical first paragraph / `.sapo` from the body. */
+1744-function dropDuplicateLead(content: ArticleContent): void {
+1745-  const lead = content.description;
+1746-  if (!lead) return;
+1747-  if (isLeadOf(content.paragraphs[0], lead) && content.paragraphs.length > 1) content.paragraphs.shift();
+1748-  if (content.htmlContent) {
+1749-    const $h = cheerio.load(content.htmlContent, null, false);
+1750-    const $first = $h("p").first();
+1751-    if ($first.length && isLeadOf($first.text(), lead)) {
+1752-      // Only when the lead is genuinely the opening block (not a later paragraph that happens to match).
+1753-      const firstBlock = $h.root().children().first();
+1754-      if (firstBlock.is($first) || firstBlock.find($first).length > 0) {
+1755-        $first.remove();
+1756-        content.htmlContent = $h.html() || undefined;
+1757-      }
+1758-    }
+1759-  }
+1760-}
+--
+1808:export async function extractFromHtml(html: string, url: string): Promise<ExtractionResult | null> {
+1809-  const $ = cheerio.load(html);
+1810-  if (isBotChallengePage($)) return null;
+1811-
+1812-  // Check if this site has a dedicated extractor (skip Readability for those)
+1813-  const dedicatedExtractor = findExtractor(url);
+1814-  const hasDedicatedExtractor = dedicatedExtractor !== extractGeneric;
+1815-
+1816-  // 1. Try Readability first (only for sites without dedicated extractors)
+1817-  const readable = hasDedicatedExtractor ? null : await extractWithReadability(html, url);
+1818-  // Readability can latch onto a menu / link rail when there is no article: treat that as a miss.
+1819-  const readableIsNav = readable
+1820-    ? (() => {
+1821-        const $r = cheerio.load(`<div id="r">${readable.htmlContent}</div>`);
+1822-        return isNavigationLike($r("#r"), $r);
+1823-      })()
+1824-    : false;
+1825-  if (readable && readable.length > 300 && !readableIsNav) {
+1826-    // Parse htmlContent for proper paragraph separation
+1827-    const $article = cheerio.load(readable.htmlContent);
+1828-    const paragraphs: string[] = [];
+1829-    $article("p, h2, h3, h4, li, figcaption").each((_, el) => {
+1830-      const text = $article(el).text().trim();
+1831-      if (text.length > 20) paragraphs.push(text);
+1832-    });
+1833-
+1834-    // Fallback to textContent split if HTML parsing yields nothing
+1835-    if (paragraphs.length === 0) {
+1836-      paragraphs.push(
+1837-        ...readable.textContent
+1838-          .split(/\n\n+/)
+1839-          .filter((p) => p.trim().length > 20)
+1840-          .map((p) => sanitizeText(p.trim()))
+1841-      );
+1842-    }
+1843-
+1844-    const result = finalizeContent({
+1845-      title: readable.title,
+1846-      heroImage: $('meta[property="og:image"]').attr("content"),
+1847-      description: readable.excerpt?.replace(/\.{2,}$/, "") || $('meta[property="og:description"]').attr("content") || undefined,
+1848-      publishedAt: extractPublishedAt($),
+1849-      author: readable.byline ?? extractAuthor($),
+1850-      paragraphs,
+1851-      htmlContent: normalizeHtmlLinks(readable.htmlContent, url),
+1852-      images: [],
+1853-      sourceUrl: url,
+1854-      sourceName: detectSource(url).name,
+1855-      readingTime: estimateReadingTime(readable.textContent),
+1856-    }, $, url);
+1857-    console.log(
+1858-      `[extractor] ${result.sourceName} | method=readability | paragraphs=${result.paragraphs.length} | len=${readable.length}`
+1859-    );
+1860-    return { content: result, cacheable: result.paragraphs.length > 0 };
+1861-  }
+1862-
+1863-  // 2. Fallback: per-site cheerio extractor
+1864-  const content = finalizeContent(dedicatedExtractor($, url), $, url);
+1865-  const realParagraphs = content.paragraphs.length;
+1866-
+1867-  content.readingTime = estimateReadingTime(content.paragraphs.join(" "));
+1868-
+1869-  // Detect thin content
+1870-  if (content.paragraphs.length <= 1) {
+1871-    content.isThinContent = true;
+1872-  }
+1873-  // Fallback: use og:description if no paragraphs
+1874-  if (content.paragraphs.length === 0 && content.description) {
+1875-    content.paragraphs = [content.description];
+1876-  }
+1877-
+1878-  console.log(
+1879-    `[extractor] ${content.sourceName} | method=cheerio | paragraphs=${content.paragraphs.length} | thin=${content.isThinContent ?? false}`
+1880-  );
+1881-  // No real paragraph (only the description stand-in) = an empty scrape, not a success.
+1882-  return { content, cacheable: realParagraphs > 0 };
+1883-}
+1884-
+1885-// --- Public API ---
+1886-
+1887-export const scrapeArticle = cache(
+1888-  async (url: string): Promise<ArticleContent | null> => {
+1889-    // Only ever fetch configured news sources — see isKnownNewsSourceUrl.
+1890-    if (!isKnownNewsSourceUrl(url)) {
+1891-      console.warn(`[extractor] Refusing to fetch non-source URL: ${url.slice(0, 120)}`);
+1892-      return null;
+1893-    }
+1894-    // Sources that 403 every client (This Is Anfield): link-out only, the reader shows the source link.
+1895-    if (isLinkOutOnlyUrl(url)) return null;
+1896-    try {
+1897-      // 1. Check DB cache first (survives across requests, 24h TTL)
+1898-      const cached = await getCachedContent(url);
+1899-      if (cached) {
+1900-        console.log(`[extractor] Cache hit for ${new URL(url).hostname}`);
+1901-        return cached;
+1902-      }
+1903-
+1904-      const controller = new AbortController();
+1905-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+1906-
+1907-      const res = await fetch(url, {
+1908-        signal: controller.signal,
