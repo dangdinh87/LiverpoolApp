@@ -12,7 +12,10 @@ const BOT_CHALLENGE_TEXT =
  * Exported for tests.
  */
 export function looksLikeJunkContent(content: ArticleContent): boolean {
-  const paragraphs = (content.paragraphs ?? []).filter((p) => p.trim().length > 40).length;
+  const paragraphs = (content.paragraphs ?? []).reduce(
+    (acc, p) => (p.trim().length > 40 ? acc + 1 : acc),
+    0,
+  );
   const html = content.htmlContent ?? "";
   const imgTags = (html.match(/<img\b/gi) ?? []).length;
   const images = Math.max(content.images?.length ?? 0, imgTags);
@@ -20,11 +23,25 @@ export function looksLikeJunkContent(content: ArticleContent): boolean {
   // Whole-page HTML next to a one-line body: menus, sign-in links, footers.
   if (paragraphs < 3 && html.length > 10_000) return true;
   if (paragraphs < 3) {
-    const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    const text = html
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     // A cached bot-check page ("JavaScript is disabled… verify you are not a robot").
-    if (BOT_CHALLENGE_TEXT.test(text) || (content.paragraphs ?? []).some((p) => BOT_CHALLENGE_TEXT.test(p))) return true;
+    if (
+      BOT_CHALLENGE_TEXT.test(text) ||
+      (content.paragraphs ?? []).some((p) => BOT_CHALLENGE_TEXT.test(p))
+    )
+      return true;
     // Nothing at all: no sentence, no picture, no video, a few words of markup.
-    if (paragraphs === 0 && images === 0 && !content.videoUrl && !html.includes("article-video-player") && text.length < 200) return true;
+    if (
+      paragraphs === 0 &&
+      images === 0 &&
+      !content.videoUrl &&
+      !html.includes("article-video-player") &&
+      text.length < 200
+    )
+      return true;
   }
   return false;
 }

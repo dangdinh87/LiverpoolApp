@@ -28,7 +28,10 @@ const MAX_PER_RUN = 2;
  */
 export const GET = withCronAuth(async (req) => {
   if (!getEnv("VIETAPI_KEY")) {
-    return NextResponse.json({ error: "VIETAPI_KEY not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "VIETAPI_KEY not configured" },
+      { status: 503 },
+    );
   }
 
   const force = req.nextUrl.searchParams.get("force") === "1";
@@ -39,7 +42,11 @@ export const GET = withCronAuth(async (req) => {
   const fixtures = await getFixtures();
   const candidates = fixtures
     .filter((f) => FINISHED.has(f.fixture.status.short))
-    .filter((f) => (only ? f.fixture.id === only : now - new Date(f.fixture.date).getTime() <= REVIEW_WINDOW_MS))
+    .filter((f) =>
+      only
+        ? f.fixture.id === only
+        : now - new Date(f.fixture.date).getTime() <= REVIEW_WINDOW_MS,
+    )
     .sort((a, b) => b.fixture.date.localeCompare(a.fixture.date));
 
   const results: GenerationOutcome[] = [];
@@ -78,7 +85,7 @@ export const GET = withCronAuth(async (req) => {
   return NextResponse.json({
     ok: true,
     considered: candidates.length,
-    written: results.filter((r) => r.ok).length,
+    written: results.reduce((acc, r) => (r.ok ? acc + 1 : acc), 0),
     rejected: results.filter((r) => !r.ok),
   });
 });

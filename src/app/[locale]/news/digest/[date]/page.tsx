@@ -2,22 +2,41 @@ import type { Metadata } from "next";
 import { Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getAllDigestDates, getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
+import {
+  getAllDigestDates,
+  getDigestByDate,
+  getSeoArticleFromDigest,
+  getVisibleDigestSections,
+} from "@/lib/news/digest";
 import { getArticleRefsByUrls } from "@/lib/news";
 import { CATEGORY_CONFIG } from "@/lib/news-config";
-import { makePageMeta, buildNewsArticleJsonLd, getHreflangAlternates, getLocalizedUrl } from "@/lib/seo";
+import {
+  makePageMeta,
+  buildNewsArticleJsonLd,
+  getHreflangAlternates,
+  getLocalizedUrl,
+} from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import "@/components/news/article-reader.css";
 import { SiteArticleBadge } from "@/components/news/site-article-badge";
 import { DigestNav } from "@/components/news/digest-nav";
-import { DigestItem, type DigestItemSource } from "@/components/news/digest-item";
+import {
+  DigestItem,
+  type DigestItemSource,
+} from "@/components/news/digest-item";
 import { outletName, pickStoryImages } from "@/components/news/digest-images";
 import { DigestToc } from "@/components/news/digest-toc";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
-import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
+import {
+  chunkSentences,
+  cleanTitle,
+  isHttpUrl,
+  keepDatesTogether,
+  leadSentences,
+} from "@/components/news/news-text";
 import { formatMatchDayMonth } from "@/lib/format-match-date";
 import { LocalTimeOfDay } from "@/components/ui/local-time";
 import { BRAND } from "@/lib/brand";
@@ -39,14 +58,18 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { date, locale } = await params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found", robots: { index: false } };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date))
+    return { title: "Digest Not Found", robots: { index: false } };
   const digest = await getDigestByDate(date);
   if (!digest) return { title: "Digest Not Found", robots: { index: false } };
   const description =
     digest.seo_description ||
     getSeoArticleFromDigest(digest)?.metaDescription ||
     digest.summary.slice(0, 160);
-  const title = digest.seo_title || getSeoArticleFromDigest(digest)?.metaTitle || digest.title;
+  const title =
+    digest.seo_title ||
+    getSeoArticleFromDigest(digest)?.metaTitle ||
+    digest.title;
   const digestPath = `/news/digest/${date}`;
   return {
     title,
@@ -65,11 +88,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function DigestPage({
-  params,
-}: {
-  params: Params;
-}) {
+export default async function DigestPage({ params }: { params: Params }) {
   const { date, locale } = await params;
   setRequestLocale(locale);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
@@ -85,8 +104,16 @@ export default async function DigestPage({
 
   // Dates arrive newest first: the next index is the previous (older) briefing.
   const at = dates.findIndex((d) => d.digest_date === date);
-  const prev = at >= 0 ? dates[at + 1]?.digest_date : dates.find((d) => d.digest_date < date)?.digest_date;
-  const next = at > 0 ? dates[at - 1]?.digest_date : at < 0 ? [...dates].reverse().find((d) => d.digest_date > date)?.digest_date : undefined;
+  const prev =
+    at >= 0
+      ? dates[at + 1]?.digest_date
+      : dates.find((d) => d.digest_date < date)?.digest_date;
+  const next =
+    at > 0
+      ? dates[at - 1]?.digest_date
+      : at < 0
+        ? [...dates].reverse().find((d) => d.digest_date > date)?.digest_date
+        : undefined;
   const latest = dates[0]?.digest_date;
 
   if (!digest) {
@@ -110,40 +137,57 @@ export default async function DigestPage({
   }
 
   const uiLocale = locale === "vi" ? "vi" : "en";
-  const sections = getVisibleDigestSections(digest.sections as {
-    category: string;
-    categoryVi: string;
-    headline: string;
-    body: string;
-    articleUrls: string[];
-  }[]);
+  const sections = getVisibleDigestSections(
+    digest.sections as {
+      category: string;
+      categoryVi: string;
+      headline: string;
+      body: string;
+      articleUrls: string[];
+    }[],
+  );
   const seoArticle = getSeoArticleFromDigest(digest);
   const displayTitle = cleanTitle(seoArticle?.title || digest.title);
   const displayDescription =
-    seoArticle?.metaDescription || seoArticle?.excerpt || digest.summary.slice(0, 160);
+    seoArticle?.metaDescription ||
+    seoArticle?.excerpt ||
+    digest.summary.slice(0, 160);
   const digestDate = new Date(`${date}T00:00:00+07:00`);
   // A short intro, not the whole summary: the items below carry the detail.
   const intro = leadSentences(seoArticle?.excerpt || digest.summary, 230);
   // Nodes, not strings: the time renders in the viewer's own zone rather than
   // being printed server-side and labelled from the interface language.
   const meta: React.ReactNode[] = [
-    digest.article_count > 0 ? t("articleCount", { count: digest.article_count }) : null,
+    digest.article_count > 0
+      ? t("articleCount", { count: digest.article_count })
+      : null,
     digest.generated_at
       ? t.rich("generatedAt", {
-          t: () => <LocalTimeOfDay iso={digest.generated_at!} locale={uiLocale} />,
+          t: () => (
+            <LocalTimeOfDay iso={digest.generated_at!} locale={uiLocale} />
+          ),
         })
       : null,
   ].filter(Boolean);
 
   // Titles and pictures for every source link across the stories.
-  const refs = await getArticleRefsByUrls(sections.flatMap((s) => s.articleUrls));
+  const refs = await getArticleRefsByUrls(
+    sections.flatMap((s) => s.articleUrls),
+  );
 
   const sourcesOf = (urls: string[]): DigestItemSource[] =>
-    urls.filter(isHttpUrl).map((url, i) => ({
-      url,
-      sourceName: outletName(url),
-      title: refs[url] ? cleanTitle(refs[url].title) : t("sourceArticle", { n: i + 1 }),
-    }));
+    urls.reduce((acc, url) => {
+      if (isHttpUrl(url)) {
+        acc.push({
+          url,
+          sourceName: outletName(url),
+          title: refs[url]
+            ? cleanTitle(refs[url].title)
+            : t("sourceArticle", { n: acc.length + 1 }),
+        });
+      }
+      return acc;
+    }, [] as DigestItemSource[]);
 
   // One picture per story, never the same photo twice (shared with the homepage briefing).
   const images = pickStoryImages(sections, refs);
@@ -156,34 +200,47 @@ export default async function DigestPage({
     photo: (source: string) => t("photoCredit", { source }),
     newTab: t("opensNewTab"),
   };
-  const tocItems = sections.map((section, i) => ({ id: `tin-${i + 1}`, headline: section.headline }));
+  const tocItems = sections.map((section, i) => ({
+    id: `tin-${i + 1}`,
+    headline: section.headline,
+  }));
 
   return (
     <article className="min-h-screen">
-      <JsonLd data={[
-        await buildLocalizedBreadcrumbJsonLd(locale, [
-          { name: tNews("title"), path: "/news" },
-          { name: cleanTitle(digest.title), path: `/news/digest/${date}` },
-        ]),
-        buildNewsArticleJsonLd({
-          title: displayTitle,
-          description: displayDescription,
-          url: getLocalizedUrl(`/news/digest/${date}`, locale),
-          inLanguage: locale,
-          publishedAt: digest.generated_at,
-          sourceName: seoArticle?.sourceName,
-          // This briefing's own share card, not the lead story's photo: that
-          // photo belongs to the outlet that ran the story.
-          image: `${getLocalizedUrl(`/news/digest/${date}`, locale)}/opengraph-image`,
-        }),
-      ]} />
+      <JsonLd
+        data={[
+          await buildLocalizedBreadcrumbJsonLd(locale, [
+            { name: tNews("title"), path: "/news" },
+            { name: cleanTitle(digest.title), path: `/news/digest/${date}` },
+          ]),
+          buildNewsArticleJsonLd({
+            title: displayTitle,
+            description: displayDescription,
+            url: getLocalizedUrl(`/news/digest/${date}`, locale),
+            inLanguage: locale,
+            publishedAt: digest.generated_at,
+            sourceName: seoArticle?.sourceName,
+            // This briefing's own share card, not the lead story's photo: that
+            // photo belongs to the outlet that ran the story.
+            image: `${getLocalizedUrl(`/news/digest/${date}`, locale)}/opengraph-image`,
+          }),
+        ]}
+      />
 
       {/* ─── Masthead: the lead story's photo behind date, title and intro ─── */}
       <header className="relative isolate">
         {heroImage && (
           <div className="absolute inset-x-0 top-0 -z-10 h-[min(78vh,640px)] overflow-hidden">
-            <NewsThumb src={heroImage.src} source={heroImage.source} sizes="100vw" priority />
-            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/80 to-stadium-bg/30" />
+            <NewsThumb
+              src={heroImage.src}
+              source={heroImage.source}
+              sizes="100vw"
+              priority
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/80 to-stadium-bg/30"
+            />
           </div>
         )}
         <div
@@ -199,14 +256,25 @@ export default async function DigestPage({
           <div className="reveal max-w-4xl">
             <div className="mb-4 mt-8 flex flex-wrap items-center gap-x-3 gap-y-2">
               <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} />
-              <span className="text-sm text-white/65">{formatMatchDayMonth(digestDate, uiLocale, true)}</span>
+              <span className="text-sm text-white/65">
+                {formatMatchDayMonth(digestDate, uiLocale, true)}
+              </span>
             </div>
             <h1 className="text-balance font-serif text-[32px] font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
               {keepDatesTogether(displayTitle)}
             </h1>
-            {intro && <p className="mt-5 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>}
+            {intro && (
+              <p className="mt-5 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">
+                {intro}
+              </p>
+            )}
             <p className="mt-4 text-sm text-stadium-muted">
-              {[sections.length > 0 ? t("storyCount", { count: sections.length }) : null, ...meta]
+              {[
+                sections.length > 0
+                  ? t("storyCount", { count: sections.length })
+                  : null,
+                ...meta,
+              ]
                 .filter(Boolean)
                 .map((part, i) => (
                   <span key={i}>
@@ -215,7 +283,11 @@ export default async function DigestPage({
                   </span>
                 ))}
             </p>
-            {heroImage && <p className="mt-1 text-xs text-white/50">{t("photoCredit", { source: heroImage.credit })}</p>}
+            {heroImage && (
+              <p className="mt-1 text-xs text-white/50">
+                {t("photoCredit", { source: heroImage.credit })}
+              </p>
+            )}
           </div>
         </div>
       </header>
@@ -232,7 +304,10 @@ export default async function DigestPage({
             <div className="min-w-0">
               <div className="space-y-16 sm:space-y-20">
                 {sections.map((section, i) => {
-                  const catConfig = CATEGORY_CONFIG[section.category as keyof typeof CATEGORY_CONFIG];
+                  const catConfig =
+                    CATEGORY_CONFIG[
+                      section.category as keyof typeof CATEGORY_CONFIG
+                    ];
                   return (
                     <DigestItem
                       key={i}
@@ -251,28 +326,32 @@ export default async function DigestPage({
               </div>
 
               <DigestNav prev={prev} next={next} />
-              <p className="mt-10 max-w-[42rem] text-[13px] leading-relaxed text-stadium-muted">{t("aiNote")}</p>
+              <p className="mt-10 max-w-[42rem] text-[13px] leading-relaxed text-stadium-muted">
+                {t("aiNote")}
+              </p>
             </div>
           </div>
         ) : (
           // No itemised stories (older or partial digest): fall back to the long-form text.
           <div className="mx-auto max-w-[42rem]">
             <div className="article-prose mt-9">
-              {seoArticle ? (
-                seoArticle.body.map((section, i) => (
-                  <section key={`${section.heading}-${i}`}>
-                    <h2>{section.heading}</h2>
-                    {section.paragraphs.map((paragraph, j) => (
-                      <p key={j}>{paragraph}</p>
-                    ))}
-                  </section>
-                ))
-              ) : (
-                chunkSentences(digest.summary).map((paragraph, i) => <p key={i}>{paragraph}</p>)
-              )}
+              {seoArticle
+                ? seoArticle.body.map((section, i) => (
+                    <section key={`${section.heading}-${i}`}>
+                      <h2>{section.heading}</h2>
+                      {section.paragraphs.map((paragraph, j) => (
+                        <p key={j}>{paragraph}</p>
+                      ))}
+                    </section>
+                  ))
+                : chunkSentences(digest.summary).map((paragraph, i) => (
+                    <p key={i}>{paragraph}</p>
+                  ))}
             </div>
             <DigestNav prev={prev} next={next} />
-            <p className="mt-10 text-[13px] leading-relaxed text-stadium-muted">{t("aiNote")}</p>
+            <p className="mt-10 text-[13px] leading-relaxed text-stadium-muted">
+              {t("aiNote")}
+            </p>
           </div>
         )}
       </div>

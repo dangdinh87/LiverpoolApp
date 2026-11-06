@@ -20,17 +20,24 @@ export interface LeaderEntry {
 export type Ranked = LeaderEntry & { rank: number; tied: boolean };
 
 /** The league's list for one stat, best first, zero values dropped. */
-export function buildLeaders(list: TopScorer[], type: "goals" | "assists"): LeaderEntry[] {
+export function buildLeaders(
+  list: TopScorer[],
+  type: "goals" | "assists",
+): LeaderEntry[] {
   return list
     .map((s) => {
       const stat = s.statistics[0];
       const isLiverpool = stat?.team?.id === LFC_ID;
       return {
         id: s.player.id,
-        surname: s.player.lastname || s.player.name.split(" ").pop() || s.player.name,
+        surname:
+          s.player.lastname || s.player.name.split(" ").pop() || s.player.name,
         club: stat?.team ? compactTeamName({ name: stat.team.name }) : "",
-        crest: isLiverpool ? "/assets/lfc/crest.webp" : (stat?.team?.logo ?? null),
-        value: (type === "goals" ? stat?.goals?.total : stat?.goals?.assists) ?? 0,
+        crest: isLiverpool
+          ? "/assets/lfc/crest.webp"
+          : (stat?.team?.logo ?? null),
+        value:
+          (type === "goals" ? stat?.goals?.total : stat?.goals?.assists) ?? 0,
         isLiverpool,
       };
     })
@@ -41,8 +48,15 @@ export function buildLeaders(list: TopScorer[], type: "goals" | "assists"): Lead
 /** Competition ranking: players level on a value share the rank of the first of them ("=3"). */
 export function rankEntries(entries: LeaderEntry[]): Ranked[] {
   return entries.map((e) => {
-    const rank = entries.filter((o) => o.value > e.value).length + 1;
-    return { ...e, rank, tied: entries.filter((o) => o.value === e.value).length > 1 };
+    const rank =
+      entries.reduce((acc, o) => (o.value > e.value ? acc + 1 : acc), 0) + 1;
+    return {
+      ...e,
+      rank,
+      tied:
+        entries.reduce((acc, o) => (o.value === e.value ? acc + 1 : acc), 0) >
+        1,
+    };
   });
 }
 
@@ -55,7 +69,15 @@ export function rankEntries(entries: LeaderEntry[]): Ranked[] {
  * gave eight players level on three goals the ranks #3 to #10, and drew its bars
  * in a grey barely distinguishable from the card.
  */
-export function Leaderboard({ entries, unit, label }: { entries: LeaderEntry[]; unit: string; label: string }) {
+export function Leaderboard({
+  entries,
+  unit,
+  label,
+}: {
+  entries: LeaderEntry[];
+  unit: string;
+  label: string;
+}) {
   const t = useTranslations("Stats.leaderboard");
   const ranked = rankEntries(entries);
   const top = ranked.slice(0, TOP);
@@ -70,26 +92,48 @@ export function Leaderboard({ entries, unit, label }: { entries: LeaderEntry[]; 
         e.isLiverpool && "bg-lfc-red/10",
       )}
     >
-      {e.isLiverpool && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-lfc-red" />}
+      {e.isLiverpool && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[3px] bg-lfc-red"
+        />
+      )}
       <span className="font-bebas text-xl leading-none tabular-nums text-stadium-muted">
         <span aria-hidden>{e.tied ? `=${e.rank}` : e.rank}</span>
-        <span className="sr-only">{t(e.tied ? "tiedRank" : "rank", { rank: e.rank })}</span>
+        <span className="sr-only">
+          {t(e.tied ? "tiedRank" : "rank", { rank: e.rank })}
+        </span>
       </span>
       <span className="relative size-5">
         <TeamCrest src={e.crest} name={e.club} sizes="20px" />
       </span>
       <span className="min-w-0 truncate text-sm">
-        <span className={cn("font-semibold", e.isLiverpool ? "text-white" : "text-white/90")}>{e.surname}</span>
+        <span
+          className={cn(
+            "font-semibold",
+            e.isLiverpool ? "text-white" : "text-white/90",
+          )}
+        >
+          {e.surname}
+        </span>
         {e.club && <span className="text-stadium-muted"> · {e.club}</span>}
       </span>
-      <span className={cn("font-bebas text-2xl leading-none tabular-nums", e.isLiverpool ? "text-brand" : "text-white")}>
+      <span
+        className={cn(
+          "font-bebas text-2xl leading-none tabular-nums",
+          e.isLiverpool ? "text-brand" : "text-white",
+        )}
+      >
         {e.value}
         <span className="sr-only"> {unit}</span>
       </span>
       {/* Bar under the name, as wide as its share of the leader's figure. */}
       <span aria-hidden className="col-span-2 col-start-3 h-1.5 bg-white/10">
         <span
-          className={cn("block h-full", e.isLiverpool ? "bg-lfc-red" : "bg-white/40")}
+          className={cn(
+            "block h-full",
+            e.isLiverpool ? "bg-lfc-red" : "bg-white/40",
+          )}
           style={{ width: `${(e.value / max) * 100}%` }}
         />
       </span>
@@ -100,7 +144,10 @@ export function Leaderboard({ entries, unit, label }: { entries: LeaderEntry[]; 
     <ol aria-label={label} className="divide-y divide-[var(--line)]">
       {top.map(row)}
       {rest.length > 0 && (
-        <li aria-hidden className="border-t border-dashed border-white/20 px-4 py-1 text-center text-xs leading-none text-stadium-muted">
+        <li
+          aria-hidden
+          className="border-t border-dashed border-white/20 px-4 py-1 text-center text-xs leading-none text-stadium-muted"
+        >
           ···
         </li>
       )}

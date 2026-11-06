@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { cache } from "react";
 import { User } from "lucide-react";
-import { scrapeArticle, getArticleContentFromDB, getArticleByUrl, getArticleEngagement, isArticleStored } from "@/lib/news";
+import {
+  scrapeArticle,
+  getArticleContentFromDB,
+  getArticleByUrl,
+  getArticleEngagement,
+  isArticleStored,
+} from "@/lib/news";
 import { fetchOgMeta } from "@/lib/news/enrichers/og-meta";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { getHreflangAlternates } from "@/lib/seo";
@@ -19,7 +25,11 @@ import {
   SOURCE_CONFIG,
   type NewsSource,
 } from "@/lib/news-config";
-import { detectSource as detectArticleSource, isLinkOutOnlyUrl, VI_SOURCES } from "@/lib/news/source-detect";
+import {
+  detectSource as detectArticleSource,
+  isLinkOutOnlyUrl,
+  VI_SOURCES,
+} from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { BRAND } from "@/lib/brand";
@@ -29,13 +39,26 @@ import { ArticleSidebar } from "@/components/news/article-sidebar";
 import { ArticleNextMatch } from "@/components/news/article-end-sections";
 import { ArticleActions } from "@/components/news/article-actions";
 import { ArticleTitle } from "@/components/news/article-header";
-import { ArticleExcerpt, NewsBackLink, OriginalLinkButton, SourceBadge } from "@/components/news/article-parts";
+import {
+  ArticleExcerpt,
+  NewsBackLink,
+  OriginalLinkButton,
+  SourceBadge,
+} from "@/components/news/article-parts";
 import { ArticleHtmlBody } from "@/components/news/article-html-body";
 import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
-import { assessReadability, cleanSnippet, cleanTitle, filterJunk, imageKey, isHttpUrl, pickTitle } from "@/components/news/news-text";
+import {
+  assessReadability,
+  cleanSnippet,
+  cleanTitle,
+  filterJunk,
+  imageKey,
+  isHttpUrl,
+  pickTitle,
+} from "@/components/news/news-text";
 
 // 1 hour. The excerpt itself never changes, so this could be far longer — but
 // the page now renders the like count, and revalidateTag refreshes the data
@@ -95,9 +118,28 @@ function publishedInstant(dateStr: string): string | null {
 
 // Improved keyword-based related articles with stopwords + diversity
 const STOP_WORDS = new Set([
-  "liverpool", "city", "club", "says", "news", "will", "that",
-  "this", "from", "have", "been", "with", "they", "their", "about",
-  "after", "could", "would", "make", "made", "premier", "league",
+  "liverpool",
+  "city",
+  "club",
+  "says",
+  "news",
+  "will",
+  "that",
+  "this",
+  "from",
+  "have",
+  "been",
+  "with",
+  "they",
+  "their",
+  "about",
+  "after",
+  "could",
+  "would",
+  "make",
+  "made",
+  "premier",
+  "league",
 ]);
 
 function getRelatedArticles(
@@ -116,24 +158,36 @@ function getRelatedArticles(
   });
 
   const currentWords = new Set(
-    currentTitle.toLowerCase().split(/\s+/)
+    currentTitle
+      .toLowerCase()
+      .split(/\s+/)
       .filter((w) => w.length > 3 && !STOP_WORDS.has(w)),
   );
-  return sameLangArticles
-    .filter((a) => a.link !== currentUrl)
-    // A card showing the same picture as this article is the same story syndicated elsewhere.
-    .filter((a) => !avoidImage || imageKey(a.thumbnail ?? a.heroImage) !== avoidImage)
-    .map((a) => {
-      const words = a.title.toLowerCase().split(/\s+/)
-        .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
-      const overlap = words.filter((w) => currentWords.has(w)).length;
-      // Promote source diversity
-      const sourcePenalty = a.source === currentSource ? -0.3 : 0;
-      return { article: a, score: overlap + sourcePenalty };
-    })
-    .sort((a, b) => b.score - a.score)
-    .slice(0, count)
-    .map((r) => r.article);
+  return (
+    sameLangArticles
+      .filter((a) => a.link !== currentUrl)
+      // A card showing the same picture as this article is the same story syndicated elsewhere.
+      .filter(
+        (a) =>
+          !avoidImage || imageKey(a.thumbnail ?? a.heroImage) !== avoidImage,
+      )
+      .map((a) => {
+        const words = a.title
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
+        const overlap = words.reduce(
+          (acc, w) => (currentWords.has(w) ? acc + 1 : acc),
+          0,
+        );
+        // Promote source diversity
+        const sourcePenalty = a.source === currentSource ? -0.3 : 0;
+        return { article: a, score: overlap + sourcePenalty };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, count)
+      .map((r) => r.article)
+  );
 }
 
 type Params = Promise<{ slug: string[]; locale: string }>;
@@ -147,20 +201,31 @@ export async function generateMetadata({
   const url = decodeArticleSlug(slug);
   // Unresolvable article pages still answer 200 (the status is sent before the
   // page body streams), so keep them out of the index explicitly.
-  if (!url || !isKnownNewsSourceUrl(url)) return { title: "Article Not Found", robots: { index: false } };
+  if (!url || !isKnownNewsSourceUrl(url))
+    return { title: "Article Not Found", robots: { index: false } };
 
-  const content = await getArticleContentFromDB(url) ?? await scrapeIfStored(url);
+  const content =
+    (await getArticleContentFromDB(url)) ?? (await scrapeIfStored(url));
   if (!content) {
     // Source blocked us, or the row expired: the page shows a headline with a "read original" link.
     const listing = await getArticleByUrl(url);
-    const title = listing ? cleanTitle(listing.title) : (await getExpiredArticleMeta(url))?.title;
+    const title = listing
+      ? cleanTitle(listing.title)
+      : (await getExpiredArticleMeta(url))?.title;
     return { title: title || "Article Not Found", robots: { index: false } };
   }
 
   const listing = await getArticleByUrl(url);
-  const title = pickTitle(content.title, listing?.title, detectArticleSource(url).name);
-  const description = content.description || content.paragraphs[0]?.slice(0, 160) || "";
-  const images = content.heroImage ? [{ url: content.heroImage, width: 1200, height: 630 }] : [];
+  const title = pickTitle(
+    content.title,
+    listing?.title,
+    detectArticleSource(url).name,
+  );
+  const description =
+    content.description || content.paragraphs[0]?.slice(0, 160) || "";
+  const images = content.heroImage
+    ? [{ url: content.heroImage, width: 1200, height: 630 }]
+    : [];
 
   const articlePath = `/news/${slug.join("/")}`;
   return {
@@ -188,11 +253,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ArticlePage({
-  params,
-}: {
-  params: Params;
-}) {
+export default async function ArticlePage({ params }: { params: Params }) {
   const { slug, locale } = await params;
   setRequestLocale(locale);
   const uiLocale = locale === "vi" ? "vi" : "en";
@@ -201,31 +262,39 @@ export default async function ArticlePage({
   if (!url || !isKnownNewsSourceUrl(url)) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
-  const [content, allArticles, fixtures, engagement, t, tNews] = await Promise.all([
-    dbContent ? Promise.resolve(dbContent) : scrapeIfStored(url),
-    // Shared across every article page instead of a 100-row query per render.
-    getCachedNewsFeed(100),
-    // Only used to name the next match. Shared, or every article page spends its
-    // own Football-Data request (10/min on the free tier).
-    getCachedFixtures(),
-    // One shared snapshot covers every article, so this is ~2 queries per TTL
-    // for the whole site rather than two per page view. See lib/news/engagement.
-    getArticleEngagement(url),
-    getTranslations("News.article"),
-    getTranslations("News"),
-  ]);
+  const [content, allArticles, fixtures, engagement, t, tNews] =
+    await Promise.all([
+      dbContent ? Promise.resolve(dbContent) : scrapeIfStored(url),
+      // Shared across every article page instead of a 100-row query per render.
+      getCachedNewsFeed(100),
+      // Only used to name the next match. Shared, or every article page spends its
+      // own Football-Data request (10/min on the free tier).
+      getCachedFixtures(),
+      // One shared snapshot covers every article, so this is ~2 queries per TTL
+      // for the whole site rather than two per page view. See lib/news/engagement.
+      getArticleEngagement(url),
+      getTranslations("News.article"),
+      getTranslations("News"),
+    ]);
 
   const nextMatch: Fixture | null =
     [...fixtures]
       .filter((f) => f.fixture.status.short === "NS")
-      .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ?? null;
+      .sort(
+        (a, b) =>
+          new Date(a.fixture.date).getTime() -
+          new Date(b.fixture.date).getTime(),
+      )[0] ?? null;
 
   // isKnownNewsSourceUrl above and detectSource share one host table, so this is never "unknown".
   const source = detectArticleSource(url).id as NewsSource;
   const sourceCfg = SOURCE_CONFIG[source];
   // The newest-100 list misses older articles; look the single row up so a blocked
   // source still shows its real headline, summary and picture.
-  const listed = allArticles.find((a) => a.link === url) ?? (await getArticleByUrl(url)) ?? undefined;
+  const listed =
+    allArticles.find((a) => a.link === url) ??
+    (await getArticleByUrl(url)) ??
+    undefined;
   // The table label wins: older stored rows carry the raw host ("www.espn.com") as sourceName.
   const sourceName = sourceCfg?.label || content?.sourceName || "";
 
@@ -236,18 +305,31 @@ export default async function ArticlePage({
       <ArticleLinkOut
         url={url}
         title={listed ? cleanTitle(listed.title) : expired?.title}
-        lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : expired?.lead}
+        lead={
+          listed
+            ? (cleanSnippet(listed.contentSnippet, listed.title) ?? undefined)
+            : expired?.lead
+        }
         heroImage={listed?.thumbnail ?? listed?.heroImage ?? expired?.heroImage}
         sourceName={sourceName}
-        related={getRelatedArticles(url, listed?.title ?? expired?.title ?? "", allArticles, source)}
+        related={getRelatedArticles(
+          url,
+          listed?.title ?? expired?.title ?? "",
+          allArticles,
+          source,
+        )}
       />
     );
   }
 
   const title = pickTitle(content.title, listed?.title, sourceCfg?.label);
-  const description = content.description ? cleanSnippet(content.description) ?? undefined : undefined;
+  const description = content.description
+    ? (cleanSnippet(content.description) ?? undefined)
+    : undefined;
   const paragraphs = filterJunk(content.paragraphs);
-  const hasVideo = !!content.videoUrl || !!content.htmlContent?.includes("article-video-player");
+  const hasVideo =
+    !!content.videoUrl ||
+    !!content.htmlContent?.includes("article-video-player");
   const readability = isLinkOutOnlyUrl(url)
     ? "linkout"
     : assessReadability({
@@ -265,20 +347,36 @@ export default async function ArticlePage({
         lead={description ?? (paragraphs[0] || undefined)}
         heroImage={content.heroImage ?? listed?.thumbnail}
         sourceName={sourceName}
-        related={getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage))}
+        related={getRelatedArticles(
+          url,
+          title,
+          allArticles,
+          source,
+          4,
+          imageKey(content.heroImage),
+        )}
       />
     );
   }
 
   const isEnglishArticle = !VI_SOURCES.has(source);
   // One short list of four headlines, no pictures.
-  const related = getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage));
+  const related = getRelatedArticles(
+    url,
+    title,
+    allArticles,
+    source,
+    4,
+    imageKey(content.heroImage),
+  );
   // Older stored extractions have no date of their own; the feed row usually does.
   const shownAt = content.publishedAt || listed?.pubDate;
   const published = shownAt ? publishedInstant(shownAt) : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
   const canonicalPath = `/news/${slug.join("/")}`;
-  const heroImage = isHttpUrl(content.heroImage) ? content.heroImage : undefined;
+  const heroImage = isHttpUrl(content.heroImage)
+    ? content.heroImage
+    : undefined;
   // Only ever render (or hand to translation) the same short excerpt a Google
   // News preview would show: a full reproduction of someone else's article is
   // itself an unlicensed derivative work, on top of reproducing the original text.
@@ -290,7 +388,8 @@ export default async function ArticlePage({
   // sub-headings, lists, embedded video — and the paragraph array is the
   // fallback for articles the extractor could only read as plain text.
   const body = bodyChars >= 120 ? paragraphs : description ? [description] : [];
-  const byline = content.author && !/^https?:/i.test(content.author) ? content.author : null;
+  const byline =
+    content.author && !/^https?:/i.test(content.author) ? content.author : null;
   const ctaHint = readability === "thin" ? t("thinContentMsg") : undefined;
 
   return (
@@ -299,10 +398,12 @@ export default async function ArticlePage({
       {/* Breadcrumb only. This page is another publisher's story shown as an
           excerpt; NewsArticle markup here named this site as its publisher,
           which is the one claim the excerpt-only stance exists to avoid. */}
-      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [
-        { name: tNews("title"), path: "/news" },
-        { name: title, path: canonicalPath },
-      ])} />
+      <JsonLd
+        data={await buildLocalizedBreadcrumbJsonLd(locale, [
+          { name: tNews("title"), path: "/news" },
+          { name: title, path: canonicalPath },
+        ])}
+      />
 
       <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
         <NewsBackLink label={t("backToNews")} />
@@ -314,7 +415,11 @@ export default async function ArticlePage({
                 <SourceBadge name={sourceName} />
                 {published && (
                   <time dateTime={published}>
-                    <LocalPublishedTime iso={published} locale={uiLocale} zoneLabel={t("viewerTime")} />
+                    <LocalPublishedTime
+                      iso={published}
+                      locale={uiLocale}
+                      zoneLabel={t("viewerTime")}
+                    />
                   </time>
                 )}
                 {byline && (
@@ -334,7 +439,12 @@ export default async function ArticlePage({
               {t.rich("sourcedFrom", {
                 sourceName,
                 source: (chunks) => (
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline underline-offset-2 hover:text-white">
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-brand underline underline-offset-2 hover:text-white"
+                  >
                     {chunks}
                   </a>
                 ),
@@ -353,7 +463,11 @@ export default async function ArticlePage({
               body.length > 0 && (
                 <div className="mt-5 max-w-[42rem]">
                   {isEnglishArticle ? (
-                    <TranslatableExcerpt articleUrl={url} paragraphs={body} label={t("excerptLabel")} />
+                    <TranslatableExcerpt
+                      articleUrl={url}
+                      paragraphs={body}
+                      label={t("excerptLabel")}
+                    />
                   ) : (
                     <section>
                       <div id="article-body">
@@ -366,7 +480,11 @@ export default async function ArticlePage({
             )}
 
             <div className="mt-5 max-w-[42rem]">
-              <OriginalLinkButton url={url} label={t("readOriginalOn", { source: sourceName })} hint={ctaHint} />
+              <OriginalLinkButton
+                url={url}
+                label={t("readOriginalOn", { source: sourceName })}
+                hint={ctaHint}
+              />
             </div>
 
             {/* After the excerpt and the button on purpose: the picture must not push them below the fold. */}
@@ -401,15 +519,24 @@ export default async function ArticlePage({
             </div>
 
             <RelatedArticles articles={related} />
-            <CommentSection articleUrl={url} initialCommentCount={engagement.comments} />
+            <CommentSection
+              articleUrl={url}
+              initialCommentCount={engagement.comments}
+            />
           </div>
 
           <aside className="hidden lg:block">
-            <ArticleSidebar sourceName={sourceName} sourceUrl={content.sourceUrl || url} nextMatch={nextMatch} />
+            <ArticleSidebar
+              sourceName={sourceName}
+              sourceUrl={content.sourceUrl || url}
+              nextMatch={nextMatch}
+            />
           </aside>
         </div>
 
-        {nextMatch && <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />}
+        {nextMatch && (
+          <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />
+        )}
       </div>
     </article>
   );

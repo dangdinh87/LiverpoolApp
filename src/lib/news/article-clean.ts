@@ -36,9 +36,11 @@ const PROMO_MARKER =
   /\b(affiliate links?|commission on any sales|t&cs apply|begambleaware|gamble responsibly|gambling can be addictive)\b/i;
 
 /** Any of these inside an element means it is a wrapper, not a single line of text. */
-const BLOCKS = "p, div, ul, ol, li, figure, table, section, article, blockquote, h1, h2, h3, h4, h5, h6, header, main";
+const BLOCKS =
+  "p, div, ul, ol, li, figure, table, section, article, blockquote, h1, h2, h3, h4, h5, h6, header, main";
 /** What is left of a share bar once its icons and links are gone ("Email", "WhatsApp"). */
-const SOCIAL_LABEL = /^(facebook|twitter|x|email|e-mail|whatsapp|linkedin|telegram|reddit|pinterest|messenger|copy link|share|print|comments?)$/i;
+const SOCIAL_LABEL =
+  /^(facebook|twitter|x|email|e-mail|whatsapp|linkedin|telegram|reddit|pinterest|messenger|copy link|share|print|comments?)$/i;
 const MEDIA = "img, video, iframe, source, .article-video-player";
 const EMPTY_CANDIDATES =
   "p, div, span, li, ul, ol, a, figure, figcaption, section, blockquote, strong, em, b, i, u, h2, h3, h4, h5, h6, table, thead, tbody, tr, td, th, picture";
@@ -95,7 +97,13 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
   const root = $.root() as $Any;
   const removedText: string[] = [];
   const keysOfImages = () =>
-    new Set(root.find("img").toArray().map((el) => imageKey($(el).attr("src") || $(el).attr("data-src"))).filter(Boolean));
+    new Set(
+      root
+        .find("img")
+        .toArray()
+        .map((el) => imageKey($(el).attr("src") || $(el).attr("data-src")))
+        .filter(Boolean),
+    );
   const keysBefore = keysOfImages();
   const drop = ($el: $Any) => {
     const text = squash($el.text());
@@ -116,7 +124,8 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
   });
   root.find("[class]").each((_, el) => {
     const $el = $(el);
-    if (FURNITURE_CLASS.test($el.attr("class") ?? "") && !hasProse($, $el)) drop($el);
+    if (FURNITURE_CLASS.test($el.attr("class") ?? "") && !hasProse($, $el))
+      drop($el);
   });
   root.find(SHARE_LINK).remove();
 
@@ -124,16 +133,33 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
   // The rail is the widest ancestor holding 2+ such pictures and no prose of its own.
   const isTeaserImg = (img: AnyNode) => {
     const href = $(img).closest("a").attr("href") ?? "";
-    return !!href && !href.startsWith("#") && !/\.(?:jpe?g|png|webp|gif|avif)(?:\?|$)/i.test(href);
+    return (
+      !!href &&
+      !href.startsWith("#") &&
+      !/\.(?:jpe?g|png|webp|gif|avif)(?:\?|$)/i.test(href)
+    );
   };
   root.find("a img").each((_, img) => {
     // Skip pictures that went away with a rail removed earlier in this loop.
     if (!isTeaserImg(img) || !$.contains($.root()[0], img)) return;
     let rail: $Any | null = null;
-    for (let up = $(img).parent() as $Any; up.length && !up.is("body"); up = up.parent() as $Any) {
-      const hasOwnProse = up.find("p").toArray().some((p) => squash($(p).text()).length >= 80);
+    for (
+      let up = $(img).parent() as $Any;
+      up.length && !up.is("body");
+      up = up.parent() as $Any
+    ) {
+      const hasOwnProse = up
+        .find("p")
+        .toArray()
+        .some((p) => squash($(p).text()).length >= 80);
       if (hasOwnProse) break;
-      if (up.find("a img").toArray().filter(isTeaserImg).length >= 2) rail = up;
+      if (
+        up
+          .find("a img")
+          .toArray()
+          .reduce((acc, img) => (isTeaserImg(img) ? acc + 1 : acc), 0) >= 2
+      )
+        rail = up;
     }
     if (rail) drop(rail);
   });
@@ -146,11 +172,20 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
     if (!PROMO_MARKER.test(squash($el.text()))) return;
     let target: $Any = $el;
     let targetLen = squash($el.text()).length;
-    for (let parent = $el.parent() as $Any; parent.length && !parent.is("body"); parent = parent.parent() as $Any) {
+    for (
+      let parent = $el.parent() as $Any;
+      parent.length && !parent.is("body");
+      parent = parent.parent() as $Any
+    ) {
       const parentLen = squash(parent.text()).length;
       if (parentLen > 700 || parentLen - targetLen > 400) break;
       // A full-length paragraph next to the marker means this wrapper is the article, not a card.
-      const holdsProse = parent.find("p").toArray().some((p) => !$.contains(target[0], p) && squash($(p).text()).length >= 180);
+      const holdsProse = parent
+        .find("p")
+        .toArray()
+        .some(
+          (p) => !$.contains(target[0], p) && squash($(p).text()).length >= 180,
+        );
       if (holdsProse) break;
       target = parent;
       targetLen = parentLen;
@@ -172,11 +207,23 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
         return;
       }
       // Inline pieces of a sentence are never judged on their own.
-      if ($el.is("span, a") && $el.parent().is("p, li, h1, h2, h3, h4, h5, h6, a, span, td, th, figcaption, strong, em, b, i")) return;
+      if (
+        $el.is("span, a") &&
+        $el
+          .parent()
+          .is(
+            "p, li, h1, h2, h3, h4, h5, h6, a, span, td, th, figcaption, strong, em, b, i",
+          )
+      )
+        return;
       // Short fragments are only junk as whole paragraphs ("Sport", "Share"); a one-word <h2> is a sub-heading.
-      const junkLine = ($el.is("p") || text.length >= 12) && isJunkParagraph(text);
+      const junkLine =
+        ($el.is("p") || text.length >= 12) && isJunkParagraph(text);
       const linkList =
-        $el.is("p, li") && text.length >= 20 && linkShare($, $el) >= 0.95 && ($el.find("a").length >= 2 || text.length <= 140);
+        $el.is("p, li") &&
+        text.length >= 20 &&
+        linkShare($, $el) >= 0.95 &&
+        ($el.find("a").length >= 2 || text.length <= 140);
       if (junkLine || linkList) drop($el);
     });
   }
@@ -219,7 +266,8 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
   });
   // A figure left with only its caption is not a figure.
   root.find("figure").each((_, el) => {
-    if ($(el).find(MEDIA).length === 0 && $(el).find("blockquote").length === 0) $(el).remove();
+    if ($(el).find(MEDIA).length === 0 && $(el).find("blockquote").length === 0)
+      $(el).remove();
   });
 
   // Empty shells (zero-width spacers, wrappers whose content was removed), until stable.
@@ -238,16 +286,25 @@ function cleanArticle(html: string, opts: CleanOptions = {}): CleanResult {
   }
 
   const keysAfter = keysOfImages();
-  const droppedImageKeys = new Set([...keysBefore].filter((k) => !keysAfter.has(k)));
+  const droppedImageKeys = new Set(
+    [...keysBefore].filter((k) => !keysAfter.has(k)),
+  );
   return { html: ($.html() ?? "").trim(), removedText, droppedImageKeys };
 }
 
-export function cleanArticleHtml(html: string, opts: CleanOptions = {}): string {
+export function cleanArticleHtml(
+  html: string,
+  opts: CleanOptions = {},
+): string {
   return cleanArticle(html, opts).html;
 }
 
 /** Photos for the plain-text body: no furniture, no hero repeat, no duplicates, capped. */
-export function cleanImageList(images: string[] | undefined, heroImage?: string, max = MAX_BODY_IMAGES): string[] {
+export function cleanImageList(
+  images: string[] | undefined,
+  heroImage?: string,
+  max = MAX_BODY_IMAGES,
+): string[] {
   const seen = new Set<string>(heroImage ? [imageKey(heroImage)] : []);
   const out: string[] = [];
   for (const src of images ?? []) {
@@ -265,8 +322,14 @@ export function cleanImageList(images: string[] | undefined, heroImage?: string,
  * filtering would leave nothing (thin sources only have a description stand-in).
  */
 export function cleanArticleContent(content: ArticleContent): ArticleContent {
-  const cleaned = content.htmlContent ? cleanArticle(content.htmlContent, { heroImage: content.heroImage }) : undefined;
-  const norm = (t: string) => t.replace(/[^\p{L}\p{N}]+/gu, " ").trim().toLowerCase();
+  const cleaned = content.htmlContent
+    ? cleanArticle(content.htmlContent, { heroImage: content.heroImage })
+    : undefined;
+  const norm = (t: string) =>
+    t
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim()
+      .toLowerCase();
   const removed = (cleaned?.removedText ?? []).map(norm);
   const paragraphs = content.paragraphs.filter((p) => {
     if (isJunkParagraph(p)) return false;
@@ -278,6 +341,8 @@ export function cleanArticleContent(content: ArticleContent): ArticleContent {
     htmlContent: cleaned?.html || undefined,
     paragraphs: paragraphs.length > 0 ? paragraphs : content.paragraphs,
     // A photo the cleaner took out of the HTML (teaser rail, promo card) must not come back via the list.
-    images: cleanImageList(content.images, content.heroImage).filter((src) => !cleaned?.droppedImageKeys.has(imageKey(src))),
+    images: cleanImageList(content.images, content.heroImage).filter(
+      (src) => !cleaned?.droppedImageKeys.has(imageKey(src)),
+    ),
   };
 }
