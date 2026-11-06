@@ -1,16 +1,40 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Loader2, Newspaper, Search, SearchX, SlidersHorizontal, X } from "lucide-react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import {
+  Loader2,
+  Newspaper,
+  Search,
+  SearchX,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { NewsArticle } from "@/lib/news/types";
-import { SOURCE_CONFIG, type ArticleCategory, type NewsSource } from "@/lib/news-config";
+import {
+  SOURCE_CONFIG,
+  type ArticleCategory,
+  type NewsSource,
+} from "@/lib/news-config";
 import { useUrlSearchParam } from "@/hooks/use-url-search-param";
 import { getReadArticles } from "@/lib/news/read-history";
 import { useNewsBaseline, watchNewsVisit } from "@/lib/news/last-visit";
 import { loadMoreNews } from "@/app/actions/news";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Sheet, SheetClose, SheetContent, SheetFooter, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetFooter,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { NewsCardSkeleton } from "./news-card";
 import { NewSinceDivider } from "./new-since";
 import { StoryCard } from "./story-card";
@@ -42,7 +66,8 @@ const CATEGORIES: { value: CategoryFilter; labelKey: string }[] = [
 ];
 
 /** A story is new when its newest article came out after the previous visit. */
-const isNewSince = (story: { lead: NewsArticle }, since: number) => new Date(story.lead.pubDate).getTime() > since;
+const isNewSince = (story: { lead: NewsArticle }, since: number) =>
+  new Date(story.lead.pubDate).getTime() > since;
 
 const categoryChip = (active: boolean) =>
   `inline-flex min-h-11 cursor-pointer items-center border px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors ${
@@ -59,7 +84,12 @@ interface NewsFeedProps {
   nowMs: number;
 }
 
-export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsFeedProps) {
+export function NewsFeed({
+  localArticles,
+  globalArticles,
+  locale,
+  nowMs,
+}: NewsFeedProps) {
   const t = useTranslations("News.feed");
   const [lang, setLang] = useState<LangFilter>(locale === "en" ? "en" : "vi");
   const [category, setCategory] = useState<CategoryFilter>("all");
@@ -68,9 +98,14 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
   // rendered per request in one region. Every article is in the static HTML
   // already; the parameter only chooses which of them to show.
   const urlSource = useUrlSearchParam("source");
-  const [pickedSource, setPickedSource] = useState<"all" | NewsSource | null>(null);
+  const [pickedSource, setPickedSource] = useState<"all" | NewsSource | null>(
+    null,
+  );
   const source: "all" | NewsSource =
-    pickedSource ?? (urlSource && Object.hasOwn(SOURCE_CONFIG, urlSource) ? (urlSource as NewsSource) : "all");
+    pickedSource ??
+    (urlSource && Object.hasOwn(SOURCE_CONFIG, urlSource)
+      ? (urlSource as NewsSource)
+      : "all");
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -100,10 +135,15 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
     const seen = new Set<string>();
     return [...localArticles, ...globalArticles, ...extra]
       .filter((a) => (seen.has(a.link) ? false : (seen.add(a.link), true)))
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+      .sort(
+        (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime(),
+      );
   }, [localArticles, globalArticles, extra]);
 
-  const byLang = useMemo(() => (lang === "all" ? loaded : loaded.filter((a) => a.language === lang)), [loaded, lang]);
+  const byLang = useMemo(
+    () => (lang === "all" ? loaded : loaded.filter((a) => a.language === lang)),
+    [loaded, lang],
+  );
 
   /**
    * Only the languages actually present, the same way `availableSources` works
@@ -120,7 +160,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
 
   const availableSources = useMemo(() => {
     const present = new Set(byLang.map((a) => a.source));
-    return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter((s) => present.has(s));
+    return (Object.keys(SOURCE_CONFIG) as NewsSource[]).filter((s) =>
+      present.has(s),
+    );
   }, [byLang]);
 
   const articles = useMemo(() => {
@@ -129,14 +171,18 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
       if (source !== "all" && a.source !== source) return false;
       if (category !== "all" && a.category !== category) return false;
       if (!q) return true;
-      return cleanTitle(a.title).toLowerCase().includes(q) || a.contentSnippet?.toLowerCase().includes(q);
+      return (
+        cleanTitle(a.title).toLowerCase().includes(q) ||
+        a.contentSnippet?.toLowerCase().includes(q)
+      );
     });
   }, [byLang, source, category, search]);
 
   // Same story from several outlets -> one card (paging counts cards, not articles).
   const stories = useMemo(() => clusterStories(articles), [articles]);
 
-  const sheetFilters = (category !== "all" ? 1 : 0) + (source !== "all" ? 1 : 0);
+  const sheetFilters =
+    (category !== "all" ? 1 : 0) + (source !== "all" ? 1 : 0);
   const filtersActive = sheetFilters > 0 || search.trim() !== "";
   const shown = stories.slice(0, visible);
   const hasMore = visible < stories.length || serverHasMore;
@@ -168,10 +214,18 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
       return;
     }
     const requestLanguage = lang === "all" ? undefined : lang;
-    const offset = loaded.filter((a) => !requestLanguage || a.language === requestLanguage).length;
+    const offset = loaded.reduce(
+      (acc, a) =>
+        !requestLanguage || a.language === requestLanguage ? acc + 1 : acc,
+      0,
+    );
     startTransition(async () => {
       try {
-        const { articles: more, hasMore: stillMore } = await loadMoreNews(offset, SERVER_PAGE_SIZE, requestLanguage);
+        const { articles: more, hasMore: stillMore } = await loadMoreNews(
+          offset,
+          SERVER_PAGE_SIZE,
+          requestLanguage,
+        );
         setExtra((prev) => [...prev, ...more]);
         setServerHasMore(stillMore);
         setVisible((v) => v + PAGE_SIZE);
@@ -182,7 +236,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
   }
 
   const activeNames = [
-    category !== "all" ? t(CATEGORIES.find((c) => c.value === category)?.labelKey ?? "catAll") : null,
+    category !== "all"
+      ? t(CATEGORIES.find((c) => c.value === category)?.labelKey ?? "catAll")
+      : null,
     source !== "all" ? SOURCE_CONFIG[source].label : null,
   ].filter(Boolean);
 
@@ -211,7 +267,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                       resetPaging();
                     }}
                     className={`min-h-11 flex-auto cursor-pointer whitespace-nowrap px-2 font-inter text-[13px] font-semibold transition-colors sm:text-sm ${
-                      active ? "bg-lfc-red text-white" : "text-stadium-muted hover:text-white"
+                      active
+                        ? "bg-lfc-red text-white"
+                        : "text-stadium-muted hover:text-white"
                     } ${value !== "all" ? "border-l border-[var(--line-strong)]" : ""}`}
                   >
                     {t(labelKey)}
@@ -250,7 +308,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                 className="max-h-[88dvh] gap-0 border-[var(--line-strong)] bg-[var(--surface-1)] p-0 sm:inset-x-auto sm:left-1/2 sm:w-full sm:max-w-lg sm:-translate-x-1/2"
               >
                 <div className="flex items-center justify-between gap-3 pl-4 pr-1 pt-3">
-                  <p className="font-bebas text-3xl leading-none text-white">{t("filtersTitle")}</p>
+                  <p className="font-bebas text-3xl leading-none text-white">
+                    {t("filtersTitle")}
+                  </p>
                   <SheetClose asChild>
                     <button
                       type="button"
@@ -263,8 +323,14 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                 </div>
                 <div className="space-y-6 overflow-y-auto px-4 pb-6 pt-4">
                   <div>
-                    <p className="section-label mb-3 text-stadium-muted">{t("categoryLabel")}</p>
-                    <div role="group" aria-label={t("categoryLabel")} className="flex flex-wrap gap-2">
+                    <p className="section-label mb-3 text-stadium-muted">
+                      {t("categoryLabel")}
+                    </p>
+                    <div
+                      role="group"
+                      aria-label={t("categoryLabel")}
+                      className="flex flex-wrap gap-2"
+                    >
                       {CATEGORIES.map(({ value, labelKey }) => (
                         <button
                           key={value}
@@ -284,7 +350,10 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
 
                   {availableSources.length > 1 && (
                     <div>
-                      <label htmlFor="news-source" className="section-label mb-3 block text-stadium-muted">
+                      <label
+                        htmlFor="news-source"
+                        className="section-label mb-3 block text-stadium-muted"
+                      >
                         {t("newsSourceLabel")}
                       </label>
                       <select
@@ -385,7 +454,11 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
         {/* Count + reset, announced politely when filters change the list */}
         <div
           aria-live="polite"
-          className={filtersActive ? "flex min-h-11 items-center justify-between gap-3 text-sm text-stadium-muted" : "sr-only"}
+          className={
+            filtersActive
+              ? "flex min-h-11 items-center justify-between gap-3 text-sm text-stadium-muted"
+              : "sr-only"
+          }
         >
           {filtersActive ? (
             <>
@@ -417,8 +490,12 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
         ) : articles.length === 0 ? (
           <div className="surface flex flex-col items-center px-6 py-12 text-center sm:py-16">
             <SearchX className="mb-4 size-10 text-stadium-muted" aria-hidden />
-            <p className="font-bebas text-2xl text-white sm:text-3xl">{t("noArticles")}</p>
-            <p className="mt-2 max-w-md text-sm text-stadium-muted">{t("noArticlesDesc")}</p>
+            <p className="font-bebas text-2xl text-white sm:text-3xl">
+              {t("noArticles")}
+            </p>
+            <p className="mt-2 max-w-md text-sm text-stadium-muted">
+              {t("noArticlesDesc")}
+            </p>
             {filtersActive && (
               <button
                 type="button"
@@ -435,10 +512,15 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
             <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
               {shown.map((story, i) => (
                 <Fragment key={story.lead.link}>
-                  {lastVisit !== null && i > 0 && isNewSince(shown[i - 1], lastVisit) && !isNewSince(story, lastVisit) && (
-                    <NewSinceDivider baseline={lastVisit} locale={locale} />
-                  )}
-                  <div className={i === 0 ? "min-w-0 lg:col-span-2" : "min-w-0"}>
+                  {lastVisit !== null &&
+                    i > 0 &&
+                    isNewSince(shown[i - 1], lastVisit) &&
+                    !isNewSince(story, lastVisit) && (
+                      <NewSinceDivider baseline={lastVisit} locale={locale} />
+                    )}
+                  <div
+                    className={i === 0 ? "min-w-0 lg:col-span-2" : "min-w-0"}
+                  >
                     <StoryCard
                       lead={story.lead}
                       related={story.related}
@@ -450,11 +532,17 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                   </div>
                 </Fragment>
               ))}
-              {pending && Array.from({ length: 6 }, (_, i) => <NewsCardSkeleton key={`sk-${i}`} />)}
+              {pending &&
+                Array.from({ length: 6 }, (_, i) => (
+                  <NewsCardSkeleton key={`sk-${i}`} />
+                ))}
             </div>
 
             {loadFailed && (
-              <p role="alert" className="text-center text-sm text-stadium-muted">
+              <p
+                role="alert"
+                className="text-center text-sm text-stadium-muted"
+              >
                 {t("loadMoreError")}
               </p>
             )}
@@ -467,7 +555,9 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                   disabled={pending}
                   className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 border border-[var(--line-strong)] px-8 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/50 disabled:opacity-60 sm:w-auto"
                 >
-                  {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+                  {pending ? (
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                  ) : null}
                   {pending ? t("loading") : t("loadMore")}
                 </button>
               </div>

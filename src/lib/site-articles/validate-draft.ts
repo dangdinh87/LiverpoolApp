@@ -27,11 +27,29 @@ const STRUCTURAL_NUMBERS = new Set([0, 1, 2, 45, 90, 100]);
  * it did not watch the match, and nobody gave it a quote.
  */
 const UNSUPPORTABLE = [
-  { pattern: /\batmosphere\b|\bcrowd\b|\broar|\bdeafening\b|\belectric\b|\bbầu không khí\b|\bcổ động viên gào\b/i, why: "describes the atmosphere" },
-  { pattern: /\bsaid\b|\btold\b|\bspoke\b|\binsisted\b|\bclaimed\b|\bphát biểu\b|\bchia sẻ\b|\bnói rằng\b/i, why: "reports speech" },
-  { pattern: /\bdressing room\b|\bbehind the scenes\b|\bphòng thay đồ\b/i, why: "claims inside knowledge" },
-  { pattern: /\bwill (?:surely|certainly)\b|\bis set to\b|\bexpected to sign\b|\bsắp chiêu mộ\b/i, why: "predicts transfers or outcomes" },
-  { pattern: /\bdeserved\b|\bunlucky\b|\brobbed\b|\bxứng đáng hơn\b/i, why: "passes a judgement the data cannot support" },
+  {
+    pattern:
+      /\batmosphere\b|\bcrowd\b|\broar|\bdeafening\b|\belectric\b|\bbầu không khí\b|\bcổ động viên gào\b/i,
+    why: "describes the atmosphere",
+  },
+  {
+    pattern:
+      /\bsaid\b|\btold\b|\bspoke\b|\binsisted\b|\bclaimed\b|\bphát biểu\b|\bchia sẻ\b|\bnói rằng\b/i,
+    why: "reports speech",
+  },
+  {
+    pattern: /\bdressing room\b|\bbehind the scenes\b|\bphòng thay đồ\b/i,
+    why: "claims inside knowledge",
+  },
+  {
+    pattern:
+      /\bwill (?:surely|certainly)\b|\bis set to\b|\bexpected to sign\b|\bsắp chiêu mộ\b/i,
+    why: "predicts transfers or outcomes",
+  },
+  {
+    pattern: /\bdeserved\b|\bunlucky\b|\brobbed\b|\bxứng đáng hơn\b/i,
+    why: "passes a judgement the data cannot support",
+  },
 ];
 
 /**
@@ -45,8 +63,8 @@ const UNSUPPORTABLE = [
  * position where it is least likely to be invented.
  */
 const SENTENCE_STARTERS = new Set(
+  // articles, conjunctions, prepositions
   (
-    // articles, conjunctions, prepositions
     "the a an and but or so yet for nor as at by in into of on onto to from with without " +
     "within over under above below between among against during before after since until " +
     "while when where why how what which who whom whose whether if unless although though " +
@@ -103,14 +121,22 @@ const SENTENCE_STARTERS = new Set(
 );
 
 /** Collect every number and every proper noun the facts permit. */
-function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<string> } {
+function allowedFrom(facts: ArticleFacts): {
+  numbers: Set<number>;
+  names: Set<string>;
+} {
   const numbers = new Set<number>(STRUCTURAL_NUMBERS);
   // The club this site is about, by the names its supporters use. Safe to allow
   // outright: they cannot be mistaken for another team.
   const names = new Set<string>([
-    "reds", "kop", "liverpool", "anfield", "lfc",
+    "reds",
+    "kop",
+    "liverpool",
+    "anfield",
+    "lfc",
     // The clock's zone, which the kick-off timestamp carries.
-    "utc", "gmt",
+    "utc",
+    "gmt",
   ]);
 
   const walk = (value: unknown): void => {
@@ -134,7 +160,10 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
         // spelling differs, so every spelling of them is permitted.
         for (const locale of ["en-GB", "vi-VN"]) {
           for (const part of ["long", "short"] as const) {
-            for (const options of [{ month: part }, { weekday: part }] as const) {
+            for (const options of [
+              { month: part },
+              { weekday: part },
+            ] as const) {
               names.add(
                 new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" })
                   .format(at)
@@ -162,7 +191,9 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
   walk(facts);
 
   // Totals and margins follow from the scores, so a draft may state them.
-  const scores = [...numbers].filter((n) => Number.isInteger(n) && n >= 0 && n <= 20);
+  const scores = [...numbers].filter(
+    (n) => Number.isInteger(n) && n >= 0 && n <= 20,
+  );
   for (const a of scores) {
     for (const b of scores) {
       numbers.add(a + b);
@@ -180,7 +211,11 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
  * and only from three letters up, so an invented name cannot pass by being
  * vaguely similar — "Darwin" prefixes nothing in a Liverpool team sheet.
  */
-function isKnownToken(token: string, names: Set<string>, numbers?: Set<number>): boolean {
+function isKnownToken(
+  token: string,
+  names: Set<string>,
+  numbers?: Set<number>,
+): boolean {
   if (names.has(token)) return true;
   // "57th" is the number 57 wearing a suffix; check it as one.
   const ordinal = /^(\d+)(st|nd|rd|th)$/.exec(token);
@@ -200,8 +235,8 @@ function isKnownToken(token: string, names: Set<string>, numbers?: Set<number>):
  * number, and the leading digit stopped it being read as a name.
  */
 function numbersIn(text: string): number[] {
-  return [...text.matchAll(/\b(\d+(?:[.,]\d+)?)(?:st|nd|rd|th)?\b/gi)].map((m) =>
-    Number(m[1].replace(",", ".")),
+  return [...text.matchAll(/\b(\d+(?:[.,]\d+)?)(?:st|nd|rd|th)?\b/gi)].map(
+    (m) => Number(m[1].replace(",", ".")),
   );
 }
 
@@ -212,7 +247,11 @@ function numbersIn(text: string): number[] {
  * anyone, so it is only treated as a name when it is not an ordinary word.
  * Consecutive capitalised words are joined, so "Manchester City" is one name.
  */
-function namesIn(text: string, headingLike = false, ordinary: Set<string> = new Set()): string[] {
+function namesIn(
+  text: string,
+  headingLike = false,
+  ordinary: Set<string> = new Set(),
+): string[] {
   const found: string[] = [];
   for (const sentence of text.split(/(?<=[.!?])\s+/)) {
     const words = sentence.trim().split(/\s+/);
@@ -230,7 +269,8 @@ function namesIn(text: string, headingLike = false, ordinary: Set<string> = new 
       // capitalised everywhere or not at all.
       const lower = word.toLowerCase();
       const ordinaryOpener =
-        (headingLike || index === 0) && (SENTENCE_STARTERS.has(lower) || ordinary.has(lower));
+        (headingLike || index === 0) &&
+        (SENTENCE_STARTERS.has(lower) || ordinary.has(lower));
       if (capitalised && !ordinaryOpener) {
         run.push(word);
       } else {
@@ -250,7 +290,9 @@ function namesIn(text: string, headingLike = false, ordinary: Set<string> = new 
  * grammatically. Joined into one string, a heading with no full stop would run
  * into the next field and its opening word would read as a mid-sentence name.
  */
-function draftUnits(draft: SiteArticleContent): { text: string; headingLike: boolean }[] {
+function draftUnits(
+  draft: SiteArticleContent,
+): { text: string; headingLike: boolean }[] {
   return [
     { text: draft.title, headingLike: true },
     { text: draft.excerpt, headingLike: false },
@@ -260,7 +302,13 @@ function draftUnits(draft: SiteArticleContent): { text: string; headingLike: boo
       { text: s.heading, headingLike: true },
       { text: s.body, headingLike: false },
     ]),
-  ].filter((unit) => unit.text && unit.text.trim().length > 0);
+  ].reduce(
+    (acc, unit) => {
+      if (unit.text && unit.text.trim().length > 0) acc.push(unit);
+      return acc;
+    },
+    [] as { text: string; headingLike: boolean }[],
+  );
 }
 
 export function validateDraft(
@@ -277,7 +325,9 @@ export function validateDraft(
   const text = units.map((u) => u.text).join("\n");
 
   if (/https?:\/\/|www\./i.test(text)) {
-    problems.push("draft links out; these articles cite the site's own data only");
+    problems.push(
+      "draft links out; these articles cite the site's own data only",
+    );
   }
 
   for (const n of numbersIn(text)) {
@@ -291,11 +341,14 @@ export function validateDraft(
   const writtenLowerCase = new Set<string>();
   for (const unit of units) {
     for (const word of unit.text.split(/[^\p{L}\p{N}']+/u)) {
-      if (word && word === word.toLowerCase() && word.length > 1) writtenLowerCase.add(word);
+      if (word && word === word.toLowerCase() && word.length > 1)
+        writtenLowerCase.add(word);
     }
   }
 
-  for (const name of units.flatMap((u) => namesIn(u.text, u.headingLike, writtenLowerCase))) {
+  for (const name of units.flatMap((u) =>
+    namesIn(u.text, u.headingLike, writtenLowerCase),
+  )) {
     // Every word of the name has to be accounted for. "Manchester City" passes
     // on two known tokens; "Darwin Nunez" fails on both of its own.
     const tokens = name
@@ -320,7 +373,9 @@ export function validateDraft(
 
   for (const { pattern, why } of UNSUPPORTABLE) {
     if (pattern.test(text)) {
-      problems.push(`${why} — that cannot be seen in the data this article was built from`);
+      problems.push(
+        `${why} — that cannot be seen in the data this article was built from`,
+      );
     }
   }
 

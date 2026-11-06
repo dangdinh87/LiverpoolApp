@@ -101,13 +101,18 @@ export interface FplBootstrapResponse {
 }
 
 /** Liverpool's players from a bootstrap-static payload ([] if the club is absent). */
-export function selectLiverpoolElements(data: FplBootstrapResponse): FplPlayerStats[] {
+export function selectLiverpoolElements(
+  data: FplBootstrapResponse,
+): FplPlayerStats[] {
   const lfc = data.teams?.find((t) => t.short_name === FPL_LFC_SHORT_NAME);
   if (!lfc) {
     console.warn("[fpl-stats] Liverpool not found in FPL teams list");
     return [];
   }
-  return data.elements.filter((e) => e.team === lfc.id).map(mapFplElement);
+  return data.elements.reduce((acc, e) => {
+    if (e.team === lfc.id) acc.push(mapFplElement(e));
+    return acc;
+  }, [] as FplPlayerStats[]);
 }
 
 // ─── Mapper ─────────────────────────────────────────────────────────────────
@@ -161,7 +166,7 @@ function normalizeName(name: string): string {
 /** Match a local player name to FPL data using multiple strategies */
 function findFplMatch(
   localName: string,
-  fplPlayers: FplPlayerStats[]
+  fplPlayers: FplPlayerStats[],
 ): FplPlayerStats | null {
   const norm = normalizeName(localName);
   const parts = norm.split(/\s+/);
@@ -189,7 +194,10 @@ function findFplMatch(
   for (const p of fplPlayers) {
     const fplFirst = normalizeName(p.firstName);
     const fplSecond = normalizeName(p.secondName);
-    if (parts.some((part) => part === fplFirst) && parts.some((part) => part === fplSecond)) {
+    if (
+      parts.some((part) => part === fplFirst) &&
+      parts.some((part) => part === fplSecond)
+    ) {
       return p;
     }
   }
@@ -265,7 +273,7 @@ async function fetchLfcFplStats(): Promise<FplPlayerStats[]> {
 
 /** Get FPL stats for a specific player by local squad name */
 export async function getFplPlayerStats(
-  playerName: string
+  playerName: string,
 ): Promise<FplPlayerStats | null> {
   try {
     const lfcPlayers = await fetchLfcFplStats();

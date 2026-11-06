@@ -14,7 +14,10 @@ export function NewStoriesCount({ storyTimes }: { storyTimes: number[] }) {
   const t = useTranslations("News.feed");
   const baseline = useNewsBaseline();
   if (baseline === null) return null;
-  const count = storyTimes.filter((time) => time > baseline).length;
+  const count = storyTimes.reduce(
+    (acc, time) => (time > baseline ? acc + 1 : acc),
+    0,
+  );
   if (count === 0) return null;
   // Every story on the page is newer: the reader was away for longer than the page reaches back.
   const capped = count === storyTimes.length;
@@ -32,17 +35,28 @@ export function NewStoriesCount({ storyTimes }: { storyTimes: number[] }) {
  * it, hence the arrow) and the ones the reader has already had a chance to
  * see: "New since 18:30".
  */
-export function NewSinceDivider({ baseline, locale }: { baseline: number; locale: "en" | "vi" }) {
+export function NewSinceDivider({
+  baseline,
+  locale,
+}: {
+  baseline: number;
+  locale: "en" | "vi";
+}) {
   const t = useTranslations("News.feed");
   const now = useNowAfterMount(5 * 60_000);
   if (now === null) return null;
 
   const since = new Date(baseline);
   const intl = locale === "vi" ? "vi-VN" : "en-GB";
-  const time = new Intl.DateTimeFormat(intl, { hour: "2-digit", minute: "2-digit" }).format(since);
+  const time = new Intl.DateTimeFormat(intl, {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(since);
   // A time alone is ambiguous once the visit was not today.
   const sameDay = new Date(now).toDateString() === since.toDateString();
-  const label = sameDay ? time : `${new Intl.DateTimeFormat(intl, { day: "numeric", month: "numeric" }).format(since)}, ${time}`;
+  const label = sameDay
+    ? time
+    : `${new Intl.DateTimeFormat(intl, { day: "numeric", month: "numeric" }).format(since)}, ${time}`;
 
   return (
     <div className="flex items-center gap-3 py-2 text-[13px] font-semibold text-lfc-gold col-span-full">

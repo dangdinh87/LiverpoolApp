@@ -2,7 +2,10 @@ import "server-only";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
-import { dropStaleLiveBlogContent, liveBlogsWithNewHeadline } from "./live-blog";
+import {
+  dropStaleLiveBlogContent,
+  liveBlogsWithNewHeadline,
+} from "./live-blog";
 import { YouTubeChannelAdapter } from "./youtube-data-api";
 import { RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
@@ -11,7 +14,12 @@ import type { SourceStats } from "./pipeline";
 import { scrapeArticle } from "./enrichers/article-extractor";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
-import { clampToNowMs, getValidDateMs, nowIso, toIsoDateOrFallback } from "./date";
+import {
+  clampToNowMs,
+  getValidDateMs,
+  nowIso,
+  toIsoDateOrFallback,
+} from "./date";
 import { sanitizeImageUrl } from "./image";
 import type { NewsArticle } from "./types";
 
@@ -39,7 +47,12 @@ export interface SyncResult {
   /** Per-source fetch outcome (status ok / http_error / timeout / parse_error / error). */
   sources: Record<string, SourceStats>;
   /** Sources whose last fetch was not "ok" — adapters swallow errors, so this is the alert signal. */
-  sourceFailures: { source: string; status: string; httpStatus?: number; error?: string }[];
+  sourceFailures: {
+    source: string;
+    status: string;
+    httpStatus?: number;
+    error?: string;
+  }[];
   /** Consecutive most-recent runs (this one included) that inserted nothing. */
   consecutiveZeroInsertRuns: number;
   thumbnailsFilled: number;
@@ -88,7 +101,7 @@ export function mergeArticleRowForUpsert(
   existing?: Record<string, unknown>,
   fetchedAt = nowIso(),
   /** Incoming article had no usable pubDate, so row.published_at is just "now". */
-  undated = false
+  undated = false,
 ): Record<string, unknown> {
   if (!existing) {
     return {
@@ -104,18 +117,19 @@ export function mergeArticleRowForUpsert(
     row.thumbnail,
     old.thumbnail,
     row.hero_image,
-    old.hero_image
+    old.hero_image,
   );
   const heroImage = firstNonEmptyString(
     row.hero_image,
     old.hero_image,
     row.thumbnail,
-    old.thumbnail
+    old.thumbnail,
   );
 
   // Undated items get published_at = fetch time on insert; on every later sync keep that
   // value, otherwise they are re-stamped "now" and stay pinned to the top forever.
-  const publishedAt = undated && old.published_at ? old.published_at : row.published_at;
+  const publishedAt =
+    undated && old.published_at ? old.published_at : row.published_at;
 
   return {
     ...old,
@@ -148,7 +162,7 @@ export interface SyncOptions {
 function getAdaptiveScrapeLimit(
   upserted: number,
   fetchedTotal: number,
-  mode: MatchTrafficMode
+  mode: MatchTrafficMode,
 ): number {
   // Keep default scrape lower, then bump only when volume or match window justifies it.
   let limit = SCRAPE_MIN_LIMIT;
@@ -206,7 +220,10 @@ async function getMatchTrafficMode(): Promise<{
 
     return { mode: "low", hoursToNext, hoursSinceLast };
   } catch (err) {
-    console.warn("[sync] Could not resolve fixture window, fallback to low mode", err);
+    console.warn(
+      "[sync] Could not resolve fixture window, fallback to low mode",
+      err,
+    );
     return { mode: "low", hoursToNext: null, hoursSinceLast: null };
   }
 }
@@ -245,7 +262,10 @@ function articleToRow(a: NewsArticle) {
     category: a.category || "general",
     relevance: a.relevanceScore ?? 0,
     // Future dates (zone mix-ups, scheduled posts) are clamped to the fetch time.
-    published_at: toIsoDateOrFallback(clampPubDate(a.pubDate, fetchedAt), fetchedAt),
+    published_at: toIsoDateOrFallback(
+      clampPubDate(a.pubDate, fetchedAt),
+      fetchedAt,
+    ),
     author: a.author || null,
     hero_image: a.heroImage || thumbnail,
     word_count: a.wordCount || null,
@@ -259,7 +279,8 @@ function articleToRow(a: NewsArticle) {
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
 // `title`: a live blog whose headline changed gets its cached body dropped (live-blog.ts).
-const EXISTING_COLUMNS = "url,title,thumbnail,hero_image,fetched_at,published_at,is_active,read_count";
+const EXISTING_COLUMNS =
+  "url,title,thumbnail,hero_image,fetched_at,published_at,is_active,read_count";
 // Each row is looked up under every URL spelling (~3) and PostgREST puts the list in
 // the query string, so keep chunks small (≈5 KB of URLs).
 const EXISTING_LOOKUP_CHUNK = 15;
@@ -267,15 +288,27 @@ const EXISTING_LOOKUP_CHUNK = 15;
 async function fetchExistingRows(supabase: NewsServiceClient, urls: string[]) {
   const data: Record<string, unknown>[] = [];
   for (let i = 0; i < urls.length; i += EXISTING_LOOKUP_CHUNK) {
-    const variants = [...new Set(urls.slice(i, i + EXISTING_LOOKUP_CHUNK).flatMap((u) => articleUrlVariants(u)))];
-    const { data: chunk, error } = await supabase.from("articles").select(EXISTING_COLUMNS).in("url", variants);
+    const variants = [
+      ...new Set(
+        urls
+          .slice(i, i + EXISTING_LOOKUP_CHUNK)
+          .flatMap((u) => articleUrlVariants(u)),
+      ),
+    ];
+    const { data: chunk, error } = await supabase
+      .from("articles")
+      .select(EXISTING_COLUMNS)
+      .in("url", variants);
     if (error) return { data: null, error };
     data.push(...((chunk as Record<string, unknown>[] | null) ?? []));
   }
   return { data, error: null };
 }
 
-async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsServiceClient) {
+async function bulkUpsertArticles(
+  articles: NewsArticle[],
+  supabase: NewsServiceClient,
+) {
   let inserted = 0;
   let updated = 0;
   let upserted = 0;
@@ -289,7 +322,10 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
     const batch = articles.slice(i, i + batchSize);
     const rows = batch.map(articleToRow);
     const undatedCanonical = new Set(
-      batch.filter((a) => !hasUsablePubDate(a)).map((a) => canonicalizeArticleUrl(a.link))
+      batch.reduce((acc, a) => {
+        if (!hasUsablePubDate(a)) acc.push(canonicalizeArticleUrl(a.link));
+        return acc;
+      }, [] as string[]),
     );
 
     const retries = 1;
@@ -298,11 +334,16 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       // pulled the cached full-article JSON for every update and made sync much
       // slower as the table grew; selecting only "url" would silently break
       // thumbnail/hero_image retention, since the merge needs the old values.
-      const { data: existingData, error: fetchError } = await fetchExistingRows(supabase, rows.map((r) => r.url));
+      const { data: existingData, error: fetchError } = await fetchExistingRows(
+        supabase,
+        rows.map((r) => r.url),
+      );
 
       if (fetchError) {
         if (attempt < retries) {
-          console.warn(`[sync] Batch ${i} fetch failed (${fetchError.message}), retrying...`);
+          console.warn(
+            `[sync] Batch ${i} fetch failed (${fetchError.message}), retrying...`,
+          );
           await new Promise((r) => setTimeout(r, 2000));
           continue;
         } else {
@@ -317,17 +358,24 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       // params) keeps its stored spelling: updating it in place avoids a duplicate
       // row and keeps its comments / likes / cached translation attached.
       const storedByCanonical = new Map(
-        (existingData || []).map((row) => [canonicalizeArticleUrl(String(row.url)), String(row.url)] as const)
+        (existingData || []).map(
+          (row) =>
+            [canonicalizeArticleUrl(String(row.url)), String(row.url)] as const,
+        ),
       );
       for (const row of rows) {
         const stored = storedByCanonical.get(canonicalizeArticleUrl(row.url));
         if (stored) row.url = stored;
       }
       const undatedUrls = new Set(
-        rows.filter((r) => undatedCanonical.has(canonicalizeArticleUrl(r.url))).map((r) => r.url)
+        rows.reduce((acc, r) => {
+          if (undatedCanonical.has(canonicalizeArticleUrl(r.url)))
+            acc.push(r.url);
+          return acc;
+        }, [] as string[]),
       );
       const existingMap = new Map(
-        (existingData || []).map((row) => [row.url, stripDbManaged(row)])
+        (existingData || []).map((row) => [row.url, stripDbManaged(row)]),
       );
       // Bulk upsert in PostgREST takes the UNION of keys across all rows;
       // any column missing on a given row is serialized as NULL, bypassing
@@ -336,7 +384,12 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
       // columns that have meaningful defaults (chiefly `is_active`).
       const fetchedAt = nowIso();
       const safeRows = rows.map((row) =>
-        mergeArticleRowForUpsert(row, existingMap.get(row.url), fetchedAt, undatedUrls.has(row.url))
+        mergeArticleRowForUpsert(
+          row,
+          existingMap.get(row.url),
+          fetchedAt,
+          undatedUrls.has(row.url),
+        ),
       );
 
       const { data, error } = await supabase
@@ -346,7 +399,10 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
 
       if (!error) {
         const affected = data?.length ?? 0;
-        const existingCount = rows.filter((row) => existingMap.has(row.url)).length;
+        const existingCount = rows.reduce(
+          (acc, row) => (existingMap.has(row.url) ? acc + 1 : acc),
+          0,
+        );
         const insertedCount = rows.length - existingCount;
         inserted += insertedCount;
         updated += existingCount;
@@ -354,7 +410,9 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
         const changed = liveBlogsWithNewHeadline(rows, existingMap);
         if (await dropStaleLiveBlogContent(supabase, changed)) {
           liveBlogsRefreshed.push(...changed);
-          console.log(`[sync] ${changed.length} live blog(s) have a new headline; body will be re-scraped`);
+          console.log(
+            `[sync] ${changed.length} live blog(s) have a new headline; body will be re-scraped`,
+          );
         }
         break;
       }
@@ -386,7 +444,7 @@ async function bulkUpsertArticles(articles: NewsArticle[], supabase: NewsService
  */
 async function enrichMissingThumbnails(
   supabase: NewsServiceClient,
-  limit = FAST_ENRICH_LIMIT
+  limit = FAST_ENRICH_LIMIT,
 ) {
   let filled = 0;
   const since = toIsoDateOrFallback(Date.now() - ENRICH_MAX_AGE_MS);
@@ -401,22 +459,33 @@ async function enrichMissingThumbnails(
     .order("fetched_at", { ascending: false })
     .limit(ENRICH_CANDIDATE_POOL);
 
-  type Candidate = { url: string; thumbnail: string | null; hero_image: string | null; content_hero?: string | null };
+  type Candidate = {
+    url: string;
+    thumbnail: string | null;
+    hero_image: string | null;
+    content_hero?: string | null;
+  };
   const candidates = (noThumbData || []) as Candidate[];
   if (!candidates.length) return filled;
 
   const needFetch: Candidate[] = [];
   const updates: PromiseLike<unknown>[] = [];
   for (const row of candidates) {
-    const known = sanitizeImageUrl(row.hero_image ?? undefined) ?? sanitizeImageUrl(row.content_hero ?? undefined, row.url);
+    const known =
+      sanitizeImageUrl(row.hero_image ?? undefined) ??
+      sanitizeImageUrl(row.content_hero ?? undefined, row.url);
     if (known) {
       filled++;
       updates.push(
         supabase
           .from("articles")
-          .update({ thumbnail: known, hero_image: row.hero_image || known, updated_at: nowIso() })
+          .update({
+            thumbnail: known,
+            hero_image: row.hero_image || known,
+            updated_at: nowIso(),
+          })
           .eq("url", row.url)
-          .then((r) => r)
+          .then((r) => r),
       );
     } else {
       needFetch.push(row);
@@ -434,10 +503,13 @@ async function enrichMissingThumbnails(
   const BATCH = 5;
   for (let i = 0; i < picked.length; i += BATCH) {
     const batch = picked.slice(i, i + BATCH);
-    const results = await Promise.allSettled(batch.map((r) => fetchOgMeta(r.url, ENRICH_TIMEOUT_MS)));
+    const results = await Promise.allSettled(
+      batch.map((r) => fetchOgMeta(r.url, ENRICH_TIMEOUT_MS)),
+    );
     await Promise.allSettled(
       results.map((result, j) => {
-        if (result.status !== "fulfilled" || !result.value.image) return Promise.resolve();
+        if (result.status !== "fulfilled" || !result.value.image)
+          return Promise.resolve();
         const row = batch[j];
         filled++;
         return supabase
@@ -449,11 +521,13 @@ async function enrichMissingThumbnails(
           })
           .eq("url", row.url)
           .then((r) => r);
-      })
+      }),
     );
   }
 
-  console.log(`[sync] Thumbnails filled ${filled} (${candidates.length} candidates, ${picked.length} fetched)`);
+  console.log(
+    `[sync] Thumbnails filled ${filled} (${candidates.length} candidates, ${picked.length} fetched)`,
+  );
   return filled;
 }
 
@@ -484,7 +558,9 @@ async function getLatestStoredArticle(supabase: NewsServiceClient) {
     .maybeSingle();
 
   if (error) {
-    console.warn(`[sync] Could not fetch latest stored article: ${error.message}`);
+    console.warn(
+      `[sync] Could not fetch latest stored article: ${error.message}`,
+    );
     return null;
   }
 
@@ -493,12 +569,12 @@ async function getLatestStoredArticle(supabase: NewsServiceClient) {
 
 async function scrapeContentForRecentArticles(
   supabase: NewsServiceClient,
-  options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode }
+  options: { upserted: number; fetchedTotal: number; mode: MatchTrafficMode },
 ) {
   const scrapeLimit = getAdaptiveScrapeLimit(
     options.upserted,
     options.fetchedTotal,
-    options.mode
+    options.mode,
   );
   const staleCutoff = toIsoDateOrFallback(Date.now() - STALE_CONTENT_MS);
   const { data, error } = await supabase
@@ -514,11 +590,21 @@ async function scrapeContentForRecentArticles(
 
   if (error) {
     console.error(`[sync] scrape query failed: ${error.message}`);
-    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
+    return {
+      attempted: 0,
+      scraped: 0,
+      scrapeFailed: 0,
+      stoppedByBudget: false,
+    };
   }
 
   if (!data?.length) {
-    return { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
+    return {
+      attempted: 0,
+      scraped: 0,
+      scrapeFailed: 0,
+      stoppedByBudget: false,
+    };
   }
 
   const startMs = Date.now();
@@ -534,7 +620,9 @@ async function scrapeContentForRecentArticles(
     }
     const batch = data.slice(i, i + scrapeBatch);
     attempted += batch.length;
-    const results = await Promise.allSettled(batch.map((row) => scrapeArticle(row.url)));
+    const results = await Promise.allSettled(
+      batch.map((row) => scrapeArticle(row.url)),
+    );
     for (let j = 0; j < results.length; j++) {
       const result = results[j];
       if (result.status === "fulfilled" && result.value) {
@@ -546,7 +634,7 @@ async function scrapeContentForRecentArticles(
   }
 
   console.log(
-    `[sync] Pre-scraped ${scraped}/${attempted} attempted (mode=${options.mode}, limit=${scrapeLimit}, batch=${scrapeBatch}, failed=${scrapeFailed}, budgetStop=${stoppedByBudget})`
+    `[sync] Pre-scraped ${scraped}/${attempted} attempted (mode=${options.mode}, limit=${scrapeLimit}, batch=${scrapeBatch}, failed=${scrapeFailed}, budgetStop=${stoppedByBudget})`,
   );
   return { attempted, scraped, scrapeFailed, stoppedByBudget };
 }
@@ -561,10 +649,15 @@ async function getRecentArticleRefs(supabase: NewsServiceClient) {
     .order("fetched_at", { ascending: false })
     .limit(600);
   if (error) {
-    console.warn(`[sync] recent-titles lookup failed (dedup limited to this batch): ${error.message}`);
+    console.warn(
+      `[sync] recent-titles lookup failed (dedup limited to this batch): ${error.message}`,
+    );
     return [];
   }
-  return (data ?? []).map((r) => ({ url: String(r.url), title: String(r.title ?? "") }));
+  return (data ?? []).map((r) => ({
+    url: String(r.url),
+    title: String(r.title ?? ""),
+  }));
 }
 
 export function listSourceFailures(stats: Record<string, SourceStats>) {
@@ -579,7 +672,10 @@ export function listSourceFailures(stats: Record<string, SourceStats>) {
 }
 
 /** This run's insert count joined with the last runs from sync_logs: how long has the whole pipeline been silent? */
-async function countConsecutiveZeroInsertRuns(supabase: NewsServiceClient, insertedNow: number) {
+async function countConsecutiveZeroInsertRuns(
+  supabase: NewsServiceClient,
+  insertedNow: number,
+) {
   if (insertedNow > 0) return 0;
   const { data, error } = await supabase
     .from("sync_logs")
@@ -599,7 +695,9 @@ async function countConsecutiveZeroInsertRuns(supabase: NewsServiceClient, inser
  * Shared sync pipeline: fetch from all adapters → upsert → re-enrich → log.
  * Called by both db.ts (background sync) and api/news/sync/route.ts (manual).
  */
-export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResult> {
+export async function syncPipeline(
+  options: SyncOptions = {},
+): Promise<SyncResult> {
   const start = Date.now();
   const fetchLimit = options.fetchLimit ?? FETCH_LIMIT_BASE;
   const enrichThumbnails = options.enrichThumbnails ?? true;
@@ -616,10 +714,14 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
   const supabase = getServiceClient();
   const existing = await getRecentArticleRefs(supabase);
 
-  const { articles, stats: sourceStats } = await fetchAllNews(adapters, fetchLimit, {
-    metaFetches,
-    existing,
-  });
+  const { articles, stats: sourceStats } = await fetchAllNews(
+    adapters,
+    fetchLimit,
+    {
+      metaFetches,
+      existing,
+    },
+  );
   console.log(`[sync] Fetched ${articles.length} articles from adapters`);
 
   const upsertResult = await bulkUpsertArticles(articles, supabase);
@@ -630,29 +732,44 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
   const errors = upsertResult.errors;
 
   const enriched = enrichThumbnails
-    ? await enrichMissingThumbnails(supabase, options.enrichLimit ?? FAST_ENRICH_LIMIT)
+    ? await enrichMissingThumbnails(
+        supabase,
+        options.enrichLimit ?? FAST_ENRICH_LIMIT,
+      )
     : 0;
 
   const traffic = preScrapeContent
     ? await getMatchTrafficMode()
-    : { mode: "low" as MatchTrafficMode, hoursToNext: null, hoursSinceLast: null };
+    : {
+        mode: "low" as MatchTrafficMode,
+        hoursToNext: null,
+        hoursSinceLast: null,
+      };
   const { attempted, scraped, scrapeFailed, stoppedByBudget } = preScrapeContent
     ? await scrapeContentForRecentArticles(supabase, {
-      upserted,
-      fetchedTotal: articles.length,
-      mode: traffic.mode,
-    })
+        upserted,
+        fetchedTotal: articles.length,
+        mode: traffic.mode,
+      })
     : { attempted: 0, scraped: 0, scrapeFailed: 0, stoppedByBudget: false };
   const durationMs = Date.now() - start;
   const latestFetchedPublishedAt = getLatestFetchedPublishedAt(articles);
   const latestStoredArticle = await getLatestStoredArticle(supabase);
 
   const sourceFailures = listSourceFailures(sourceStats);
-  const consecutiveZeroInsertRuns = await countConsecutiveZeroInsertRuns(supabase, inserted);
+  const consecutiveZeroInsertRuns = await countConsecutiveZeroInsertRuns(
+    supabase,
+    inserted,
+  );
   if (sourceFailures.length) {
     console.warn(
       `[sync] ${sourceFailures.length} source(s) not ok: ` +
-        sourceFailures.map((f) => `${f.source}=${f.status}${f.httpStatus ? `(${f.httpStatus})` : ""}`).join(", ")
+        sourceFailures
+          .map(
+            (f) =>
+              `${f.source}=${f.status}${f.httpStatus ? `(${f.httpStatus})` : ""}`,
+          )
+          .join(", "),
     );
   }
 
@@ -683,7 +800,7 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
   });
 
   console.log(
-    `[sync] Done in ${durationMs}ms: ${inserted} inserted, ${updated} updated, ${failed} failed`
+    `[sync] Done in ${durationMs}ms: ${inserted} inserted, ${updated} updated, ${failed} failed`,
   );
   return {
     total: articles.length,
