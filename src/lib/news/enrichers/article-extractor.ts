@@ -265,8 +265,8 @@ function buildHtmlContent(
 
   // Unconditionally remove related news elements and tags
   container.find(
-    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .the-article-link, .article-socal, .the-article-author, .the-article-tags, .pswp"
-  ).remove();
+    "[type='RelatedOneNews'], [type='RelatedNewsBox'], .related-news, .relate-container, .detail__related, .social-top, .detail-author, .box-comment, .the-article-link, .article-socal, .the-article-author, .the-article-tags, .pswp, .detail-tab, .box-author-detail, .detail-author-bot, .readmore-body-box"
+  ).not(".VCSortableInPreviewMode").remove();
 
   // Source page chrome that duplicates what our own article layout already renders:
   // the headline/date/"follow us" strip and the byline + "original link / copy link" card.
@@ -289,7 +289,7 @@ function buildHtmlContent(
   // tuoitre's "Đọc tiếp / Về trang Chủ đề" box and minigame embeds. 24h marks the
   // minigame with a CLASS (`.data-embed-code-minigame`), not an attribute.
   container.find(
-    ".hide, .hidden, .d-none, [hidden], [style*='display:none'], [style*='display: none'], .ck-cms-insert-neww-group, .readmore-body-box, .data-embed-code-minigame, [data-embed-code-minigame], [class*='minigame']"
+    ".hide, .hidden, .d-none, [hidden], [style*='display:none'], [style*='display: none'], .ck-cms-insert-neww-group, .data-embed-code-minigame, [data-embed-code-minigame], [class*='minigame']"
   ).remove();
   container.find("a").each((_, el) => {
     if (/^(Đọc tiếp|Về trang Chủ đề)$/i.test($(el).text().replace(/\s+/g, " ").trim())) $(el).remove();
@@ -849,6 +849,11 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
   if (sapoText && sapoText.length > 20) {
+    contentClone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), sapoText)) {
+        $(el).remove();
+      }
+    });
     contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
@@ -926,8 +931,19 @@ function extractBongdaplus(
   const contentClone = container.clone();
   contentClone.find(`${chrome}, .box-ads, .article-relate`).remove();
   contentClone.find(".sapo, .detail-sapo").remove();
-  if (sapoText.length > 20 && !isSameText(sapoText, description)) {
-    contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(sapoText)}</strong></p>`);
+
+  let finalSapoText = sapoText;
+  if (!finalSapoText && description) {
+    finalSapoText = description;
+  }
+
+  if (finalSapoText && finalSapoText.length > 20) {
+    contentClone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), finalSapoText)) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(finalSapoText)}</strong></p>`);
   }
 
   $("img").each((_, el) => {
@@ -988,8 +1004,14 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Sapo/lead text
-  const sapo = $("#article_sapo").text().trim();
-  if (sapo && sapo.length > 20) pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $("#article_sapo").text().trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
+  }
+
+  if (!sapoText && description) {
+    sapoText = description;
+  }
 
   // Junk patterns: save buttons, ad text, navigation, source attribution, match widgets
   const junkPattern = /^(Lưu bài viết|Bạn có thể xem lại|Dự đoán tỷ số|Cơ hội trúng|Nguồn:|Xem thêm|Tags?:|Chia sẻ|>>|To view this video)/i;
@@ -1057,9 +1079,14 @@ function extract24h($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Build htmlContent — preserve bold headings and inline images
   const clone = container.clone();
-  if (sapo && sapo.length > 20) {
+  if (sapoText && sapoText.length > 20) {
     clone.find("#article_sapo").remove();
-    clone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+    clone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), sapoText)) {
+        $(el).remove();
+      }
+    });
+    clone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
   // Remove junk: ads, scripts, related articles, minigame, banners
   clone.find("script, style, section, .bv-lq, .box-game, .ad-unit, [data-embed-code-minigame], .tuht_all").remove();
@@ -1279,7 +1306,18 @@ function extractLiverpoolEcho($: cheerio.CheerioAPI, url: string): ArticleConten
     }
   });
 
-  const htmlContent = buildHtmlContent(container, $, url) || undefined;
+  const clone = container.clone();
+
+  if (description && description.length > 20) {
+    clone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), description)) {
+        $(el).remove();
+      }
+    });
+    clone.prepend(`<p class="sapo"><strong>${description}</strong></p>`);
+  }
+
+  const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
     title, heroImage, description,
@@ -1326,6 +1364,21 @@ function extractVietnameseGeneric(
     }
   }
 
+  if (!sapoText && description) {
+    sapoText = description;
+  }
+
+  if (sapoText) {
+    // Remove duplicate h2 or p tags from contentClone that exactly match the fallback text
+    // to prevent duplication while preserving valid subheadings.
+    contentClone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), sapoText)) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+  }
+
   // Extract paragraphs + figcaptions (some VN sites use figcaption for article text)
   container.find("p, figcaption").each((_, el) => {
     const text = $(el).text().trim();
@@ -1344,11 +1397,6 @@ function extractVietnameseGeneric(
   if (opts?.htmlContent !== false) {
     // Per-source junk that has no reusable class name (topic teasers, etc.)
     if (opts?.removeSelectors) contentClone.find(opts.removeSelectors).remove();
-    // The article layout already renders `description` as the lead paragraph, so
-    // re-inserting an identical sapo prints the same sentence twice on the page.
-    if (sapoText && !isSameText(sapoText, description)) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
-    }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
 
@@ -1513,6 +1561,16 @@ function extractWebthethao($: cheerio.CheerioAPI, url: string): ArticleContent {
     const text = $(el).text().trim();
     if (junkPattern.test(text)) $(el).remove();
   });
+
+  if (description && description.length > 20) {
+    clone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), description)) {
+        $(el).remove();
+      }
+    });
+    clone.prepend(`<p class="sapo"><strong>${description}</strong></p>`);
+  }
+
   const htmlContent = buildHtmlContent(clone, $, url) || undefined;
 
   return {
@@ -1549,11 +1607,23 @@ function extractZnews($: cheerio.CheerioAPI, url: string): ArticleContent {
   const seenI = new Set<string>();
 
   // Extract lead/sapo text
-  const sapo = $(".the-article-summary").first().text().trim();
-  if (sapo && sapo.length > 20) {
-    pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $(".the-article-summary").first().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    pushUnique(paragraphs, seenP, sapoText);
     contentClone.find(".the-article-summary").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  if (!sapoText && description) {
+    sapoText = description;
+  }
+
+  if (sapoText) {
+    contentClone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), sapoText)) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
@@ -1602,13 +1672,25 @@ function extractVnexpress($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   // Extract lead/sapo text
   // `<span class="location-stamp">Anh</span>` is glued to the lead text; drop it.
-  const sapo = $("p.description").first().clone().find(".location-stamp").remove().end().text().trim();
-  if (sapo && sapo.length > 20) {
-    if (sapo !== description) {
-      pushUnique(paragraphs, seenP, sapo);
+  let sapoText = $("p.description").first().clone().find(".location-stamp").remove().end().text().trim();
+  if (sapoText && sapoText.length > 20) {
+    if (sapoText !== description) {
+      pushUnique(paragraphs, seenP, sapoText);
     }
     contentClone.find("p.description").first().remove();
-    contentClone.prepend(`<p class="sapo"><strong>${sapo}</strong></p>`);
+  }
+
+  if (!sapoText && description) {
+    sapoText = description;
+  }
+
+  if (sapoText) {
+    contentClone.find("h2, p").each((_, el) => {
+      if (isSameText($(el).text(), sapoText)) {
+        $(el).remove();
+      }
+    });
+    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
   }
 
   container.find("p").each((_, el) => {
