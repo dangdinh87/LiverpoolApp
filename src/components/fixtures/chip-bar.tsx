@@ -75,7 +75,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
               href={item.href}
               scroll={false}
               data-active={isActive ? "true" : undefined}
-              aria-current={isActive ? "page" : undefined}
+              aria-current={isActive ? "true" : undefined}
               className={chipClass(isActive)}
             >
               {content}
@@ -85,6 +85,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
               key={item.key}
               type="button"
               data-active={isActive ? "true" : undefined}
+              aria-current={isActive ? "true" : undefined}
               aria-pressed={isActive}
               onClick={() => onSelect?.(item.key)}
               className={chipClass(isActive)}

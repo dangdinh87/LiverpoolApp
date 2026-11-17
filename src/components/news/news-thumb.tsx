@@ -13,6 +13,8 @@ interface NewsThumbProps {
   sizes: string;
   priority?: boolean;
   className?: string;
+  /** Hide the centered outlet wordmark when used as a full-bleed backdrop behind text. */
+  showFallbackLabel?: boolean;
 }
 
 /**
@@ -23,7 +25,15 @@ interface NewsThumbProps {
  * News images stay `unoptimized` (publisher CDNs, Vercel Hobby image quota) and
  * are sent without a referrer: several publishers block hot-linking by Referer.
  */
-export function NewsThumb({ src, alt = "", source, sizes, priority, className }: NewsThumbProps) {
+export function NewsThumb({
+  src,
+  alt = "",
+  source,
+  sizes,
+  priority,
+  className,
+  showFallbackLabel = true,
+}: NewsThumbProps) {
   const [failed, setFailed] = useState(false);
   const cfg = SOURCE_CONFIG[source];
 
@@ -33,7 +43,9 @@ export function NewsThumb({ src, alt = "", source, sizes, priority, className }:
         aria-hidden
         className="absolute inset-0 flex items-center justify-center bg-[var(--surface-3)] px-3 text-center"
       >
-        <span className="font-bebas text-xl leading-tight tracking-wide text-stadium-muted">{cfg?.label ?? ""}</span>
+        {showFallbackLabel && (
+          <span className="font-bebas text-xl leading-tight tracking-wide text-stadium-muted">{cfg?.label ?? ""}</span>
+        )}
       </div>
     );
   }

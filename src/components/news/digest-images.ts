@@ -3,7 +3,7 @@ import { SOURCE_CONFIG } from "@/lib/news-config";
 import type { ArticleRef } from "@/lib/news/db";
 import type { NewsSource } from "@/lib/news/types";
 import type { DigestItemImage } from "./digest-item";
-import { isHttpUrl } from "./news-text";
+import { isEmbeddableImageUrl } from "./news-text";
 
 /** Display name of the outlet behind an article URL. */
 export function outletName(url: string): string {
@@ -24,7 +24,7 @@ export function pickStoryImages(
   return stories.map((story) => {
     for (const url of story.articleUrls) {
       const src = refs[url]?.image;
-      if (!isHttpUrl(src) || used.has(src)) continue;
+      if (!isEmbeddableImageUrl(src) || used.has(src)) continue;
       used.add(src);
       const detected = detectSource(url);
       return { src, source: (detected.id === "unknown" ? "bbc" : detected.id) as NewsSource, credit: outletName(url) };

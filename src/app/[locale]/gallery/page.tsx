@@ -17,11 +17,16 @@ import { PageHero } from "@/components/ui/page-hero";
 const GALLERY_PAGE_SIZE = 50;
 
 const getCachedGalleryFirstPage = unstable_cache(
-  async () =>
-    Promise.all([
+  async () => {
+    const res = await Promise.all([
       listGalleryImagesFromDB({ limit: GALLERY_PAGE_SIZE, offset: 0 }),
       getGalleryCategoryCounts(),
-    ]),
+    ]);
+    if (res[0].images.length === 0) {
+      throw new Error("[gallery] empty DB response — not caching");
+    }
+    return res;
+  },
   ["gallery-first-page-v1"],
   { revalidate: 1800, tags: [GALLERY_CACHE_TAG] },
 );
