@@ -67,7 +67,8 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
                 </span>
                 <span className="spoiler-hide font-bebas text-xl leading-none text-white tabular-nums">{score}</span>
                 <span aria-hidden className="spoiler-show font-bebas text-xl leading-none text-white/40">?–?</span>
-                <span className="sr-only">{context}</span>
+                <span className="spoiler-hide sr-only">{context}</span>
+                <span className="spoiler-show sr-only">{displayTeamName(opponent.name)}</span>
               </>
             );
             const cls =
@@ -79,7 +80,7 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
                     {content}
                   </Link>
                 ) : (
-                  <div role="img" aria-label={`${tMatch(`resultShort.${result}`)} ${score}, ${context}`} className={cls}>
+                  <div className={cls}>
                     {content}
                   </div>
                 )}

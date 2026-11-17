@@ -24,9 +24,10 @@ export function SpoilerToggle({ className }: { className?: string }) {
       <EyeOff className="size-4" aria-hidden />
       {t("toggle")}
       <Switch
+        aria-label={t("toggle")}
         checked={on}
         onCheckedChange={setSpoilerFree}
-        className="data-[state=checked]:bg-lfc-gold data-[state=unchecked]:bg-white/20 dark:data-[state=unchecked]:bg-white/20"
+        className="tap-target data-[state=checked]:bg-lfc-gold data-[state=unchecked]:bg-white/20 dark:data-[state=unchecked]:bg-white/20"
       />
     </label>
   );

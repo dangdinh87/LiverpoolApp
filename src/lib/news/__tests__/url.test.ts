@@ -48,6 +48,10 @@ describe("slug round-trip", () => {
     expect(articleUrlVariants(routerRoundTrip(TIA_FEED)!)).toContain(TIA_FEED);
     expect(articleUrlVariants(routerRoundTrip(BBC_FEED)!)).toContain(BBC_FEED);
   });
+  it("preserves query-bearing URLs like YouTube watch links across router round-trip", () => {
+    const yt = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    expect(routerRoundTrip(yt)).toBe(yt);
+  });
 });
 
 describe("articleUrlVariants", () => {

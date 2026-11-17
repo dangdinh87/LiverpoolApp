@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Check } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { withLocalePrefix } from "@/i18n/routing";
 import { getRatingsState, saveRatings, type PredictionWriteError, type RatingsState } from "@/app/actions/predictions";
 import { cn } from "@/lib/utils";
 import { Slider } from "@/components/ui/slider";
@@ -17,6 +18,7 @@ const band = (r: number) => (r >= 7.5 ? "text-green-400" : r >= 6 ? "text-lfc-go
  */
 export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
   const t = useTranslations("Predict.ratings");
+  const locale = useLocale();
   const [state, setState] = useState<RatingsState | null>(null);
   const [draft, setDraft] = useState<Record<string, number>>({});
   const [saved, setSaved] = useState(false);
@@ -25,17 +27,43 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
 
   useEffect(() => {
     let live = true;
-    getRatingsState(fixtureId).then((s) => {
-      if (!live) return;
-      setState(s);
-      setDraft(s.mine);
-    });
+    getRatingsState(fixtureId)
+      .then((s) => {
+        if (!live) return;
+        setState(s);
+        setDraft(s.mine);
+      })
+      .catch(() => {
+        if (live) {
+          setState({ available: false, open: false, signedIn: false, players: [], mine: {} });
+        }
+      });
     return () => {
       live = false;
     };
   }, [fixtureId]);
 
-  if (!state?.available) return null;
+  if (fixtureId <= 0) return null;
+
+  if (state === null) {
+    return (
+      <section aria-labelledby="ratings-title" aria-busy="true" className="surface mt-6 p-4 sm:p-6">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 id="ratings-title" className="font-bebas text-3xl leading-none text-white">
+            {t("title")}
+          </h2>
+          <span aria-hidden className="skeleton h-4 w-20" />
+        </div>
+        <div aria-hidden className="mt-4 space-y-2.5">
+          {Array.from({ length: 5 }, (_, i) => (
+            <div key={i} className="skeleton h-10 w-full" />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  if (!state.available) return null;
   const editable = state.open && state.signedIn;
   const totalVotes = Math.max(0, ...state.players.map((p) => p.votes));
 
@@ -117,7 +145,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
             </button>
           ) : (
             <Link
-              href={`/auth/login?redirect=/fixtures/${fixtureId}`}
+              href={`/auth/login?redirect=${encodeURIComponent(withLocalePrefix(`/fixtures/${fixtureId}`, locale))}`}
               className="inline-flex min-h-11 items-center bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
             >
               {t("signIn")}

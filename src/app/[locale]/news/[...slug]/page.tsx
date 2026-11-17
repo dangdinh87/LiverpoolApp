@@ -35,7 +35,7 @@ import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
-import { assessReadability, cleanSnippet, cleanTitle, filterJunk, imageKey, isHttpUrl, pickTitle } from "@/components/news/news-text";
+import { assessReadability, cleanSnippet, cleanTitle, dropHeroDuplicate, filterJunk, imageKey, isEmbeddableImageUrl, pickTitle } from "@/components/news/news-text";
 
 // 1 hour. The excerpt itself never changes, so this could be far longer — but
 // the page now renders the like count, and revalidateTag refreshes the data
@@ -83,7 +83,7 @@ const getExpiredArticleMeta = cache(async (url: string) => {
   return {
     title,
     lead: cleanSnippet(og.description, og.title) ?? undefined,
-    heroImage: isHttpUrl(og.image) ? og.image : undefined,
+    heroImage: isEmbeddableImageUrl(og.image) ? og.image : undefined,
   };
 });
 
@@ -278,7 +278,10 @@ export default async function ArticlePage({
   const published = shownAt ? publishedInstant(shownAt) : null;
   const articleSlugUrl = `/news/${encodeArticleSlug(url)}`;
   const canonicalPath = `/news/${slug.join("/")}`;
-  const heroImage = isHttpUrl(content.heroImage) ? content.heroImage : undefined;
+  const heroImage = isEmbeddableImageUrl(content.heroImage) ? content.heroImage : undefined;
+  const cleanedHtml = content.htmlContent
+    ? dropHeroDuplicate(content.htmlContent, heroImage)
+    : undefined;
   // Only ever render (or hand to translation) the same short excerpt a Google
   // News preview would show: a full reproduction of someone else's article is
   // itself an unlicensed derivative work, on top of reproducing the original text.
@@ -342,27 +345,30 @@ export default async function ArticlePage({
             </p>
 
             {/* The publisher's own markup when we have it: it carries the
-                sub-headings, lists and video the paragraph array flattens away. */}
-            {content.htmlContent ? (
+                sub-headings, lists and video the paragraph array flattens away.
+                English articles wrap it in TranslatableExcerpt so Vietnamese
+                readers can toggle an on-demand translation of the full body. */}
+            {(cleanedHtml || body.length > 0) && (
               <div className="mt-5 max-w-[42rem]">
-                <div id="article-body">
-                  <ArticleHtmlBody html={content.htmlContent} />
-                </div>
+                {isEnglishArticle ? (
+                  <TranslatableExcerpt
+                    articleUrl={url}
+                    paragraphs={body}
+                    htmlContent={cleanedHtml}
+                    label={t("excerptLabel")}
+                  />
+                ) : cleanedHtml ? (
+                  <div id="article-body">
+                    <ArticleHtmlBody html={cleanedHtml} />
+                  </div>
+                ) : (
+                  <section>
+                    <div id="article-body">
+                      <ArticleExcerpt paragraphs={body} />
+                    </div>
+                  </section>
+                )}
               </div>
-            ) : (
-              body.length > 0 && (
-                <div className="mt-5 max-w-[42rem]">
-                  {isEnglishArticle ? (
-                    <TranslatableExcerpt articleUrl={url} paragraphs={body} label={t("excerptLabel")} />
-                  ) : (
-                    <section>
-                      <div id="article-body">
-                        <ArticleExcerpt paragraphs={body} />
-                      </div>
-                    </section>
-                  )}
-                </div>
-              )
             )}
 
             <div className="mt-5 max-w-[42rem]">

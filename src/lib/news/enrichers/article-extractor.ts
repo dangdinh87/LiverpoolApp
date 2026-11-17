@@ -105,6 +105,13 @@ const ARTICLE_SANITIZE_OPTS: sanitize.IOptions = {
     p: ["class"],
   },
   allowedSchemes: ["https", "http"],
+  allowedIframeHostnames: [
+    "www.youtube.com",
+    "youtube.com",
+    "www.youtube-nocookie.com",
+    "player.vimeo.com",
+    "www.dailymotion.com",
+  ],
   exclusiveFilter: (frame) => {
     // Drop known ad or junk classes
     if (frame.tag === "div" && frame.attribs.class) {
@@ -431,32 +438,26 @@ function buildHtmlContent(
     }
   });
 
-  // 2. Sanitize HTML
-  const rawHtml = container.html() || "";
-  let sanitized = sanitize(rawHtml, ARTICLE_SANITIZE_OPTS);
+  // 2. Normalize nested figures and standalone div > img BEFORE sanitization so
+  // sanitize-html is always the final step (no post-sanitize Cheerio/regex mXSS).
+  container.find("figcaption figure").each((_, el) => {
+    const $fig = $(el);
+    const outer = $fig.closest("figure");
+    if (outer.length > 0) $fig.insertAfter(outer);
+  });
 
-  // 3. Post-process to fix malformed nested figures (often seen in VN sites)
-  if (sanitized.includes("<figcaption>") && sanitized.includes("<figure>")) {
-    const $html = cheerio.load(sanitized, null, false);
-    $html("figcaption figure").each((_, el) => {
-      const $fig = $html(el);
-      $fig.insertAfter($fig.closest("figure"));
-    });
-    // Remove empty/orphaned closing tags left over
-    sanitized = $html.html()?.replace(/<\/(figcaption|figure)>\s*<\/(figcaption|figure)>\s*/g, "</$1>\n</$2>\n") || sanitized;
-  }
-
-  // Final cleanup of unwrapped images into figures if they contain alt text
-  const $final = cheerio.load(sanitized, null, false);
-  $final("div > img:only-child").each((_, el) => {
-    const $el = $final(el);
+  container.find("div > img:only-child").each((_, el) => {
+    const $el = $(el);
     const $div = $el.parent();
-    const figure = $final("<figure></figure>");
+    if ($div.hasClass("article-video-player")) return;
+    const figure = $("<figure></figure>");
     figure.append($el.clone());
     $div.replaceWith(figure);
   });
 
-  sanitized = $final.html() || sanitized;
+  // 3. Sanitize HTML as the strict final pass
+  const rawHtml = container.html() || "";
+  const sanitized = sanitize(rawHtml, ARTICLE_SANITIZE_OPTS).trim();
 
   return sanitized || undefined;
 }
@@ -849,7 +850,7 @@ function extractBongda($: cheerio.CheerioAPI, url: string): ArticleContent {
 
   const contentClone = contentDetail.length > 0 ? contentDetail.clone() : container.clone();
   if (sapoText && sapoText.length > 20) {
-    contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+    contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(sapoText)}</strong></p>`);
   }
 
   if (contentDetail.length > 0) {
@@ -1347,7 +1348,7 @@ function extractVietnameseGeneric(
     // The article layout already renders `description` as the lead paragraph, so
     // re-inserting an identical sapo prints the same sentence twice on the page.
     if (sapoText && !isSameText(sapoText, description)) {
-      contentClone.prepend(`<p class="sapo"><strong>${sapoText}</strong></p>`);
+      contentClone.prepend(`<p class="sapo"><strong>${escapeHtml(sapoText)}</strong></p>`);
     }
     htmlContent = buildHtmlContent(contentClone, $, url) || undefined;
   }
@@ -1929,7 +1930,28 @@ export const scrapeArticle = cache(
         return null;
       }
 
-      const html = await res.text();
+      const contentLength = Number(res.headers?.get("content-length") || "0");
+      if (contentLength > 4_000_000) {
+        console.warn(`[article-extractor] Oversized HTML (${contentLength}B): ${url.slice(0, 120)}`);
+        return null;
+      }
+      let html = "";
+      const reader = res.body?.getReader();
+      if (reader) {
+        const decoder = new TextDecoder();
+        try {
+          while (html.length < 2_000_000) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            html += decoder.decode(value, { stream: true });
+          }
+          html += decoder.decode();
+        } finally {
+          reader.cancel().catch(() => {});
+        }
+      } else {
+        html = (await res.text()).slice(0, 2_000_000);
+      }
       const extracted = await extractFromHtml(html, url);
       if (!extracted) {
         console.warn(`[article-extractor] Bot-check / unreadable page, not cached: ${url.slice(0, 120)}`);
@@ -1950,6 +1972,7 @@ export const scrapeArticle = cache(
 
 export const getOgImage = cache(
   async (url: string): Promise<string | undefined> => {
+    if (!isKnownNewsSourceUrl(url)) return undefined;
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -1965,6 +1988,7 @@ export const getOgImage = cache(
       });
       clearTimeout(timeoutId);
       if (!res.ok) return undefined;
+      if (res.url && !isKnownNewsSourceUrl(res.url)) return undefined;
 
       const reader = res.body?.getReader();
       if (!reader) return undefined;

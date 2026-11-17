@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Languages, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { getCachedTranslation, setCachedTranslation } from "@/lib/news/translation-cache";
+import { ArticleHtmlBody } from "./article-html-body";
 import { ArticleExcerpt } from "./article-parts";
 import { filterJunk } from "./news-text";
 
@@ -13,20 +14,30 @@ function stripPrefix(s: string): string {
 
 interface TranslatableExcerptProps {
   articleUrl: string;
-  /** The (already capped) excerpt in the article's own language. */
+  /** Plain-text paragraphs in the article's original language (fallback when htmlContent is absent). */
   paragraphs: string[];
-  /** Small heading above the excerpt ("Đoạn trích"). */
+  /** Extracted sanitised HTML body (preserves sub-headings, lists, figures, and inline videos). */
+  htmlContent?: string;
+  /** Small heading above the body. */
   label: string;
 }
 
 /**
- * The excerpt with an on-demand Vietnamese translation. Only the excerpt is
- * translated: the headline and everything else on the page stay as published.
- * The translate API and the local cache both cap what they return to the same excerpt.
+ * Full article body with an on-demand Vietnamese translation toggle.
+ *
+ * When `htmlContent` is available, the original view renders `<ArticleHtmlBody>`
+ * (server-rendered in first paint); toggling translation swaps cleanly to the
+ * translated Vietnamese paragraphs and optionally shows the translated headline.
  */
-export function TranslatableExcerpt({ articleUrl, paragraphs, label }: TranslatableExcerptProps) {
+export function TranslatableExcerpt({
+  articleUrl,
+  paragraphs,
+  htmlContent,
+  label,
+}: TranslatableExcerptProps) {
   const t = useTranslations("News.translate");
   const [translated, setTranslated] = useState<string[] | null>(null);
+  const [translatedTitle, setTranslatedTitle] = useState<string | null>(null);
   const [showTranslated, setShowTranslated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -44,6 +55,7 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
     const cached = getCachedTranslation(articleUrl);
     if (cached) {
       setTranslated(filterJunk(cached.paragraphs.map(stripPrefix)));
+      if (cached.title_vi) setTranslatedTitle(stripPrefix(cached.title_vi));
       setShowTranslated(true);
       return;
     }
@@ -61,18 +73,15 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
       const data = await res.json();
       const titleVi = stripPrefix(data.title_vi || "");
       const descriptionVi = data.description_vi ? stripPrefix(data.description_vi) : null;
-      // No cap: the page shows the full article, so the translation must too,
-      // or toggling to Vietnamese would shrink what the reader had.
       const translatedBody = filterJunk((data.paragraphs || []).map((p: string) => stripPrefix(p)));
-      // An article with no body text is shown from its description; translate that instead.
       const shown = translatedBody.length > 0 ? translatedBody : descriptionVi ? [descriptionVi] : [];
       if (shown.length === 0) throw new Error("Empty translation");
 
       setTranslated(shown);
+      if (titleVi) setTranslatedTitle(titleVi);
       setShowTranslated(true);
       setCachedTranslation(articleUrl, titleVi, shown, descriptionVi || undefined);
     } catch {
-      // Calm, generic message in the UI: raw error text is never shown.
       setFailed(true);
     } finally {
       setLoading(false);
@@ -87,7 +96,8 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
           type="button"
           onClick={toggle}
           disabled={loading}
-          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3.5 font-barlow text-sm font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:border-white/40 disabled:opacity-60"
+          aria-pressed={showTranslated}
+          className="inline-flex min-h-11 shrink-0 cursor-pointer items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3.5 font-barlow text-sm font-semibold uppercase tracking-[0.08em] text-white transition-colors hover:border-white/40 active:scale-[0.98] disabled:opacity-60"
         >
           {loading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Languages className="size-4" aria-hidden />}
           {loading ? t("translating") : showTranslated ? t("showOriginal") : t("showTranslated")}
@@ -102,8 +112,19 @@ export function TranslatableExcerpt({ articleUrl, paragraphs, label }: Translata
             <div className="skeleton h-[18px] w-[88%]" />
             <div className="skeleton h-[18px] w-[60%]" />
           </div>
+        ) : showTranslated && translated ? (
+          <div className="space-y-4">
+            {translatedTitle && (
+              <p className="font-serif text-xl font-semibold leading-snug text-white sm:text-2xl">
+                {translatedTitle}
+              </p>
+            )}
+            <ArticleExcerpt paragraphs={translated} />
+          </div>
+        ) : htmlContent ? (
+          <ArticleHtmlBody html={htmlContent} />
         ) : (
-          <ArticleExcerpt paragraphs={showTranslated && translated ? translated : paragraphs} />
+          <ArticleExcerpt paragraphs={paragraphs} />
         )}
       </div>
 

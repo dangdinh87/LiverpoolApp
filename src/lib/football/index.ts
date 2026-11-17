@@ -20,10 +20,8 @@ export type { SeasonStats, SeasonOverview, MonthlyGoals, CompetitionStats, Seaso
 
 const provider = new FdoProvider();
 
-const hasFdoKey = !!process.env.FOOTBALL_DATA_ORG_KEY;
-
-if (process.env.NODE_ENV === "development") {
-  console.info(`[football] Provider: ${provider.name}, FDO key: ${hasFdoKey ? "yes" : "no"}`);
+function hasFdoKey(): boolean {
+  return Boolean(process.env.FOOTBALL_DATA_ORG_KEY);
 }
 
 // Re-export all functions wrapped in React.cache() for per-request deduplication.
@@ -31,7 +29,7 @@ export const getSquad = cache(() => provider.getSquad());
 
 // Fixtures: FDO (all comps) + ESPN (FA Cup, EFL Cup supplement)
 export const getFixtures = cache(async (season?: number) => {
-  if (!hasFdoKey) {
+  if (!hasFdoKey()) {
     console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no fixtures");
     return [];
   }
@@ -83,7 +81,7 @@ export const getFixtureById = cache(async (id: number) => {
 
 // Standings: Football-Data.org (real W/D/L/GF/GA/form)
 export const getStandings = cache(async (season?: number) => {
-  if (!hasFdoKey) {
+  if (!hasFdoKey()) {
     console.warn("[football] FOOTBALL_DATA_ORG_KEY not set — no standings");
     return [];
   }
@@ -98,7 +96,7 @@ export const getStandings = cache(async (season?: number) => {
 
 // UCL standings
 export const getUclStandings = cache(async (season?: number) => {
-  if (!hasFdoKey) return [] as Standing[];
+  if (!hasFdoKey()) return [] as Standing[];
   try {
     return await getFdoUclStandings(season);
   } catch (err) {
@@ -153,7 +151,7 @@ export const getTeamInfo = cache(() => provider.getTeamInfo());
 
 // Coach: FDO team endpoint
 export const getCoach = cache(async () => {
-  if (!hasFdoKey) return null;
+  if (!hasFdoKey()) return null;
   try {
     return await getFdoCoach();
   } catch (err) {

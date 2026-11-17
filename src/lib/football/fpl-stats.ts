@@ -158,8 +158,8 @@ function normalizeName(name: string): string {
     .trim();
 }
 
-/** Match a local player name to FPL data using multiple strategies */
-function findFplMatch(
+/** Match a local player name to FPL data using multiple strategies (exported for tests). */
+export function findFplMatch(
   localName: string,
   fplPlayers: FplPlayerStats[]
 ): FplPlayerStats | null {
@@ -176,7 +176,6 @@ function findFplMatch(
   // Strategy 2: web_name (display name) match
   for (const p of fplPlayers) {
     if (normalizeName(p.webName) === norm) return p;
-    // Last name only match
     if (normalizeName(p.webName) === lastName) return p;
   }
 
@@ -185,11 +184,14 @@ function findFplMatch(
     if (normalizeName(p.secondName) === lastName) return p;
   }
 
-  // Strategy 4: first name + last name partial match
+  // Strategy 4: word-level overlap across compound firstName + secondName
+  // (e.g. FPL firstName="Alisson", secondName="Ramses Becker" vs local "Alisson Becker").
   for (const p of fplPlayers) {
-    const fplFirst = normalizeName(p.firstName);
-    const fplSecond = normalizeName(p.secondName);
-    if (parts.some((part) => part === fplFirst) && parts.some((part) => part === fplSecond)) {
+    const fplFirstTokens = normalizeName(p.firstName).split(/\s+/).filter(Boolean);
+    const fplSecondTokens = normalizeName(p.secondName).split(/\s+/).filter(Boolean);
+    const firstMatches = fplFirstTokens.some((tok) => parts.includes(tok));
+    const secondMatches = fplSecondTokens.some((tok) => parts.includes(tok));
+    if (firstMatches && secondMatches) {
       return p;
     }
   }

@@ -74,7 +74,7 @@ interface GalleryContentProps {
   isAdmin?: boolean;
   totalImages: number;
   categoryCounts?: Record<string, number>;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string) => Promise<boolean> | void;
   onSetHomepage?: (id: string) => Promise<boolean>;
   onLoadMore?: (category: string) => Promise<{
     images: GalleryImage[];
@@ -230,9 +230,13 @@ export function GalleryContent({
         open: true,
         title: t("admin.delete"),
         description: t("admin.deleteConfirm"),
-        onConfirm: () => {
-          onDelete?.(id);
-          showToast({ type: "success", message: t("admin.deleteSuccess") });
+        onConfirm: async () => {
+          const ok = await onDelete?.(id);
+          if (ok !== false) {
+            showToast({ type: "success", message: t("admin.deleteSuccess") });
+          } else {
+            showToast({ type: "error", message: t("admin.actionError") });
+          }
           setConfirmDialog((prev) => ({ ...prev, open: false }));
         },
       });
@@ -384,7 +388,7 @@ export function GalleryContent({
                   onClick={() => handleDelete(img.id)}
                   aria-label={t("admin.delete")}
                   title={t("admin.delete")}
-                  className="absolute left-1.5 top-1.5 inline-flex size-9 items-center justify-center bg-red-600/90 text-white hover:bg-red-600"
+                  className="absolute left-1.5 top-1.5 inline-flex size-11 items-center justify-center bg-red-600/90 text-white hover:bg-red-600"
                 >
                   <Trash2 className="size-4" aria-hidden />
                 </button>
@@ -396,7 +400,7 @@ export function GalleryContent({
                   aria-label={t("admin.setHomepage")}
                   title={t("admin.setHomepage")}
                   className={cn(
-                    "absolute right-1.5 top-1.5 inline-flex size-9 items-center justify-center text-black",
+                    "absolute right-1.5 top-1.5 inline-flex size-11 items-center justify-center text-black",
                     homepageSet === img.id ? "bg-green-400" : "bg-lfc-gold/90 hover:bg-lfc-gold",
                   )}
                 >

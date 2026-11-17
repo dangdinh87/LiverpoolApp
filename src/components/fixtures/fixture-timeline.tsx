@@ -96,7 +96,8 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   }, [fixtures, comp]);
 
   const viewerZone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
-  const zoneOffset = formatZoneOffset(new Date(fixtures[0]?.fixture.date ?? 0), viewerZone);
+  const referenceIso = upcoming[0]?.fixture.date ?? results[0]?.fixture.date ?? fixtures[0]?.fixture.date;
+  const zoneOffset = formatZoneOffset(referenceIso ? new Date(referenceIso) : new Date(), viewerZone);
 
   // Upcoming is ~40 matches: a few full cards, the rest as compact rows folded by month.
   const { groups, laterGroups, laterCount } = useMemo(() => {

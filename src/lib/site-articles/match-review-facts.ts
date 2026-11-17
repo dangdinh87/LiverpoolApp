@@ -4,6 +4,7 @@ import {
   getFixtureEvents,
   getFixtureLineups,
   getFixtureStatistics,
+  getMatchDetail,
   getStandings,
 } from "@/lib/football";
 import type {
@@ -34,28 +35,57 @@ const COMPETITION_ALIASES: Record<string, string[]> = {
 
 /** Statistic labels the providers use, mapped to the fields we report. */
 const STAT_LABELS = {
-  possession: "Ball Possession",
-  shots: "Total Shots",
-  onTarget: "Shots on Goal",
-  corners: "Corner Kicks",
+  possession: ["Ball Possession"],
+  shots: ["Total Shots"],
+  // ESPN emits "Shots on Target"; older providers/fixtures used "Shots on Goal".
+  onTarget: ["Shots on Target", "Shots on Goal"],
+  corners: ["Corner Kicks"],
 } as const;
 
-/** Read one statistic as a home/away pair, or null when a side is missing it. */
+function readStatValue(
+  team: FixtureTeamStats | undefined,
+  labels: readonly string[],
+): number | null {
+  if (!team) return null;
+  const item = team.statistics.find((x) => labels.includes(x.type));
+  if (item?.value === null || item?.value === undefined) return null;
+  const n =
+    typeof item.value === "number"
+      ? item.value
+      : Number(String(item.value).replace("%", ""));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Read one statistic as a `[home, away]` pair, or `null` when a side is missing it.
+ *
+ * Opponent team IDs differ between Football-Data.org (`fixture.teams`) and ESPN
+ * (`stats`), whereas Liverpool is always normalised to `LFC_ID = 40` in both.
+ * Resolve Liverpool vs non-Liverpool first when Liverpool is one of the teams.
+ */
 function statPair(
   stats: FixtureTeamStats[],
   homeId: number,
-  label: string,
+  awayId: number,
+  labels: readonly string[],
 ): HomeAway | null {
-  const read = (teamId: number): number | null => {
-    const team = stats.find((s) => s.team.id === teamId);
-    const item = team?.statistics.find((x) => x.type === label);
-    if (item?.value === null || item?.value === undefined) return null;
-    const n = typeof item.value === "number" ? item.value : Number(String(item.value).replace("%", ""));
-    return Number.isFinite(n) ? n : null;
-  };
-  const away = stats.find((s) => s.team.id !== homeId)?.team.id;
-  const h = read(homeId);
-  const a = away === undefined ? null : read(away);
+  if (stats.length < 2) return null;
+
+  let homeTeam: FixtureTeamStats | undefined;
+  let awayTeam: FixtureTeamStats | undefined;
+
+  if (homeId === LFC_ID || awayId === LFC_ID) {
+    const lfcTeam = stats.find((s) => s.team.id === LFC_ID);
+    const oppTeam = stats.find((s) => s.team.id !== LFC_ID);
+    homeTeam = homeId === LFC_ID ? lfcTeam : oppTeam;
+    awayTeam = homeId === LFC_ID ? oppTeam : lfcTeam;
+  } else {
+    homeTeam = stats.find((s) => s.team.id === homeId);
+    awayTeam = stats.find((s) => s.team.id !== homeId);
+  }
+
+  const h = readStatValue(homeTeam, labels);
+  const a = readStatValue(awayTeam, labels);
   return h === null || a === null ? null : [h, a];
 }
 
@@ -87,12 +117,6 @@ function cardsFrom(events: FixtureEvent[]): CardFact[] {
 
 /**
  * Assemble everything a match report may state.
- *
- * Pure, so it can be tested against recorded fixtures without a network call,
- * and so the one place that decides what is true stays readable. A missing
- * input narrows what the article can say rather than inventing a stand-in:
- * every optional field here is a sentence the writer simply will not get to
- * write.
  */
 export function buildMatchReviewFacts(
   fixture: Fixture,
@@ -108,6 +132,21 @@ export function buildMatchReviewFacts(
 
   const lfcLineup = lineups.find((l) => l.team.id === LFC_ID) ?? null;
   const row = standings.find((s) => s.team.id === LFC_ID) ?? null;
+
+  const parsedStats = stats.length
+    ? {
+        possession: statPair(stats, teams.home.id, teams.away.id, STAT_LABELS.possession),
+        shots: statPair(stats, teams.home.id, teams.away.id, STAT_LABELS.shots),
+        onTarget: statPair(stats, teams.home.id, teams.away.id, STAT_LABELS.onTarget),
+        corners: statPair(stats, teams.home.id, teams.away.id, STAT_LABELS.corners),
+      }
+    : null;
+  const hasAnyStat =
+    parsedStats !== null &&
+    (parsedStats.possession !== null ||
+      parsedStats.shots !== null ||
+      parsedStats.onTarget !== null ||
+      parsedStats.corners !== null);
 
   return {
     kind: "review",
@@ -130,14 +169,7 @@ export function buildMatchReviewFacts(
     starters: lfcLineup?.startXI.map((s) => s.player.name) ?? [],
     coach: lfcLineup?.coach?.name ?? null,
     substitutes: lfcLineup?.substitutes.map((s) => s.player.name) ?? [],
-    stats: stats.length
-      ? {
-          possession: statPair(stats, teams.home.id, STAT_LABELS.possession),
-          shots: statPair(stats, teams.home.id, STAT_LABELS.shots),
-          onTarget: statPair(stats, teams.home.id, STAT_LABELS.onTarget),
-          corners: statPair(stats, teams.home.id, STAT_LABELS.corners),
-        }
-      : null,
+    stats: hasAnyStat ? parsedStats : null,
     table: row ? { position: row.rank, points: row.points, played: row.all.played } : null,
   };
 }
@@ -147,11 +179,13 @@ export async function loadMatchReviewFacts(fixtureId: number): Promise<MatchRevi
   const fixture = await getFixtureById(fixtureId);
   if (!fixture) return null;
   const date = fixture.fixture.date;
-  const [events, lineups, stats, standings] = await Promise.all([
+  const [events, lineups, providerStats, espnDetail, standings] = await Promise.all([
     getFixtureEvents(fixtureId, date),
     getFixtureLineups(fixtureId, date),
     getFixtureStatistics(fixtureId),
+    getMatchDetail(date).catch(() => null),
     getStandings().catch(() => [] as Standing[]),
   ]);
+  const stats = espnDetail?.stats?.length ? espnDetail.stats : providerStats;
   return buildMatchReviewFacts(fixture, events, lineups, stats, standings);
 }

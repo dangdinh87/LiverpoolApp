@@ -5,10 +5,8 @@
 import "server-only";
 import { seasonRevalidate } from "@/lib/football/current-season";
 import type { Standing, StandingRecord } from "@/lib/types/football";
+import { CANONICAL_LFC_ID, fdoFetch, mapFdoTeamId as mapTeamId } from "./fdo-client";
 import { derivePLFormMap } from "./fdo-matches";
-
-const FDO_BASE = "https://api.football-data.org/v4";
-const FETCH_TIMEOUT_MS = 10_000;
 
 // ─── Football-Data.org response shapes ──────────────────────────────────────
 
@@ -46,31 +44,6 @@ interface FdoStandingsResponse {
   standings: FdoStandingsGroup[];
 }
 
-// ─── Team ID mapping (FDO → canonical) ──────────────────────────────────────
-
-// Football-Data.org uses different team IDs. Map Liverpool specifically.
-const FDO_LFC_ID = 64;
-const CANONICAL_LFC_ID = 40;
-
-// ─── Fetcher ────────────────────────────────────────────────────────────────
-
-async function fdoFetch<T>(path: string, revalidate: number): Promise<T> {
-  const key = process.env.FOOTBALL_DATA_ORG_KEY;
-  if (!key) throw new Error("[fdo] FOOTBALL_DATA_ORG_KEY not set");
-
-  const res = await fetch(`${FDO_BASE}${path}`, {
-    headers: { "X-Auth-Token": key },
-    next: { revalidate },
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-
-  if (!res.ok) {
-    throw new Error(`[fdo] HTTP ${res.status} on ${path}`);
-  }
-
-  return res.json();
-}
-
 // ─── Mappers ────────────────────────────────────────────────────────────────
 
 function mapRecord(e: FdoTableEntry): StandingRecord {
@@ -81,10 +54,6 @@ function mapRecord(e: FdoTableEntry): StandingRecord {
     lose: e.lost,
     goals: { for: e.goalsFor, against: e.goalsAgainst },
   };
-}
-
-function mapTeamId(fdoId: number): number {
-  return fdoId === FDO_LFC_ID ? CANONICAL_LFC_ID : fdoId;
 }
 
 // Normalize form "W,D,W,L,W" → "WDWLW"

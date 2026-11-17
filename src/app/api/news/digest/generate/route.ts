@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getEnv } from "@/lib/env";
 import {
   generateDailyDigest,
@@ -40,8 +41,13 @@ export const GET = withCronAuth(async (req) => {
     const digest = await generateDailyDigest();
 
     await upsertDigestRecord(existing, today, digest);
-    // Pages cache the latest digest for 30 min; show the new one right away.
+    // Bust both the shared digest data tag AND the rendered ISR pages that
+    // embed today's briefing (including /news/digest/[today] if visited early).
     revalidateTag("news-digest", "max");
+    revalidateLocalizedPath("/");
+    revalidateLocalizedPath("/news");
+    revalidateLocalizedPath("/news/digest");
+    revalidateLocalizedPath(`/news/digest/${today}`);
 
     return NextResponse.json({
       ok: true,

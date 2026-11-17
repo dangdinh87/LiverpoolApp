@@ -70,9 +70,36 @@ const ZONE_ABBR = /^(.*\S)\s+(BST|CEST|EDT|EST)$/i;
 const SHORT_OFFSET = /([+-])(\d):(\d{2})$/; // "+7:00" -> "+07:00" (bongdaplus)
 
 /**
+ * Exact UTC offset in minutes for `America/New_York` at a wall-clock instant.
+ * ESPN feeds emit `"EST"` year-round even during Eastern Daylight Time (`-04:00`),
+ * and US DST transitions on the 2nd Sunday of March and 1st Sunday of November.
+ */
+function easternOffsetMinutesAt(utcWallGuessMs: number): number {
+  try {
+    // Check at +5h from the UTC wall-clock numbers (exact instant if standard EST;
+    // within 1h of the 02:00 local transition otherwise).
+    const probe = new Date(utcWallGuessMs + 5 * 3_600_000);
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      timeZoneName: "shortOffset",
+    }).formatToParts(probe);
+    const tzPart = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+    const match = tzPart.match(/GMT([+-]\d{1,2})(?::(\d{2}))?/);
+    if (match) {
+      const hours = parseInt(match[1], 10);
+      const mins = match[2] ? parseInt(match[2], 10) : 0;
+      return hours * 60 + (hours < 0 ? -mins : mins);
+    }
+  } catch {
+    // Fallback if Intl lacks IANA zone data
+  }
+  return -300;
+}
+
+/**
  * Zone names V8 cannot parse (BST, CEST) or parses with the wrong DST (ESPN labels
- * summer times "EST" but means Eastern Time, i.e. -04:00 from March to November)
- * are resolved explicitly. Returns epoch ms, or undefined when the text has no such zone.
+ * summer times "EST" when it means America/New_York) are resolved explicitly.
+ * Returns epoch ms, or undefined when the text has no such zone.
  */
 function parseAbbreviatedZoneMs(text: string): number | undefined {
   const m = ZONE_ABBR.exec(text);
@@ -80,8 +107,7 @@ function parseAbbreviatedZoneMs(text: string): number | undefined {
   const asUtc = new Date(`${m[1]} GMT`).getTime();
   if (!Number.isFinite(asUtc)) return undefined;
   const abbr = m[2].toUpperCase();
-  const month = new Date(asUtc).getUTCMonth(); // 0-based
-  const offset = abbr === "EST" ? (month >= 2 && month <= 10 ? -240 : -300) : ABBR_OFFSET_MINUTES[abbr];
+  const offset = abbr === "EST" ? easternOffsetMinutesAt(asUtc) : ABBR_OFFSET_MINUTES[abbr];
   return asUtc - offset * 60_000;
 }
 

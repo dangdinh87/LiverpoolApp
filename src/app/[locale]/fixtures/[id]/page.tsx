@@ -55,9 +55,39 @@ interface PageProps {
   params: Promise<{ id: string; locale: string }>;
 }
 
+function parsePositiveFixtureId(raw: string): number | null {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/**
+ * Match a provider team (`stats`, `lineups`, `events`) against a fixture side
+ * without colliding on shared prefixes like `"FC"` (`"FC Barcelona"` vs `"Liverpool FC"`)
+ * or `"Manchester"` (`"Manchester City"` vs `"Manchester United"`).
+ */
+function matchesFixtureTeam(
+  candidate: { id: number; name: string },
+  side: { id: number; name: string },
+): boolean {
+  if (candidate.id > 0 && candidate.id === side.id) return true;
+  if (side.id === LFC_ID && /\bliverpool\b/i.test(candidate.name)) return true;
+  if (side.id !== LFC_ID && /\bliverpool\b/i.test(candidate.name)) return false;
+
+  const normCandidate = displayTeamName(candidate.name).toLowerCase().trim();
+  const normSide = displayTeamName(side.name).toLowerCase().trim();
+  if (!normCandidate || !normSide) return false;
+  return (
+    normCandidate === normSide ||
+    normCandidate.includes(normSide) ||
+    normSide.includes(normCandidate)
+  );
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id, locale } = await params;
-  const match = await getFixtureById(Number(id));
+  const fixtureId = parsePositiveFixtureId(id);
+  if (!fixtureId) return { title: "Match", robots: { index: false } };
+  const match = await getFixtureById(fixtureId);
   if (!match) return { title: "Match", robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "Fixtures.detail" });
   const tRound = await getTranslations({ locale, namespace: "Match.round" });
@@ -87,7 +117,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function FixtureDetailPage({ params }: PageProps) {
   const { id, locale } = await params;
   setRequestLocale(locale);
-  const fixtureId = Number(id);
+  const fixtureId = parsePositiveFixtureId(id);
+  if (!fixtureId) notFound();
 
   const [match, tDetail, tMatch, tCard, tRound] = await Promise.all([
     getFixtureById(fixtureId),
@@ -146,18 +177,16 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   }
 
   const matchStats = espnDetail?.stats?.length ? espnDetail.stats : providerStats;
-  const homeStats = matchStats.find((s) =>
-    s.team.id === teams.home.id || s.team.name.toLowerCase().includes(teams.home.name.toLowerCase().split(" ")[0].toLowerCase())
-  );
-  const awayStats = matchStats.find((s) =>
-    s.team.id === teams.away.id || s.team.name.toLowerCase().includes(teams.away.name.toLowerCase().split(" ")[0].toLowerCase())
-  );
+  const homeStats = matchStats.find((s) => matchesFixtureTeam(s.team, teams.home));
+  const awayStats = matchStats.find((s) => matchesFixtureTeam(s.team, teams.away));
 
-  // Match lineups by team ID first, then by name (IDs differ across FDO/ESPN providers)
-  const homeLineup = lineups.find((l) => l.team.id === teams.home.id)
-    ?? lineups.find((l) => l.team.name.toLowerCase().includes(teams.home.name.toLowerCase().split(" ")[0].toLowerCase()));
-  const awayLineup = lineups.find((l) => l.team.id === teams.away.id)
-    ?? lineups.find((l) => l.team.name.toLowerCase().includes(teams.away.name.toLowerCase().split(" ")[0].toLowerCase()));
+  // Match lineups by team ID first, then by normalized club name
+  const homeLineup =
+    lineups.find((l) => l.team.id === teams.home.id) ??
+    lineups.find((l) => matchesFixtureTeam(l.team, teams.home));
+  const awayLineup =
+    lineups.find((l) => l.team.id === teams.away.id) ??
+    lineups.find((l) => matchesFixtureTeam(l.team, teams.away));
 
   const htHome = score.halftime.home;
   const htAway = score.halftime.away;
@@ -167,31 +196,17 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const attendance = espnDetail?.attendance;
   const referee = espnDetail?.referee;
 
-  // Goal scorers for header display
-  const goalEvents = events.filter((e) => e.type === "Goal");
-  const resolvedGoals = goalEvents.map((e) => {
-    if (e.team.id !== 0) return e;
-    const name = e.team.name.toLowerCase();
-    const homeName = teams.home.name.toLowerCase();
-    const awayName = teams.away.name.toLowerCase();
-    const homeMatch = homeName.includes(name) || name.includes(homeName.split(" ")[0]);
-    const awayMatch = awayName.includes(name) || name.includes(awayName.split(" ")[0]);
-    const resolvedId = homeMatch ? teams.home.id : awayMatch ? teams.away.id : 0;
-    return { ...e, team: { ...e.team, id: resolvedId } };
-  });
-  const homeGoals = resolvedGoals.filter((e) => e.team.id === teams.home.id);
-  const awayGoals = resolvedGoals.filter((e) => e.team.id === teams.away.id);
-
   const resolvedEvents = events.map((e) => {
-    if (e.team.id !== 0) return e;
-    const name = e.team.name.toLowerCase();
-    const homeName = teams.home.name.toLowerCase();
-    const awayName = teams.away.name.toLowerCase();
-    const homeMatch = homeName.includes(name) || name.includes(homeName.split(" ")[0]);
-    const awayMatch = awayName.includes(name) || name.includes(awayName.split(" ")[0]);
-    const resolvedId = homeMatch ? teams.home.id : awayMatch ? teams.away.id : 0;
+    if (e.team.id === teams.home.id || e.team.id === teams.away.id) return e;
+    const isHome = matchesFixtureTeam(e.team, teams.home);
+    const isAway = !isHome && matchesFixtureTeam(e.team, teams.away);
+    const resolvedId = isHome ? teams.home.id : isAway ? teams.away.id : e.team.id;
     return { ...e, team: { ...e.team, id: resolvedId } };
   });
+
+  const goalEvents = resolvedEvents.filter((e) => e.type === "Goal");
+  const homeGoals = goalEvents.filter((e) => e.team.id === teams.home.id);
+  const awayGoals = goalEvents.filter((e) => e.team.id === teams.away.id);
 
   const hasEvents = resolvedEvents.length > 0;
   const hasLineups = !!(homeLineup || awayLineup);

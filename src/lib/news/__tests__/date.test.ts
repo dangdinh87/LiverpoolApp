@@ -83,4 +83,17 @@ describe("feed date parsing (machine-timezone independent)", () => {
     expect(parseVietnameseDateText("20 phút trước", NOW)).toBe(NOW - 20 * 60_000);
     expect(parseVietnameseDateText("nonsense", NOW)).toBeNull();
   });
+
+  it("resolves BST, CEST, EDT and America/New_York EST across DST transitions", () => {
+    // Sky Sports BST (+01:00)
+    expect(normalizeFeedDate("Sat, 10 Oct 2026 15:00:00 BST", "en")).toBe("2026-10-10T14:00:00.000Z");
+    // CEST (+02:00)
+    expect(normalizeFeedDate("Sat, 10 Oct 2026 16:00:00 CEST", "en")).toBe("2026-10-10T14:00:00.000Z");
+    // Summer ESPN "EST" (actually EDT = UTC-4)
+    expect(normalizeFeedDate("Wed, 15 Jul 2026 10:00:00 EST", "en")).toBe("2026-07-15T14:00:00.000Z");
+    // Mid-November ESPN "EST" (after 1st Sunday of Nov = genuine UTC-5, NOT UTC-4)
+    expect(normalizeFeedDate("Wed, 18 Nov 2026 10:00:00 EST", "en")).toBe("2026-11-18T15:00:00.000Z");
+    // Early March before 2nd Sunday (genuine UTC-5)
+    expect(normalizeFeedDate("Thu, 05 Mar 2026 10:00:00 EST", "en")).toBe("2026-03-05T15:00:00.000Z");
+  });
 });

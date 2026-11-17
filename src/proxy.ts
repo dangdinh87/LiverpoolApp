@@ -21,6 +21,10 @@ function addNoIndex(response: NextResponse): NextResponse {
 // /wp, /wordpress, /cms, /blog, /site, /press, each also with ?rest_route=.
 const SCANNER_PROBE = /^\/(?:wp|wordpress|cms|blog|site|press)(?:\/|$)|\.php$|^\/xmlrpc|^\/wp-/;
 
+function matchesRouteSegment(path: string, prefixes: readonly string[]): boolean {
+  return prefixes.some((r) => path === r || path.startsWith(`${r}/`));
+}
+
 export async function proxy(request: NextRequest) {
   if (SCANNER_PROBE.test(request.nextUrl.pathname) || request.nextUrl.searchParams.has("rest_route")) {
     return new NextResponse(null, { status: 404 });
@@ -31,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const response = handleI18nRouting(request);
   const { path, prefix } = splitLocalePrefix(request.nextUrl.pathname);
 
-  if (PROTECTED_ROUTES.some((r) => path.startsWith(r))) {
+  if (matchesRouteSegment(path, PROTECTED_ROUTES)) {
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -64,12 +68,18 @@ export async function proxy(request: NextRequest) {
 
     if (!user) {
       const loginUrl = new URL(`${prefix}/auth/login`, request.url);
-      loginUrl.searchParams.set("redirect", request.nextUrl.pathname);
-      return addNoIndex(NextResponse.redirect(loginUrl));
+      loginUrl.searchParams.set("redirect", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      // Preserve any cookie mutations (e.g. cleared expired session tokens) so
+      // clients do not retain broken auth cookies across redirects.
+      for (const c of response.cookies.getAll()) {
+        redirectResponse.cookies.set(c);
+      }
+      return addNoIndex(redirectResponse);
     }
   }
 
-  if (NOINDEX_PREFIXES.some((r) => path.startsWith(r))) addNoIndex(response);
+  if (matchesRouteSegment(path, NOINDEX_PREFIXES)) addNoIndex(response);
   return response;
 }
 

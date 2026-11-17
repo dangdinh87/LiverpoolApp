@@ -8,12 +8,25 @@
  */
 export const dynamic = "force-dynamic";
 
+import { unstable_cache } from "next/cache";
 import { getAllPlayers } from "@/lib/squad-data";
 import { getAllDigestDates } from "@/lib/news/digest";
 import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { getCurrentSeasonYear, getSelectableSeasons } from "@/lib/football/current-season";
 import { listSiteArticles } from "@/lib/site-articles/db";
 import { getHreflangAlternates } from "@/lib/seo";
+
+const getCachedSitemapDigests = unstable_cache(
+  async () => getAllDigestDates(),
+  ["sitemap-digests-v1"],
+  { revalidate: 3600, tags: ["news-digest"] },
+);
+
+const getCachedSitemapSiteArticles = unstable_cache(
+  async () => listSiteArticles(200),
+  ["sitemap-site-articles-v1"],
+  { revalidate: 3600, tags: ["site-articles"] },
+);
 
 export async function GET() {
   const today = new Date().toISOString().slice(0, 10);
@@ -44,13 +57,9 @@ export async function GET() {
 
   try {
     const [digestData, fixtures, articles] = await Promise.allSettled([
-      getAllDigestDates(),
+      getCachedSitemapDigests().catch(() => getAllDigestDates()),
       getCachedFixtures(),
-      // These were declared and never fetched, so the one set of pages this
-      // site writes itself — the only original content here — was missing from
-      // the sitemap entirely while every scraped mirror was deliberately kept
-      // out. Nothing was submitting them.
-      listSiteArticles(200),
+      getCachedSitemapSiteArticles().catch(() => listSiteArticles(200)),
     ]);
     if (digestData.status === "fulfilled") digests = digestData.value;
     if (articles.status === "fulfilled") {
@@ -186,7 +195,12 @@ ${urls.join("\n")}
   });
 }
 
-/** Escape special XML chars in URLs */
+/** Escape special XML chars in URLs and attributes */
 function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }

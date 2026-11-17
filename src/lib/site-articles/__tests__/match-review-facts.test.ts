@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildMatchReviewFacts } from "@/lib/site-articles/match-review-facts";
 import { validateDraft } from "@/lib/site-articles/validate-draft";
+import { mapEspnStats } from "@/lib/football/espn-events";
 import type {
   Fixture,
   FixtureEvent,
@@ -129,5 +130,46 @@ describe("buildMatchReviewFacts", () => {
       facts,
     );
     expect(report.problems).toEqual([]);
+  });
+
+  it("extracts stats from real mapEspnStats output (including 0-0 draws and mismatched opponent IDs)", () => {
+    const espnLfc = mapEspnStats({
+      team: { id: "364", displayName: "Liverpool" },
+      statistics: [
+        { name: "possessionPct", displayValue: "61" },
+        { name: "totalShots", displayValue: "18" },
+        { name: "shotsOnTarget", displayValue: "7" },
+        { name: "wonCorners", displayValue: "9" },
+      ],
+    });
+    const espnOpp = mapEspnStats({
+      // ESPN ID for Man City is 382, whereas FDO fixture uses 50
+      team: { id: "382", displayName: "Manchester City" },
+      statistics: [
+        { name: "possessionPct", displayValue: "39" },
+        { name: "totalShots", displayValue: "8" },
+        { name: "shotsOnTarget", displayValue: "2" },
+        { name: "wonCorners", displayValue: "3" },
+      ],
+    });
+
+    const nilNil = fixture({
+      goals: { home: 0, away: 0 },
+      score: {
+        halftime: { home: 0, away: 0 },
+        fulltime: { home: 0, away: 0 },
+        extratime: { home: null, away: null },
+        penalty: { home: null, away: null },
+      },
+    } as Partial<Fixture>);
+
+    const facts = buildMatchReviewFacts(nilNil, [], [], [espnOpp, espnLfc], standings);
+    expect(facts.result).toBe("draw");
+    expect(facts.stats).toEqual({
+      possession: [61, 39],
+      shots: [18, 8],
+      onTarget: [7, 2],
+      corners: [9, 3],
+    });
   });
 });

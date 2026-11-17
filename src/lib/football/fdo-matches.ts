@@ -5,12 +5,8 @@
 import "server-only";
 import type { Fixture, Coach } from "@/lib/types/football";
 import { getCurrentSeasonYear, seasonRevalidate } from "@/lib/football/current-season";
-
-const FDO_BASE = "https://api.football-data.org/v4";
-const FETCH_TIMEOUT_MS = 10_000;
-
-const FDO_LFC_ID = 64;
-const CANONICAL_LFC_ID = 40;
+import { getCoach as getLocalCoach } from "@/lib/squad-data";
+import { CANONICAL_LFC_ID, FDO_LFC_ID, fdoFetch, mapFdoTeamId as mapTeamId } from "./fdo-client";
 
 // ─── FDO response shapes ────────────────────────────────────────────────────
 
@@ -76,22 +72,6 @@ interface FdoTeamResponse {
   coach: FdoCoachRaw;
 }
 
-// ─── Fetcher (shared with fdo-standings via same pattern) ───────────────────
-
-async function fdoFetch<T>(path: string, revalidate: number): Promise<T> {
-  const key = process.env.FOOTBALL_DATA_ORG_KEY;
-  if (!key) throw new Error("[fdo] FOOTBALL_DATA_ORG_KEY not set");
-
-  const res = await fetch(`${FDO_BASE}${path}`, {
-    headers: { "X-Auth-Token": key },
-    next: { revalidate },
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-
-  if (!res.ok) throw new Error(`[fdo] HTTP ${res.status} on ${path}`);
-  return res.json();
-}
-
 // ─── Status mapping ─────────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { short: string; long: string }> = {
@@ -112,12 +92,6 @@ const STATUS_MAP: Record<string, { short: string; long: string }> = {
 function mapStatus(fdoStatus: string): { short: string; long: string; elapsed: number | null } {
   const mapped = STATUS_MAP[fdoStatus] ?? { short: "NS", long: fdoStatus };
   return { ...mapped, elapsed: fdoStatus === "FINISHED" ? 90 : null };
-}
-
-// ─── Team ID mapping ────────────────────────────────────────────────────────
-
-function mapTeamId(fdoId: number): number {
-  return fdoId === FDO_LFC_ID ? CANONICAL_LFC_ID : fdoId;
 }
 
 // Local competition logos (override remote FDO emblems)
@@ -281,6 +255,11 @@ export async function getFdoCoach(): Promise<Coach | null> {
     ? Math.floor((Date.now() - new Date(c.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : 0;
 
+  const localCoach = getLocalCoach();
+  const sameCoach =
+    localCoach &&
+    localCoach.name.toLowerCase().includes(c.lastName.toLowerCase());
+
   return {
     id: c.id,
     name: c.name,
@@ -295,7 +274,7 @@ export async function getFdoCoach(): Promise<Coach | null> {
     nationality: c.nationality,
     height: null,
     weight: null,
-    photo: "/assets/lfc/players/arne-slot.webp",
+    photo: sameCoach ? localCoach.photo : "",
     team: { id: CANONICAL_LFC_ID, name: data.name, logo: data.crest },
     career: [],
   };

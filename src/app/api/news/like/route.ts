@@ -82,13 +82,24 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     // Unlike
-    await supabase.from("article_likes").delete().eq("id", existing.id);
+    const { error } = await supabase
+      .from("article_likes")
+      .delete()
+      .eq("id", existing.id);
+    if (error) {
+      console.error("[like] delete error:", error.message);
+      return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+    }
   } else {
     // Like
-    await supabase.from("article_likes").insert({
+    const { error } = await supabase.from("article_likes").insert({
       user_id: user.id,
       article_url: canonicalUrl,
     });
+    if (error && error.code !== "23505") {
+      console.error("[like] insert error:", error.message);
+      return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+    }
   }
 
   // The article page renders the count from a snapshot shared by every

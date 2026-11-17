@@ -1,6 +1,7 @@
 import type { NewsArticle } from "../types";
 import { extractImageUrlFromHtml } from "../image";
 import { NEWS_USER_AGENT } from "../http";
+import { isKnownNewsSourceUrl } from "@/lib/news-config";
 
 interface OgMeta {
   image?: string;
@@ -27,6 +28,7 @@ function extractMetaContent(html: string, name: string): string | undefined {
 }
 
 export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta> {
+  if (!isKnownNewsSourceUrl(url)) return {};
   try {
     const readBodyFallback = /bongda24h\.vn/i.test(url);
     const res = await fetch(url, {
@@ -40,6 +42,7 @@ export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta
       cache: "no-store",
     });
     if (!res.ok) return {};
+    if (res.url && !isKnownNewsSourceUrl(res.url)) return {};
 
     // Stream only what is needed: the head for normal sites, plus the start of
     // the body for sources that lazy-load their primary image outside OG tags.

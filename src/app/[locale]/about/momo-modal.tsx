@@ -20,7 +20,10 @@ export function MomoModal() {
           MoMo
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm gap-3 border-[var(--line-strong)] bg-white p-4 sm:max-w-sm">
+      <DialogContent
+        closeLabel={t("close")}
+        className="max-w-sm gap-3 border-[var(--line-strong)] bg-white p-4 text-neutral-900 sm:max-w-sm [&_[data-slot=dialog-close]]:top-2 [&_[data-slot=dialog-close]]:right-2 [&_[data-slot=dialog-close]]:flex [&_[data-slot=dialog-close]]:size-11 [&_[data-slot=dialog-close]]:items-center [&_[data-slot=dialog-close]]:justify-center [&_[data-slot=dialog-close]]:bg-black/75 [&_[data-slot=dialog-close]]:text-white [&_[data-slot=dialog-close]]:opacity-100 hover:[&_[data-slot=dialog-close]]:bg-black"
+      >
         <DialogTitle className="sr-only">{t("momoTitle")}</DialogTitle>
         <DialogDescription className="sr-only">{t("momoAlt")}</DialogDescription>
         <Image src="/assets/momo-qr.png" alt={t("momoAlt")} width={400} height={400} className="h-auto w-full" />

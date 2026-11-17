@@ -59,9 +59,22 @@ interface NewsFeedProps {
   nowMs: number;
 }
 
+/**
+ * Fall back to `"all"` whenever the requested language tab has no articles
+ * available (e.g. `"vi"` after Vietnamese RSS feeds were retired in Oct 2026).
+ */
+export function resolveEffectiveLang(
+  lang: LangFilter,
+  availableValues: readonly LangFilter[],
+): LangFilter {
+  return availableValues.includes(lang) ? lang : "all";
+}
+
 export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsFeedProps) {
   const t = useTranslations("News.feed");
-  const [lang, setLang] = useState<LangFilter>(locale === "en" ? "en" : "vi");
+  const [lang, setLang] = useState<LangFilter>(() =>
+    locale === "vi" ? (localArticles.length > 0 ? "vi" : "all") : "en",
+  );
   const [category, setCategory] = useState<CategoryFilter>("all");
   // `/news?source=bbc` is read here rather than in the page, so /news stays
   // prerendered and is served from the CDN edge worldwide instead of being
@@ -103,8 +116,6 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
       .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
   }, [localArticles, globalArticles, extra]);
 
-  const byLang = useMemo(() => (lang === "all" ? loaded : loaded.filter((a) => a.language === lang)), [loaded, lang]);
-
   /**
    * Only the languages actually present, the same way `availableSources` works
    * below: a chip that can only ever lead to an empty list is a dead control.
@@ -117,6 +128,16 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
     const present = new Set(loaded.map((a) => a.language));
     return LANGS.filter((l) => l.value === "all" || present.has(l.value));
   }, [loaded]);
+
+  const effectiveLang = useMemo(
+    () => resolveEffectiveLang(lang, availableLangs.map((l) => l.value)),
+    [lang, availableLangs],
+  );
+
+  const byLang = useMemo(
+    () => (effectiveLang === "all" ? loaded : loaded.filter((a) => a.language === effectiveLang)),
+    [loaded, effectiveLang],
+  );
 
   const availableSources = useMemo(() => {
     const present = new Set(byLang.map((a) => a.source));
@@ -167,7 +188,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
       setVisible((v) => v + PAGE_SIZE);
       return;
     }
-    const requestLanguage = lang === "all" ? undefined : lang;
+    const requestLanguage = effectiveLang === "all" ? undefined : effectiveLang;
     const offset = loaded.filter((a) => !requestLanguage || a.language === requestLanguage).length;
     startTransition(async () => {
       try {
@@ -199,7 +220,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
               hidden={availableLangs.length < 3}
             >
               {availableLangs.map(({ value, labelKey }) => {
-                const active = lang === value;
+                const active = effectiveLang === value;
                 return (
                   <button
                     key={value}

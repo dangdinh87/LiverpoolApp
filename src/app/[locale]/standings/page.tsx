@@ -1,5 +1,8 @@
+import { unstable_cache } from "next/cache";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
+import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
+import { requireNonEmptyArray } from "@/lib/football/fdo-client";
 import { getFixtures, getStandings, getUclStandings } from "@/lib/football";
 import { standingsContext } from "@/lib/football/standings-context";
 import { StandingsSummary } from "@/components/standings/standings-summary";
@@ -21,12 +24,24 @@ export async function generateMetadata({ params }: LocaleParams) {
 
 export const revalidate = 21600; // 6 hours
 
+// Match the 6h page window: calling raw getFixtures() directly ran a 300s fetch
+// inside render, silently lowering /standings ISR from 6h down to 5 minutes.
+const getCachedStandingsFixtures = unstable_cache(
+  async () => requireNonEmptyArray(getFixtures()),
+  ["standings-fixtures-v1"],
+  { revalidate: 21600, tags: [FOOTBALL_CACHE_TAG] },
+);
+
 export default async function StandingsPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Standings");
   // The Champions League table is a second tab when the data source has it (it is empty off-season).
-  const [standings, uclStandings, fixtures] = await Promise.all([getStandings(), getUclStandings(), getFixtures()]);
+  const [standings, uclStandings, fixtures] = await Promise.all([
+    getStandings(),
+    getUclStandings(),
+    getCachedStandingsFixtures().catch(() => []),
+  ]);
 
   // Liverpool's next Premier League match: its opponent is tagged in the table.
   const nextLeague = fixtures

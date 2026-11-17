@@ -48,7 +48,8 @@ const getCachedNewsList = unstable_cache(
 const getCachedVideoItems = unstable_cache(
   async () => getVideoItemsFromDB(6),
   ["news-page-video-v1"],
-  { revalidate: 900, tags: ["news"] },
+  // Match the page's 1800s revalidate so Next does not lower /news ISR to 900s.
+  { revalidate: 1800, tags: ["news"] },
 );
 
 // Was fresh only because the root layout forced dynamic rendering; the cached
@@ -81,7 +82,10 @@ export default async function NewsPage({ params }: LocaleParams) {
   // When each story of the default view came out, so "N new stories" can count
   // them against the reader's previous visit in the browser (NewsFeed clusters
   // the same articles the same way, so the count matches the divider).
-  const storyTimes = clusterStories(userLang === "vi" ? localArticles : globalArticles).map((s) =>
+  // Fall back to globalArticles when no Vietnamese feed articles exist.
+  const defaultArticles =
+    userLang === "vi" && localArticles.length > 0 ? localArticles : globalArticles;
+  const storyTimes = clusterStories(defaultArticles).map((s) =>
     new Date(s.lead.pubDate).getTime(),
   );
 

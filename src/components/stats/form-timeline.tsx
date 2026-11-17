@@ -27,7 +27,7 @@ export function FormTimeline({ entries, legendLabels }: Props) {
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="shrink-0 transition-[filter] duration-(--dur-base) hover:brightness-110"
+                className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center transition-[filter] duration-(--dur-base) hover:brightness-110 active:scale-[0.97]"
                 aria-label={`${legendLabels?.[WORD[entry.result]] ?? entry.result}: ${entry.score} vs ${entry.opponent}`}
               >
                 <FormSquare result={entry.result} size="md" />

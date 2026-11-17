@@ -52,7 +52,8 @@ const SCRAPE_MIN_LIMIT = 10;
 const SCRAPE_BASE_LIMIT = 16;
 const SCRAPE_MAX_LIMIT = 28;
 const SCRAPE_PEAK_MAX_LIMIT = 36;
-const SCRAPE_TIME_BUDGET_MS = 90_000;
+// Keep well below Cloudflare's 100s edge HTTP 524 timeout even after RSS fetch + DB upserts.
+const SCRAPE_TIME_BUDGET_MS = 45_000;
 const STALE_CONTENT_MS = 24 * 3600 * 1000;
 const MATCH_PEAK_BEFORE_HOURS = 36;
 const MATCH_PEAK_AFTER_HOURS = 18;
@@ -395,8 +396,8 @@ async function enrichMissingThumbnails(
     .select("url,thumbnail,hero_image,content_hero:content_en->>heroImage")
     .eq("is_active", true)
     .is("thumbnail", null)
-    // This Is Anfield 403s every client; its RSS carries images anyway.
-    .not("source", "in", "(tia,anfieldindex)")
+    // Link-out / video sources are never scraped.
+    .not("source", "in", "(tia,anfieldindex,lfctv)")
     .gte("fetched_at", since)
     .order("fetched_at", { ascending: false })
     .limit(ENRICH_CANDIDATE_POOL);
@@ -505,8 +506,8 @@ async function scrapeContentForRecentArticles(
     .from("articles")
     .select("url")
     .eq("is_active", true)
-    // This Is Anfield 403s every client: link-out only, never scrape.
-    .not("source", "in", "(tia,anfieldindex)")
+    // Link-out / video sources are never scraped (including lfctv would poison scrapeSuccessRate).
+    .not("source", "in", "(tia,anfieldindex,lfctv)")
     .or(`content_en.is.null,content_scraped_at.lt.${staleCutoff}`)
     .order("relevance", { ascending: false })
     .order("published_at", { ascending: false })

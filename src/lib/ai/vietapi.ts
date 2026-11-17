@@ -1,25 +1,28 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { getEnv } from "@/lib/env";
 
 /**
- * The app's LLM provider: chat, article translation, and the daily digest.
+ * The app's LLM provider: article translation, daily digest, and match reviews.
  *
- * VietAPI is an OpenAI-compatible proxy (`https://api.vietapi.tech/v1`) keyed by
- * `VIETAPI_KEY`. It replaced Groq, whose model line-up had been retired out from
- * under this codebase — the configured default and most of the fallback chain
- * returned `model_not_found`, which took chat, translation and the digest down
- * together.
- *
- * Use the `openai-compatible` provider specifically, not another vendor's
- * provider pointed at this baseURL: that combination streams text correctly but
- * silently drops tool calls.
+ * Instantiated at call time rather than frozen at module import so Cloudflare
+ * Worker secrets populated per-request (and rotated env vars in tests) are
+ * always picked up cleanly.
  */
-export const vietapi = createOpenAICompatible({
-  name: "vietapi",
-  apiKey: process.env.VIETAPI_KEY ?? "",
-  baseURL: "https://api.vietapi.tech/v1",
-});
+export function getVietapiModel(modelId: string) {
+  const provider = createOpenAICompatible({
+    name: "vietapi",
+    apiKey: getEnv("VIETAPI_KEY") ?? "",
+    baseURL: "https://api.vietapi.tech/v1",
+  });
+  return provider(modelId);
+}
+
+/** Backwards-compatible callable wrapper around {@link getVietapiModel}. */
+export function vietapi(modelId: string) {
+  return getVietapiModel(modelId);
+}
 
 /** Whether the provider is configured; callers degrade instead of throwing. */
 export function hasVietapiKey(): boolean {
-  return Boolean(process.env.VIETAPI_KEY);
+  return Boolean(getEnv("VIETAPI_KEY"));
 }

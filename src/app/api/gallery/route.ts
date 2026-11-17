@@ -9,17 +9,28 @@ import {
   getGalleryImageById,
 } from "@/lib/gallery/queries";
 
+const ALLOWED_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
+const MAX_GALLERY_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
+
 /** GET /api/gallery?offset=0&limit=50&category=all — paginated gallery images */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const offset = parseInt(searchParams.get("offset") || "0", 10);
-    const limit = parseInt(searchParams.get("limit") || "50", 10);
+    const rawOffset = Number.parseInt(searchParams.get("offset") || "0", 10);
+    const rawLimit = Number.parseInt(searchParams.get("limit") || "50", 10);
+    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+    const limit =
+      Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 50;
     const category = searchParams.get("category") || "all";
-    const search = searchParams.get("search") || "";
+    const search = (searchParams.get("search") || "").slice(0, 120);
 
     const { images, total } = await listGalleryImagesFromDB({
-      limit: Math.min(limit, 100),
+      limit,
       offset,
       category,
       search,
@@ -67,6 +78,18 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { error: "Unsupported image format" },
+        { status: 400 },
+      );
+    }
+    if (file.size <= 0 || file.size > MAX_GALLERY_UPLOAD_BYTES) {
+      return NextResponse.json(
+        { error: "Image must be under 10 MB" },
+        { status: 400 },
+      );
     }
 
     if (
@@ -126,7 +149,8 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { id } = await req.json();
+    const body = await req.json().catch(() => null);
+    const id = typeof body?.id === "string" ? body.id.trim() : "";
     if (!id) {
       return NextResponse.json({ error: "No id provided" }, { status: 400 });
     }

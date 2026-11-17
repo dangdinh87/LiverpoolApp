@@ -13,7 +13,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { getServiceClient } from "./supabase-service";
-import { articleUrlVariants } from "./url";
+import { canonicalizeArticleUrl } from "./url";
 
 /** Busted by the like route so a new like is not hidden for a whole TTL. */
 export const ARTICLE_ENGAGEMENT_TAG = "article-engagement";
@@ -58,7 +58,9 @@ const loadEngagement = unstable_cache(
   async (): Promise<Record<string, ArticleEngagement>> => {
     const out: Record<string, ArticleEngagement> = {};
     const bump = (url: string, key: keyof ArticleEngagement) => {
-      const row = (out[url] ??= { likes: 0, comments: 0 });
+      if (!url) return;
+      const canonical = canonicalizeArticleUrl(url);
+      const row = (out[canonical] ??= { likes: 0, comments: 0 });
       row[key] += 1;
     };
 
@@ -92,9 +94,5 @@ const loadEngagement = unstable_cache(
  */
 export async function getArticleEngagement(url: string): Promise<ArticleEngagement> {
   const snapshot = await loadEngagement();
-  for (const variant of articleUrlVariants(url)) {
-    const found = snapshot[variant];
-    if (found) return found;
-  }
-  return { likes: 0, comments: 0 };
+  return snapshot[canonicalizeArticleUrl(url)] ?? { likes: 0, comments: 0 };
 }

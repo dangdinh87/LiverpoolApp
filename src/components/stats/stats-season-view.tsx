@@ -20,23 +20,10 @@ import { competitionName } from "@/lib/competition-labels";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
   formatSeasonLabel,
-  getCurrentSeasonLabel,
   getCurrentSeasonYear,
   getSelectableSeasons,
 } from "@/lib/football/current-season";
 
-// Derived from the date; see src/lib/football/current-season.ts.
-const CURRENT_SEASON = getCurrentSeasonYear();
-
-/**
- * The stats page for one season, shared by /stats and /stats/[season].
- *
- * It used to be the /stats page itself, reading the season from `?season=`.
- * Awaiting searchParams opts a route out of prerendering, so every visit to
- * /stats — nearly all of them for the current season, with no parameter at all
- * — was rendered on demand in one region. The season is a path segment now and
- * this holds the markup both routes render.
- */
 export async function StatsSeasonView({
   locale,
   selectedSeason,
@@ -45,41 +32,41 @@ export async function StatsSeasonView({
   selectedSeason: number;
 }) {
   setRequestLocale(locale);
+  const currentSeason = getCurrentSeasonYear();
   const t = await getTranslations("Stats");
   const tMatch = await getTranslations("Match");
   const letters = { W: tMatch("resultShort.W"), D: tMatch("resultShort.D"), L: tMatch("resultShort.L") };
-  const isCurrentSeason = selectedSeason === CURRENT_SEASON;
+  const isCurrentSeason = selectedSeason === currentSeason;
   const seasonLabel = formatSeasonLabel(selectedSeason);
+  const comparisonSeasons = [selectedSeason - 1, selectedSeason - 2];
 
-  // Fetch data — scorers only available for current season (FDO limitation)
-  const [scorers, assists, squad, fixtures, standings] = await Promise.all([
+  // Parallelize current season + comparison archive seasons + breadcrumb JSON-LD
+  // in a single Promise.all to eliminate sequential cold-render waterfalls.
+  const [scorers, assists, squad, fixtures, standings, compSeasonData, breadcrumbJsonLd] = await Promise.all([
     isCurrentSeason ? getTopScorers() : Promise.resolve([]),
     isCurrentSeason ? getTopAssists() : Promise.resolve([]),
-    // The squad's own numbers (FPL, cached 6h): the league lists above stop at their top fifty.
     isCurrentSeason ? getAllFplStats() : Promise.resolve([]),
     getFixtures(selectedSeason),
     isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []),
+    Promise.all(
+      comparisonSeasons.map(async (s) => {
+        try {
+          const [fx, st] = await Promise.all([
+            getFixtures(s),
+            getStandings(s).catch(() => []),
+          ]);
+          return { season: s, stats: computeSeasonStats(fx, st) };
+        } catch {
+          return null;
+        }
+      }),
+    ),
+    buildLocalizedBreadcrumbJsonLd(locale, [
+      { nav: "stats", path: isCurrentSeason ? "/stats" : `/stats/${selectedSeason}` },
+    ]),
   ]);
 
-  // Compute all derived stats — pure function, zero API calls
   const seasonStats = computeSeasonStats(fixtures, standings);
-
-  // Comparison chart: the seasons before the selected one (finished seasons are
-  // cached for 30 days, so this costs no API quota after the first render).
-  const comparisonSeasons = [selectedSeason - 1, selectedSeason - 2];
-  const compSeasonData = await Promise.all(
-    comparisonSeasons.map(async (s) => {
-      try {
-        const [fx, st] = await Promise.all([
-          getFixtures(s),
-          getStandings(s).catch(() => []),
-        ]);
-        return { season: s, stats: computeSeasonStats(fx, st) };
-      } catch {
-        return null;
-      }
-    })
-  );
   const seasonComparisonList = [
     { label: `${selectedSeason}/${(selectedSeason + 1).toString().slice(-2)}`, overview: seasonStats.overview },
     ...compSeasonData
@@ -98,14 +85,14 @@ export async function StatsSeasonView({
   const seasonItems = getSelectableSeasons().map((y) => ({
     key: String(y),
     label: formatSeasonLabel(y),
-    href: matchCentreHref("stats", y === CURRENT_SEASON ? undefined : y),
+    href: matchCentreHref("stats", y === currentSeason ? undefined : y),
   }));
   const hasData = seasonStats.overview.played > 0;
-  const chartSubtitle = t("charts.legend", { season: getCurrentSeasonLabel() });
+  const chartSubtitle = t("charts.legend", { season: seasonLabel });
 
   return (
     <div className="min-h-screen">
-      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "stats", path: "/stats" }])} />
+      <JsonLd data={breadcrumbJsonLd} />
       <PageHero
         eyebrow={`${t("hero.seasonLabel")} ${seasonLabel}`}
         title={t("hero.title")}
@@ -292,7 +279,7 @@ function ChartCard({ title, subtitle, flush, children }: { title?: string; subti
     <div className="surface overflow-hidden">
       {title && (
         <div className="px-4 pt-4 sm:px-6 sm:pt-5">
-          <h3 className="font-bebas text-2xl text-white">{title}</h3>
+          <h2 className="font-bebas text-2xl text-white">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-stadium-muted">{subtitle}</p>}
         </div>
       )}

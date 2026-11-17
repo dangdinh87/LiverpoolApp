@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { SOURCE_CONFIG, type NewsSource } from "@/lib/news-config";
-import { isHttpUrl } from "./news-text";
+import { isEmbeddableImageUrl } from "./news-text";
 
 interface NewsThumbProps {
   src?: string;
@@ -27,7 +27,7 @@ export function NewsThumb({ src, alt = "", source, sizes, priority, className }:
   const [failed, setFailed] = useState(false);
   const cfg = SOURCE_CONFIG[source];
 
-  if (!isHttpUrl(src) || failed) {
+  if (!isEmbeddableImageUrl(src) || failed) {
     return (
       <div
         aria-hidden

@@ -23,6 +23,7 @@ export interface ArticleRelevanceAnalysis {
 
 const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
   lfc: 10,
+  lfctv: 9,
   "anfield-watch": 7,
   eotk: 7,
   echo: 7,
@@ -58,6 +59,7 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
 // NOT in this set: their items need a Liverpool identity signal like any other.
 const LFC_DEDICATED: Set<NewsSource> = new Set([
   "lfc",
+  "lfctv",
   "anfield-watch",
   "eotk",
   "echo",

@@ -27,6 +27,7 @@ const INPUT =
 export function LoginForm({ defaultMode = "login", embedded = false, onClose }: LoginFormProps) {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") ?? "/";
+  const callbackFailed = searchParams.get("error");
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,14 +43,20 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
   const t = mode === "login" ? tLogin : tRegister;
   const Heading = embedded ? "h2" : "h1";
   const busy = isPending || googleBusy;
+  const effectiveError = error ?? (callbackFailed ? tErrors("unknown") : null);
+
+  function computeErrors(vals: { email: string; password: string; confirm: string }): Partial<Record<Field, string>> {
+    const out: Partial<Record<Field, string>> = {};
+    if (!vals.email.trim()) out.email = tErrors("emailRequired");
+    else if (!/^\S+@\S+\.\S+$/.test(vals.email.trim())) out.email = tErrors("emailInvalid");
+    if (!vals.password) out.password = tErrors("passwordRequired");
+    else if (mode === "register" && vals.password.length < 6) out.password = tRegister("passwordShort");
+    if (mode === "register" && vals.confirm !== vals.password) out.confirm = tRegister("confirmMismatch");
+    return out;
+  }
 
   // Inline validation, shown after a field was left (or after a submit attempt).
-  const fieldError: Partial<Record<Field, string>> = {};
-  if (!values.email.trim()) fieldError.email = tErrors("emailRequired");
-  else if (!/^\S+@\S+\.\S+$/.test(values.email.trim())) fieldError.email = tErrors("emailInvalid");
-  if (!values.password) fieldError.password = tErrors("passwordRequired");
-  else if (mode === "register" && values.password.length < 6) fieldError.password = tRegister("passwordShort");
-  if (mode === "register" && values.confirm !== values.password) fieldError.confirm = tRegister("confirmMismatch");
+  const fieldError = computeErrors(values);
   const shown = (f: Field) => (touched[f] ? fieldError[f] : undefined);
 
   function switchMode() {
@@ -65,13 +72,17 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
     try {
       // Only the Google button needs the Supabase client; load it on click, not with the page.
       const supabase = await loadSupabaseClient();
-      await supabase.auth.signInWithOAuth({
+      const { error: oauthErr } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           // Encode so a destination carrying its own `?a=1&b=2` survives the round trip.
           redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
         },
       });
+      if (oauthErr) {
+        setError(tErrors("unknown"));
+        setGoogleBusy(false);
+      }
     } catch {
       setError(tErrors("unknown"));
       setGoogleBusy(false);
@@ -81,17 +92,26 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    // Read from the DOM first so password-manager autofill (which may not fire React onChange)
+    // is honoured before client validation runs.
+    const formData = new FormData(e.currentTarget);
+    const domValues = {
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
+      confirm: String(formData.get("confirm") ?? ""),
+    };
+    setValues(domValues);
     setTouched({ email: true, password: true, confirm: true });
+
+    const domErrors = computeErrors(domValues);
     const relevant: Field[] = mode === "register" ? ["email", "password", "confirm"] : ["email", "password"];
-    const firstInvalid = relevant.find((f) => fieldError[f]);
+    const firstInvalid = relevant.find((f) => domErrors[f]);
     if (firstInvalid) {
-      // Move focus to the first field that needs attention (keyboard and screen-reader users).
       document.getElementById(`${uid}-${firstInvalid}`)?.focus();
       return;
     }
 
-    // Read from the DOM (not state) so password-manager autofill is included.
-    const formData = new FormData(e.currentTarget);
     formData.set("redirectTo", redirectTo);
     startTransition(async () => {
       try {
@@ -261,9 +281,9 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
 
               {/* Reserved live region: announces server errors without moving the layout when empty. */}
               <div aria-live="polite" role="status">
-                {error && (
+                {effectiveError && (
                   <p className="text-red-300 font-inter text-sm bg-red-500/10 border border-red-500/20 px-3 py-2.5">
-                    {error}
+                    {effectiveError}
                   </p>
                 )}
               </div>

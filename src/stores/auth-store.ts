@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 export interface AuthUser {
   id: string;
@@ -25,13 +25,18 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (isLoading) => set({ isLoading }),
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
+      // Never persist email PII in localStorage; keep only display profile fields.
       partialize: (state) => ({
-        user: state.user,
+        user: state.user
+          ? {
+              id: state.user.id,
+              name: state.user.name,
+              avatarUrl: state.user.avatarUrl,
+              provider: state.user.provider,
+            }
+          : null,
       }),
     },
   ),
 );
-
-
-

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { BrandMark } from "@/components/layout/brand-mark";
+import { isEmbeddableImageUrl } from "@/components/news/news-text";
 import { cn } from "@/lib/utils";
 
 interface NewsThumbProps {
@@ -15,12 +17,13 @@ interface NewsThumbProps {
 
 /**
  * Fills its (aspect-ratio) parent. When the image is missing, blocked by the
- * publisher's hotlink rules or fails to load, a crest tile takes its place, so
- * a card never shows a broken-image icon or collapses.
+ * publisher's CORP/hotlink rules or fails to load, the site's own BrandMark
+ * tile takes its place (never the club crest, per brand guidelines).
  */
 export function NewsThumb({ src, sizes, priority, className, crestClassName }: NewsThumbProps) {
   const [failed, setFailed] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const canEmbed = isEmbeddableImageUrl(src);
 
   // An image can fail before hydration attaches onError; catch that case too.
   useEffect(() => {
@@ -32,7 +35,7 @@ export function NewsThumb({ src, sizes, priority, className, crestClassName }: N
 
   return (
     <div ref={wrapRef} className="absolute inset-0 bg-[var(--surface-3)]">
-      {src && !failed ? (
+      {canEmbed && !failed ? (
         <Image
           src={src}
           alt=""
@@ -41,21 +44,16 @@ export function NewsThumb({ src, sizes, priority, className, crestClassName }: N
           sizes={sizes}
           priority={priority}
           loading={priority ? undefined : "lazy"}
+          referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
           className={cn("object-cover", className)}
         />
       ) : (
         <div
           aria-hidden
-          className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-lfc-red/25 via-[var(--surface-2)] to-[var(--surface-1)]"
+          className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-lfc-red/20 via-[var(--surface-2)] to-[var(--surface-1)]"
         >
-          <Image
-            src="/assets/lfc/crest.webp"
-            alt=""
-            width={48}
-            height={60}
-            className={cn("h-auto w-10 opacity-40", crestClassName)}
-          />
+          <BrandMark className={cn("size-10 opacity-45", crestClassName)} />
         </div>
       )}
     </div>

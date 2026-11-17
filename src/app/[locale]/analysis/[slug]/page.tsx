@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getSiteArticleBySlug, listSiteArticles } from "@/lib/site-articles/db";
 import { getHreflangAlternates, getLocalizedUrl, SCHEMA_IDS } from "@/lib/seo";
@@ -62,24 +62,29 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!row || !content) return { title: "Not found", robots: { index: false } };
   const alternates = getHreflangAlternates(`/analysis/${slug}`, locale, writtenIn(row));
 
+  const title = content.metaTitle || content.title;
+  const description = content.metaDescription || content.excerpt;
+  const ogLocale = locale === "vi" ? "vi_VN" : "en_GB";
+
   return {
-    title: content.metaTitle || content.title,
-    description: content.metaDescription || content.excerpt,
+    title,
+    description,
     alternates,
     openGraph: {
       type: "article",
-      title: content.metaTitle || content.title,
-      description: content.metaDescription || content.excerpt,
+      title,
+      description,
       url: alternates.canonical,
+      locale: ogLocale,
+      alternateLocale: [locale === "vi" ? "en_GB" : "vi_VN"],
       ...(row.published_at && { publishedTime: row.published_at }),
       siteName: BRAND.name,
-      // Declared rather than left to the file convention. Next builds that URL
-      // from the matched `[locale]` segment, so the default locale came out as
-      // /en/analysis/..., which is a 307 — a share image should not redirect.
       images: [{ url: `${alternates.canonical}/opengraph-image`, width: 1200, height: 630 }],
     },
     twitter: {
       card: "summary_large_image",
+      title,
+      description,
       images: [`${alternates.canonical}/opengraph-image`],
     },
   };
@@ -87,16 +92,22 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function AnalysisArticlePage({ params }: { params: Params }) {
   const { slug, locale } = await params;
+  setRequestLocale(locale);
   const row = await getSiteArticleBySlug(slug);
   if (!row) notFound();
   const picked = pick(row, locale);
   if (!picked) notFound();
   const { content, lang } = picked;
 
-  const t = await getTranslations({ locale, namespace: "Analysis" });
-  const related = (await listSiteArticles(4, row.kind))
-    .filter((r) => r.slug !== row.slug)
-    .slice(0, 3);
+  const [t, relatedRows, breadcrumbJsonLd] = await Promise.all([
+    getTranslations({ locale, namespace: "Analysis" }),
+    listSiteArticles(4, row.kind),
+    buildLocalizedBreadcrumbJsonLd(locale, [
+      { nav: "analysis", path: "/analysis" },
+      { name: content.title, path: `/analysis/${slug}` },
+    ]),
+  ]);
+  const related = relatedRows.filter((r) => r.slug !== row.slug).slice(0, 3);
 
   // The version actually shown: on a locale without its own text this is the
   // fallback language's URL, which is also the page's canonical.
@@ -131,10 +142,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             // differently.
             publisher: { "@id": SCHEMA_IDS.publisher },
           },
-          await buildLocalizedBreadcrumbJsonLd(locale, [
-            { nav: "analysis", path: "/analysis" },
-            { name: content.title, path: `/analysis/${slug}` },
-          ]),
+          breadcrumbJsonLd,
         ]}
       />
 

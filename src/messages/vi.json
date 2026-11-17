@@ -836,7 +836,7 @@
     "disclaimer": "{brand} là trang fan <status>độc lập, không chính thức</status>. Trang không liên kết với, không được tài trợ hay xác nhận bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các tờ báo được dẫn link. Tên, logo và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
       "title": "{brand} là gì?",
-      "description": "Anfield Daily là trang của một fan Liverpool, làm ra để đọc tin cho nhanh. Trang gom tin từ các báo Anh và tiếng Việt, bỏ các bài trùng nhau và tóm tắt cả ngày thành một bản tin ngắn, để bạn khỏi phải mở hai mươi tab. Lịch thi đấu, kết quả và bảng xếp hạng nằm ngay bên cạnh.",
+      "description": "Anfield Daily là trang của một fan Liverpool, làm ra để đọc tin cho nhanh. Trang gom tin từ các tờ báo thể thao tiếng Anh, bỏ các bài trùng nhau và tóm tắt cả ngày thành một bản tin ngắn, để bạn khỏi phải mở hai mươi tab. Lịch thi đấu, kết quả và bảng xếp hạng nằm ngay bên cạnh.",
       "featuresTitle": "Trong trang có gì",
       "features": {
         "gathered": {
@@ -895,16 +895,17 @@
       "description": "{brand} miễn phí. Nếu thấy hữu ích, bạn có thể góp một ly cà phê để mình trả tiền máy chủ và API.",
       "buyCoffee": "Mời mình ly cà phê",
       "momoAlt": "QR MoMo - Nguyễn Đăng Định",
-      "momoTitle": "Mã QR MoMo"
+      "momoTitle": "Mã QR MoMo",
+      "close": "Đóng"
     },
     "tagline": "Tin nhanh, bản tin tóm tắt mỗi ngày, lịch thi đấu và kết quả cho fan Liverpool.",
     "news": {
       "title": "Tin tức được xử lý thế nào",
-      "body": "Mục tin nhanh hiện toàn văn bài đúng như báo gốc viết, có dẫn nguồn và link bài gốc. Muốn đọc trên trang của báo đó. {brand} không đăng lại toàn văn bài báo. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh hay gỡ một mục, hãy gửi email để mình xem xét."
+      "body": "Mục tin nhanh hiển thị bài viết kèm ghi nhận nguồn rõ ràng ở đầu bài và đường dẫn sang bài gốc trên trang của tòa soạn. Các trang đọc lại này không chạy quảng cáo và không đưa vào chỉ mục tìm kiếm. Nếu bạn là tác giả hoặc tòa soạn và muốn chỉnh sửa hay gỡ bỏ nội dung, hãy gửi email để mình xử lý sớm nhất."
     },
     "ai": {
       "title": "AI trên {brand}",
-      "body": "Bản dịch đoạn trích tin và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể trả lời sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ đá hay vé, hãy đối chiếu với nguồn chính thức của CLB."
+      "body": "Tính năng dịch bài báo sang tiếng Việt, bài tường thuật trận đấu và bản tin tổng hợp hằng ngày có AI hỗ trợ. AI có thể sai hoặc thiếu cập nhật. Với thông tin quan trọng như giờ bóng lăn hay vé, hãy đối chiếu với kênh chính thức của CLB."
     }
   },
   "Standings": {

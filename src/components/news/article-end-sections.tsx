@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { ArrowRight } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Fixture } from "@/lib/types/football";
-import { formatDayMonth, formatMatchTime } from "@/lib/format-match-date";
+import { LocalMatchDay, LocalMatchTime } from "@/components/ui/local-time";
 
 const LFC_CREST = "/assets/lfc/crest.webp";
 
@@ -22,7 +22,7 @@ function Team({ name, logo }: { name: string; logo?: string }) {
 export async function ArticleNextMatch({ fixture, className }: { fixture: Fixture; className?: string }) {
   const [t, locale] = await Promise.all([getTranslations("NextMatch"), getLocale()]);
   const { teams, fixture: f } = fixture;
-  const date = new Date(f.date);
+  const uiLocale = locale === "vi" ? "vi" : "en";
 
   return (
     <Link href="/fixtures" className={`surface-interactive block p-4 ${className ?? ""}`}>
@@ -31,8 +31,12 @@ export async function ArticleNextMatch({ fixture, className }: { fixture: Fixtur
         <Team name={teams.home.name} logo={teams.home.logo} />
         <div className="flex shrink-0 flex-col items-center px-1">
           <span className="font-bebas text-2xl leading-none text-stadium-muted">VS</span>
-          <span className="mt-1 font-barlow text-sm font-semibold text-white">{formatDayMonth(date, locale)}</span>
-          <span className="text-xs text-stadium-muted">{formatMatchTime(date)}</span>
+          <span className="mt-1 font-barlow text-sm font-semibold text-white tabular-nums">
+            <LocalMatchDay iso={f.date} locale={uiLocale} />
+          </span>
+          <span className="text-xs text-stadium-muted tabular-nums">
+            <LocalMatchTime iso={f.date} locale={uiLocale} />
+          </span>
         </div>
         <Team name={teams.away.name} logo={teams.away.logo} />
       </div>

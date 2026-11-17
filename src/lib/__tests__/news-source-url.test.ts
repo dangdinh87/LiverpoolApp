@@ -77,6 +77,16 @@ describe("article slug round-trip", () => {
     expect(decoded).toBe(url);
     expect(isKnownNewsSourceUrl(decoded!)).toBe(false);
   });
+
+  it("preserves YouTube watch?v= query strings across real URL pathname routing", () => {
+    const ytUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+    const encoded = encodeArticleSlug(ytUrl);
+    // Simulate Next.js router parsing /news/<encoded>: ?query would be stripped off pathname
+    const parsed = new URL(`https://anfielddaily.com/news/${encoded}`);
+    expect(parsed.search).toBe("");
+    const segments = parsed.pathname.replace(/^\/news\//, "").split("/");
+    expect(decodeArticleSlug(segments)).toBe(ytUrl);
+  });
 });
 
 describe("detectSource", () => {

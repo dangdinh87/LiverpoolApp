@@ -5,6 +5,7 @@ import type { NewsSource, ArticleCategory } from "./news/types";
 // Hosts/aliases live in ONE table (news/source-hosts.ts) shared with source-detect.
 import { formatDayMonth } from "./format-match-date";
 import { findSourceByHost, getSourceEntry, isHostOfSource } from "./news/source-hosts";
+import { canonicalizeArticleUrl } from "./news/url";
 
 export const SOURCE_CONFIG: Record<
   NewsSource,
@@ -95,10 +96,14 @@ function toBase64Url(value: string): string {
  */
 export function encodeArticleSlug(url: string): string {
   try {
-    const u = new URL(url);
+    const cleaned = canonicalizeArticleUrl(url);
+    const u = new URL(cleaned);
     const entry = findSourceByHost(u.hostname);
-    if (!entry) return toBase64Url(url);
-    const path = (u.pathname + u.search).replace(/^\//, "");
+    // URLs carrying meaningful query strings (e.g. YouTube watch?v=...) cannot
+    // embed `?` in a Next.js path segment without the router stripping the query
+    // into searchParams; base64url keeps the entire URL intact in one segment.
+    if (!entry || u.search) return toBase64Url(cleaned);
+    const path = u.pathname.replace(/^\//, "");
     const host = u.hostname.toLowerCase();
     if (host === entry.canonical) return `${entry.id}/${path}`;
     return `${entry.id}/${HOST_SEGMENT_PREFIX}${host}/${path}`;
@@ -133,7 +138,8 @@ export function decodeArticleSlug(segments: string[]): string | null {
     const combined = segments.join("/");
     const base64 = combined.replace(/-/g, "+").replace(/_/g, "/");
     if (typeof window !== "undefined") {
-      return atob(base64);
+      const decoded = atob(base64);
+      return decoded.startsWith("http") ? decoded : null;
     }
     const decoded = Buffer.from(base64, "base64").toString("utf-8");
     if (decoded.startsWith("http")) return decoded;

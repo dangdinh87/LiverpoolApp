@@ -4,10 +4,15 @@ import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { Camera, User } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { createClient } from "@/lib/supabase";
+import { loadSupabaseClient } from "@/lib/supabase-lazy";
 import { updateAvatarUrl } from "@/app/actions/profile";
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
 interface AvatarUploadProps {
@@ -27,7 +32,8 @@ export function AvatarUpload({ currentUrl, username }: AvatarUploadProps) {
     e.target.value = ""; // allow re-selecting the same file after an error
     if (!file) return;
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const ext = MIME_TO_EXT[file.type];
+    if (!ext) {
       setError(t("errorType"));
       return;
     }
@@ -44,27 +50,26 @@ export function AvatarUpload({ currentUrl, username }: AvatarUploadProps) {
     setError(null);
     startTransition(async () => {
       try {
-        const supabase = createClient();
+        const supabase = await loadSupabaseClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { setError(t("errorAuth")); setPreview(currentUrl); return; }
 
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
         const path = `${user.id}/avatar.${ext}`;
 
-        const { error: uploadErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+        const { error: uploadErr } = await supabase.storage
+          .from("avatars")
+          .upload(path, file, { upsert: true, contentType: file.type });
         if (uploadErr) { setError(t("errorUpload")); setPreview(currentUrl); return; }
 
-        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+        // Remove stale sibling extensions if the user changed format (e.g. png -> webp).
+        const stalePaths = Object.values(MIME_TO_EXT)
+          .filter((other) => other !== ext)
+          .map((other) => `${user.id}/avatar.${other}`);
+        void supabase.storage.from("avatars").remove(stalePaths).catch(() => {});
 
-        // The storage path is fixed per user and uploaded with `upsert`, so a new
-        // avatar reuses the same URL. Both the browser and the Next image
-        // optimizer key their caches on that URL, and the optimizer has no
-        // invalidation API at all — so without a version the old face kept being
-        // served for the whole of `images.minimumCacheTTL`. Stamping the URL is
-        // what makes a long TTL safe for every other image on the site.
+        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
         const versionedUrl = `${publicUrl}?v=${Date.now()}`;
 
-        // Update profile row via server action (tiny payload, no file)
         const result = await updateAvatarUrl(versionedUrl);
         if (result?.error) { setError(t("errorUpload")); setPreview(currentUrl); }
       } catch {
@@ -100,7 +105,7 @@ export function AvatarUpload({ currentUrl, username }: AvatarUploadProps) {
         )}
       </button>
 
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} tabIndex={-1} aria-hidden />
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleFileChange} tabIndex={-1} aria-hidden />
 
       <p className="text-xs text-stadium-muted" aria-live="polite">
         {isPending ? t("uploading") : t("clickToChange")}

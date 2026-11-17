@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { isAdminEmail } from "@/lib/constants";
+import { hasSupabaseSession, loadSupabaseClient } from "@/lib/supabase-lazy";
 import { GalleryContent } from "./gallery-content";
 
 export interface GalleryImage {
@@ -16,30 +18,64 @@ export interface GalleryImage {
 
 interface GalleryPageProps {
   images: GalleryImage[];
-  isAdmin: boolean;
+  isAdmin?: boolean;
   totalImages: number;
   categoryCounts?: Record<string, number>;
 }
 
-export function GalleryPage({ images: initialImages, isAdmin, totalImages, categoryCounts }: GalleryPageProps) {
+export function GalleryPage({
+  images: initialImages,
+  isAdmin: initialIsAdmin = false,
+  totalImages,
+  categoryCounts,
+}: GalleryPageProps) {
   const [images, setImages] = useState(initialImages);
   const [total, setTotal] = useState(totalImages);
+  const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
   const [searching, setSearching] = useState(false);
-  const savedImagesRef = useRef(initialImages);
+  const savedAllImagesRef = useRef(initialImages);
+  const savedAllTotalRef = useRef(totalImages);
+  const activeFetchRef = useRef<AbortController | null>(null);
 
-  const handleDelete = useCallback(async (id: string) => {
+  // Resolve admin affordances client-side only when a Supabase session cookie exists,
+  // keeping /gallery prerendered as static ISR for every visitor.
+  useEffect(() => {
+    if (!hasSupabaseSession()) return;
+    let cancelled = false;
+    loadSupabaseClient()
+      .then((supabase) => supabase.auth.getUser())
+      .then(({ data: { user } }) => {
+        if (!cancelled) setIsAdmin(isAdminEmail(user?.email));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(
+    () => () => {
+      activeFetchRef.current?.abort();
+    },
+    [],
+  );
+
+  const handleDelete = useCallback(async (id: string): Promise<boolean> => {
     try {
       const res = await fetch("/api/gallery", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      if (res.ok) {
-        setImages((prev) => prev.filter((img) => img.id !== id));
-        setTotal((prev) => prev - 1);
-      }
+      if (!res.ok) return false;
+      setImages((prev) => prev.filter((img) => img.id !== id));
+      savedAllImagesRef.current = savedAllImagesRef.current.filter((img) => img.id !== id);
+      savedAllTotalRef.current = Math.max(0, savedAllTotalRef.current - 1);
+      setTotal((prev) => Math.max(0, prev - 1));
+      return true;
     } catch (err) {
       console.error("Delete failed:", err);
+      return false;
     }
   }, []);
 
@@ -68,7 +104,7 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
         category,
       });
       const res = await fetch(`/api/gallery?${params}`);
-      if (!res.ok) return { images: [], hasMore: false, total: total };
+      if (!res.ok) return { images: [], hasMore: false, total };
       const data = await res.json();
       const newImages = data.images as GalleryImage[];
 
@@ -76,7 +112,10 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
         const existingIds = new Set(prev.map((img) => img.id));
         const unique = newImages.filter((img: GalleryImage) => !existingIds.has(img.id));
         const merged = [...prev, ...unique];
-        savedImagesRef.current = merged;
+        if (category === "all") {
+          savedAllImagesRef.current = merged;
+          savedAllTotalRef.current = data.total;
+        }
         return merged;
       });
       setTotal(data.total);
@@ -84,40 +123,52 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
       return { images: newImages, hasMore: data.hasMore, total: data.total };
     } catch (err) {
       console.error("Load more failed:", err);
-      return { images: [], hasMore: false, total: total };
+      return { images: [], hasMore: false, total };
     }
   }, [images, total]);
 
   const handleCategoryChange = useCallback(async (category: string) => {
+    activeFetchRef.current?.abort();
     if (category === "all") {
-      // Restore saved images (initial load has all categories)
-      setImages(savedImagesRef.current);
-      setTotal(totalImages);
+      setImages(savedAllImagesRef.current);
+      setTotal(savedAllTotalRef.current);
       return;
     }
+    const controller = new AbortController();
+    activeFetchRef.current = controller;
     try {
       const params = new URLSearchParams({
         offset: "0",
         limit: "50",
         category,
       });
-      const res = await fetch(`/api/gallery?${params}`);
+      const res = await fetch(`/api/gallery?${params}`, { signal: controller.signal });
       if (!res.ok) return;
       const data = await res.json();
       setImages(data.images as GalleryImage[]);
       setTotal(data.total);
     } catch (err) {
-      console.error("Category fetch failed:", err);
+      if ((err as Error)?.name !== "AbortError") {
+        console.error("Category fetch failed:", err);
+      }
     }
-  }, [totalImages]);
+  }, []);
 
   const handleSearch = useCallback(async (query: string, category: string) => {
+    activeFetchRef.current?.abort();
     if (!query.trim()) {
-      setImages(savedImagesRef.current);
-      setTotal(totalImages);
+      if (category === "all") {
+        setImages(savedAllImagesRef.current);
+        setTotal(savedAllTotalRef.current);
+        setSearching(false);
+        return;
+      }
       setSearching(false);
+      await handleCategoryChange(category);
       return;
     }
+    const controller = new AbortController();
+    activeFetchRef.current = controller;
     setSearching(true);
     try {
       const params = new URLSearchParams({
@@ -126,17 +177,21 @@ export function GalleryPage({ images: initialImages, isAdmin, totalImages, categ
         limit: "100",
         offset: "0",
       });
-      const res = await fetch(`/api/gallery?${params}`);
+      const res = await fetch(`/api/gallery?${params}`, { signal: controller.signal });
       if (!res.ok) return;
       const data = await res.json();
       setImages(data.images as GalleryImage[]);
       setTotal(data.total);
     } catch (err) {
-      console.error("Search failed:", err);
+      if ((err as Error)?.name !== "AbortError") {
+        console.error("Search failed:", err);
+      }
     } finally {
-      setSearching(false);
+      if (activeFetchRef.current === controller) {
+        setSearching(false);
+      }
     }
-  }, [totalImages]);
+  }, [handleCategoryChange]);
 
   return (
     <GalleryContent

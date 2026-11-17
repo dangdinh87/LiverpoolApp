@@ -9,6 +9,7 @@ import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
+import { useSpoilerFree } from "@/hooks/use-spoiler-free";
 import { MatchCountdown } from "./match-countdown";
 import { useLiveMatch } from "./use-live-match";
 import { LiveClock, LiveEdgeTrack, LiveEventColumns, LiveScore, LiveStats, LiveStatusBadge, LiveTicker } from "./live-match-panel";
@@ -94,16 +95,20 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
       : null;
   const resultWord = result === "W" ? t("win") : result === "D" ? t("draw") : t("loss");
 
+  const spoilerFree = useSpoilerFree();
   const round = roundLabel(tRound, league.round);
   const homeName = displayTeamName(teams.home.name);
   const awayName = displayTeamName(teams.away.name);
   const aria = isUpcoming
     ? `${homeName} – ${awayName}, ${dateStr} ${timeStr} ${zoneLabel}`
-    : `${homeName} ${goals.home ?? 0} – ${goals.away ?? 0} ${awayName}`;
+    : spoilerFree
+      ? `${homeName} – ${awayName}`
+      : `${homeName} ${goals.home ?? 0} – ${goals.away ?? 0} ${awayName}`;
+  const cardHref = f.id > 0 ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
     <Link
-      href={`/fixtures/${f.id}`}
+      href={cardHref}
       aria-label={aria}
       className={cn(
         "surface-interactive group relative block overflow-hidden",
@@ -161,7 +166,12 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
           <div className="text-center">
             {isLive ? (
               <>
-                <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-4xl text-white sm:text-5xl" />
+                <div className="spoiler-hide">
+                  <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-4xl text-white sm:text-5xl" />
+                </div>
+                <p className="spoiler-show font-bebas text-4xl leading-none tracking-wide text-white/40 sm:text-5xl" aria-hidden>
+                  ? - ?
+                </p>
                 <LiveClock
                   live={live}
                   updatedAt={updatedAt}
@@ -200,9 +210,9 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
         {/* Live: goals/cards under the teams, stats in the side column, newest commentary across the foot */}
         {isLive && live && (
           <>
-            <LiveEventColumns events={live.events} className="mt-3 lg:col-start-2 lg:row-start-3 lg:mt-2" />
+            <LiveEventColumns events={live.events} className="spoiler-hide mt-3 lg:col-start-2 lg:row-start-3 lg:mt-2" />
             {live.stats && (
-              <div className="mt-4 lg:col-start-3 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center">
+              <div className="spoiler-hide mt-4 lg:col-start-3 lg:row-span-3 lg:row-start-1 lg:mt-0 lg:self-center">
                 <LiveStats stats={live.stats} lfcSide={lfcSide} />
               </div>
             )}
@@ -210,7 +220,7 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
               live={live}
               updatedAt={updatedAt}
               ended={ended}
-              className="mt-4 border-t border-[var(--line)] pt-3 lg:col-span-3 lg:row-start-4"
+              className="spoiler-hide mt-4 border-t border-[var(--line)] pt-3 lg:col-span-3 lg:row-start-4"
             />
           </>
         )}

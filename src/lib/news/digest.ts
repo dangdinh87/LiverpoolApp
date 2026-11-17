@@ -186,7 +186,7 @@ Write like a person. Avoid the tells:
 - Do not start several paragraphs the same way ("Liverpool...", "The Reds...", "The side...")
 - Do not scatter em dashes; use ordinary punctuation
 - Do not end on something that could be said about any club on any day — have a position
-- Supporters' language is fine where it fits ("The Kop", "Slot's side", "the Anfield crowd") but do not pack it in
+- Supporters' language is fine where it fits ("The Kop", "the Reds", "the Anfield crowd") but do not pack it in
 
 Content rules:
 - Name every player and manager that matters; leave none out
@@ -372,6 +372,7 @@ async function fetchDigestArticles(
     .from("articles")
     .select("url, title, snippet, source, language, category, relevance")
     .eq("is_active", true)
+    .not("source", "in", "(lfctv)")
     .or(`published_at.gte.${since},fetched_at.gte.${since}`)
     .order("relevance", { ascending: false })
     .limit(DIGEST_ARTICLE_LIMIT + 15);

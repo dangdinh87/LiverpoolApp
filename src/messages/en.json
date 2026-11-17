@@ -895,16 +895,17 @@
       "description": "{brand} is free. If it's useful to you, a coffee helps me cover hosting and API costs.",
       "buyCoffee": "Buy me a coffee",
       "momoAlt": "MoMo QR - Nguyen Dang Dinh",
-      "momoTitle": "MoMo QR code"
+      "momoTitle": "MoMo QR code",
+      "close": "Close"
     },
     "tagline": "Quick news, a daily summary, fixtures and results for Liverpool fans.",
     "news": {
       "title": "How news is handled",
-      "body": "Quick news shows the full article as its publisher wrote it, credited and linked to the original. To read it on their own site, open it on the publisher's own site. {brand} does not republish full articles. If you are the author or publisher and want an item changed or removed, email me and I will review it."
+      "body": "Quick news shows articles as published by each outlet, clearly credited at the top with a direct link to the original page on the publisher's site. Mirrored reader pages carry no ads and stay out of search indexing. If you are an author or publisher and want an item changed or removed, email me and I will act on it promptly."
     },
     "ai": {
       "title": "AI on {brand}",
-      "body": "Translation of news excerpts and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
+      "body": "On-demand Vietnamese article translation, match reports and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
     }
   },
   "Standings": {

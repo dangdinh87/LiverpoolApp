@@ -20,7 +20,7 @@ const ARTICLE_COLUMNS =
  * strip; `getVideoItemsFromDB` is the only reader that wants them.
  */
 export const NON_ARTICLE_SOURCES = ["lfctv"] as const;
-const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
+export const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
 
 // The row's whole life (cleanup deletes articles at 14 days). A shorter window
 // sent every older article back to the publisher for a fresh scrape on render.
@@ -238,13 +238,15 @@ export const searchArticles = cache(
   async (query: string, limit = 20): Promise<NewsArticle[]> => {
     try {
       const supabase = getServiceClient();
-      const tsQuery = query.trim().split(/\s+/).join(" & ");
+      const q = query.trim().slice(0, 120);
+      if (!q) return [];
 
       const { data, error } = await supabase
         .from("articles")
         .select(ARTICLE_COLUMNS)
         .eq("is_active", true)
-        .textSearch("fts", tsQuery)
+        .not("source", "in", NON_ARTICLE_FILTER)
+        .textSearch("fts", q, { type: "websearch" })
         .order("relevance", { ascending: false })
         .limit(limit);
 
@@ -278,6 +280,7 @@ export const getArticlesMentioning = cache(
         .from("articles")
         .select(ARTICLE_COLUMNS)
         .eq("is_active", true)
+        .not("source", "in", NON_ARTICLE_FILTER)
         .or(terms.map((t) => `title.ilike.*${t}*`).join(","))
         .order("published_at", { ascending: false })
         .limit(limit * 2);

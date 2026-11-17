@@ -87,6 +87,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Content must be 1-1000 characters" }, { status: 400 });
   }
 
+  if (parentId) {
+    const { data: parentRow } = await supabase
+      .from("article_comments")
+      .select("id")
+      .eq("id", parentId)
+      .in("article_url", articleUrlVariants(url))
+      .maybeSingle();
+    if (!parentRow) {
+      return NextResponse.json({ error: "Parent comment not found on this article" }, { status: 400 });
+    }
+  }
+
   const { data: profile } = await supabase
     .from("user_profiles")
     .select("username, avatar_url")
@@ -139,8 +151,8 @@ export async function POST(req: NextRequest) {
 // DELETE /api/news/comments?id=... — delete own comment
 export async function DELETE(req: NextRequest) {
   const commentId = req.nextUrl.searchParams.get("id");
-  if (!commentId) {
-    return NextResponse.json({ error: "Missing id param" }, { status: 400 });
+  if (!commentId || !UUID_RE.test(commentId)) {
+    return NextResponse.json({ error: "Invalid id param" }, { status: 400 });
   }
 
   const supabase = await createServerSupabaseClient();
@@ -151,11 +163,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   // RLS ensures user can only delete own comments
-  const { error } = await supabase
+  const { data: deleted, error } = await supabase
     .from("article_comments")
     .delete()
     .eq("id", commentId)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .select("article_url")
+    .maybeSingle();
 
   if (error) {
     console.error("[comments]", error.message);
@@ -164,6 +178,9 @@ export async function DELETE(req: NextRequest) {
 
   // The count is cached for an hour; a deleted comment must leave it now.
   revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
+  if (deleted?.article_url) {
+    revalidateLocalizedPath(`/news/${encodeArticleSlug(deleted.article_url)}`);
+  }
 
   return NextResponse.json({ success: true });
 }

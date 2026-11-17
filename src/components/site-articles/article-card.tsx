@@ -17,7 +17,13 @@ export interface ArticleCardData {
  * The whole card is the link — a card with a small link inside it is a smaller
  * target than the card suggests, and this list is read on a phone.
  */
-export function ArticleCard({ article }: { article: ArticleCardData }) {
+export function ArticleCard({
+  article,
+  as: Heading = "h3",
+}: {
+  article: ArticleCardData;
+  as?: "h2" | "h3";
+}) {
   const t = useTranslations("Analysis.kinds");
   const locale = useLocale();
 
@@ -34,9 +40,9 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
           </span>
         )}
       </div>
-      <h3 className="font-bebas text-2xl leading-tight tracking-wide text-white group-hover:text-white sm:text-3xl">
+      <Heading className="font-bebas text-2xl leading-tight tracking-wide text-white group-hover:text-white sm:text-3xl">
         {article.title}
-      </h3>
+      </Heading>
       <p className="line-clamp-2 text-sm leading-relaxed text-stadium-muted">{article.excerpt}</p>
     </Link>
   );

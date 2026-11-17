@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ArticleCard } from "@/components/site-articles/article-card";
@@ -22,24 +22,27 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
 
 export default async function AnalysisPage({ params }: LocaleParams) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "Analysis" });
-  const rows = await listSiteArticles(30);
+  setRequestLocale(locale);
+
+  const [t, rows, breadcrumbJsonLd] = await Promise.all([
+    getTranslations({ locale, namespace: "Analysis" }),
+    listSiteArticles(30),
+    buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "analysis", path: "/analysis" }]),
+  ]);
 
   const articles = rows
     .map((row) => {
-      // Fall back to the other language rather than hiding the piece: a reader
-      // would rather have the English one than an empty page.
-      const content = (locale === "vi" ? row.content_vi : row.content_en) ??
-        row.content_en ?? row.content_vi;
+      const content =
+        (locale === "vi" ? row.content_vi : row.content_en) ??
+        row.content_en ??
+        row.content_vi;
       return content ? { row, content: content as SiteArticleContent } : null;
     })
     .filter((x): x is { row: (typeof rows)[number]; content: SiteArticleContent } => x !== null);
 
   return (
     <div className="min-h-screen bg-stadium-bg pb-16">
-      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [
-        { nav: "analysis", path: "/analysis" },
-      ])} />
+      <JsonLd data={breadcrumbJsonLd} />
 
       <PageHero
         eyebrow={t("hero.eyebrow")}
@@ -55,6 +58,7 @@ export default async function AnalysisPage({ params }: LocaleParams) {
             {articles.map(({ row, content }) => (
               <li key={row.id}>
                 <ArticleCard
+                  as="h2"
                   article={{
                     slug: row.slug,
                     kind: row.kind,

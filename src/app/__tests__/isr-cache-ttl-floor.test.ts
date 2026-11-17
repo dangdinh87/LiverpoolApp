@@ -41,6 +41,33 @@ describe("cache TTLs read by ISR pages are not shorter than the page", () => {
     const ttl = num(block, /revalidate: ([\d_]+)/);
     expect(ttl).toBeGreaterThanOrEqual(playerRevalidate);
   });
+
+  it("/news video cache TTL covers /news page revalidate window", () => {
+    const newsPage = read("src/app/[locale]/news/page.tsx");
+    const pageTtl = num(newsPage, /export const revalidate = (\d+);/);
+    const videoBlock = newsPage.slice(newsPage.indexOf('["news-page-video-v1"]'));
+    const videoTtl = num(videoBlock, /revalidate: ([\d_]+)/);
+    expect(videoTtl).toBeGreaterThanOrEqual(pageTtl);
+  });
+
+  it("/standings does not call uncached 300s getFixtures() directly in render", () => {
+    const standingsPage = read("src/app/[locale]/standings/page.tsx");
+    const pageTtl = num(standingsPage, /export const revalidate = (\d+);/);
+    const cacheBlock = standingsPage.slice(standingsPage.indexOf('["standings-fixtures-v1"]'));
+    const cacheTtl = num(cacheBlock, /revalidate: ([\d_]+)/);
+    expect(cacheTtl).toBeGreaterThanOrEqual(pageTtl);
+  });
+
+  it("/gallery does not read server cookies so its ISR revalidate works", () => {
+    const galleryPage = read("src/app/[locale]/gallery/page.tsx");
+    expect(galleryPage).not.toContain("createServerSupabaseClient");
+    expect(galleryPage).toMatch(/export const revalidate = \d+;/);
+  });
+
+  it("/analysis pages call setRequestLocale so next-intl keeps them static ISR", () => {
+    expect(read("src/app/[locale]/analysis/page.tsx")).toContain("setRequestLocale(locale)");
+    expect(read("src/app/[locale]/analysis/[slug]/page.tsx")).toContain("setRequestLocale(locale)");
+  });
 });
 
 describe("article bodies are not scraped again needlessly", () => {

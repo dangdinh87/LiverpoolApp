@@ -262,11 +262,16 @@ export function prepareArticleHtml(html: string): string {
   });
 
   out = out.replace(/<img\b([^>]*?)\/?>/gi, (_m, attrs: string) => {
+    const srcMatch = attrs.match(/\ssrc\s*=\s*("([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const src = (srcMatch?.[2] ?? srcMatch?.[3] ?? srcMatch?.[4] ?? "").trim();
+    if (src && !isEmbeddableImageUrl(src)) return "";
     const cleaned = attrs
       .replace(/\s(loading|decoding|referrerpolicy)\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
       .trimEnd();
     return `<img${cleaned} loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
   });
+  // Drop figures whose only image was stripped as CORP-blocked.
+  out = out.replace(/<figure\b[^>]*>\s*(?:<figcaption\b[^>]*>[\s\S]*?<\/figcaption>\s*)?<\/figure>/gi, "");
 
   const embeds: string[] = [];
   out = out.replace(/<iframe\b([^>]*?)(?:\/>|>\s*<\/iframe>)/gi, (_m, attrs: string) => {
@@ -295,6 +300,23 @@ export function prepareArticleHtml(html: string): string {
 /** True for http(s) URLs only: the single gate for any external href we render. */
 export function isHttpUrl(value: string | undefined | null): value is string {
   return !!value && /^https?:\/\//i.test(value.trim());
+}
+
+/**
+ * Publisher CDNs that send `Cross-Origin-Resource-Policy: same-origin`, causing
+ * browsers to block cross-origin `<img>` loads with `ERR_BLOCKED_BY_RESPONSE.NotSameOrigin`.
+ */
+const CORP_BLOCKED_IMAGE_HOSTS = new Set(["staticcdn.anfieldwatch.co.uk"]);
+
+/** True when `value` is an http(s) image URL whose host allows cross-origin embedding. */
+export function isEmbeddableImageUrl(value: string | undefined | null): value is string {
+  if (!isHttpUrl(value)) return false;
+  try {
+    const host = new URL(value.trim()).hostname.toLowerCase();
+    return !CORP_BLOCKED_IMAGE_HOSTS.has(host);
+  } catch {
+    return false;
+  }
 }
 
 /**

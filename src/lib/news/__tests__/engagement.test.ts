@@ -56,13 +56,17 @@ describe("getArticleEngagement", () => {
     expect(await getArticleEngagement(URL_CANONICAL)).toEqual({ likes: 2, comments: 1 });
   });
 
-  it("finds rows stored under a legacy spelling of the URL", async () => {
+  it("finds rows stored under a legacy spelling of the URL and sums mixed variants", async () => {
     // Rows written before ingest settled on a canonical form still carry a
     // tracking parameter or a trailing slash the page's URL no longer has.
-    commentRows = [{ article_url: `${URL_CANONICAL}?at_medium=RSS` }];
+    likeRows = [{ article_url: URL_CANONICAL }];
+    commentRows = [
+      { article_url: `${URL_CANONICAL}?at_medium=RSS` },
+      { article_url: `${URL_CANONICAL}/` },
+    ];
 
-    const found = await getArticleEngagement(`${URL_CANONICAL}?at_medium=RSS`);
-    expect(found.comments).toBe(1);
+    const found = await getArticleEngagement(URL_CANONICAL);
+    expect(found).toEqual({ likes: 1, comments: 2 });
   });
 
   it("returns zeroes for an article nobody touched", async () => {

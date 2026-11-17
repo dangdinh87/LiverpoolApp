@@ -109,34 +109,47 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
         setProfile(null);
         setAuthUser(null);
       };
+      let unsubscribe: (() => void) | undefined;
       try {
         // No session cookie = guest; don't even load the Supabase client.
         if (!hasSupabaseSession()) return signOut();
         const supabase = await loadSupabaseClient();
+        const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+          if (event === "SIGNED_OUT") signOut();
+        });
+        unsubscribe = () => sub.subscription.unsubscribe();
         const {
           data: { user: u },
         } = await supabase.auth.getUser();
         if (cancelled) return;
         if (!u) return signOut();
         setUser({ id: u.id, email: u.email ?? null });
-        setAuthUser({ id: u.id, email: u.email ?? undefined });
-        const { data } = await supabase.from("user_profiles").select("*").eq("user_id", u.id).single();
+        setAuthUser({ id: u.id });
+        const { data } = await supabase.from("user_profiles").select("*").eq("user_id", u.id).maybeSingle();
         if (cancelled || !data) return;
         const p = data as UserProfile;
         setProfile(p);
-        setAuthUser({ id: u.id, email: u.email ?? undefined, name: p.username ?? undefined, avatarUrl: p.avatar_url ?? undefined });
+        setAuthUser({ id: u.id, name: p.username ?? undefined, avatarUrl: p.avatar_url ?? undefined });
       } catch {
         // Unreachable auth service: stay as we are, the header just shows the guest actions.
       } finally {
         if (!cancelled) setAuthReady(true);
       }
+      return unsubscribe;
     }
 
-    void syncAuth();
+    let cleanupSub: (() => void) | undefined;
+    void syncAuth().then((fn) => {
+      if (typeof fn === "function") {
+        if (cancelled) fn();
+        else cleanupSub = fn;
+      }
+    });
     return () => {
       cancelled = true;
+      cleanupSub?.();
     };
-  }, [setAuthUser]);
+  }, [pathname, setAuthUser]);
 
   // Fetch & record streak on mount (authenticated users only)
   useEffect(() => {
@@ -186,7 +199,13 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const doLogout = () => startTransition(() => logout());
+  const doLogout = () => {
+    setUser(null);
+    setProfile(null);
+    setStreak(0);
+    setAuthUser(null);
+    startTransition(() => logout());
+  };
   const displayName = profile?.username ?? user?.email?.split("@")[0] ?? t("profile");
 
   // "Trận đấu" groups the season hub, fixtures, standings and stats, so none of
@@ -525,6 +544,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
       {!user && (
         <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
           <DialogContent
+            aria-describedby={undefined}
             className="bg-transparent border-none shadow-none p-0 sm:max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto"
             showCloseButton={false}
           >

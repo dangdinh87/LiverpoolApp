@@ -15,29 +15,9 @@ import {
 } from "@/lib/squad-data";
 import { getFplPlayerStats, type FplPlayerStats } from "./fpl-stats";
 import { getCurrentSeasonYear } from "@/lib/football/current-season";
+import { CANONICAL_LFC_ID, FDO_LFC_ID, fdoFetch } from "./fdo-client";
 
-// ─── Configuration ─────────────────────────────────────────────────────────────
-
-const FDO_BASE = "https://api.football-data.org/v4";
-const FDO_LFC_ID = 64;
-const CANONICAL_LFC_ID = 40;
 const FETCH_TIMEOUT_MS = 12_000;
-
-// ─── Core fetcher ──────────────────────────────────────────────────────────────
-
-async function fdoFetch<T>(path: string, revalidate: number): Promise<T> {
-  const key = process.env.FOOTBALL_DATA_ORG_KEY;
-  if (!key) throw new Error("[fdo-provider] FOOTBALL_DATA_ORG_KEY not set");
-
-  const res = await fetch(`${FDO_BASE}${path}`, {
-    headers: { "X-Auth-Token": key },
-    next: { revalidate },
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-
-  if (!res.ok) throw new Error(`[fdo-provider] HTTP ${res.status} on ${path}`);
-  return res.json();
-}
 
 // ─── FDO response shapes ───────────────────────────────────────────────────────
 
@@ -246,16 +226,12 @@ function mapFplToStatistic(fpl: FplPlayerStats, local: LfcPlayer): PlayerStatist
 export class FdoProvider implements FootballDataProvider {
   readonly name = "fdo";
 
-  // Shared scorers cache — single FDO call for both top scorers and assists
-  private scorersCache: FdoScorersResponse | null = null;
-
   private async getScorersData(): Promise<FdoScorersResponse> {
-    if (this.scorersCache) return this.scorersCache;
-    this.scorersCache = await fdoFetch<FdoScorersResponse>(
+    return fdoFetch<FdoScorersResponse>(
       "/competitions/PL/scorers?limit=50",
-      3600, // 1h
+      3600, // 1h in Next Data Cache; no stale-forever singleton field
+      FETCH_TIMEOUT_MS,
     );
-    return this.scorersCache;
   }
 
   // Squad: use local squad.json (rich data with photos, bios)

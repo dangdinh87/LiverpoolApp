@@ -1,20 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { vietapi } from "@/lib/ai/vietapi";
+import { getVietapiModel } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
 import { scrapeArticle } from "@/lib/news";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
-import { articleUrlVariants } from "@/lib/news/url";
+import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
+import { buildCurrentFactsBlock } from "@/lib/prompts/current-facts";
 import type { ArticleContent } from "@/lib/news/types";
 
 export const maxDuration = 60;
 
-const TRANSLATE_PROMPT = `You are a senior Vietnamese sports journalist who writes for a top football news site. Translate the following English football article into natural, fluent Vietnamese that reads like it was originally written in Vietnamese.
+// Cap input characters sent to the LLM so giant liveblogs cannot overrun the
+// 60s route budget or exhaust maxOutputTokens.
+const MAX_TRANSLATE_CHARS = 18_000;
 
-Context — this is about Liverpool FC. Key people and roles:
-- Andoni Iraola = HLV trưởng (head coach)
+function buildTranslateSystemPrompt(): string {
+  return `You are a senior Vietnamese sports journalist who writes for a top football news site. Translate the following English football article into natural, fluent Vietnamese that reads like it was originally written in Vietnamese.
+
+${buildCurrentFactsBlock()}
+
+Additional LFC executive roles:
 - Julian Ward = giám đốc thể thao (sporting director, appointed Sept 2026), NOT a player
 - Richard Hughes = cựu giám đốc thể thao (former sporting director), NOT a player
 - Mike Gordon = chủ tịch FSG (FSG president)
@@ -39,6 +46,7 @@ Format rules:
 - Do NOT include labels like "TITLE:", "TIÊU ĐỀ:", "P1:", etc.
 - Skip promotional text (FOLLOW OUR PAGE, Sign up, Newsletter)
 - Return ONLY the Vietnamese translation, no commentary`;
+}
 
 // VietAPI models, verified live 2026-09-09. Ordered cheapest-first: translation
 // is high volume and the flash tier already returns clean Vietnamese.
@@ -53,7 +61,19 @@ interface CachedTranslationContent {
   paragraphs?: string[];
 }
 
-function shouldTryNextGroqModel(err: unknown): boolean {
+interface TranslationPayload {
+  title_vi: string;
+  description_vi: string | null;
+  snippet_vi: string | null;
+  paragraphs: string[];
+  model?: string;
+  cached: boolean;
+}
+
+// Deduplicate concurrent uncached translations for the same canonical URL in one isolate.
+const inflightTranslations = new Map<string, Promise<TranslationPayload>>();
+
+function shouldTryNextModel(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
   return /429|rate limit|tokens per|does not exist|do not have access|model|overloaded|timeout|503|502|504|500/i.test(msg);
 }
@@ -74,24 +94,33 @@ function hasUnexpectedScript(text: string): boolean {
   return /[\u0400-\u04FF\u3400-\u9FFF]/u.test(text);
 }
 
+function capParagraphsByChars(paragraphs: string[], maxChars: number): string[] {
+  const out: string[] = [];
+  let used = 0;
+  for (const p of paragraphs) {
+    if (used + p.length > maxChars && out.length > 0) break;
+    out.push(p.slice(0, maxChars));
+    used += p.length + 5;
+  }
+  return out;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
-    if (!url || typeof url !== "string") {
-      return NextResponse.json({ error: "Missing url" }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    const url = body && typeof body === "object" ? (body as { url?: unknown }).url : undefined;
+    if (!url || typeof url !== "string" || url.length > 2048) {
+      return NextResponse.json({ error: "Missing or invalid url" }, { status: 400 });
     }
-    // Anonymous callers must not be able to point the scraper (and the LLM bill)
-    // at arbitrary hosts.
     if (!isKnownNewsSourceUrl(url)) {
       return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
     }
 
     const supabase = getServiceClient();
-    // Slugs decode to the bare URL; rows may be stored with a trailing slash or
-    // feed tracking params (legacy), so match every spelling.
+    const canonicalUrl = canonicalizeArticleUrl(url);
     const urlVariants = articleUrlVariants(url);
 
-    // Check DB cache first
+    // Check DB first — only translate Liverpool articles actually stored by our sync pipeline.
     const { data: cached } = await supabase
       .from("articles")
       .select("title_vi, snippet_vi, content_vi, content_en")
@@ -100,7 +129,11 @@ export async function POST(req: NextRequest) {
       .limit(1)
       .maybeSingle();
 
-    if (cached && isUsableTranslation(cached.content_vi)) {
+    if (!cached) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    if (isUsableTranslation(cached.content_vi)) {
       return NextResponse.json({
         title_vi: cached.title_vi,
         description_vi: cached.content_vi.description || null,
@@ -116,110 +149,125 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
-    const apiKey = getEnv("VIETAPI_KEY");
-    if (!apiKey) {
+    if (!getEnv("VIETAPI_KEY")) {
       return NextResponse.json(
         { error: "Translation service unavailable" },
         { status: 503 }
       );
     }
 
-    // Prefer pre-scraped DB content. Falling back to live scraping can be slow or blocked by sources.
-    const content = isUsableArticleContent(cached?.content_en)
-      ? cached.content_en
-      : await scrapeArticle(url);
-    if (!content || content.paragraphs.length === 0) {
+    const existingPromise = inflightTranslations.get(canonicalUrl);
+    if (existingPromise) {
+      const payload = await existingPromise;
+      return NextResponse.json({ ...payload, cached: true });
+    }
+
+    const work = (async (): Promise<TranslationPayload | null> => {
+      const content = isUsableArticleContent(cached.content_en)
+        ? cached.content_en
+        : await scrapeArticle(url);
+      if (!content || content.paragraphs.length === 0) {
+        return null;
+      }
+
+      const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|IconSport|Getty Images|Image:/i;
+      const cleanParagraphs = capParagraphsByChars(
+        content.paragraphs.filter((p) => !junkPattern.test(p)),
+        MAX_TRANSLATE_CHARS
+      );
+
+      const sections = [content.title];
+      if (content.description) sections.push(content.description);
+      sections.push(...cleanParagraphs);
+      const input = sections.join("\n|||\n");
+      const systemPrompt = buildTranslateSystemPrompt();
+
+      let result;
+      let usedModel: string = TRANSLATE_MODELS[0];
+      for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
+        try {
+          result = await generateText({
+            model: getVietapiModel(modelId),
+            system: systemPrompt,
+            prompt: input,
+            maxOutputTokens: 4000,
+          });
+          if (hasUnexpectedScript(result.text) && index < TRANSLATE_MODELS.length - 1) {
+            console.warn(`[translate] ${modelId} returned unexpected script, falling back...`);
+            result = undefined;
+            continue;
+          }
+          usedModel = modelId;
+          break;
+        } catch (err) {
+          if (index < TRANSLATE_MODELS.length - 1 && shouldTryNextModel(err)) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.warn(`[translate] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
+            continue;
+          }
+          throw err;
+        }
+      }
+      if (!result) throw new Error("All translation models failed");
+
+      const stripPrefix = (s: string) =>
+        s.replace(/^(TITLE|TIÊU ĐỀ|P\d+)\s*[:：]\s*/i, "").trim();
+
+      const translated = result.text.split("|||").map((s) => stripPrefix(s));
+      const titleVi = translated[0] || content.title;
+
+      const hasDescription = !!content.description;
+      const descriptionVi = hasDescription ? (translated[1] || "") : "";
+      const paragraphsVi = translated
+        .slice(hasDescription ? 2 : 1)
+        .map((p) => stripPrefix(p))
+        .filter((p) => p.length > 0);
+
+      const contentVi = {
+        description: descriptionVi,
+        paragraphs: paragraphsVi,
+        translatedAt: new Date().toISOString(),
+      };
+
+      await supabase
+        .from("articles")
+        .update({
+          title_vi: titleVi,
+          snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
+          content_vi: contentVi,
+        })
+        .in("url", urlVariants);
+
+      return {
+        title_vi: titleVi,
+        description_vi: descriptionVi || null,
+        snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
+        paragraphs: paragraphsVi,
+        model: usedModel,
+        cached: false,
+      };
+    })();
+
+    inflightTranslations.set(canonicalUrl, work as Promise<TranslationPayload>);
+    let payload: TranslationPayload | null;
+    try {
+      payload = await work;
+    } finally {
+      inflightTranslations.delete(canonicalUrl);
+    }
+
+    if (!payload) {
       return NextResponse.json(
         { error: "Could not extract article content" },
         { status: 404 }
       );
     }
 
-    // Filter out junk paragraphs (social media CTAs, newsletter promos, source attribution noise)
-    const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|IconSport|Getty Images|Image:/i;
-    const cleanParagraphs = content.paragraphs.filter((p) => !junkPattern.test(p));
-    // Translate the whole body, because that is what the reader now sees: the
-    // page renders the full article (owner's decision, Oct 2026), so capping the
-    // translation would have left a Vietnamese reader a fraction of the English
-    // one. It costs proportionally more tokens per article.
-    // Build translation input: title + description (if any) + paragraphs
-    const sections = [content.title];
-    if (content.description) sections.push(content.description);
-    sections.push(...cleanParagraphs);
-    const input = sections.join("\n|||\n");
-
-    // Model fallback on rate limit / provider error
-    let result;
-    let usedModel: string = TRANSLATE_MODELS[0];
-    for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
-      try {
-        result = await generateText({
-          model: vietapi(modelId),
-          system: TRANSLATE_PROMPT,
-          prompt: input,
-          maxOutputTokens: 4000,
-        });
-        if (hasUnexpectedScript(result.text) && index < TRANSLATE_MODELS.length - 1) {
-          console.warn(`[translate] ${modelId} returned unexpected script, falling back...`);
-          result = undefined;
-          continue;
-        }
-        usedModel = modelId;
-        break; // success
-      } catch (err) {
-        if (index < TRANSLATE_MODELS.length - 1 && shouldTryNextGroqModel(err)) {
-          const msg = err instanceof Error ? err.message : String(err);
-          console.warn(`[translate] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
-          continue;
-        }
-        throw err;
-      }
-    }
-    if (!result) throw new Error("All translation models failed");
-
-    // Parse translated sections — strip any label prefixes the LLM might add
-    const stripPrefix = (s: string) =>
-      s.replace(/^(TITLE|TIÊU ĐỀ|P\d+)\s*[:：]\s*/i, "").trim();
-
-    const translated = result.text.split("|||").map((s) => stripPrefix(s));
-    const titleVi = translated[0] || content.title;
-
-    // If we sent description, second section is description_vi
-    const hasDescription = !!content.description;
-    const descriptionVi = hasDescription ? (translated[1] || "") : "";
-    const paragraphsVi = translated
-      .slice(hasDescription ? 2 : 1)
-      .map((p) => stripPrefix(p))
-      .filter((p) => p.length > 0);
-
-    // Save to DB
-    const contentVi = {
-      description: descriptionVi,
-      paragraphs: paragraphsVi,
-      translatedAt: new Date().toISOString(),
-    };
-
-    await supabase
-      .from("articles")
-      .update({
-        title_vi: titleVi,
-        snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
-        content_vi: contentVi,
-      })
-      .in("url", urlVariants);
-
-    return NextResponse.json({
-      title_vi: titleVi,
-      description_vi: descriptionVi || null,
-      snippet_vi: paragraphsVi[0]?.slice(0, 200) || null,
-      paragraphs: paragraphsVi,
-      model: usedModel,
-      cached: false,
-    });
+    return NextResponse.json(payload);
   } catch (err) {
     console.error("[translate] Error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Translation failed" },
+      { error: "Translation failed" },
       { status: 500 }
     );
   }

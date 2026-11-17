@@ -1,15 +1,23 @@
 import type { NextRequest } from "next/server";
 
+const MAX_ENTRIES = 2_000;
 const store = new Map<string, { count: number; resetAt: number }>();
 
-// Clean up expired entries every 60s (avoids memory leak in long-running serverless instances)
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-      if (now > entry.resetAt) store.delete(key);
-    }
-  }, 60_000).unref?.();
+/**
+ * Lazy expiry sweep + bounded capacity (no module-scope setInterval: Cloudflare
+ * Workers disallow timers at global evaluation time, and an uncapped Map could
+ * grow unboundedly under rotated keys within a single window).
+ */
+function pruneStore(now: number): void {
+  if (store.size < MAX_ENTRIES) return;
+  for (const [key, entry] of store) {
+    if (now > entry.resetAt) store.delete(key);
+  }
+  while (store.size >= MAX_ENTRIES) {
+    const oldestKey = store.keys().next().value;
+    if (oldestKey === undefined) break;
+    store.delete(oldestKey);
+  }
 }
 
 export function checkRateLimit(
@@ -21,8 +29,9 @@ export function checkRateLimit(
   const entry = store.get(identifier);
 
   if (!entry || now > entry.resetAt) {
+    pruneStore(now);
     store.set(identifier, { count: 1, resetAt: now + windowMs });
-    return { allowed: true, remaining: limit - 1 };
+    return { allowed: true, remaining: Math.max(0, limit - 1) };
   }
 
   if (entry.count >= limit) {
@@ -30,13 +39,37 @@ export function checkRateLimit(
   }
 
   entry.count++;
-  return { allowed: true, remaining: limit - entry.count };
+  return { allowed: true, remaining: Math.max(0, limit - entry.count) };
 }
 
-export function getClientIP(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
+/**
+ * Resolve caller IP safely behind Cloudflare Workers and reverse proxies.
+ *
+ * `cf-connecting-ip` is set authoritatively by Cloudflare's edge and cannot be
+ * spoofed by clients, whereas `x-forwarded-for`'s first element is client-
+ * controlled when a forged header is sent (`spoofed, real_ip`).
+ */
+export function getClientIP(req: Pick<NextRequest, "headers">): string {
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const hops = xff
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const lastHop = hops.at(-1);
+    if (lastHop) return lastHop;
+  }
+
+  return "unknown";
+}
+
+/** Test-only helper to reset in-memory counters between specs. */
+export function resetRateLimitStore(): void {
+  store.clear();
 }

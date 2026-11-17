@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getEnv } from "@/lib/env";
 import { withCronAuth } from "@/lib/cron";
 import { getFixtures } from "@/lib/football";
@@ -71,8 +71,8 @@ export const GET = withCronAuth(async (req) => {
   }
 
   if (results.some((r) => r.ok)) {
-    revalidatePath("/analysis");
-    revalidatePath("/");
+    revalidateLocalizedPath("/analysis");
+    revalidateLocalizedPath("/");
   }
 
   return NextResponse.json({

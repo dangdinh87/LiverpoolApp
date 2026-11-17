@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Inline HLS/MP4 video player for article content.
- * Uses native <video> (Safari supports HLS natively) + dynamic HLS.js import for other browsers.
+ * Uses native <video> HLS on Safari (zero extra JS) + dynamic HLS.js import for other browsers,
+ * with strict unmount cancellation so Hls instances never leak.
  */
 export function ArticleVideoPlayer({
   src,
@@ -17,7 +18,6 @@ export function ArticleVideoPlayer({
   poster?: string;
   sourceUrl?: string;
   sourceName?: string;
-  /** Localised "can't play, open on {source}" line (this renders in its own React root, so no i18n context). */
   fallbackLabel: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,50 +28,59 @@ export function ArticleVideoPlayer({
     const video = videoRef.current;
     if (!video || !isHLS) return;
 
-    // Prefer HLS.js when available (works in Chrome, Firefox, Edge)
-    // Fall back to native HLS only on Safari where HLS.js isn't supported
+    let cancelled = false;
     let hls: import("hls.js").default | null = null;
+
+    // Safari / iOS support HLS natively without downloading ~178 KB gzip of hls.js.
+    if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      video.src = src;
+      return () => {
+        cancelled = true;
+      };
+    }
+
     import("hls.js")
       .then((mod) => {
+        if (cancelled) return;
         const Hls = mod.default;
         if (Hls.isSupported()) {
           hls = new Hls({ maxBufferLength: 30, maxMaxBufferLength: 60 });
           hls.loadSource(src);
           hls.attachMedia(video);
           hls.on(Hls.Events.ERROR, (_, data) => {
-            if (data.fatal) setError(true);
+            if (!cancelled && data.fatal) setError(true);
           });
-        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          // Safari: native HLS support
-          video.src = src;
         } else {
           setError(true);
         }
       })
       .catch(() => {
-        // HLS.js failed to load — try native as last resort
-        if (video.canPlayType("application/vnd.apple.mpegurl")) {
-          video.src = src;
-        } else {
-          setError(true);
-        }
+        if (!cancelled) setError(true);
       });
 
-    return () => { hls?.destroy(); };
+    return () => {
+      cancelled = true;
+      hls?.destroy();
+    };
   }, [src, isHLS]);
 
-  // Fallback: link to original source
   if (error) {
+    const captionText = sourceName ? `${fallbackLabel} (${sourceName})` : fallbackLabel;
     return (
       <figure className="article-video-placeholder">
-        <a href={sourceUrl || src} target="_blank" rel="noopener noreferrer">
+        <a
+          href={sourceUrl || src}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={captionText}
+        >
           {poster && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={poster} alt="" loading="lazy" referrerPolicy="no-referrer" />
           )}
-          <span className="video-play-overlay" />
+          <span className="video-play-overlay" aria-hidden />
         </a>
-        <figcaption>{sourceName ? `${fallbackLabel} (${sourceName})` : fallbackLabel}</figcaption>
+        <figcaption>{captionText}</figcaption>
       </figure>
     );
   }
@@ -84,9 +93,10 @@ export function ArticleVideoPlayer({
         playsInline
         preload="metadata"
         poster={poster}
-        aria-label={sourceName}
+        aria-label={sourceName || fallbackLabel}
         className="article-video"
         src={!isHLS ? src : undefined}
+        onError={() => setError(true)}
       />
     </div>
   );

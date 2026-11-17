@@ -14,7 +14,7 @@ function StatCard({ value, label, sub, accent }: { value: string | number; label
       {accent && <div className="absolute inset-x-0 top-0 h-0.5 bg-lfc-red" />}
       <div className={cn("font-bebas text-2xl leading-none tabular-nums sm:text-4xl", accent ? "text-brand" : "text-white")}>{value}</div>
       <div className="mt-1.5 font-barlow text-xs uppercase tracking-[0.15em] text-stadium-muted">{label}</div>
-      {sub && <div className="mt-0.5 text-xs tabular-nums text-stadium-muted/80">{sub}</div>}
+      {sub && <div className="mt-0.5 text-xs tabular-nums text-stadium-muted">{sub}</div>}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 // Stores full translated paragraphs to avoid re-calling API
 
 interface CachedTranslation {
+  url?: string;
   title_vi: string;
   description_vi?: string;
   paragraphs: string[];
@@ -12,7 +13,6 @@ const CACHE_PREFIX = "lfc-translate-";
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function getCacheKey(url: string): string {
-  // Simple hash from URL
   let hash = 0;
   for (let i = 0; i < url.length; i++) {
     hash = ((hash << 5) - hash + url.charCodeAt(i)) | 0;
@@ -29,7 +29,11 @@ export function getCachedTranslation(url: string): CachedTranslation | null {
 
     const cached: CachedTranslation = JSON.parse(raw);
 
-    // Check expiry
+    // Guard against 31-bit hash collisions across different article URLs.
+    if (cached.url && cached.url !== url) {
+      return null;
+    }
+
     if (Date.now() - cached.cachedAt > CACHE_TTL_MS) {
       localStorage.removeItem(key);
       return null;
@@ -51,6 +55,7 @@ export function setCachedTranslation(
   try {
     const key = getCacheKey(url);
     const cached: CachedTranslation = {
+      url,
       title_vi,
       description_vi,
       paragraphs,

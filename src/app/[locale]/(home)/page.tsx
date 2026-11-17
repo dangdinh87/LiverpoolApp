@@ -4,6 +4,7 @@ import { brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
 import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
+import { requireNonEmptyArray } from "@/lib/football/fdo-client";
 import { getFixtures, getStandings } from "@/lib/football";
 import { getNewsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
@@ -26,13 +27,11 @@ function getOptimizedHeroUrl(url: string): string {
   if (!url.includes("res.cloudinary.com") || !url.includes("/upload/")) {
     return url;
   }
-  if (url.includes("/upload/w_1280,h_720,c_fill,q_auto,f_auto/")) {
-    return url;
-  }
-  return url.replace(
-    "/upload/",
-    "/upload/w_1280,h_720,c_fill,q_auto,f_auto/"
-  );
+  const [head, tail] = url.split("/upload/");
+  // Strip any existing transformation prefix (e.g. w_1920,h_1080,... saved by cover-selector)
+  // so we never emit a double transform segment.
+  const cleanTail = tail.replace(/^(?:[a-z]_[^/]+\/)+/i, "");
+  return `${head}/upload/w_1280,h_720,c_fill,q_auto:eco,f_auto/${cleanTail}`;
 }
 
 /** "Tin nhanh" shows this many headlines; the query takes a few extra so the language mix can still fill it. */
@@ -42,16 +41,16 @@ const HOME_NEWS_SHOWN = 7;
 const HOME_NEWS_LIMIT = 24;
 
 const getCachedHomeFixtures = unstable_cache(
-  async () => getFixtures(),
-  ["home-fixtures-v1"],
+  async () => requireNonEmptyArray(getFixtures()),
+  ["home-fixtures-v2"],
   // The window must not sit below the page's own, or every render re-queries by
   // definition. The tag is there so a post-match job could bust it from one place.
   { revalidate: 1800, tags: [FOOTBALL_CACHE_TAG] },
 );
 
 const getCachedHomeStandings = unstable_cache(
-  async () => getStandings(),
-  ["home-standings-v1"],
+  async () => requireNonEmptyArray(getStandings()),
+  ["home-standings-v2"],
   { revalidate: 3600, tags: [FOOTBALL_CACHE_TAG] },
 );
 

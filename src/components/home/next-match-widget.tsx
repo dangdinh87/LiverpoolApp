@@ -157,7 +157,10 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         <div className="flex w-28 shrink-0 flex-col items-center gap-1 text-center sm:w-36">
           {isLive ? (
             <>
-              <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-5xl text-white" />
+              <div className="spoiler-hide">
+                <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-5xl text-white" />
+              </div>
+              <span aria-hidden className="spoiler-show font-bebas text-5xl leading-none text-white/40">? - ?</span>
               <LiveClock
                 live={live}
                 updatedAt={updatedAt}
@@ -182,7 +185,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
       )}
 
       {isLive && live && (
-        <div className="mt-3 space-y-4">
+        <div className="spoiler-hide mt-3 space-y-4">
           <LiveEventColumns events={live.events} centered />
           {live.stats && <LiveStats stats={live.stats} lfcSide={lfcSide} rows />}
           <LiveTicker live={live} updatedAt={updatedAt} ended={ended} className="border-t border-[var(--line)] pt-3" />
