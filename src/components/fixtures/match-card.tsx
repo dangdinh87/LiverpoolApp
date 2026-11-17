@@ -7,9 +7,8 @@ import { useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
-import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
-import { useSpoilerFree } from "@/hooks/use-spoiler-free";
 import { MatchCountdown } from "./match-countdown";
 import { useLiveMatch } from "./use-live-match";
 import { LiveClock, LiveEdgeTrack, LiveEventColumns, LiveScore, LiveStats, LiveStatusBadge, LiveTicker } from "./live-match-panel";
@@ -87,7 +86,6 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
   const zone = useViewerTimeZone(defaultTimeZoneForLocale(locale));
   const dateStr = formatMatchDayMonth(date, locale, false, zone);
   const timeStr = formatMatchTime(date, zone);
-  const zoneLabel = formatZoneOffset(date, zone);
   const extra = status === "AET" ? "AET" : status === "PEN" ? "PEN" : null;
   const pens =
     status === "PEN" && score.penalty.home !== null && score.penalty.away !== null
@@ -95,21 +93,12 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
       : null;
   const resultWord = result === "W" ? t("win") : result === "D" ? t("draw") : t("loss");
 
-  const spoilerFree = useSpoilerFree();
   const round = roundLabel(tRound, league.round);
-  const homeName = displayTeamName(teams.home.name);
-  const awayName = displayTeamName(teams.away.name);
-  const aria = isUpcoming
-    ? `${homeName} – ${awayName}, ${dateStr} ${timeStr} ${zoneLabel}`
-    : spoilerFree
-      ? `${homeName} – ${awayName}`
-      : `${homeName} ${goals.home ?? 0} – ${goals.away ?? 0} ${awayName}`;
   const cardHref = f.id > 0 ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
     <Link
       href={cardHref}
-      aria-label={aria}
       className={cn(
         "surface-interactive group relative block overflow-hidden",
         isLive && !ended && "!border-lfc-red/50",

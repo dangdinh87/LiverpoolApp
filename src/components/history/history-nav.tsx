@@ -43,7 +43,11 @@ export function HistoryNav({ items, ariaLabel }: HistoryNavProps) {
     if (!strip || !active) return;
     const chip = strip.querySelector<HTMLElement>(`[data-id="${active}"]`);
     if (!chip) return;
-    strip.scrollTo({ left: chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2, behavior: "smooth" });
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    strip.scrollTo({
+      left: chip.offsetLeft - (strip.clientWidth - chip.offsetWidth) / 2,
+      behavior: reduced ? "auto" : "smooth",
+    });
   }, [active]);
 
   return (

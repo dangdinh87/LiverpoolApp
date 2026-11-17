@@ -48,11 +48,11 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
             <span className="font-bebas text-lg sm:text-xl text-white/60 tracking-wider text-right">{opponentName}</span>
           </div>
           <div className="flex h-3 overflow-hidden gap-0.5 rounded-sm">
-            <div className="bg-lfc-red transition-all duration-700" style={{ width: `${lfcPct}%` }} />
+            <div className="bg-lfc-red" style={{ width: `${lfcPct}%` }} />
             {drawPct > 0 && (
-              <div className="bg-stadium-muted/40 transition-all duration-700" style={{ width: `${drawPct}%` }} />
+              <div className="bg-stadium-muted/40" style={{ width: `${drawPct}%` }} />
             )}
-            <div className="bg-white/15 transition-all duration-700" style={{ width: `${oppPct}%` }} />
+            <div className="bg-white/15" style={{ width: `${oppPct}%` }} />
           </div>
           <div className="flex justify-between">
             <ResultTally value={h2h.liverpoolWins} label={t("winLabel")} tone="text-brand" />

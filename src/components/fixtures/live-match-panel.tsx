@@ -49,10 +49,10 @@ export function LiveScore({ home, away, className }: { home: number; away: numbe
   return (
     <motion.p
       key={key}
-      initial={key === firstKey || reduce ? false : { scale: 1.35, color: "#f6eb61" }}
-      animate={{ scale: 1, color: "#ffffff" }}
-      transition={{ duration: 0.9, ease: "easeOut" }}
-      className={cn("font-bebas leading-none tracking-wide tabular-nums", className)}
+      initial={key === firstKey || reduce ? false : { scale: 1.12, opacity: 0.7 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ duration: 0.22, ease: "easeOut" }}
+      className={cn("font-bebas leading-none tracking-wide text-white tabular-nums", className)}
       aria-live="polite"
     >
       {home}
@@ -185,7 +185,7 @@ export function LiveEdgeTrack({ live, ended }: { live: LiveMatchSnapshot; ended:
       <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/[0.07]">
         <div
           className={cn(
-            "h-full transition-[width] duration-700",
+            "h-full",
             ended ? "bg-white/30" : "bg-lfc-red shadow-[0_0_12px_rgba(200,16,46,0.9)]",
           )}
           style={{ width: `${pct}%` }}
@@ -234,7 +234,7 @@ export function LiveStats({ stats, lfcSide, rows = false }: { stats: Stats; lfcS
           <span className="font-bebas text-lg leading-none text-white tabular-nums">{pa}%</span>
         </div>
         <div className="flex h-1 gap-0.5" aria-hidden>
-          <div className={cn("h-full transition-[width] duration-700", red === "home" ? "bg-lfc-red" : "bg-white/40")} style={{ width: `${ph}%` }} />
+          <div className={cn("h-full", red === "home" ? "bg-lfc-red" : "bg-white/40")} style={{ width: `${ph}%` }} />
           <div className={cn("h-full flex-1", red === "away" ? "bg-lfc-red" : "bg-white/40")} />
         </div>
       </div>

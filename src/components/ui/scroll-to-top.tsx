@@ -24,7 +24,10 @@ export function ScrollToTop() {
   return (
     <button
       type="button"
-      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      onClick={() => {
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+      }}
       aria-label={t("scrollToTop")}
       // `inert` takes the hidden button out of the tab order and the accessibility
       // tree in one go (aria-hidden on a focusable button is flagged by audits).

@@ -43,7 +43,7 @@ export async function DigestFeature({ digest, locale }: { digest: DigestRecord; 
         href={href}
         className="group relative isolate flex min-h-[300px] flex-col justify-end overflow-hidden bg-[var(--surface-3)] p-5 sm:min-h-[360px] sm:p-6 lg:col-span-7"
       >
-        <span className="absolute inset-0 -z-20 transition-transform duration-500 group-hover:scale-[1.03]">
+        <span className="absolute inset-0 -z-20 transition-transform duration-200 ease-[var(--ease-out)] group-hover:scale-[1.02]">
           <NewsThumb src={lead?.src} source={lead?.source ?? "bbc"} sizes="(max-width: 1024px) 100vw, 700px" />
         </span>
         <span aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-t from-black via-black/75 to-black/10" />

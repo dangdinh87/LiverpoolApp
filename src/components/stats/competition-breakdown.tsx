@@ -57,8 +57,8 @@ export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
 
             {/* Win rate bar */}
             <div className="h-1.5 bg-stadium-surface2 rounded-full overflow-hidden flex mb-2">
-              <div className="h-full bg-green-500 transition-all" style={{ width: `${winRate}%` }} />
-              <div className="h-full bg-amber-500 transition-all" style={{ width: `${drawRate}%` }} />
+              <div className="h-full bg-green-500" style={{ width: `${winRate}%` }} />
+              <div className="h-full bg-amber-500" style={{ width: `${drawRate}%` }} />
             </div>
 
             {/* Goals */}

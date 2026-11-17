@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { Check, RotateCcw, ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/stores/toast-store";
@@ -140,6 +140,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
       </div>
 
       {/* Preset grid */}
+      <MotionConfig reducedMotion="user">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
         {COVER_PRESETS.map((preset) => {
           const optimizedPresetUrl = toOptimizedCloudinary(preset.url);
@@ -148,11 +149,12 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
           return (
             <motion.button
               key={preset.id}
-              whileTap={{ scale: 0.96 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.14, ease: "easeOut" }}
               onClick={() => handleSelect(optimizedPresetUrl)}
               disabled={isPending}
               className={cn(
-                "relative aspect-[16/9] overflow-hidden border-2 transition-all cursor-pointer group",
+                "relative aspect-[16/9] overflow-hidden border-2 transition-colors duration-150 ease-[var(--ease-out)] cursor-pointer group",
                 isActive
                   ? "border-lfc-red ring-1 ring-lfc-red/50"
                   : isDefault
@@ -165,7 +167,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
                 src={optimizedPresetUrl}
                 alt={preset.alt}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                className="object-cover group-hover:scale-[1.03] transition-transform duration-200 ease-[var(--ease-out)]"
                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 unoptimized
               />
@@ -187,6 +189,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
           );
         })}
       </div>
+      </MotionConfig>
     </div>
   );
 }

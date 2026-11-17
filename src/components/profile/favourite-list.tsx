@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Heart, X } from "lucide-react";
 import { useTransition } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { toggleFavouritePlayer } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
@@ -104,6 +104,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
         </AlertDialogContent>
       </AlertDialog>
 
+      <MotionConfig reducedMotion="user">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         <AnimatePresence>
           {favourites.map((fav) => {
@@ -112,11 +113,10 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
             return (
             <motion.div
               key={fav.player_id}
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
               className="bg-stadium-surface border border-stadium-border overflow-hidden group relative"
             >
               <Link href={href} className="block">
@@ -157,6 +157,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
           })}
         </AnimatePresence>
       </div>
+      </MotionConfig>
     </>
   );
 }

@@ -210,11 +210,11 @@
    per-page one-offs so the site reads as a single product.
    ═══════════════════════════════════════════════════════════════════ */
 :root {
-  /* Motion: one curve, three speeds. Anything slower than --dur-slow is decoration. */
+  /* Motion: one curve, three speeds (<= 300ms). Only transform and opacity animate. */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur-fast: 120ms;
-  --dur-base: 200ms;
-  --dur-slow: 360ms;
+  --dur-fast: 140ms;
+  --dur-base: 180ms;
+  --dur-slow: 260ms;
 
   /* Layered surfaces (elevation by lightness, not by heavy shadow) */
   --surface-1: #141414;
@@ -259,15 +259,19 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-/* Smooth route changes without JS: browsers with cross-document view
-   transitions cross-fade between pages; others navigate as before. */
+/* Smooth route changes without JS: exit faster than enter, subtle 6px lift + fade. */
 @view-transition {
   navigation: auto;
 }
-::view-transition-old(root),
+::view-transition-old(root) {
+  animation: page-fade-out var(--dur-fast) ease-in both;
+}
 ::view-transition-new(root) {
-  animation-duration: var(--dur-base);
-  animation-timing-function: var(--ease-out);
+  animation: reveal 220ms var(--ease-out) both;
+}
+@keyframes page-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 /* The header is the same element on every page: give it its own transition
@@ -302,7 +306,7 @@ html {
 }
 .nav-progress[data-state="done"] {
   transform: scaleX(1);
-  animation: nav-progress-done 320ms var(--ease-out) forwards;
+  animation: nav-progress-done 220ms var(--ease-out) forwards;
 }
 @keyframes nav-progress-run {
   from { transform: scaleX(0.02); opacity: 1; }
@@ -485,7 +489,7 @@ html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
 @keyframes reveal {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
