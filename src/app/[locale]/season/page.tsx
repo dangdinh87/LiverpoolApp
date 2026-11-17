@@ -46,8 +46,9 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "Season.metadata" });
   const selected = resolveSeason(seasonParam);
   const isCurrent = selected === getCurrentSeasonYear();
-  const title = t("title");
-  const description = t("description", { season: seasonLabel(getCurrentSeasonYear()) });
+  const label = seasonLabel(selected);
+  const title = isCurrent ? t("title") : `${t("title")} (${label})`;
+  const description = t("description", { season: label });
   // The current season is the same content as /fixtures; only past seasons are this page's own.
   return {
     title,

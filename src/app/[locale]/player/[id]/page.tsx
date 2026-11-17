@@ -8,6 +8,7 @@ import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calcula
 import type { PlayerPosition } from "@/lib/squad-data";
 import { BRAND } from "@/lib/brand";
 import { getNationality } from "@/lib/nationality";
+import { playerSurname } from "@/lib/player-surname";
 import { getPlayerStats } from "@/lib/football";
 import { getFplPlayerStats } from "@/lib/football/fpl-stats";
 import { PlayerFavouriteButton } from "@/components/player/player-favourite-button";
@@ -147,9 +148,8 @@ export default async function PlayerPage({ params }: PageProps) {
   const { flag, key: nationalityKey } = getNationality(player.nationality);
   const nationality = nationalityKey ? t(`nationalities.${nationalityKey}`) : player.nationality;
 
-  // Headlines usually name a player by surname ("Isak", "Mac Allister").
-  const nameParts = player.name.split(" ");
-  const surname = nameParts.length > 1 && nameParts.at(-1)!.length >= 4 ? nameParts.at(-1)! : player.name;
+  // Headlines usually name a player by surname ("Isak", "van Dijk", "Mac Allister").
+  const surname = playerSurname(player.name);
   const [playerStats, fplStats, mentions, fanRating] = await Promise.all([
     getPlayerStats(player.id),
     getFplPlayerStats(player.name),

@@ -69,21 +69,31 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
     return (
       <span className={cn("inline-flex items-center gap-1", isOwn ? "text-red-400" : "text-white")}>
         <Goal size={14} strokeWidth={2.25} aria-hidden />
+        <span className="sr-only">{isOwn ? "Own goal" : isPen ? "Penalty goal" : "Goal"}</span>
         {(isPen || isOwn) && (
-          <span className="font-barlow text-xs font-bold uppercase tracking-wider">{isPen ? "PEN" : "OG"}</span>
+          <span aria-hidden className="font-barlow text-xs font-bold uppercase tracking-wider">{isPen ? "PEN" : "OG"}</span>
         )}
       </span>
     );
   }
   if (type === "Card") {
-    return <span aria-hidden className={cn("inline-block h-4 w-3 rounded-[1px]", detail.includes("Red") ? "bg-red-500" : "bg-yellow-400")} />;
+    const isRed = detail.includes("Red");
+    return (
+      <>
+        <span aria-hidden className={cn("inline-block h-4 w-3 rounded-[1px]", isRed ? "bg-red-500" : "bg-yellow-400")} />
+        <span className="sr-only">{isRed ? "Red card" : "Yellow card"}</span>
+      </>
+    );
   }
   if (type === "subst") {
     return (
-      <span aria-hidden className="flex items-center -space-x-0.5">
-        <ArrowUpFromLine size={12} className="text-green-400" />
-        <ArrowDownToLine size={12} className="text-red-400" />
-      </span>
+      <>
+        <span aria-hidden className="flex items-center -space-x-0.5">
+          <ArrowUpFromLine size={12} className="text-green-400" />
+          <ArrowDownToLine size={12} className="text-red-400" />
+        </span>
+        <span className="sr-only">Substitution</span>
+      </>
     );
   }
   return <span aria-hidden className="text-xs text-stadium-muted">•</span>;

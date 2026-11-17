@@ -33,7 +33,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
 
   useEffect(() => {
     const row = rowRef.current;
-    const el = row?.querySelector<HTMLElement>('[aria-current="true"]');
+    const el = row?.querySelector<HTMLElement>('[data-active="true"]');
     if (!row || !el) return;
     // Scroll only the chip row (never the page).
     const target = el.offsetLeft - (row.clientWidth - el.offsetWidth) / 2;
@@ -74,7 +74,8 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
               key={item.key}
               href={item.href}
               scroll={false}
-              aria-current={isActive ? "true" : undefined}
+              data-active={isActive ? "true" : undefined}
+              aria-current={isActive ? "page" : undefined}
               className={chipClass(isActive)}
             >
               {content}
@@ -83,7 +84,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
             <button
               key={item.key}
               type="button"
-              aria-current={isActive ? "true" : undefined}
+              data-active={isActive ? "true" : undefined}
               aria-pressed={isActive}
               onClick={() => onSelect?.(item.key)}
               className={chipClass(isActive)}

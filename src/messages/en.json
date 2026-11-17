@@ -202,7 +202,10 @@
       "duplicate": "You just posted the same comment",
       "submitError": "Failed to post comment. Please try again.",
       "cancel": "Cancel reply",
-      "delete": "Delete comment"
+      "delete": "Delete comment",
+      "deleteCancel": "Cancel",
+      "deleteAction": "Delete",
+      "deleteError": "Couldn't delete comment. Please try again."
     },
     "article": {
       "backToNews": "Back to news roundup",
@@ -284,10 +287,10 @@
       "title": "Related news"
     },
     "translate": {
-      "aiDisclaimer": "Automatic translation into Vietnamese, may be inaccurate.",
+      "aiDisclaimer": "Automatic translation into Vietnamese; phrasing may be imperfect.",
       "translating": "Translating...",
       "showOriginal": "Show original",
-      "showTranslated": "Translate excerpt",
+      "showTranslated": "Translate to Vietnamese",
       "error": "Couldn't translate right now. Try again later."
     },
     "actions": {
@@ -1078,15 +1081,15 @@
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "{brand} is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar). Authentication is handled securely via Supabase. AI chat conversations are stored for continuity but are not shared externally. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
+        "content": "{brand} is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar, saved items and match predictions). Authentication is handled securely via Supabase. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. {brand} is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. Quick news reproduces the full text of articles published by the outlets named below, each credited and linked to the original. All rights in an article belong to the original publisher or author; {brand} claims none and will remove any article on request from its publisher. AI features (chat, translation, daily digest) are powered by VietAPI, with Groq for live web search. Use of this site constitutes acceptance of these terms."
+        "content": "This site is provided as-is for informational and entertainment purposes only. {brand} is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News pages display stories from the outlets named below, each credited and linked directly to the original publisher. All rights in an article belong to the original publisher or author; {brand} claims none and will remove any article on request from its publisher. AI features (article translation, daily digest and editorial match reviews) are powered by VietAPI. Use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. Quick news takes headlines and short excerpts from the publishers' public RSS feeds, with a link to the original story — Sources are LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com and ESPN. AI chat, article translation and the daily digest are powered by VietAPI; the daily digest is drafted by AI and may contain mistakes. Live web search in chat uses Groq. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. News aggregates stories from public feeds with credit and a direct link to the original publisher — including LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com and ESPN. Article translation, the daily digest and match reviews are drafted with AI via VietAPI and may contain occasional inaccuracies. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
       }
     },
     "toc": "On this page"

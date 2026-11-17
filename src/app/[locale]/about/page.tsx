@@ -122,7 +122,7 @@ export default async function AboutPage({ params }: LocaleParams) {
                 <p className="mt-3 text-[15px] leading-relaxed text-stadium-muted">{t("creator.bio")}</p>
                 <p className="mt-3 text-[15px] leading-relaxed text-stadium-muted">{t("contact.description")}</p>
                 <div className="mt-5 flex flex-col gap-3">
-                  <a href="mailto:nguyendangdinh47@gmail.com" className={`${BUTTON} bg-lfc-red text-white hover:bg-lfc-red-dark`}>
+                  <a href={`mailto:${BRAND.contactEmail}`} className={`${BUTTON} bg-lfc-red text-white hover:bg-lfc-red-dark`}>
                     <Mail size={16} aria-hidden />
                     {t("contact.email")}
                   </a>
@@ -130,7 +130,7 @@ export default async function AboutPage({ params }: LocaleParams) {
                     <Github size={16} aria-hidden />
                     {t("contact.github")}
                   </a>
-                  <a href="tel:0977963775" className={BUTTON_OUTLINE}>
+                  <a href="tel:+84977963775" className={BUTTON_OUTLINE}>
                     <Phone size={16} aria-hidden />
                     {t("contact.phone")}
                   </a>

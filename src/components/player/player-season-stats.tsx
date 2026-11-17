@@ -176,14 +176,16 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
           <div className="flex items-center gap-3 ml-auto">
             {fplStats.yellowCards > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-4 rounded-[1px] bg-yellow-400 inline-block" />
-                <span className="font-bebas text-lg text-white">{fplStats.yellowCards}</span>
+                <span aria-hidden className="w-3 h-4 rounded-[1px] bg-yellow-400 inline-block" />
+                <span className="sr-only">Yellow cards: </span>
+                <span className="font-bebas text-lg text-white tabular-nums">{fplStats.yellowCards}</span>
               </span>
             )}
             {fplStats.redCards > 0 && (
               <span className="flex items-center gap-1.5">
-                <span className="w-3 h-4 rounded-[1px] bg-red-500 inline-block" />
-                <span className="font-bebas text-lg text-white">{fplStats.redCards}</span>
+                <span aria-hidden className="w-3 h-4 rounded-[1px] bg-red-500 inline-block" />
+                <span className="sr-only">Red cards: </span>
+                <span className="font-bebas text-lg text-white tabular-nums">{fplStats.redCards}</span>
               </span>
             )}
           </div>
@@ -208,7 +210,7 @@ function SummaryCard({
     <div className="surface p-4 text-center relative overflow-hidden group ">
       <div className="absolute top-2.5 left-2.5 text-stadium-muted/50">{icon}</div>
       <div className={cn(
-        "font-bebas text-4xl md:text-5xl leading-none mb-0.5",
+        "font-bebas text-4xl md:text-5xl leading-none mb-0.5 tabular-nums",
         accent === "red" ? "text-brand"
           : accent === "gold" ? "text-lfc-gold"
             : "text-white"
@@ -256,7 +258,7 @@ function StatRow({
     <div className="flex items-center justify-between py-2">
       <span className="text-stadium-muted font-inter text-sm">{label}</span>
       <span className={cn(
-        "font-inter text-sm font-semibold",
+        "font-inter text-sm font-semibold tabular-nums",
         highlight ? "text-lfc-gold" : "text-white"
       )}>
         {value}

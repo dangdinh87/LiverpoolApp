@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function HomeLoading() {
   return (
     <div role="status" aria-busy="true">
-      <span className="sr-only">Đang tải…</span>
+      <span className="sr-only">Loading…</span>
       <div className="border-b border-[var(--line)]">
         <div className="page-container pb-6 pt-[calc(var(--header-h)+1rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+2.5rem)]">
           <div className="grid gap-5 lg:grid-cols-12 lg:items-center lg:gap-12">

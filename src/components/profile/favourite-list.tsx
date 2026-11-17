@@ -106,7 +106,10 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         <AnimatePresence>
-          {favourites.map((fav) => (
+          {favourites.map((fav) => {
+            const squadPlayer = getPlayerById(fav.player_id);
+            const href = squadPlayer ? `/player/${squadPlayer.slug}` : "/squad";
+            return (
             <motion.div
               key={fav.player_id}
               layout
@@ -116,7 +119,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
               transition={{ duration: 0.2 }}
               className="bg-stadium-surface border border-stadium-border overflow-hidden group relative"
             >
-              <Link href={`/player/${getPlayerById(fav.player_id)?.slug ?? fav.player_id}`} className="block">
+              <Link href={href} className="block">
                 <div className="relative h-28 bg-stadium-surface2">
                   {fav.player_photo ? (
                     <Image
@@ -150,7 +153,8 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
                 <X size={14} aria-hidden />
               </button>
             </motion.div>
-          ))}
+            );
+          })}
         </AnimatePresence>
       </div>
     </>

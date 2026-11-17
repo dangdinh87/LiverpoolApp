@@ -47,13 +47,12 @@ export async function StandingsPreview({ standings }: { standings: Standing[] })
             <li key={s.team.id}>
               <Link
                 href="/standings"
-                aria-current={me ? "true" : undefined}
                 className={cn(
                   "flex min-h-11 items-center gap-3 border-l-2 px-2 transition-colors",
                   me ? "border-l-lfc-red bg-lfc-red/15" : "border-l-transparent hover:bg-[var(--surface-3)]",
                 )}
               >
-                <span className={cn("w-6 text-center font-bebas text-lg leading-none", me ? "text-white" : "text-stadium-muted")}>
+                <span className={cn("w-6 text-center font-bebas text-lg leading-none tabular-nums", me ? "text-white" : "text-stadium-muted")}>
                   {s.rank}
                 </span>
                 <span className="flex min-w-0 flex-1 items-center gap-2.5">

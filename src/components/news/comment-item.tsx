@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import Image from "next/image";
-import { Loader2, Send, Trash2, X } from "lucide-react";
+import { Loader2, Send, Trash2, User, X } from "lucide-react";
 import type { useTranslations } from "next-intl";
 
 export interface Comment {
@@ -50,7 +50,7 @@ export function InlineReplyForm({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex size-8 items-center justify-center text-stadium-muted hover:text-white transition-colors cursor-pointer"
+          className="inline-flex size-11 items-center justify-center text-stadium-muted hover:text-white transition-colors cursor-pointer"
           aria-label={t("cancel")}
         >
           <X className="size-4" aria-hidden />
@@ -119,25 +119,21 @@ export function CommentItem({
         isDeleting ? "opacity-50" : ""
       }`}
     >
-      {/* Avatar */}
-      <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface ring-1 ring-stadium-border/40 ${isReply ? "w-6 h-6" : "w-8 h-8"}`}>
+      {/* Avatar — neutral User icon fallback (never the club crest) */}
+      <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface2 ring-1 ring-stadium-border/60 ${isReply ? "w-6 h-6" : "w-8 h-8"}`}>
         {comment.avatarUrl ? (
           <Image
             src={comment.avatarUrl}
-            alt={comment.username}
+            alt=""
             fill
             className="object-cover"
             sizes={isReply ? "24px" : "32px"}
             unoptimized
           />
         ) : (
-          <Image
-            src="/assets/lfc/crest.webp"
-            alt="LFC"
-            fill
-            className="object-contain p-1"
-            sizes={isReply ? "24px" : "32px"}
-          />
+          <span className="flex h-full w-full items-center justify-center text-stadium-muted" aria-hidden>
+            <User size={isReply ? 13 : 16} />
+          </span>
         )}
       </div>
 
@@ -155,25 +151,27 @@ export function CommentItem({
           {comment.content}
         </p>
 
-        {/* Meta row: time · reply · delete */}
+        {/* Meta row: time · reply · delete (>=44px touch targets) */}
         <div className="flex items-center gap-1 mt-0.5">
-          <span className="mr-2 text-xs text-stadium-muted">
+          <span className="mr-2 text-xs text-stadium-muted tabular-nums">
             {formatDate(comment.createdAt)}
           </span>
           {userId && (
             <button
+              type="button"
               onClick={onReply}
-              className="inline-flex min-h-9 items-center px-2 text-xs font-medium text-stadium-muted hover:text-white transition-colors cursor-pointer"
+              className="inline-flex min-h-11 items-center px-2.5 text-xs font-medium text-stadium-muted hover:text-white transition-colors cursor-pointer"
             >
               {t("reply")}
             </button>
           )}
           {userId === comment.userId && (
             <button
+              type="button"
               onClick={() => onDelete(comment.id)}
               disabled={isDeleting}
               aria-label={t("delete")}
-              className="inline-flex size-9 items-center justify-center text-stadium-muted hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
+              className="inline-flex size-11 items-center justify-center text-stadium-muted hover:text-rose-400 transition-colors cursor-pointer disabled:cursor-not-allowed"
             >
               {isDeleting ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />

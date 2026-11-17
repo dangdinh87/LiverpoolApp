@@ -2,6 +2,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { PageHero } from "@/components/ui/page-hero";
 import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
+import { JsonLd } from "@/components/seo/json-ld";
 import { toParagraphs } from "./paragraphs";
 import { BRAND } from "@/lib/brand";
 
@@ -34,6 +36,7 @@ export default async function LegalPage({ params }: LocaleParams) {
 
   return (
     <div className="bg-stadium-bg text-white">
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/legal" }])} />
       <PageHero title={t("title")} description={t("lastUpdated", { date: lastUpdated })} />
 
       <div className="page-container pb-20 pt-6 sm:pt-10">

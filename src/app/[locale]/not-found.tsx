@@ -1,6 +1,6 @@
 import { Link } from "@/i18n/navigation";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { BrandMark } from "@/components/layout/brand-mark";
 
 export default function NotFound() {
   const t = useTranslations("Common");
@@ -8,14 +8,14 @@ export default function NotFound() {
 
   const links = [
     { href: "/news", label: nav("news") },
-    { href: "/season", label: nav("season") },
+    { href: "/fixtures", label: nav("season") },
     { href: "/squad", label: nav("squad") },
     { href: "/stats", label: nav("stats") },
   ];
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 pt-[calc(var(--header-h)+1rem)] pb-16 text-center">
-      <Image src="/assets/lfc/crest.webp" alt="" width={64} height={80} className="opacity-30 mb-5 h-16 w-auto reveal" />
+      <BrandMark className="size-14 mb-5 opacity-90 reveal" />
 
       <p aria-hidden className="font-bebas text-[112px] sm:text-[160px] leading-[0.85] text-lfc-red/30 tracking-wider select-none reveal">
         404

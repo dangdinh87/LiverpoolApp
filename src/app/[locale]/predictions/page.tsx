@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { LocalMatchDay, LocalMatchTime } from "@/components/ui/local-time";
 import { makePageMeta } from "@/lib/seo";
+import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
+import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata({ params }: LocaleParams) {
@@ -38,6 +40,7 @@ export default async function PredictionsPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
+      <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/predictions" }])} />
       <PageHero eyebrow={t("eyebrow")} title={t("title")} description={t("rule", { exact: EXACT_POINTS, result: RESULT_POINTS })} />
 
       {/* The width goes on an inner box: .page-container's own max-width outranks max-w-3xl. */}

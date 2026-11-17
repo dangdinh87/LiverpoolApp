@@ -19,6 +19,8 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { getArticleUrl, SOURCE_CONFIG } from "@/lib/news-config";
+import { isEmbeddableImageUrl } from "@/components/news/news-text";
+import { canonicalizeArticleUrl } from "@/lib/news/url";
 import type { SavedArticle } from "@/lib/supabase";
 import type { NewsSource } from "@/lib/news/types";
 import { formatDayMonth } from "@/lib/format-match-date";
@@ -42,7 +44,24 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
     setArticles((prev) => prev.filter((a) => a.id !== article.id));
 
     startTransition(async () => {
-      await unsaveArticle(article.article_url);
+      const result = await unsaveArticle(article.article_url);
+      if (result && "error" in result) {
+        setArticles((prev) => [article, ...prev]);
+        showToast({ type: "error", message: t("favError") });
+        return;
+      }
+      try {
+        const canonical = canonicalizeArticleUrl(article.article_url);
+        const raw = localStorage.getItem("lfc-saved-articles");
+        if (raw) {
+          const urls = (JSON.parse(raw) as string[]).filter(
+            (u) => canonicalizeArticleUrl(u) !== canonical,
+          );
+          localStorage.setItem("lfc-saved-articles", JSON.stringify(urls));
+        }
+      } catch {
+        // ignore storage errors
+      }
       showToast({ type: "success", message: t("unsaveSuccess") });
     });
   }
@@ -100,14 +119,15 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                 href={getArticleUrl(article.article_url)}
                 className="relative w-28 sm:w-36 h-24 shrink-0 overflow-hidden"
               >
-                {article.article_thumbnail ? (
+                {isEmbeddableImageUrl(article.article_thumbnail) ? (
                   <Image
-                    src={article.article_thumbnail}
+                    src={article.article_thumbnail!}
                     alt={article.article_title}
                     fill
                     className="object-cover"
                     sizes="144px"
                     loading="lazy"
+                    referrerPolicy="no-referrer"
                     unoptimized
                   />
                 ) : (

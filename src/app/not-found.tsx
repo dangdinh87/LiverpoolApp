@@ -6,7 +6,7 @@ import NextError from "next/error";
 // extension). Everything else 404s through app/[locale]/not-found.tsx.
 export default function GlobalNotFound() {
   return (
-    <html lang="vi">
+    <html lang="en">
       <body>
         <NextError statusCode={404} />
       </body>

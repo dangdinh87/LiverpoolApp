@@ -40,8 +40,9 @@ export async function generateMetadata({ params }: { params: Params }) {
   const year = parseSeason(season);
   if (year === null) return { title: "Not Found", robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "Stats.metadata" });
-  const title = t("title");
-  const description = t("description", { season: formatSeasonLabel(year) });
+  const label = formatSeasonLabel(year);
+  const title = `${t("title")} ${label}`;
+  const description = t("description", { season: label });
   return { title, description, ...makePageMeta(title, description, { locale, path: `/stats/${year}` }) };
 }
 

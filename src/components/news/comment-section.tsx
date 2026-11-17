@@ -12,6 +12,16 @@ import { useTranslations, useLocale } from "next-intl";
 import { hasSupabaseSession, loadSupabaseClient } from "@/lib/supabase-lazy";
 import { useToast } from "@/stores/toast-store";
 import { formatDayMonth } from "@/lib/format-match-date";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { CommentItem, InlineReplyForm, type Comment } from "./comment-item";
 
 interface CommentSectionProps {
@@ -33,6 +43,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
   const [loading, setLoading] = useState(initialCommentCount > 0);
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
@@ -170,9 +181,8 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
     }
   }
 
-  async function handleDelete(commentId: string) {
-    if (!window.confirm(t("deleteConfirm"))) return;
-
+  async function handleConfirmDelete(commentId: string) {
+    setConfirmDeleteId(null);
     setDeletingId(commentId);
     try {
       const res = await fetch(
@@ -182,9 +192,11 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
       if (res.ok) {
         setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
         if (replyingToId === commentId) closeReply();
+      } else {
+        toast.show({ type: "error", message: t("deleteError") });
       }
     } catch {
-      // silent
+      toast.show({ type: "error", message: t("deleteError") });
     } finally {
       setDeletingId(null);
     }
@@ -240,9 +252,36 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
 
   return (
     <section aria-labelledby="comments-title" className="mt-12 border-t border-[var(--line)] pt-8">
+      <AlertDialog
+        open={confirmDeleteId !== null}
+        onOpenChange={(v) => { if (!v) setConfirmDeleteId(null); }}
+      >
+        <AlertDialogContent className="bg-stadium-surface border-stadium-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider">
+              {t("delete")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-stadium-muted font-inter">
+              {t("deleteConfirm")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11 bg-stadium-surface2 border-stadium-border text-white hover:bg-stadium-surface hover:text-white cursor-pointer">
+              {t("deleteCancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDeleteId && handleConfirmDelete(confirmDeleteId)}
+              className="min-h-11 bg-lfc-red hover:bg-lfc-red-dark text-white cursor-pointer"
+            >
+              {t("deleteAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <h2 id="comments-title" className="mb-6 flex items-center gap-2 font-bebas text-3xl leading-none text-white">
         <MessageSquareText className="size-6 text-lfc-red" aria-hidden />
-        {t("title")} {comments.length > 0 && t("count", { count: comments.length })}
+        {t("title")} {comments.length > 0 && <span className="tabular-nums">{t("count", { count: comments.length })}</span>}
       </h2>
 
       {userId ? (
@@ -320,7 +359,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
                 comment={comment}
                 userId={userId}
                 deletingId={deletingId}
-                onDelete={handleDelete}
+                onDelete={setConfirmDeleteId}
                 onReply={() => openReply(comment.id)}
                 formatDate={formatDate}
                 t={t}
@@ -335,7 +374,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
                         comment={reply}
                         userId={userId}
                         deletingId={deletingId}
-                        onDelete={handleDelete}
+                        onDelete={setConfirmDeleteId}
                         onReply={() => openReply(reply.id)}
                         formatDate={formatDate}
                         isReply

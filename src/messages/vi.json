@@ -202,7 +202,10 @@
       "duplicate": "Bạn vừa gửi bình luận giống hệt",
       "submitError": "Không thể gửi bình luận. Vui lòng thử lại.",
       "cancel": "Hủy trả lời",
-      "delete": "Xóa bình luận"
+      "delete": "Xóa bình luận",
+      "deleteCancel": "Hủy",
+      "deleteAction": "Xóa",
+      "deleteError": "Không thể xóa bình luận. Vui lòng thử lại."
     },
     "article": {
       "backToNews": "Về Điểm tin",
@@ -284,10 +287,10 @@
       "title": "Tin liên quan"
     },
     "translate": {
-      "aiDisclaimer": "Bản dịch tự động, có thể chưa chuẩn. Chỉ dịch phần đoạn trích.",
+      "aiDisclaimer": "Bản dịch tiếng Việt tự động bằng AI, có thể chưa hoàn toàn chính xác.",
       "translating": "Đang dịch...",
       "showOriginal": "Xem bản gốc",
-      "showTranslated": "Dịch đoạn trích",
+      "showTranslated": "Dịch sang tiếng Việt",
       "error": "Chưa dịch được lúc này. Bạn thử lại sau nhé."
     },
     "actions": {
@@ -755,7 +758,7 @@
       "goalsCount": "{count} bàn thắng",
       "appearances": "Ra sân nhiều nhất",
       "appsCount": "{count} trận",
-      "signing": "Hợp đồng kỷ lục (Mùa)",
+      "signing": "Bản hợp đồng kỷ lục",
       "sale": "Bán cầu thủ kỷ lục"
     },
     "legends": {
@@ -1078,15 +1081,15 @@
     "sections": {
       "privacy": {
         "title": "Chính sách bảo mật",
-        "content": "{brand} là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar). Xác thực được xử lý an toàn qua Supabase. Lịch sử trò chuyện AI được lưu để duy trì cuộc hội thoại nhưng không chia sẻ ra bên ngoài. Hình ảnh gallery được lưu trữ trên Cloudinary. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba. Trang có hiển thị quảng cáo của Google AdSense; Google và các đối tác có thể dùng cookie để phân phát quảng cáo, và bạn có thể tắt quảng cáo cá nhân hóa trong Cài đặt quảng cáo của Google."
+        "content": "{brand} là dự án độc lập và không liên kết với Câu lạc bộ Bóng đá Liverpool hoặc Fenway Sports Group. Chúng tôi không thu thập dữ liệu cá nhân ngoài những gì cần thiết cho chức năng tài khoản (email, tên người dùng, avatar, mục đã lưu và dự đoán tỉ số). Xác thực được xử lý an toàn qua Supabase. Hình ảnh gallery được lưu trữ trên Cloudinary. Chúng tôi không bán hoặc chia sẻ dữ liệu của bạn với bên thứ ba. Trang có hiển thị quảng cáo của Google AdSense; Google và các đối tác có thể dùng cookie để phân phát quảng cáo, và bạn có thể tắt quảng cáo cá nhân hóa trong Cài đặt quảng cáo của Google."
       },
       "terms": {
         "title": "Điều khoản sử dụng",
-        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. {brand} là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin nhanh đăng lại toàn văn bài của các báo nêu dưới đây, mỗi bài đều dẫn nguồn và kèm link bài gốc. Mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc; {brand} không nhận quyền gì và sẽ gỡ bài khi báo gốc yêu cầu. Các tính năng AI (chat, dịch bài, tổng hợp tin hàng ngày) được hỗ trợ bởi VietAPI, kèm Groq cho tìm kiếm web. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
+        "content": "Trang web này được cung cấp nguyên trạng chỉ cho mục đích thông tin và giải trí. {brand} là trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Tất cả các nhãn hiệu, logo và các yếu tố thương hiệu của Liverpool FC là tài sản của Liverpool Football Club và Athletic Grounds Limited. Dữ liệu trận đấu được lấy từ Football-Data.org và ESPN. Mục tin tức hiển thị bài viết từ các báo nêu dưới đây, mỗi bài đều ghi rõ nguồn và dẫn liên kết trực tiếp tới báo gốc. Mọi quyền đối với bài viết thuộc về báo hoặc tác giả gốc; {brand} không nhận quyền gì và sẽ gỡ bài khi báo gốc yêu cầu. Các tính năng AI (dịch bài, bản tin tổng hợp hàng ngày và bài bình luận sau trận) được hỗ trợ bởi VietAPI. Việc sử dụng trang web này có nghĩa là bạn chấp nhận các điều khoản này."
       },
       "sources": {
         "title": "Nguồn dữ liệu",
-        "content": "Bảng xếp hạng, lịch thi đấu và kết quả được cung cấp bởi Football-Data.org. Lịch thi đấu cúp và diễn biến trận đấu được bổ sung từ ESPN. Thống kê cầu thủ lấy từ Fantasy Premier League (API công khai); đội hình và hồ sơ cầu thủ lấy từ liverpoolfc.com. Tin nhanh lấy tiêu đề và đoạn trích ngắn từ RSS công khai của các báo, kèm liên kết tới bài gốc — gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com và ESPN. Chat AI, dịch bài viết và bản tin tổng hợp hằng ngày được hỗ trợ bởi VietAPI; bản tin tổng hợp do AI soạn nháp nên có thể có sai sót. Tìm kiếm web trong chat dùng Groq. Hình ảnh gallery được lưu trữ trên Cloudinary. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên dựa trên các nguồn công khai."
+        "content": "Bảng xếp hạng, lịch thi đấu và kết quả được cung cấp bởi Football-Data.org. Lịch thi đấu cúp và diễn biến trận đấu được bổ sung từ ESPN. Thống kê cầu thủ lấy từ Fantasy Premier League (API công khai); đội hình và hồ sơ cầu thủ lấy từ liverpoolfc.com. Tin tức tổng hợp từ các nguồn RSS công khai kèm dẫn nguồn và liên kết trực tiếp tới bài gốc — gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com và ESPN. Dịch bài viết, bản tin tổng hợp hằng ngày và bài bình luận sau trận được hỗ trợ bởi VietAPI; nội dung do AI hỗ trợ biên tập nên đôi khi có thể có sai sót. Hình ảnh gallery được lưu trữ trên Cloudinary. Dữ liệu lịch sử và thông tin danh hiệu được duy trì bởi quản trị viên dựa trên các nguồn công khai."
       }
     },
     "toc": "Trong trang này"
