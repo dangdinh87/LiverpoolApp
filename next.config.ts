@@ -23,6 +23,9 @@ const nextConfig: NextConfig = {
   // Lets parallel dev servers (one per engineer/agent) use separate build dirs;
   // Next refuses to run two servers on the same one. Unset = default `.next`.
   ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
+  turbopack: {
+    root: import.meta.dirname,
+  },
   serverExternalPackages: ['rss-parser'],
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];

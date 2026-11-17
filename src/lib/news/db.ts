@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { getServiceClient } from "./supabase-service";
 import { analyzeArticleRelevance } from "./relevance";
 import { articleUrlVariants } from "./url";
@@ -341,12 +342,8 @@ export interface ArticleRef {
   image: string | null;
 }
 
-/**
- * Title and picture for a set of article URLs (the digest page shows them as
- * its source links and story images).
- */
-export async function getArticleRefsByUrls(
-  urls: string[]
+async function fetchArticleRefsByUrlsUncached(
+  urls: string[],
 ): Promise<Record<string, ArticleRef>> {
   if (!urls.length) return {};
   try {
@@ -376,22 +373,25 @@ export async function getArticleRefsByUrls(
   }
 }
 
-/** Lightweight query for sitemap: active article URLs + publish dates (last 90 days) */
-export async function getArticleSitemapData(): Promise<{ url: string; published_at: string }[]> {
-  try {
-    const supabase = getServiceClient();
-    const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from("articles")
-      .select("url, published_at")
-      .gte("published_at", cutoff)
-      .eq("is_active", true)
-      // These rows link out to youtube.com; our sitemap lists our own pages.
-      .not("source", "in", NON_ARTICLE_FILTER)
-      .order("published_at", { ascending: false })
-      .limit(500);
-    return (data ?? []).filter((r) => r.url && r.published_at);
-  } catch {
-    return [];
-  }
-}
+const getCachedArticleRefsInner = unstable_cache(
+  async (sortedUrls: string[]) => fetchArticleRefsByUrlsUncached(sortedUrls),
+  ["article-refs-by-urls-v1"],
+  { revalidate: 1800, tags: ["news"] },
+);
+
+/**
+ * Title and picture for a set of article URLs (the digest page shows them as
+ * its source links and story images).
+ */
+export const getArticleRefsByUrls = cache(
+  async (urls: string[]): Promise<Record<string, ArticleRef>> => {
+    const uniqueSorted = [...new Set(urls.filter(Boolean))].sort();
+    if (uniqueSorted.length === 0) return {};
+    return getCachedArticleRefsInner(uniqueSorted).catch((err) => {
+      if (err instanceof Error && err.message.includes("incrementalCache")) {
+        return fetchArticleRefsByUrlsUncached(uniqueSorted);
+      }
+      return {};
+    });
+  },
+);

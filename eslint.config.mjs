@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     // Build output, not source. Linting it produced thousands of findings
     // in minified bundles that drowned out real issues in src/.
     ".vercel/**",
+    ".open-next/**",
     // Per-agent build output (NEXT_DIST_DIR=.build-ui / .build-live). Gitignored,
     // but eslint does not read .gitignore: without this, `npm run lint` reports
     // 42k findings in minified bundles and hides the ~13 real ones in src/.

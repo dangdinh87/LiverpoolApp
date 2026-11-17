@@ -3,20 +3,14 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-// Link and usePathname from @/i18n/navigation (not next/link + next/navigation).
-// usePathname strips the /en prefix, so active-link checks against bare paths
-// like "/history" still work on English pages. Link adds that prefix back when
-// rendering hrefs: with plain next/link every nav target on an English page
-// pointed at the Vietnamese URL and only reached the right page via a 307, so
-// prefetches were wasted and each click paid a redirect.
 import { Link, usePathname } from "@/i18n/navigation";
-import { Menu, User, LogOut, Shield, ChevronDown, Flame, X } from "lucide-react";
+import { User, LogOut, Shield, ChevronDown, Flame } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
 import { BrandLogo } from "./brand-mark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { NavbarMobileSheet, type SheetNavLink } from "./navbar-mobile-sheet";
 import { MATCH_PATHS, SQUAD_PATHS, TABS, isActiveAny, isActivePath } from "./nav-items";
-import { useMenuStore } from "./menu-store";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,7 +19,6 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 import type { UserProfile } from "@/lib/supabase";
@@ -42,30 +35,19 @@ const LoginForm = dynamic(() => import("@/components/auth/login-form").then((m) 
 interface NavbarClientProps {
   user: { id: string; email: string | null } | null;
   profile: UserProfile | null;
-  nextMatchDate?: string | null;
-  isMatchLive?: boolean;
 }
 
 const DESKTOP_LINK =
-  // whitespace-nowrap: Vietnamese labels ("Trang chủ", "Tin tức") are two words and
-  // wrapped onto two lines at 1440px. Padding/tracking only widen at 2xl: at xl (1280) the
-  // Vietnamese row was 1174px wide inside the 1088px page container, so the right-hand
-  // group ran 86px past the container (and 1px past the viewport at 1024).
   "relative inline-flex min-h-11 items-center whitespace-nowrap px-1.5 xl:px-2 2xl:px-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] 2xl:tracking-[0.12em] transition-colors";
 
 function ActiveBar() {
   return <span aria-hidden className="absolute inset-x-3 bottom-1 h-0.5 bg-lfc-red" />;
 }
 
-export function NavbarClient({ user: initialUser, profile: initialProfile, nextMatchDate, isMatchLive }: NavbarClientProps) {
+export function NavbarClient({ user: initialUser, profile: initialProfile }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
-  // Shared with the "Thêm" tab of the bottom bar (see menu-store.ts).
-  const menuOpen = useMenuStore((st) => st.open);
-  const setMenuOpen = useMenuStore((st) => st.setOpen);
   const [clubMenuOpen, setClubMenuOpen] = useState(false);
-  // Hover-to-open with a short grace period: the menu content is portalled, so
-  // moving from the trigger to the menu briefly leaves both elements.
   const clubCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancelClubMenuClose = () => {
     if (clubCloseTimer.current) clearTimeout(clubCloseTimer.current);
@@ -75,8 +57,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     cancelClubMenuClose();
     clubCloseTimer.current = setTimeout(() => setClubMenuOpen(false), 150);
   };
-  // True while the menu was opened by pointer hover: closing it must not pull
-  // focus onto the trigger (that painted a stray focus ring after mouse use).
   const openedByHover = useRef(false);
   const openClubMenuOnHover = () => {
     cancelClubMenuClose();
@@ -84,21 +64,16 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     setClubMenuOpen(true);
   };
   useEffect(() => cancelClubMenuClose, []);
+
   const [loginOpen, setLoginOpen] = useState(false);
   const [streak, setStreak] = useState(0);
   const [mounted, setMounted] = useState(false);
-  // False until the first client auth check settles, so the auth slot renders
-  // an empty placeholder instead of flashing "Members" for signed-in users.
   const [authReady, setAuthReady] = useState(false);
-  const [matchStartsSoon, setMatchStartsSoon] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [user, setUser] = useState(initialUser);
   const [profile, setProfile] = useState(initialProfile);
   const pathname = usePathname();
 
-  // Client-side auth fetch — replaces server-side cookies() dependency.
-  // The Supabase browser client is ~60 KB gzip, so it is imported only when a
-  // session cookie exists (signed-in visitors); see supabase-lazy.ts.
   const setAuthUser = useAuthStore((s) => s.setUser);
   useEffect(() => {
     let cancelled = false;
@@ -111,7 +86,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
       };
       let unsubscribe: (() => void) | undefined;
       try {
-        // No session cookie = guest; don't even load the Supabase client.
         if (!hasSupabaseSession()) return signOut();
         const supabase = await loadSupabaseClient();
         const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -151,47 +125,14 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
     };
   }, [pathname, setAuthUser]);
 
-  // Fetch & record streak on mount (authenticated users only)
   useEffect(() => {
     if (!user) return;
     fetch("/api/streak").then((r) => r.json()).then((d) => setStreak(d.streak ?? 0)).catch(() => {});
   }, [user]);
 
-  // Client-only chrome: the flag must flip after hydration, never during it.
-  // Flipping the flag synchronously after mount is the whole point: see the
-  // comment above. The directive must sit on the line before the code.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMounted(true); }, []);
 
-  /**
-   * Whether kick-off is inside the next 30 minutes.
-   *
-   * Derived after mount and refreshed on a timer, not during render. This
-   * component is server-rendered too, and a render-time `Date.now()` disagrees
-   * with the value the browser computes a moment later — that mismatch failed
-   * hydration (React #418) on every page showing the navbar, intermittently,
-   * whenever the 30-minute boundary fell between the two. The timer also lets
-   * the badge appear on its own instead of waiting for a reload.
-   */
-  useEffect(() => {
-    if (isMatchLive || !nextMatchDate) {
-      // Clearing the badge is the early-return branch of the timer below.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMatchStartsSoon(false);
-      return;
-    }
-    const kickOff = new Date(nextMatchDate).getTime();
-    const sync = () => {
-      const untilKickOff = kickOff - Date.now();
-      setMatchStartsSoon(untilKickOff > 0 && untilKickOff <= 30 * 60_000);
-    };
-    sync();
-    const timer = setInterval(sync, 30_000);
-    return () => clearInterval(timer);
-  }, [isMatchLive, nextMatchDate]);
-
-  // Solid-on-scroll. State only flips when crossing the threshold, so scrolling
-  // does not re-render. The header height never changes (no layout shift).
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
     handleScroll();
@@ -208,23 +149,21 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
   };
   const displayName = profile?.username ?? user?.email?.split("@")[0] ?? t("profile");
 
-  // "Trận đấu" groups the season hub, fixtures, standings and stats, so none of
-  // those needs its own top-level link.
   const mainLinks = [
     { href: "/", label: t("home"), paths: ["/"] as readonly string[] },
-    { href: "/fixtures", label: t("season"), paths: MATCH_PATHS as readonly string[], soon: matchStartsSoon },
+    { href: "/fixtures", label: t("season"), paths: MATCH_PATHS as readonly string[] },
     { href: "/news", label: t("news"), paths: ["/news"] as readonly string[] },
     { href: "/analysis", label: t("analysis"), paths: ["/analysis"] as readonly string[] },
     { href: "/squad", label: t("squad"), paths: SQUAD_PATHS as readonly string[] },
   ];
   const clubActive = isActivePath(pathname, "/history") || isActivePath(pathname, "/gallery");
 
-  // Menu sheet. Below md the bottom tab bar already holds some main sections, so
-  // the sheet skips exactly those there (Analysis has no tab and stays); from md
-  // (tablets, which have no bar) every main link is listed.
-  const sheetLinks = [
+  const sheetLinks: SheetNavLink[] = [
     ...mainLinks.map(({ href, label, paths }) => ({
-      href, label, paths, inTabBar: TABS.some((tab) => tab.href === href),
+      href,
+      label,
+      paths,
+      inTabBar: TABS.some((tab) => tab.href === href),
     })),
     { href: "/history", label: t("history"), paths: ["/history"], inTabBar: false },
     { href: "/gallery", label: t("clubGallery"), paths: ["/gallery"], inTabBar: false },
@@ -262,7 +201,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
       )}
       style={{ top: "var(--live-banner-h, 0px)", height: "var(--header-h)" }}
     >
-      {/* Top scrim keeps icons legible over hero photos while the header is transparent */}
       <div
         aria-hidden
         className={cn(
@@ -271,14 +209,13 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
         )}
       />
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
-        {/* Brand. Plain next/link on purpose: "/" always resolves (the middleware picks the locale). */}
         <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
           <BrandLogo markClassName="size-8 lg:size-9" wordmarkClassName="text-[26px] lg:text-[30px]" />
         </Link>
 
         {/* Desktop nav (from lg) */}
         <ul className="hidden lg:flex items-center gap-0.5">
-          {mainLinks.map(({ href, label, paths, soon }) => {
+          {mainLinks.map(({ href, label, paths }) => {
             const active = isActiveAny(pathname, paths);
             return (
               <li key={href}>
@@ -288,19 +225,12 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                   className={cn(DESKTOP_LINK, active ? "text-white" : "text-white/80 hover:text-white")}
                 >
                   {label}
-                  {soon && (
-                    <span className="ml-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold leading-none bg-lfc-red text-white uppercase whitespace-nowrap">
-                      <span className="size-1.5 rounded-full bg-white animate-pulse" />
-                      {t("matchSoon")}
-                    </span>
-                  )}
                   {active && <ActiveBar />}
                 </Link>
               </li>
             );
           })}
 
-          {/* Club dropdown — Radix menu: keyboard operable, aria-expanded; opens on hover too */}
           <li>
             <DropdownMenu modal={false} open={clubMenuOpen} onOpenChange={setClubMenuOpen}>
               <DropdownMenuTrigger asChild>
@@ -310,9 +240,6 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                   onKeyDown={() => {
                     openedByHover.current = false;
                   }}
-                  // Hover already opened it: stop Radix's pointerdown toggle from
-                  // closing the menu on the click that usually follows. Touch and
-                  // keyboard keep the normal toggle.
                   onPointerDown={(e) => {
                     if (e.pointerType === "mouse" && clubMenuOpen) e.preventDefault();
                   }}
@@ -405,7 +332,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
                       <Flame size={14} aria-hidden className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
                       {t("streak")}
                     </span>
-                    <span className={cn("font-bebas text-lg leading-none", streak > 0 ? "text-orange-400" : "text-stadium-muted")}>
+                    <span className={cn("font-bebas text-lg leading-none tabular-nums", streak > 0 ? "text-orange-400" : "text-stadium-muted")}>
                       {streak} {streak === 1 ? t("day") : t("days")}
                     </span>
                   </div>
@@ -436,107 +363,15 @@ export function NavbarClient({ user: initialUser, profile: initialProfile, nextM
             )}
           </div>
 
-          {/* Mobile menu — Sheet mounts after hydration to avoid a Radix id mismatch */}
-          {!mounted ? (
-            <button className="lg:hidden inline-flex size-11 items-center justify-center text-white" aria-label={t("menu")}>
-              <Menu size={24} aria-hidden />
-            </button>
-          ) : (
-            <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <button className="lg:hidden inline-flex size-11 items-center justify-center text-white" aria-label={t("menu")}>
-                  <Menu size={24} aria-hidden />
-                </button>
-              </SheetTrigger>
-              <SheetContent
-                side="right"
-                showCloseButton={false}
-                title={t("primary")}
-                // Opened from the "Thêm" tab: hand focus back to that tab, not the hamburger.
-                onCloseAutoFocus={(e) => {
-                  const { returnFocusTo, clearReturnFocus } = useMenuStore.getState();
-                  if (!returnFocusTo) return;
-                  e.preventDefault();
-                  returnFocusTo.focus();
-                  clearReturnFocus();
-                }}
-                className="w-full max-w-none sm:max-w-none bg-stadium-bg border-none gap-0 overflow-y-auto"
-              >
-                <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between px-4 border-b border-[var(--line)]">
-                  <span className="flex items-center text-white">
-                    <BrandLogo markClassName="size-8" wordmarkClassName="text-[26px]" />
-                    <span className="sr-only">{BRAND.name}</span>
-                  </span>
-                  <SheetClose asChild>
-                    <button className="inline-flex size-11 items-center justify-center text-white" aria-label={t("closeMenu")}>
-                      <X size={24} aria-hidden />
-                    </button>
-                  </SheetClose>
-                </div>
-
-                <ul className="px-4 py-2">
-                  {sheetLinks.map(({ href, label, paths, inTabBar }) => {
-                    const active = isActiveAny(pathname, paths);
-                    return (
-                      <li key={href} className={cn("border-b border-[var(--line)]", inTabBar && "max-md:hidden")}>
-                        <SheetClose asChild>
-                          <Link
-                            href={href}
-                            aria-current={active ? "page" : undefined}
-                            className={cn(
-                              "flex min-h-14 items-center gap-3 font-bebas text-3xl uppercase tracking-wide transition-colors",
-                              active ? "text-white" : "text-white/75 hover:text-white"
-                            )}
-                          >
-                            <span aria-hidden className={cn("h-6 w-1", active ? "bg-lfc-red" : "bg-transparent")} />
-                            {label}
-                          </Link>
-                        </SheetClose>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                <div className="mt-auto flex flex-col gap-3 px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-                  <LanguageSwitcher variant="segmented" />
-                  {!authReady ? (
-                    <div className="min-h-12" />
-                  ) : user ? (
-                    <>
-                      <SheetClose asChild>
-                        <Link
-                          href="/profile"
-                          className="flex min-h-12 items-center justify-center gap-2 border border-[var(--line-strong)] font-barlow font-bold uppercase tracking-[0.12em] text-white"
-                        >
-                          <Shield size={14} aria-hidden className="text-lfc-red-text" />
-                          {t("memberArea")}
-                        </Link>
-                      </SheetClose>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={doLogout}
-                        className="min-h-12 font-barlow font-semibold uppercase tracking-[0.12em] text-stadium-muted hover:text-white cursor-pointer disabled:opacity-50"
-                      >
-                        {t("logout")}
-                      </button>
-                    </>
-                  ) : (
-                    <SheetClose asChild>
-                      <button
-                        type="button"
-                        onClick={() => setLoginOpen(true)}
-                        className="flex min-h-12 items-center justify-center gap-2 bg-lfc-red font-barlow font-bold uppercase tracking-[0.12em] text-white hover:bg-lfc-red-dark cursor-pointer"
-                      >
-                        <Shield size={14} aria-hidden />
-                        {t("members")}
-                      </button>
-                    </SheetClose>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
+          <NavbarMobileSheet
+            mounted={mounted}
+            authReady={authReady}
+            isSignedIn={!!user}
+            isPending={isPending}
+            sheetLinks={sheetLinks}
+            onOpenLogin={() => setLoginOpen(true)}
+            onLogout={doLogout}
+          />
         </div>
       </nav>
 

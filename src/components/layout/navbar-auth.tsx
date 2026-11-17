@@ -3,5 +3,5 @@
 import { NavbarClient } from "./navbar-client";
 
 export function NavbarAuth() {
-  return <NavbarClient user={null} profile={null} nextMatchDate={null} isMatchLive={false} />;
+  return <NavbarClient user={null} profile={null} />;
 }

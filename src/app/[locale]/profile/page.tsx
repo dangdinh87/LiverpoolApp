@@ -42,12 +42,14 @@ export default async function ProfilePage({ params }: LocaleParams) {
     );
   }
 
-  const [{ data: profile }, { data: favourites }, { data: savedArticles }] = await Promise.all([
+  const admin = isAdminEmail(user.email);
+
+  const [{ data: profile }, { data: favourites }, { data: savedArticles }, heroSetting] = await Promise.all([
     supabase
       .from("user_profiles")
       .select("*")
       .eq("user_id", user.id)
-      .single<UserProfile>(),
+      .maybeSingle<UserProfile>(),
     supabase
       .from("favourite_players")
       .select("*")
@@ -58,18 +60,12 @@ export default async function ProfilePage({ params }: LocaleParams) {
       .select("*")
       .eq("user_id", user.id)
       .order("saved_at", { ascending: false }),
+    admin
+      ? getSiteSetting<{ cloudinary_url: string }>("homepage_hero_image").catch(() => null)
+      : Promise.resolve(null),
   ]);
 
-  const admin = isAdminEmail(user.email);
-
-  // Fetch current homepage hero bg for admin selector
-  let currentHeroBg: string | null = null;
-  if (admin) {
-    try {
-      const setting = await getSiteSetting<{ cloudinary_url: string }>("homepage_hero_image");
-      currentHeroBg = setting?.cloudinary_url ?? null;
-    } catch { /* fallback to null */ }
-  }
+  const currentHeroBg = heroSetting?.cloudinary_url ?? null;
 
   return (
     <ProfileLayout

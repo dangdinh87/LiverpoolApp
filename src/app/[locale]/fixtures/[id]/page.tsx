@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, MapPin, Users, CircleDot, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
+import { ArrowLeft, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
@@ -15,25 +14,27 @@ import {
 } from "@/lib/football";
 import { getCurrentSeasonYear } from "@/lib/football/current-season";
 import { H2HSection } from "@/components/fixtures/h2h-section";
-import { MatchCountdown } from "@/components/fixtures/match-countdown";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
-import { WhereToWatch } from "@/components/fixtures/where-to-watch";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
   LFC_ID,
   LineupSection,
-  ScorerList,
   StatsComparison,
   TimelineRow,
-  teamLogo,
 } from "@/components/fixtures/match-detail-parts";
+import {
+  MATCH_STAT_KEYS,
+  MatchScoreHeader,
+  matchesFixtureTeam,
+  parsePositiveFixtureId,
+} from "@/components/fixtures/match-score-header";
 import { FormationPitch } from "@/components/fixtures/formation-pitch";
 import { SpoilerRevealPanel } from "@/components/fixtures/spoiler-controls";
 import { FanPrediction } from "@/components/fixtures/fan-prediction";
 import { PlayerRatings } from "@/components/fixtures/player-ratings";
-import { LiveDetailBadge, LiveDetailScore, LiveDetailStats, LiveDetailTimeline } from "@/components/fixtures/live-match-detail";
+import { LiveDetailStats, LiveDetailTimeline } from "@/components/fixtures/live-match-detail";
 import type { Fixture } from "@/lib/types/football";
 import { getMatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
@@ -41,46 +42,15 @@ import { buildSportsEventJsonLd, getLocalizedUrl, makePageMeta } from "@/lib/seo
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
-import { LocalMatchDay, LocalMatchTime, LocalZoneOffset } from "@/components/ui/local-time";
 
 export const revalidate = 300; // 5 minutes
 
-// Empty list = nothing prerendered at build, each path is rendered on first
-// request and then cached for `revalidate` (without it the route renders per request).
 export async function generateStaticParams() {
   return [];
 }
 
 interface PageProps {
   params: Promise<{ id: string; locale: string }>;
-}
-
-function parsePositiveFixtureId(raw: string): number | null {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-/**
- * Match a provider team (`stats`, `lineups`, `events`) against a fixture side
- * without colliding on shared prefixes like `"FC"` (`"FC Barcelona"` vs `"Liverpool FC"`)
- * or `"Manchester"` (`"Manchester City"` vs `"Manchester United"`).
- */
-function matchesFixtureTeam(
-  candidate: { id: number; name: string },
-  side: { id: number; name: string },
-): boolean {
-  if (candidate.id > 0 && candidate.id === side.id) return true;
-  if (side.id === LFC_ID && /\bliverpool\b/i.test(candidate.name)) return true;
-  if (side.id !== LFC_ID && /\bliverpool\b/i.test(candidate.name)) return false;
-
-  const normCandidate = displayTeamName(candidate.name).toLowerCase().trim();
-  const normSide = displayTeamName(side.name).toLowerCase().trim();
-  if (!normCandidate || !normSide) return false;
-  return (
-    normCandidate === normSide ||
-    normCandidate.includes(normSide) ||
-    normSide.includes(normCandidate)
-  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -140,39 +110,24 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
     isFinished ? getMatchDetail(f.date) : Promise.resolve(null),
-    // Fetch the season before this fixture's for richer H2H data. Derived from
-    // the fixture rather than pinned to a year, which went stale every August.
     league.season > 0
       ? getFixtures(league.season - 1).catch(() => [] as Fixture[])
       : Promise.resolve([] as Fixture[]),
-    // The fixture's own season (the current one is the no-argument call, which
-    // getFixtureById already made, so React.cache dedupes it).
     league.season === getCurrentSeasonYear() ? getFixtures() : getFixtures(league.season),
   ]);
 
-  // H2H: compute from this season's + the previous season's fixtures
   const opponentId = teams.home.id === LFC_ID ? teams.away.id : teams.home.id;
   const opponentName = teams.home.id === LFC_ID ? teams.away.name : teams.home.name;
-  const allFixturesForH2H = [...seasonFixtures, ...prevFixtures];
-  const h2h = computeH2H(allFixturesForH2H, opponentId);
+  const h2h = computeH2H([...seasonFixtures, ...prevFixtures], opponentId);
 
   const date = new Date(f.date);
-  // Match confirmation depends on current server time.
   // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
-  const msToKickoff = date.getTime() - now;
-  const isConfirmed = isFinished || isLive || msToKickoff <= 3_600_000;
+  const isConfirmed = isFinished || isLive || date.getTime() - now <= 3_600_000;
   const uiLocale: "vi" | "en" = locale === "vi" ? "vi" : "en";
 
-  // Build stat label translation map
-  const STAT_KEYS = [
-    "Ball Possession", "Total Shots", "Shots on Target", "Shots off Target",
-    "Blocked Shots", "Saves", "Corner Kicks", "Offsides", "Fouls",
-    "Yellow Cards", "Red Cards", "Total Passes", "Accurate Passes",
-    "Pass Accuracy", "Tackles Won", "Interceptions", "Clearances", "Expected Goals",
-  ];
   const statLabels: Record<string, string> = {};
-  for (const key of STAT_KEYS) {
+  for (const key of MATCH_STAT_KEYS) {
     try { statLabels[key] = tMatch(`statLabels.${key}`); } catch { statLabels[key] = key; }
   }
 
@@ -180,17 +135,12 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const homeStats = matchStats.find((s) => matchesFixtureTeam(s.team, teams.home));
   const awayStats = matchStats.find((s) => matchesFixtureTeam(s.team, teams.away));
 
-  // Match lineups by team ID first, then by normalized club name
   const homeLineup =
     lineups.find((l) => l.team.id === teams.home.id) ??
     lineups.find((l) => matchesFixtureTeam(l.team, teams.home));
   const awayLineup =
     lineups.find((l) => l.team.id === teams.away.id) ??
     lineups.find((l) => matchesFixtureTeam(l.team, teams.away));
-
-  const htHome = score.halftime.home;
-  const htAway = score.halftime.away;
-  const hasHt = htHome !== null && htAway !== null;
 
   const venue = espnDetail?.venue ?? ([f.venue.name, f.venue.city].filter(Boolean).join(", ") || null);
   const attendance = espnDetail?.attendance;
@@ -217,17 +167,10 @@ export default async function FixtureDetailPage({ params }: PageProps) {
       ? `${score.penalty.home}–${score.penalty.away}`
       : null;
   const resultWord = result === "W" ? tMatch("win") : result === "D" ? tMatch("draw") : tMatch("loss");
-  const resultTone =
-    result === "W" ? "border-green-500/40 bg-green-500/10 text-green-400"
-    : result === "D" ? "border-amber-400/40 bg-amber-400/10 text-amber-300"
-    : "border-red-500/40 bg-red-500/10 text-red-400";
   const hasStarted = isFinished || isLive;
   const homeName = displayTeamName(teams.home.name);
   const awayName = displayTeamName(teams.away.name);
   const round = roundLabel(tRound, league.round);
-  // The broadcaster depends on where the reader is, which only the browser
-  // knows, so WhereToWatch decides for itself and renders nothing when unsure.
-  const showWatch = !isFinished;
   const sections = [
     ...(hasStarted
       ? [
@@ -239,7 +182,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
     { id: "h2h", label: tMatch("tabs.h2h") },
   ];
   const sectionClass = "mt-10 scroll-mt-[calc(var(--header-h)+3.5rem)]";
-  const infoIcon = "mt-0.5 size-4 shrink-0 text-stadium-muted";
 
   return (
     <div className="min-h-screen pb-16 pt-[calc(var(--header-h)+1rem)] sm:pt-[calc(var(--header-h)+1.5rem)]">
@@ -262,7 +204,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           status: f.status.short,
         }),
       ]} />
-      {/* .page-container sets its own max-width, so the reading column is capped by an inner box. */}
       <div className="page-container">
         <div className="mx-auto max-w-3xl">
           <Link
@@ -273,115 +214,30 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             {tDetail("back")}
           </Link>
 
-          {/* ─── Score header ─── */}
-          <section className="surface reveal relative overflow-hidden p-4 sm:p-6">
-            {isFinished && result !== "NS" && (
-              <span aria-hidden className={cn("spoiler-hide absolute inset-y-0 left-0 w-1", result === "W" ? "bg-green-500" : result === "D" ? "bg-amber-400" : "bg-red-500")} />
-            )}
-            {isLive && <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-lfc-red" />}
-
-            <div className="mb-4 flex min-h-6 items-center justify-between gap-3">
-              <p className="min-w-0 truncate font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted">
-                <span className="text-white/90">{league.name}</span>
-                {round && <span> · {round}</span>}
-              </p>
-              {isFinished && result !== "NS" && (
-                <span className={cn("spoiler-hide inline-flex shrink-0 items-center gap-1.5 border px-2 py-0.5 font-barlow text-xs font-bold uppercase tracking-wider", resultTone)}>
-                  {resultWord}
-                  {(f.status.short === "AET" || f.status.short === "PEN") && (
-                    <span className="text-white/70">· {f.status.short}</span>
-                  )}
-                </span>
-              )}
-              {isLive && <LiveDetailBadge initial={match} />}
-              {!hasStarted && <MatchCountdown kickOff={f.date} showLabel={false} />}
-            </div>
-
-            <h1 className="sr-only">{homeName} vs {awayName}</h1>
-            <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] items-start gap-2 sm:grid-cols-[minmax(0,1fr)_9rem_minmax(0,1fr)] sm:gap-4">
-              {/* Home */}
-              <div className="flex min-w-0 flex-col items-center text-center sm:items-end sm:text-right">
-                <div className="relative size-12 sm:size-16">
-                  <Image src={teamLogo(teams.home.id, teams.home.logo)} alt="" fill sizes="64px" className="object-contain" priority />
-                </div>
-                <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", homeIsLfc ? "text-white" : "text-white/80")}>
-                  {homeName}
-                </p>
-                {homeLineup && <p className="font-barlow text-xs text-stadium-muted">{homeLineup.formation}</p>}
-                {isFinished && <div className="spoiler-hide"><ScorerList goals={homeGoals} align="home" /></div>}
-              </div>
-
-              {/* Score / time */}
-              <div className="pt-1 text-center sm:pt-3">
-                {isLive ? (
-                  <LiveDetailScore initial={match} />
-                ) : hasStarted ? (
-                  <>
-                    <div className="spoiler-hide">
-                      <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl">
-                        {goals.home}<span className="px-1 text-stadium-muted">-</span>{goals.away}
-                      </p>
-                      {isFinished && hasHt && (
-                        <p className="mt-1.5 text-xs text-stadium-muted">{tMatch("halftimeShort")} {htHome} – {htAway}</p>
-                      )}
-                      {f.status.short === "AET" && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("aet")}</p>}
-                      {pens && <p className="mt-0.5 text-xs font-semibold text-stadium-muted">{tMatch("penShort", { score: pens })}</p>}
-                    </div>
-                    <p aria-hidden className="spoiler-show font-bebas text-5xl leading-none tracking-wide text-white/40 sm:text-6xl">? - ?</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="font-bebas text-5xl leading-none tracking-wide text-white tabular-nums sm:text-6xl"><LocalMatchTime iso={f.date} locale={uiLocale} /></p>
-                    <p className="mt-1.5 font-barlow text-sm font-semibold uppercase tracking-wider text-stadium-muted"><LocalZoneOffset iso={f.date} locale={uiLocale} /></p>
-                  </>
-                )}
-              </div>
-
-              {/* Away */}
-              <div className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-left">
-                <div className="relative size-12 sm:size-16">
-                  <Image src={teamLogo(teams.away.id, teams.away.logo)} alt="" fill sizes="64px" className="object-contain" priority />
-                </div>
-                <p className={cn("mt-2 break-words text-sm font-semibold leading-tight sm:text-base", teams.away.id === LFC_ID ? "text-white" : "text-white/80")}>
-                  {awayName}
-                </p>
-                {awayLineup && <p className="font-barlow text-xs text-stadium-muted">{awayLineup.formation}</p>}
-                {isFinished && <div className="spoiler-hide"><ScorerList goals={awayGoals} align="away" /></div>}
-              </div>
-            </div>
-
-            {/* When, where, where to watch: one scannable list, in the viewer's own time zone */}
-            <ul className="mt-5 space-y-2.5 border-t border-[var(--line)] pt-4 text-sm leading-snug text-white/90">
-              <li className="flex items-start gap-2.5">
-                <CalendarDays aria-hidden className={infoIcon} />
-                <span>
-                  <LocalMatchDay iso={f.date} locale={uiLocale} withYear />
-                  {!hasStarted && (
-                    <> · <LocalMatchTime iso={f.date} locale={uiLocale} /> (<LocalZoneOffset iso={f.date} locale={uiLocale} />)</>
-                  )}
-                </span>
-              </li>
-              {venue && (
-                <li className="flex items-start gap-2.5"><MapPin aria-hidden className={infoIcon} />{venue}</li>
-              )}
-              {showWatch && (
-                <li className="font-semibold text-white">
-                  <WhereToWatch competition={league.name} className="items-start gap-2.5" />
-                </li>
-              )}
-              {attendance != null && attendance > 0 && (
-                <li className="flex items-start gap-2.5"><Users aria-hidden className={infoIcon} />{tDetail("attendance", { count: attendance.toLocaleString(loc) })}</li>
-              )}
-              {referee && (
-                <li className="flex items-start gap-2.5"><CircleDot aria-hidden className={cn(infoIcon, "text-lfc-gold")} />{tDetail("referee", { name: referee })}</li>
-              )}
-            </ul>
-          </section>
+          <MatchScoreHeader
+            match={match}
+            uiLocale={uiLocale}
+            round={round}
+            result={result}
+            resultWord={resultWord}
+            isFinished={isFinished}
+            isLive={isLive}
+            homeLineup={homeLineup}
+            awayLineup={awayLineup}
+            homeGoals={homeGoals}
+            awayGoals={awayGoals}
+            venue={venue}
+            attendance={attendance}
+            referee={referee}
+            halftimeLabel={tMatch("halftimeShort")}
+            aetLabel={tMatch("aet")}
+            penLabel={pens ? tMatch("penShort", { score: pens }) : null}
+            attendanceLabel={attendance != null && attendance > 0 ? tDetail("attendance", { count: attendance.toLocaleString(loc) }) : null}
+            refereeLabel={referee ? tDetail("referee", { name: referee }) : null}
+          />
 
           {isFinished && <SpoilerRevealPanel />}
 
-          {/* Fans: score predictions (open until kick-off) and, once played, player ratings.
-              A played match's points and ratings say how it went, so they hide in spoiler-free mode. */}
           {isFinished ? (
             <div className="spoiler-hide">
               <FanPrediction fixture={match} />
@@ -391,7 +247,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             <FanPrediction fixture={match} />
           )}
 
-          {/* ─── Jump chips (phones): a finished match has four long sections ─── */}
           {sections.length > 2 && (
             <nav
               aria-label={tDetail("sectionsLabel")}
@@ -413,7 +268,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
           {!hasStarted && <p className="mt-6 text-sm text-stadium-muted">{tDetail("noData")}</p>}
 
-          {/* ─── Events ─── */}
           {hasStarted && (
             <section id="timeline" className={cn(sectionClass, isFinished && "spoiler-hide")}>
               <SectionHeader title={tDetail("matchTimeline")} />
@@ -436,7 +290,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* ─── Statistics ─── */}
           {hasStarted && (
             <section id="stats" className={cn(sectionClass, isFinished && "spoiler-hide")}>
               <SectionHeader title={tDetail("statistics")} />
@@ -461,7 +314,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             </section>
           )}
 
-          {/* ─── Lineups ─── */}
           <section id="lineups" className={sectionClass}>
             <SectionHeader title={tDetail("lineups")} />
             {hasLineups ? (
@@ -492,8 +344,6 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             )}
           </section>
 
-          {/* ─── Head to head ─── */}
-          {/* Its "recent meetings" include this match once it is played. */}
           <section id="h2h" className={cn(sectionClass, isFinished && "spoiler-hide")}>
             <SectionHeader title={tMatch("h2h.title")} />
             {h2h ? (

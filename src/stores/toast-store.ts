@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 
 export type ToastType = "success" | "error" | "favourite" | "info";
@@ -19,8 +20,9 @@ export const useToastStore = create<ToastState>((set) => ({
   dismiss: () => set({ toast: null }),
 }));
 
-/** Shorthand hook for showing toasts */
+/** Shorthand hook for showing toasts without subscribing to `toast` changes. */
 export const useToast = () => {
-  const { show, dismiss } = useToastStore();
-  return { show, dismiss };
+  const show = useToastStore((s) => s.show);
+  const dismiss = useToastStore((s) => s.dismiss);
+  return useMemo(() => ({ show, dismiss }), [show, dismiss]);
 };
