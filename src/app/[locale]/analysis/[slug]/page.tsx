@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -9,9 +10,29 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { LocalMatchDay } from "@/components/ui/local-time";
 import { ArticleCard } from "@/components/site-articles/article-card";
 import { BRAND } from "@/lib/brand";
-import type { SiteArticleContent } from "@/lib/site-articles/types";
+import type { SiteArticleContent, SiteArticleKind } from "@/lib/site-articles/types";
 
 export const revalidate = 3600;
+
+const getCachedSiteArticleBySlug = unstable_cache(
+  async (slug: string) => {
+    const row = await getSiteArticleBySlug(slug);
+    if (!row) throw new Error("[analysis] missing or unreachable article — not caching");
+    return row;
+  },
+  ["site-article-by-slug-v1"],
+  { revalidate: 3600, tags: ["site-articles"] },
+);
+
+const getCachedRelatedSiteArticles = unstable_cache(
+  async (kind: SiteArticleKind) => {
+    const rows = await listSiteArticles(4, kind);
+    if (rows.length === 0) throw new Error("[analysis] empty related list — not caching");
+    return rows;
+  },
+  ["site-articles-related-v1"],
+  { revalidate: 3600, tags: ["site-articles"] },
+);
 
 /**
  * Prerender every published article.
@@ -57,7 +78,7 @@ function writtenIn(row: ArticleRow): string[] {
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug, locale } = await params;
-  const row = await getSiteArticleBySlug(slug);
+  const row = await getCachedSiteArticleBySlug(slug).catch(() => null);
   const content = row ? pick(row, locale)?.content : null;
   if (!row || !content) {
     const tCommon = await getTranslations({ locale, namespace: "Common" });
@@ -96,7 +117,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function AnalysisArticlePage({ params }: { params: Params }) {
   const { slug, locale } = await params;
   setRequestLocale(locale);
-  const row = await getSiteArticleBySlug(slug);
+  const row = await getCachedSiteArticleBySlug(slug).catch(() => null);
   if (!row) notFound();
   const picked = pick(row, locale);
   if (!picked) notFound();
@@ -104,7 +125,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
 
   const [t, relatedRows, breadcrumbJsonLd] = await Promise.all([
     getTranslations({ locale, namespace: "Analysis" }),
-    listSiteArticles(4, row.kind),
+    getCachedRelatedSiteArticles(row.kind).catch(() => []),
     buildLocalizedBreadcrumbJsonLd(locale, [
       { nav: "analysis", path: "/analysis" },
       { name: content.title, path: `/analysis/${slug}` },

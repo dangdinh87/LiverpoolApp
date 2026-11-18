@@ -80,6 +80,31 @@ describe("createSupabaseFetch", () => {
     expect(isSupabaseBreakerOpen()).toBe(true);
   });
 
+  it("treats 502/503/504 gateway errors as an outage instead of closing an open breaker", async () => {
+    for (const status of [502, 503, 504]) {
+      resetSupabaseBreaker();
+      globalThis.fetch = vi.fn(
+        async () => new Response('{"message":"upstream request timeout"}', { status }),
+      ) as typeof fetch;
+      const res = await createSupabaseFetch()("https://example.test");
+      expect(res.status).toBe(status);
+      expect(isSupabaseBreakerOpen()).toBe(true);
+    }
+  });
+
+  it("enforces timeout and trips breaker even when a fetch wrapper drops init.signal", async () => {
+    // Next.js patch-fetch drops `signal` when revalidating stale cache entries.
+    globalThis.fetch = vi.fn(
+      () => new Promise<Response>(() => {}),
+    ) as unknown as typeof fetch;
+
+    const doFetch = createSupabaseFetch(25);
+    await expect(doFetch("https://example.test")).rejects.toMatchObject({
+      name: "AbortError",
+    });
+    expect(isSupabaseBreakerOpen()).toBe(true);
+  });
+
   it("closes the breaker once the origin answers again", async () => {
     let fail = true;
     globalThis.fetch = vi.fn(async () =>

@@ -42,6 +42,23 @@ describe("cache TTLs read by ISR pages are not shorter than the page", () => {
     expect(ttl).toBeGreaterThanOrEqual(playerRevalidate);
   });
 
+  it("player mentions cache covers the player page window and avoids news sync tag", () => {
+    const playerPage = read("src/app/[locale]/player/[id]/page.tsx");
+    const block = playerPage.slice(playerPage.indexOf('["player-mentions-v1"]'));
+    const options = /\{[\s\S]*?\}/.exec(block)?.[0] ?? "";
+    const ttl = num(options, /revalidate: ([\d_]+)/);
+    expect(ttl).toBeGreaterThanOrEqual(playerRevalidate);
+    expect(options).not.toContain('"news"');
+  });
+
+  it("/analysis site-articles cache covers the /analysis page window", () => {
+    const analysisPage = read("src/app/[locale]/analysis/page.tsx");
+    const pageTtl = num(analysisPage, /export const revalidate = (\d+);/);
+    const block = analysisPage.slice(analysisPage.indexOf('["analysis-list-v1"]'));
+    const ttl = num(block, /revalidate: ([\d_]+)/);
+    expect(ttl).toBeGreaterThanOrEqual(pageTtl);
+  });
+
   it("/news video cache TTL covers /news page revalidate window", () => {
     const newsPage = read("src/app/[locale]/news/page.tsx");
     const pageTtl = num(newsPage, /export const revalidate = (\d+);/);

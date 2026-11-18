@@ -33,11 +33,18 @@ export const SUPABASE_FETCH_TIMEOUT_MS = 3_000;
 export const SUPABASE_BREAKER_COOLDOWN_MS = 30_000;
 
 /**
- * Statuses that mean "the origin never answered" rather than "the database
- * answered with an error". Cloudflare reports origin failures as 52x.
+ * Statuses that mean "the origin/gateway never answered" rather than "the
+ * database answered with a query error". Cloudflare reports origin failures as
+ * 52x; Supabase's Kong/Envoy gateway reports upstream timeouts/outages as
+ * 502/503/504 (e.g. `{"message":"upstream request timeout"}`).
  */
 function isOriginFailure(status: number): boolean {
-  return status >= 520 && status <= 530;
+  return (
+    status === 502 ||
+    status === 503 ||
+    status === 504 ||
+    (status >= 520 && status <= 530)
+  );
 }
 
 /** Timestamp until which requests short-circuit; 0 means the breaker is closed. */
@@ -87,22 +94,55 @@ export function createSupabaseFetch(
       );
     }
 
-    const timeout = AbortSignal.timeout(timeoutMs);
-    const signal = init?.signal
-      ? AbortSignal.any([init.signal, timeout])
-      : timeout;
+    const callerSignal = init?.signal;
+    if (callerSignal?.aborted) {
+      throw callerSignal.reason ?? asAbortError("Aborted");
+    }
+
+    const controller = new AbortController();
+    let timedOut = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let onCallerAbort: (() => void) | undefined;
+
+    // Race a hard timer alongside AbortController: Next.js's patched `fetch`
+    // strips `init.signal` when foreground-revalidating stale fetch-cache
+    // entries (`signal: isStale ? undefined : signal`), which would otherwise
+    // let `fetch()` hang for 60-90s during `next build` when Supabase is down.
+    const abortOrTimeout = new Promise<never>((_resolve, reject) => {
+      onCallerAbort = () => {
+        const reason = callerSignal?.reason ?? asAbortError("Aborted");
+        controller.abort(reason);
+        reject(reason);
+      };
+      callerSignal?.addEventListener("abort", onCallerAbort, { once: true });
+
+      timer = setTimeout(() => {
+        timedOut = true;
+        const err = new DOMException(
+          "The operation was aborted due to timeout",
+          "TimeoutError",
+        );
+        controller.abort(err);
+        reject(err);
+      }, timeoutMs);
+    });
 
     let response: Response;
     try {
-      response = await fetch(input, { ...init, signal });
+      const fetchPromise = fetch(input, { ...init, signal: controller.signal });
+      fetchPromise.catch(() => {});
+      response = await Promise.race([fetchPromise, abortOrTimeout]);
     } catch (err) {
       // A caller aborting its own request says nothing about Supabase's health.
-      if (init?.signal?.aborted) throw err;
+      if (callerSignal?.aborted && !timedOut) throw err;
       // Only a timeout or transport failure indicates the origin is down.
       tripBreaker(cooldownMs);
       throw asAbortError(
         `Supabase request failed: ${err instanceof Error ? err.message : String(err)}`,
       );
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
+      if (onCallerAbort) callerSignal?.removeEventListener("abort", onCallerAbort);
     }
 
     if (isOriginFailure(response.status)) {

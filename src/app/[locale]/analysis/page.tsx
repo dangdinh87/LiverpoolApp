@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +12,18 @@ import type { LocaleParams } from "@/i18n/routing";
 import type { SiteArticleContent } from "@/lib/site-articles/types";
 
 export const revalidate = 900;
+
+const getCachedAnalysisArticles = unstable_cache(
+  async () => {
+    const rows = await listSiteArticles(30);
+    if (rows.length === 0) {
+      throw new Error("[analysis] empty site_articles response — not caching");
+    }
+    return rows;
+  },
+  ["analysis-list-v1"],
+  { revalidate: 900, tags: ["site-articles"] },
+);
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params;
@@ -26,7 +39,7 @@ export default async function AnalysisPage({ params }: LocaleParams) {
 
   const [t, rows, breadcrumbJsonLd] = await Promise.all([
     getTranslations({ locale, namespace: "Analysis" }),
-    listSiteArticles(30),
+    getCachedAnalysisArticles().catch(() => []),
     buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "analysis", path: "/analysis" }]),
   ]);
 

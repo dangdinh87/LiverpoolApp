@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ChevronDown, Trophy } from "lucide-react";
@@ -20,8 +21,17 @@ import { getHreflangAlternates, buildPersonJsonLd, getLocalizedUrl } from "@/lib
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getArticlesMentioning } from "@/lib/news";
+import { requireNonEmptyNews } from "@/lib/news/db";
 import { getPlayerFanRating } from "@/lib/fan-predictions/leaderboard";
 import { NewsCard } from "@/components/news/news-card";
+
+const getCachedPlayerMentions = unstable_cache(
+  async (surname: string) => requireNonEmptyNews(getArticlesMentioning(surname)),
+  ["player-mentions-v1"],
+  // Matches the page's 1h ISR window so it never lowers `revalidate`; not tagged
+  // "news" so 15-minute feed syncs do not mark all player pages stale.
+  { revalidate: 3600 },
+);
 
 // ─── Types & constants ───────────────────────────────────────────────────────
 
@@ -160,7 +170,7 @@ export default async function PlayerPage({ params }: PageProps) {
   const [playerStats, fplStats, mentions, fanRating] = await Promise.all([
     getPlayerStats(player.id),
     getFplPlayerStats(player.name),
-    getArticlesMentioning(surname),
+    getCachedPlayerMentions(surname).catch(() => []),
     getPlayerFanRating(player.name).catch(() => null),
   ]);
 
