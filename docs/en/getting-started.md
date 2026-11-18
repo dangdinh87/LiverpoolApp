@@ -130,15 +130,15 @@ npm run cf:deploy    # Deploy Worker to Cloudflare
 ```text
 src/
 ├── app/
-│   ├── [locale]/          # Localized pages (/, /vi, /news, /analysis, /fixtures, /standings, /predictions, /squad, /player/[id], /stats, /season, /history, /gallery, /profile, /auth, /about, /legal)
+│   ├── [locale]/          # Localised pages (/, /vi, /news, /analysis, /fixtures, /standings, /predictions, /squad, /player/[id], /stats, /season, /history, /gallery, /profile, /auth, /about, /legal)
 │   ├── actions/           # Server Actions (auth, profile, news pagination, fan predictions)
 │   ├── api/               # Route handlers (news sync/digest/cleanup/translate/comments/like, site-articles, calendar .ics, gallery, live-fixture, streak)
 │   ├── auth/callback/     # Supabase OAuth callback
 │   ├── llms.txt/          # AI crawler guide
 │   ├── robots.txt/        # Dynamic robots.txt
-│   └── sitemap.xml/       # Localized XML sitemap
+│   └── sitemap.xml/       # Localised XML sitemap
 ├── components/            # Feature UI + shadcn/ui primitives + pickClientMessages
-├── data/                  # Static JSON + .vi.json localized variants
+├── data/                  # Static JSON + .vi.json localised variants
 ├── hooks/                 # Spoiler-free, hydration-safe clock, viewer timezone, favourites
 ├── i18n/                  # next-intl routing, navigation & request config
 ├── lib/                   # Brand, football, news, site-articles, fan-predictions, calendar, ai, seo, supabase

@@ -50,7 +50,7 @@
 ### Layer 2: Request Proxy (`src/proxy.ts`)
 
 Next.js 16 replaces `middleware.ts` with `src/proxy.ts`. On every page request it:
-1. Short-circuits automated WordPress/CMS scanner probes (`/wp-*`, `*.php`, `?rest_route=`) with an immediate `404` before rendering localized layouts.
+1. Short-circuits automated WordPress/CMS scanner probes (`/wp-*`, `*.php`, `?rest_route=`) with an immediate `404` before rendering localised layouts.
 2. Runs `next-intl` routing (`en` unprefixed at `/`, `vi` under `/vi`, honouring `NEXT_LOCALE` cookie and `Accept-Language`).
 3. Refreshes Supabase auth cookies on protected routes (`/profile`, `/vi/profile`) using a bounded `createSupabaseFetch()` client and redirects unauthenticated visitors to `/auth/login?redirect=...`.
 4. Attaches `X-Robots-Tag: noindex, nofollow` on `/auth` and `/profile` routes.
@@ -98,7 +98,7 @@ Every Supabase client uses `createSupabaseFetch()` and `db: { retry: false }`:
 GitHub Actions (`news-sync.yml` hourly, `news-daily.yml` daily)
   ├── GET /api/news/sync
   │     ├── Fetch 13 English outlets + LFC YouTube (`lfctv`) in parallel
-  │     ├── Canonicalize URLs (`url.ts`) + Jaccard title dedup (`dedup.ts`)
+  │     ├── Canonicalise URLs (`url.ts`) + Jaccard title dedup (`dedup.ts`)
   │     ├── Score Liverpool relevance + regex category classification
   │     ├── Batch upsert to `articles` + fill missing `og:image` thumbnails
   │     └── Pre-scrape full HTML & embedded video (`article-extractor.ts`, 45s budget)

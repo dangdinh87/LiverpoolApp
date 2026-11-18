@@ -17,7 +17,7 @@
 | **Đợt 5 — Mượt & Animation có chủ đích** | `377402a` | Chỉ animate `transform` và `opacity` (gỡ bỏ toàn bộ `transition-[width] duration-700` & `transition-all` gây tính toán lại layout trên thanh tiến trình trực tiếp/thống kê); chuẩn hóa nhịp thời gian (`140–200ms` nút/hover với `active:scale-[0.97]`, `<= 260ms` modal/sheet/chuyển trang, vào `ease-out` / ra nhanh hơn); tôn trọng đầy đủ `prefers-reduced-motion: reduce` qua CSS, `<MotionConfig reducedMotion="user">` và `matchMedia` trước `window.scrollTo`. |
 | **Đợt 6–8 — Kiểm chứng & Báo cáo** | `17f2430` | Chụp đủ `104` ảnh đối ứng tại `audit/after/*.png`, đo lại Lighthouse Mobile 7 trang, kiểm tra Performance trace tương tác, chạy toàn bộ unit tests + bài kiểm thử E2E Playwright (desktop + mobile) xanh 100% và xuất bản gốc `audit/final.md`. |
 | **Swarm Wave 1 — Chuẩn hóa Wording, RSC Payload, Backend & Stale-Fetch** | `da38902` · `e6bdecc` · `d6d9cb3` · `b15033e` | Đại tu song ngữ toàn bộ `1,156` khóa dịch & tiểu sử `31` cầu thủ mùa 2026/27; cắt giảm **~52%** payload i18n client (`pickClientMessages`) kèm xóa chuỗi UI cứng; gia cố API/Server Actions, lịch `.ics`, JSON-LD/OG, lọc rác xuất bản & `validate-draft.ts`; sửa lỗi treo stale `fetch-cache` của Next.js 16 khi Supabase gián đoạn (`Promise.race` + `502/503/504` breaker + `unstable_cache`). Nâng tổng kiểm thử lên **`764+` unit tests** & **`113+` E2E tests**. |
-| **Swarm Wave 2 — Đồng bộ Tài liệu, Hậu kiểm Ngôn ngữ & Mở rộng E2E** | *(Wave 2)* | Viết lại & đồng bộ 100% hệ thống tài liệu (`README.md`, `CLAUDE.md`, `docs/README.md`, `docs/codebase-summary.md`, `docs/en/**`, `docs/vi/**`) theo kiến trúc 2026/27 và chuẩn thương hiệu **Anfield Daily** (`docs/brand.md`); rà soát tinh chỉnh lần hai ngữ pháp Anh – Việt; mở rộng kiểm thử hồi quy E2E & rà soát khả năng tiếp cận cấp ứng dụng. |
+| **Swarm Wave 2 — Đồng bộ Tài liệu, Hậu kiểm Ngôn ngữ & Mở rộng E2E** | `431b69c` · `5994ca5` · `swarm/docs` | Nâng chuẩn văn phong báo chí quốc tế (British English, ICU pluralisation, xóa sạch trợ từ khẩu ngữ, kiểm tra đối xứng dữ liệu CLB/cầu thủ); gỡ `framer-motion` khỏi các trang công khai (`LiveScore` CSS `@keyframes score-pop`), bổ sung `aria-live`/`aria-busy` & xử lý ảnh gãy trước hydration; viết lại & đồng bộ 100% hệ thống tài liệu (`README.md`, `CLAUDE.md`, `docs/**`) theo chuẩn **Anfield Daily**; nâng kiểm thử lên **`76` files / `774` unit tests** & **`125` E2E tests passed (`142` total)**. |
 
 ---
 
@@ -60,7 +60,7 @@ Sau khi hoàn tất Đợt 1–8 (`17f2430`), dự án tiếp tục thực hiệ
 
 ### 3.3. Gia cố Backend, Lịch `.ics`, SEO/JSON-LD & Kiểm duyệt Bài viết AI (`d6d9cb3`)
 - **Lịch thi đấu RFC 5545 (`/api/calendar/liverpool.ics`, `fixtures-ics.ts`):** Đồng bộ `BRAND.name`, dịch tên giải đấu theo ngôn ngữ (`en`/`vi`), xử lý ký tự `\r` theo chuẩn RFC 5545, ánh xạ trạng thái hủy trận `ABD -> CANCELLED` và bổ sung `Cache-Control: max-age=3600`.
-- **SEO, JSON-LD & OpenGraph (`src/lib/seo.ts`, `story-card.tsx`, `robots.txt`):** Chuyển truy xuất `NEXT_PUBLIC_SITE_URL` sang hàm lười `getSiteUrl()` tương thích Cloudflare Workers; chuẩn hóa `@type` tác giả trong `NewsArticle` (`Organization` vs `Person`), trạng thái `SUSP -> EventPostponed` trong `SportsEvent`, và khoảng cách chữ `WORDMARK` (`0.18em` + gạch chân đỏ) trên ảnh chia sẻ.
+- **SEO, JSON-LD & OpenGraph (`src/lib/seo.ts`, `story-card.tsx`, `robots.txt`):** Chuyển truy xuất `NEXT_PUBLIC_SITE_URL` sang hàm truy xuất động `getSiteUrl()` tương thích Cloudflare Workers; chuẩn hóa `@type` tác giả trong `NewsArticle` (`Organization` vs `Person`), trạng thái `SUSP -> EventPostponed` trong `SportsEvent`, và khoảng cách chữ `WORDMARK` (`0.18em` + gạch chân đỏ) trên ảnh chia sẻ.
 - **Lọc rác xuất bản & kiểm duyệt bản nháp (`src/lib/news/**`, `validate-draft.ts`):** Loại bỏ triệt để đuôi rác nhà xuất bản (*"Read more…"*, chân trang bản quyền, quảng bá kênh nhắn tin), giải mã đầy đủ thực thể HTML ở RSS/OG/YouTube; tinh chỉnh biểu thức kiểm duyệt định vị trong `validate-draft.ts` chỉ chặn các cụm nhắm sai đối tượng độc giả nhưng vẫn cho phép văn phong tường thuật hợp lệ khi thi đấu sân khách hoặc cúp châu Âu.
 - **Bảo vệ API & Server Actions:** Ẩn thông báo lỗi nội bộ ở các phản hồi `500`, áp hạn mức thời gian `AbortSignal.timeout` cho từng model trong `/api/news/translate`, chống ký tự đại diện `ILIKE` trên `/api/gallery`, phân biệt rõ trạng thái mất kết nối Supabase (`"unavailable"`) với chưa đăng nhập (`"signIn"`).
 
@@ -90,9 +90,9 @@ $ npm test
 > liverpool-app@0.1.0 test
 > vitest run
 
- Test Files  74+ passed (74+)
-      Tests  764+ passed (764+)
-(Exit code: 0 — tăng từ 70 files / 718 tests ban đầu lên 74+ files / 764+ tests, khóa chặt parity song ngữ, đồ thị namespace client, API hardening, SEO/ICS, draft validation và Supabase stale-fetch timeout)
+ Test Files  76 passed (76)
+      Tests  774 passed (774)
+(Exit code: 0 — tăng từ 70 files / 718 tests ban đầu lên 76 files / 774 tests, khóa chặt parity song ngữ & dữ liệu CLB, đồ thị namespace client, API hardening, SEO/ICS, draft validation và Supabase stale-fetch timeout)
 ```
 
 ### 4.3. Production Build (`npm run build`)
@@ -104,16 +104,16 @@ $ npm run build
 ▲ Next.js 16.4.6 (Turbopack)
 ✓ Compiled successfully
 ✓ Finished TypeScript
-✓ Generating static pages using 7 workers in ~5.7s
-(Exit code: 0 — không còn SecurityFatalError, không còn HTTP 429, không bị treo khi Supabase chập chờn)
+✓ Generating static pages using 7 workers (116/116) in ~5.7s
+(Exit code: 0 — 0 cảnh báo metadataBase, không còn SecurityFatalError, không còn HTTP 429, không bị treo khi Supabase chập chờn)
 ```
 
 ### 4.4. Playwright E2E Suite (Desktop Chrome + Mobile Pixel 7)
 ```text
 $ npx playwright test
-Running 130+ tests using 3 workers
-  113+ passed, 0 failed (các test còn lại skip theo điều kiện khung nhìn desktop/mobile)
-(Exit code: 0 — kiểm chứng tràn ngang 320px & 390px ở cả EN/VI, /vi/news đầy đủ bài, chế độ ẩn tỷ số, /analysis & /predictions, điều hướng bàn phím, focus trap, reduced-motion, lightbox, 0 lỗi Console)
+Running 142 tests using 3 workers
+  125 passed, 17 skipped (project-scoped desktop/mobile skips), 0 failed
+(Exit code: 0 — bao gồm 12 bài kiểm thử mới trong e2e/upgraded-flows.spec.ts cho /vi/news, Spoiler-free, /analysis & /predictions; tràn ngang 320px & 390px ở cả EN/VI, bàn phím, focus trap, reduced-motion, lightbox, 0 lỗi Console)
 ```
 
 ---
@@ -141,8 +141,8 @@ Running 130+ tests using 3 workers
 | **Client JS (`.next/static`, gzip)** | `904,878 B` (883.7 KB) | **`900,707 B` (879.6 KB)** | **-4,171 B (-0.46%)** |
 | **Client CSS (`.next/static`, gzip)** | `31,131 B` (30.4 KB) | **`30,708 B` (30.0 KB)** | **-423 B (-1.36%)** |
 | **RSC `NextIntlClientProvider` Payload (EN / VI)** | `45.1 KB` / `52.5 KB` | **`21.9 KB` / `25.2 KB`** | **Giảm ~52% mỗi trang** |
-| **Unit Tests (`vitest`)** | 70 files / 718 tests | **`74+` files / `764+` tests** | **+46+ tests (100% pass)** |
-| **Playwright E2E Tests** | Chưa chạy kiểm chứng | **`113+` passed / `0` failed** | **100% pass (Desktop & Mobile)** |
+| **Unit Tests (`vitest`)** | 70 files / 718 tests | **`76` files / `774` tests** | **+56 tests (100% pass)** |
+| **Playwright E2E Tests** | Chưa chạy kiểm chứng | **`125` passed / `0` failed (`142` total)** | **100% pass (Desktop & Mobile)** |
 | **Đồng bộ Khóa Dịch & Tiểu sử Cầu thủ** | Rải rác chuỗi cứng & thiếu bio | **`1,156/1,156` khóa · `31/31` bio EN+VI** | **Chuẩn hóa 100%** |
 | **Lỗi ứng dụng trên Console (26 route)** | Hàng loạt `ERR_BLOCKED_BY_RESPONSE` | **`0` lỗi ứng dụng** | **Sạch 100%** |
 | **Tràn ngang ở `390px` & `320px`** | `+72px` trên `/fixtures/560645` | **`0px` trên mọi route** | **Sạch 100%** |

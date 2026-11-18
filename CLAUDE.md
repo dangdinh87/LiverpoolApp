@@ -25,7 +25,7 @@ npm run dev          # Start dev server (next dev / Turbopack)
 npm run build        # Production build
 npm run start        # Start local production server
 npm run lint         # ESLint 9
-npm test             # Vitest unit tests (764+ tests)
+npm test             # Vitest unit tests (774 tests across 76 files)
 npm run test:e2e     # Playwright E2E suite (desktop + mobile against production build)
 npm run seed:gallery # Seed gallery data (tsx scripts/seed-gallery.ts)
 npm run cf:build     # Build OpenNext bundle for Cloudflare Workers
@@ -61,7 +61,7 @@ src/
 ├── app/
 │   ├── layout.tsx              # Root shell
 │   ├── globals.css             # Tailwind v4 @theme inline tokens & reduced-motion rules
-│   ├── [locale]/               # Localized routes (en at /, vi at /vi)
+│   ├── [locale]/               # Localised routes (en at /, vi at /vi)
 │   │   ├── layout.tsx          # Fonts, ThemeProvider, pickClientMessages, NavbarAuth, Footer
 │   │   ├── (home)/page.tsx     # Homepage — Hero, DigestFeature, BentoGrid widgets
 │   │   ├── news/               # /news feed, /news/[...slug] reader, /news/digest/[date]
@@ -183,7 +183,7 @@ src/
 
 ### AI Editorial & Translation (`src/lib/ai/vietapi.ts`)
 
-All AI features run server-side on **VietAPI** (`VIETAPI_KEY`) via `@ai-sdk/openai-compatible` and `ai`, grounded with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — current date, 2026/27 season, head coach Andoni Iraola, sporting director Julian Ward, active 31-player squad):
+All AI features run server-side on **VietAPI** (`VIETAPI_KEY`) via `@ai-sdk/openai-compatible` and `ai`, grounded with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — current date in `GMT+7`, `2026/27` season, head coach Andoni Iraola, active 31-player squad):
 
 - **Daily Briefing (`src/lib/news/digest.ts`):** Generated only by `/api/news/digest/generate` (daily cron + hourly idempotent retry) in two parallel LLM calls (structured briefing + SEO article, `Europe/London` date key). Pages read via `getLatestDigest()` and never generate during render.
 - **On-Demand Article Translation (`src/app/api/news/translate/route.ts`):** Translates verified `articles` rows (`<= 18,000` chars) into natural Vietnamese sports journalism (`deepseek-v4-flash` → `deepseek-v4-pro` → `claude-sonnet-5`), deduplicated in-flight per canonical URL, cached in `articles.content_vi` and browser `localStorage`.
@@ -256,7 +256,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 8. `008_repair_articles_null_flags.sql` — Backfill non-null `is_active` / `read_count` flags on `articles`
 9. `009_site_articles.sql` — `site_articles` table for fact-validated original editorial articles (`/analysis`)
 10. `010_rls_repair_and_function_hardening.sql` — RLS policy & SQL function `search_path` hardening
-11. `011_rls_initplan_and_fk_indexes.sql` — `(select auth.uid())` RLS initplan optimization & foreign-key indexes
+11. `011_rls_initplan_and_fk_indexes.sql` — `(select auth.uid())` RLS initplan optimisation & foreign-key indexes
 12. `012_fan_predictions_and_ratings.sql` — `match_predictions`, `player_ratings` (read-own RLS; validated writes via `src/app/actions/predictions.ts` with service role)
 13. `chat_schema.sql` — legacy unused tables (`conversations`, `messages`), retained only for schema history
 
@@ -267,7 +267,7 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 - **Every code push to `master` deploys** via `.github/workflows/deploy-cloudflare.yml` (typecheck, lint, unit tests, `cf:build`, `cf:deploy`, R2 cache prune, smoke test, Telegram deploy ping).
 - Manual: `npm run cf:build` (`DEPLOY_TARGET=cloudflare`), then `npm run cf:deploy`. Never build from a tree with local `.env*` secrets intended only for dev; runtime secrets live in the Worker (`wrangler secret put`), and server code reads env lazily via `getEnv()` (`src/lib/env.ts`).
 - `scripts/cf-patch-middleware-trace.mjs` runs between `next build` and the OpenNext bundle so `@opentelemetry/api/build/esm` is included in `proxy.ts`'s trace.
-- Readability uses `linkedom` (`jsdom` does not run on `workerd`). Next's image optimizer is disabled on Cloudflare builds (`images.unoptimized`).
+- Readability uses `linkedom` (`jsdom` does not run on `workerd`). Next's image optimiser is disabled on Cloudflare builds (`images.unoptimized`).
 
 ## Scheduled Jobs
 

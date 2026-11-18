@@ -93,5 +93,5 @@ npx shadcn@latest add <component-name>
 
 - **Contrast:** White `#F5F5F5` on `#1A1A1A` (~13:1 AAA); red text `#FF3347` on `#1A1A1A` (4.8:1 AA); muted text `#A0A0A0` used without low-opacity modifiers on body labels.
 - **Tap Targets:** Minimum `44×44px` (`min-h-11 min-w-11` / `tap-target`) on mobile interactive elements.
-- **Keyboard & Screen Readers:** Visible `focus-visible` rings, `<SkipLink />` to `#main-content`, roving `tabIndex` on tablists, localized `aria-label` attributes on icon buttons, and `AlertDialog` confirmations instead of blocking `window.confirm`.
+- **Keyboard & Screen Readers:** Visible `focus-visible` rings, `<SkipLink />` to `#main-content`, roving `tabIndex` on tablists, localised `aria-label` attributes on icon buttons, and `AlertDialog` confirmations instead of blocking `window.confirm`.
 - **Spoiler-Free Compatibility:** Match scores, W/D/L badges, and goal summaries respect `html[data-spoiler-free]` rules defined in `src/app/globals.css`.

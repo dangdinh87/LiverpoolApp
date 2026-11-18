@@ -59,7 +59,7 @@
 
 ### Official Club Video (`lfctv`)
 
-`YouTubeChannelAdapter` (`src/lib/news/youtube-data-api.ts`) queries YouTube Data API v3 (`YOUTUBE_API_KEY`) for official Liverpool FC uploads to populate the video strip on `/news`. Video items (`source === "lfctv"`) are recognized as dedicated club items in `relevance.ts`, excluded from text pre-scraping, digests, and full-text search, and skipped cleanly when `YOUTUBE_API_KEY` is unset.
+`YouTubeChannelAdapter` (`src/lib/news/youtube-data-api.ts`) queries YouTube Data API v3 (`YOUTUBE_API_KEY`) for official Liverpool FC uploads to populate the video strip on `/news`. Video items (`source === "lfctv"`) are recognised as dedicated club items in `relevance.ts`, excluded from text pre-scraping, digests, and full-text search, and skipped cleanly when `YOUTUBE_API_KEY` is unset.
 
 ---
 
@@ -80,7 +80,7 @@
 
 1. **Cloudflare-compatible DOM parsing:** Uses `linkedom` + `@mozilla/readability` + per-source Cheerio selectors (`jsdom` is avoided because it cannot run on Cloudflare `workerd`).
 2. **Boilerplate & image hygiene:** Strips "Read more…", syndication footers, newsletter/WhatsApp promos, generic next-match widgets, and duplicate hero images (`dropHeroDuplicate`), while filtering CORP-blocked image CDNs in `isEmbeddableImageUrl()`.
-3. **Final HTML sanitization:** Runs `sanitize-html` as the last step (with `allowedIframeHostnames` and whitelisted semantic tags).
+3. **Final HTML sanitisation:** Runs `sanitize-html` as the last step (with `allowedIframeHostnames` and whitelisted semantic tags).
 4. **Inline HLS/MP4 video:** Converts detected streams into `<div class="article-video-player" data-video-src="...">` placeholders.
 5. **Reader rendering (`/news/[...slug]`):** `TranslatableExcerpt` renders full `htmlContent` via `ArticleHtmlBody` (mounting `ArticleVideoPlayer` + dynamic `hls.js`) with publisher attribution and original link **above** the body, `robots: { index: false, follow: true }`, and no ads.
 
@@ -88,7 +88,7 @@
 
 ## 5. VietAPI Workflows (`src/lib/ai/vietapi.ts`)
 
-All AI features call **VietAPI** (`VIETAPI_KEY`) via `@ai-sdk/openai-compatible` and `ai`, prepended with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — 2026/27 season, head coach Andoni Iraola, sporting director Julian Ward, and active 31-player squad):
+All AI features call **VietAPI** (`VIETAPI_KEY`) via `@ai-sdk/openai-compatible` and `ai`, prepended with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — current date in `GMT+7`, `2026/27` season, head coach Andoni Iraola, and active 31-player squad):
 
 ### A. On-Demand Full-Article Vietnamese Translation (`POST /api/news/translate`)
 

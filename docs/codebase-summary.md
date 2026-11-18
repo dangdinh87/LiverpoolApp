@@ -45,7 +45,7 @@ All LLM workloads call **VietAPI** (`VIETAPI_KEY`) lazily per request via `@ai-s
   - **Broadcaster Lookup (`premier-league-broadcasters.ts`):** Maps viewer IANA time zone to local Premier League TV/streaming broadcaster.
 - **Predictions & Player Ratings (`/predictions`, `/fixtures/[id]`):** Pre-match score predictions (3 pts exact, 1 pt outcome), largest-remainder community split, season leaderboard, and post-match 1–10 player ratings (`match_predictions`, `player_ratings` via service-role Server Actions in `src/app/actions/predictions.ts`).
 - **Spoiler-Free Mode (`src/lib/spoiler-mode.ts`):** Inline blocking `SPOILER_BOOT_SCRIPT` sets `data-spoiler-free` on `<html>` before first paint so shared ISR pages mask scores purely in CSS without flicker.
-- **iCalendar Feed (`/api/calendar/liverpool.ics`):** RFC 5545 UTC fixture subscription with localized competition names, 30-minute VALARM reminders, and spoiler-free summaries.
+- **iCalendar Feed (`/api/calendar/liverpool.ics`):** RFC 5545 UTC fixture subscription with localised competition names, 30-minute VALARM reminders, and spoiler-free summaries.
 
 ### 4. Supabase Client Split & Resilience
 
@@ -95,8 +95,8 @@ All LLM workloads call **VietAPI** (`VIETAPI_KEY`) lazily per request via `@ai-s
 
 ## Testing & Deployment
 
-- **Unit Tests (`npm test`):** Vitest 4 (`vitest.config.mts`) — `74+` test suites, `764+` tests covering news sync/dedup/text cleaning, draft validation, SEO/ICS builders, API hardening, Supabase circuit breaker, EN/VI message parity (`1,156` keys), and client namespace AST coverage.
-- **E2E Tests (`npm run test:e2e`):** Playwright (`playwright.config.ts`, `e2e/*.spec.ts`) — `113+` active desktop + mobile tests against `next build && next start` with strict zero-console-error / zero-5xx assertions (`page-diagnostics.ts`).
+- **Unit Tests (`npm test`):** Vitest 4 (`vitest.config.mts`) — `76` test suites, `774` tests covering news sync/dedup/text cleaning, draft validation, SEO/ICS builders, API hardening, Supabase circuit breaker, EN/VI message & data parity (`1,156` keys, 31 squad bios), and client namespace AST coverage.
+- **E2E Tests (`npm run test:e2e`):** Playwright (`playwright.config.ts`, `e2e/*.spec.ts`) — `125` passed desktop + mobile tests (`142` total definitions) against `next build && next start` with strict zero-console-error / zero-5xx assertions (`page-diagnostics.ts`).
 - **Cloudflare Workers Deployment:** Built with `@opennextjs/cloudflare` (`npm run cf:build`), backed by R2 (`liverpool-app-next-cache`), D1 (`liverpool-app-tag-cache`), and Durable Objects (`DOQueueHandler`), deployed automatically from `master` via `.github/workflows/deploy-cloudflare.yml`.
 
 ---

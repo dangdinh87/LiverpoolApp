@@ -88,7 +88,7 @@
 
 ## 5. Ba Luồng AI Qua VietAPI (`src/lib/ai/vietapi.ts`)
 
-Mọi tác vụ AI đều gọi **VietAPI** (`VIETAPI_KEY`) qua `@ai-sdk/openai-compatible` và `ai`, luôn đính kèm khối sự thật nền `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — mùa giải 2026/27, HLV trưởng Andoni Iraola, giám đốc thể thao Julian Ward và danh sách 31 cầu thủ đội một):
+Mọi tác vụ AI đều gọi **VietAPI** (`VIETAPI_KEY`) qua `@ai-sdk/openai-compatible` và `ai`, luôn đính kèm khối sự thật nền `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — ngày hiện tại theo `GMT+7`, mùa giải `2026/27`, HLV trưởng Andoni Iraola và danh sách 31 cầu thủ đội một):
 
 ### A. Dịch Toàn Văn Sang Tiếng Việt (`POST /api/news/translate`)
 

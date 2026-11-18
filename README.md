@@ -33,7 +33,7 @@ Unofficial Liverpool FC news and match hub — fast, de-duplicated coverage from
 | **Football Data** | Football-Data.org v4 (`fdo-client` dedup + 429 backoff), ESPN API, Fantasy Premier League API |
 | **Media** | Cloudinary (gallery transforms), `hls.js` (embedded article video streams) |
 | **Deployment** | Cloudflare Workers (`@opennextjs/cloudflare`), R2 incremental cache, D1 tag cache, Durable Objects |
-| **Testing** | Vitest (`npm test` — 764+ unit tests) & Playwright (`npm run test:e2e` — desktop + mobile E2E) |
+| **Testing** | Vitest (`npm test` — 774 unit tests across 76 files) & Playwright (`npm run test:e2e` — 125 desktop + mobile E2E tests) |
 
 ---
 
@@ -42,13 +42,13 @@ Unofficial Liverpool FC news and match hub — fast, de-duplicated coverage from
 ```text
 src/
 ├── app/
-│   ├── [locale]/          # Localized pages (/, /vi, /news, /analysis, /fixtures, /standings, /predictions, /squad, /player/[id], /stats, /season, /history, /gallery, /profile, /auth, /about, /legal)
+│   ├── [locale]/          # Localised pages (/, /vi, /news, /analysis, /fixtures, /standings, /predictions, /squad, /player/[id], /stats, /season, /history, /gallery, /profile, /auth, /about, /legal)
 │   ├── actions/           # Server Actions (auth, profile, news pagination, fan predictions & ratings)
 │   ├── api/               # Route handlers (news sync/digest/cleanup/translate/comments/like, site-articles, calendar .ics, gallery, live-fixture, streak)
 │   ├── auth/callback/     # Supabase OAuth callback
 │   ├── llms.txt/          # AI crawler guide distinguishing original journalism vs attributed mirrors
 │   ├── robots.txt/        # Dynamic crawl rules & SEO-tool bot blocks
-│   └── sitemap.xml/       # Localized XML sitemap with hreflang alternates
+│   └── sitemap.xml/       # Localised XML sitemap with hreflang alternates
 ├── components/            # Feature UI + shadcn/ui primitives + NextIntl client message filter
 ├── data/                  # Bilingual static JSON (squad, player-bios.vi, trophies, history, legends, club-info, gallery)
 ├── hooks/                 # Client hooks (spoiler-free, hydration-safe clock, viewer timezone, favourites)

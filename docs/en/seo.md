@@ -33,7 +33,7 @@ Site-wide entities are declared once in `<StructuredData />` (`src/components/an
 
 | Scope | Schema Types |
 |---|---|
-| Root localized layout | `Organization` (`#publisher`), `WebSite` (`#website`), `SportsTeam` (`#club`) |
+| Root localised layout | `Organization` (`#publisher`), `WebSite` (`#website`), `SportsTeam` (`#club`) |
 | Section & detail pages | `BreadcrumbList` (`src/lib/seo-breadcrumbs.ts`) |
 | `/analysis/[slug]` & `/news/digest/[date]` | `BreadcrumbList` + `NewsArticle` |
 | `/news/[...slug]` | `BreadcrumbList` + `NewsArticle` (`Organization` fallback or `Person` author) |
@@ -46,7 +46,7 @@ Site-wide entities are declared once in `<StructuredData />` (`src/components/an
 ## 4. OpenGraph Cards (`src/lib/og/story-card.tsx`)
 
 - Site default card: `src/app/opengraph-image.tsx` (1200×630).
-- Dynamic localized story cards for `/news/digest/[date]/opengraph-image.tsx` and `/analysis/[slug]/opengraph-image.tsx`.
+- Dynamic localised story cards for `/news/digest/[date]/opengraph-image.tsx` and `/analysis/[slug]/opengraph-image.tsx`.
 - Embeds League Gothic as base64 (`src/assets/fonts/league-gothic-base64.ts`) with `WORDMARK` tracking (`0.18em`) and red underline bar per [`docs/brand.md`](../brand.md), requiring zero runtime disk or network fetches on Cloudflare Workers.
 
 ---
@@ -56,7 +56,7 @@ Site-wide entities are declared once in `<StructuredData />` (`src/components/an
 ### `src/app/sitemap.xml/route.ts`
 
 - Served dynamically (`force-dynamic`, `Cache-Control: public, max-age=3600, s-maxage=3600`) with `unstable_cache` wrappers around Supabase digest and `site_articles` queries so builds never depend on live DB reachability.
-- Emits localized `<url>` entries (with full `xhtml:link` `hreflang` sets and genuine `lastmod` dates only) for static routes, archived seasons (`/season?season=...`, `/stats/...`), player profiles, `/analysis/[slug]` (restricted to locales actually published), `/news/digest/[date]`, and `/fixtures/[id]`.
+- Emits localised `<url>` entries (with full `xhtml:link` `hreflang` sets and genuine `lastmod` dates only) for static routes, archived seasons (`/season?season=...`, `/stats/...`), player profiles, `/analysis/[slug]` (restricted to locales actually published), `/news/digest/[date]`, and `/fixtures/[id]`.
 
 ### `src/app/robots.txt/route.ts`
 

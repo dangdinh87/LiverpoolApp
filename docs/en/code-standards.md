@@ -23,7 +23,7 @@ export default async function SquadPage({ params }: { params: Promise<{ locale: 
 }
 ```
 
-- Always `await params` (Next.js 16 async route params) and call `setRequestLocale(locale)` in localized pages/layouts so routes prerender statically.
+- Always `await params` (Next.js 16 async route params) and call `setRequestLocale(locale)` in localised pages/layouts so routes prerender statically.
 - Import server-only modules (`@/lib/football`, `@/lib/supabase-server`, `@/lib/news/*`) freely.
 - Pass minimal, serialisable props across client boundaries.
 
