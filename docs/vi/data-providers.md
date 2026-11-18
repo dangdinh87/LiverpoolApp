@@ -1,360 +1,89 @@
-# Data Providers
+# Nhà Cung Cấp Dữ Liệu Bóng Đá
 
-Lớp dữ liệu bóng đá của LiverpoolApp — pattern provider giúp tách ứng dụng khỏi sự phụ thuộc vào bất kỳ API đơn lẻ nào.
-
----
-
-## 1. Tổng Quan
-
-Toàn bộ dữ liệu bóng đá đều đi qua một abstract provider interface. Các provider dịch response từ API bên ngoài về canonical types. Barrel (`src/lib/football/index.ts`) bọc mọi hàm trong `React.cache()` để dedup trong cùng một request và re-export chúng dưới dạng named functions.
-
-```
-Người dùng truy cập /squad
-     ↓
-SquadPage (server component)
-     ↓
-await getSquad()         ← import từ '@/lib/football'
-     ↓
-React.cache wrapper      ← dedup trong cùng một request
-     ↓
-provider.getSquad()      ← FdoProvider (hoặc MockProvider khi dev)
-     ↓
-fdoFetch('/teams/64/..') ← HTTP call với ISR revalidation
-     ↓
-map to Player[]          ← canonical types từ src/lib/types/football.ts
-     ↓
-trả về component
-```
-
-### Các file chính
-
-| File | Mục đích |
-|------|---------|
-| `src/lib/football/provider.ts` | Interface `FootballDataProvider` |
-| `src/lib/football/index.ts` | Factory + barrel export + wrappers `React.cache()` |
-| `src/lib/football/fdo-provider.ts` | Triển khai Football-Data.org |
-| `src/lib/football/fdo-standings.ts` | Bảng xếp hạng PL + UCL (FDO) |
-| `src/lib/football/fdo-matches.ts` | Lịch thi đấu + thông tin HLV (FDO) |
-| `src/lib/football/espn-events.ts` | Sự kiện trận đấu, đội hình, lịch cup (ESPN) |
-| `src/lib/football/mock-provider.ts` | Mock fallback tĩnh |
-| `src/lib/football/mock-data.ts` | Hằng số mock (`MOCK_SQUAD`, v.v.) |
-| `src/lib/football/fpl-stats.ts` | Thống kê cầu thủ bổ sung từ FPL API |
-| `src/lib/types/football.ts` | Định nghĩa canonical types |
+Tầng dữ liệu bóng đá phía server (`src/lib/football/`) của **Anfield Daily** kết hợp **Football-Data.org v4**, **ESPN Soccer API**, **Fantasy Premier League (FPL) API**, bộ dữ liệu tĩnh song ngữ của CLB và bảng ánh xạ kênh phát sóng theo múi giờ thông qua một điểm xuất duy nhất.
 
 ---
 
-## 2. Provider Interface
+## 1. Tổng Quan & Luồng Dữ Liệu
 
-`src/lib/football/provider.ts`
+Toàn bộ truy vấn bóng đá đi qua `src/lib/football/index.ts` (có chốt chặn `import "server-only"`) và được bọc `React.cache()` để khử trùng lặp trong cùng một request.
 
-```typescript
-export interface FootballDataProvider {
-  readonly name: string;
-
-  getSquad(): Promise<Player[]>;
-  getFixtures(): Promise<Fixture[]>;
-  getStandings(): Promise<Standing[]>;
-  getTopScorers(): Promise<TopScorer[]>;
-  getTopAssists(): Promise<TopScorer[]>;
-  getPlayerStats(playerId: number): Promise<PlayerStats | null>;
-  getFixtureEvents(fixtureId: number): Promise<FixtureEvent[]>;
-  getFixtureLineups(fixtureId: number): Promise<FixtureLineup[]>;
-  getFixtureStatistics(fixtureId: number): Promise<FixtureTeamStats[]>;
-  getInjuries(): Promise<Injury[]>;
-  getTeamInfo(): Promise<TeamInfo | null>;
-  getCoach(): Promise<Coach | null>;
-  getGameweekInfo(): Promise<GameweekInfo | null>;
-}
+```text
+Trang / Route Handler (Server Component)
+  ↓
+import { getFixtures, getStandings, getSquad } from "@/lib/football"
+  ↓
+React.cache() gộp lời gọi trùng trong cùng request
+  ├── Football-Data.org (`fdo-client.ts` — gộp in-flight + backoff HTTP 429)
+  ├── ESPN (`espn-events.ts` — Cúp FA/Liên đoàn, tỷ số trực tiếp, diễn biến, đội hình, 28 chỉ số)
+  ├── FPL API (`fpl-stats.ts` — thống kê cá nhân cầu thủ tại Ngoại hạng Anh)
+  └── Dữ liệu tĩnh (`src/data/squad.json` + các tệp `.vi.json`)
 ```
 
-Tất cả kiểu trả về đều từ `src/lib/types/football.ts`. Các provider phải ánh xạ cấu trúc API của mình về các canonical types này.
+### Các Tệp Thành Phần
+
+| Tệp | Chức năng |
+|---|---|
+| `src/lib/football/index.ts` | Điểm xuất duy nhất phía server + `React.cache()` + khử trùng lặp lịch đấu cúp |
+| `src/lib/football/provider.ts` | Giao diện `FootballDataProvider` |
+| `src/lib/football/fdo-client.ts` | Hàm tải dùng chung `fdoFetch`, gộp request đồng thời, retry/backoff `HTTP 429`, `requireNonEmptyArray` |
+| `src/lib/football/fdo-provider.ts` | Triển khai `FdoProvider` (đội hình, vua phá lưới, thông tin CLB) |
+| `src/lib/football/fdo-standings.ts` | Bảng xếp hạng Ngoại hạng Anh (`/competitions/PL/standings`) & Champions League (`/competitions/CL/standings`) |
+| `src/lib/football/fdo-matches.ts` | Lịch thi đấu mùa hiện tại & các mùa lưu trữ (`/teams/64/matches`) + thông tin HLV |
+| `src/lib/football/fdo-h2h.ts` | Tổng hợp thành tích đối đầu (`computeH2H`) |
+| `src/lib/football/espn-events.ts` | Lịch cúp quốc nội, cập nhật trực tiếp, diễn biến từng phút, đội hình ra sân và 28 chỉ số thống kê |
+| `src/lib/football/fpl-stats.ts` | Thống kê chi tiết cầu thủ từ Fantasy Premier League |
+| `src/lib/football/season-stats.ts` | Tính toán tổng quan mùa giải, chuỗi phong độ, thống kê theo đấu trường & cột mốc |
+| `src/lib/football/current-season.ts` | Xác định năm/nhãn mùa giải hiện hành theo giờ UTC & danh sách mùa giải lưu trữ |
+| `src/lib/football/premier-league-broadcasters.ts` | Ánh xạ múi giờ IANA của người đọc sang quốc gia và đơn vị phát sóng Ngoại hạng Anh |
+| `src/lib/types/football.ts` | Bộ kiểu chuẩn (`Player`, `Fixture`, `Standing`, `FixtureEvent`, v.v.) |
 
 ---
 
-## 3. Football-Data.org (Chính)
+## 2. Football-Data.org v4 (Nguồn Chính)
 
-**File:** `src/lib/football/fdo-provider.ts`
-**API:** `https://api.football-data.org/v4`
-**ID Liverpool trong FDO:** 64 (ánh xạ về canonical ID 40 trong responses)
-**Env var:** `FOOTBALL_DATA_ORG_KEY`
+- **Địa chỉ gốc:** `https://api.football-data.org/v4`
+- **Mã đội Liverpool:** `64` trên FDO → chuyển đổi qua `mapFdoTeamId()` về mã chuẩn `40` trong toàn ứng dụng
+- **Biến môi trường:** `FOOTBALL_DATA_ORG_KEY` (10 request/phút ở gói miễn phí)
 
-### Dữ liệu cung cấp
+### Cơ Chế Chịu Tải Trong `fdo-client.ts`
 
-| Dữ liệu | Endpoint | Revalidation |
-|------|----------|-------------|
-| Đội hình + tiểu sử cầu thủ | Local `squad.json` + FDO enrichment | Tĩnh |
-| Bảng xếp hạng PL | `/competitions/PL/standings` | 6h |
-| Bảng xếp hạng UCL | `/competitions/CL/standings` | 6h |
-| Tất cả lịch thi đấu | `/teams/64/matches` | 1h |
-| Thông tin HLV | `/teams/64` | 24h |
-| Top ghi bàn | `/competitions/PL/scorers` | 6h |
-| Top kiến tạo | `/competitions/PL/scorers?limit=20` | 6h |
-
-### Giới hạn rate (gói miễn phí)
-
-- **10 requests / phút**
-- Dữ liệu mùa giải: 2022, 2023, 2024 (mùa 2025 bị khóa trên gói miễn phí)
-- Tất cả hàm dùng `next: { revalidate }` qua `fetch()` — hiếm khi đạt giới hạn rate trên production
-
-### Thiết lập API key
-
-```bash
-# .env.local
-FOOTBALL_DATA_ORG_KEY=your_key_here
-```
-
-Lấy key tại [football-data.org/client/register](https://www.football-data.org/client/register). Gói miễn phí đủ cho toàn bộ tính năng hiện tại.
-
-### Core fetcher
-
-```typescript
-// src/lib/football/fdo-provider.ts
-const FDO_BASE = 'https://api.football-data.org/v4';
-
-async function fdoFetch<T>(path: string, revalidate: number): Promise<T> {
-  const key = process.env.FOOTBALL_DATA_ORG_KEY;
-  if (!key) throw new Error('[fdo-provider] FOOTBALL_DATA_ORG_KEY not set');
-
-  const res = await fetch(`${FDO_BASE}${path}`, {
-    headers: { 'X-Auth-Token': key },
-    next: { revalidate },
-    signal: AbortSignal.timeout(12_000),
-  });
-
-  if (!res.ok) throw new Error(`[fdo-provider] HTTP ${res.status} on ${path}`);
-  return res.json();
-}
-```
-
-### Hạn chế đã biết
-
-- `getPlayerStats()` ủy thác sang FPL API (Fantasy Premier League) — không có bộ lọc giải đấu, cầu thủ không có thống kê PL có thể trả về thống kê từ giải đấu khác
-- Mùa 2025 không khả dụng trên gói miễn phí
-- Không có sự kiện trận đấu với dữ liệu phút chính xác (dùng ESPN cho mục đích này)
+1. **Gộp request đang bay (in-flight deduplication):** Các lời gọi đồng thời tới cùng `${revalidate}:${path}` trên một isolate dùng chung một Promise duy nhất.
+2. **Tự động chờ và thử lại khi gặp `HTTP 429`:** Đọc header `X-RequestCounter-Reset` (cộng độ trễ ngẫu nhiên nhỏ, tối đa `12s`, thử lại tối đa 2 lần), giúp 7 tiến trình worker khi chạy `next build` không bị gãy vì chạm trần 10 req/phút.
+3. **`requireNonEmptyArray()`:** Chủ động ném lỗi trước khi `unstable_cache` kịp lưu nhầm mảng rỗng khi API đối tác chập chờn.
+4. **Không dùng dữ liệu giả lập:** Khi thiếu `FOOTBALL_DATA_ORG_KEY`, các hàm ghi log cảnh báo và trả về mảng rỗng/`null` để giao diện hiển thị trạng thái trống minh bạch.
 
 ---
 
-## 4. ESPN (Bổ Sung)
+## 3. ESPN Soccer API (Chi Tiết Trận Đấu, Trực Tiếp & Cúp Quốc Nội)
 
-**File:** `src/lib/football/espn-events.ts`
-**API:** `https://site.api.espn.com/apis/site/v2/sports/soccer`
-**ID Liverpool trong ESPN:** `364`
-**Env var:** không cần — miễn phí, không cần key
+- **Địa chỉ gốc:** `https://site.api.espn.com/apis/site/v2/sports/soccer`
+- **Mã đội Liverpool:** `364`
+- **Xác thực:** Miễn phí, không cần API key
+- **Giải đấu hỗ trợ:** `eng.1` (Ngoại hạng Anh), `uefa.champions` (Champions League), `eng.fa` (FA Cup), `eng.league_cup` (EFL Cup)
 
-### Dữ liệu cung cấp
+### Phạm Vi Dữ Liệu Từ ESPN
 
-| Dữ liệu | Phạm vi |
-|------|---------|
-| Sự kiện trận đấu (bàn thắng, thẻ, thay người) | Dữ liệu phút chính xác |
-| Đội hình trận đấu | Đội hình xuất phát + dự bị |
-| Chi tiết trận đấu | Sân vận động, khán giả, trọng tài, 28 thống kê mỗi đội |
-| Lịch cup | FA Cup (`eng.fa`), EFL Cup (`eng.league_cup`) |
-
-ESPN được dùng là **nguồn ưu tiên cho chi tiết trận đấu** vì nó cung cấp dữ liệu phút mà FDO không có. Barrel triển khai chuỗi fallback:
-
-```typescript
-// src/lib/football/index.ts
-export const getFixtureEvents = cache(async (id: number, fixtureDate?: string) => {
-  if (fixtureDate) {
-    try {
-      const espnEvents = await getEspnMatchEvents(fixtureDate);
-      if (espnEvents.length > 0) return espnEvents; // ESPN được ưu tiên
-    } catch (err) {
-      console.error('[football] ESPN events failed:', err);
-    }
-  }
-  return provider.getFixtureEvents(id); // FDO fallback
-});
-```
-
-### League slugs
-
-```typescript
-const LEAGUE_SLUGS = ['eng.1', 'uefa.champions', 'eng.fa', 'eng.league_cup'];
-```
+- **Bổ sung Cúp FA & Cúp Liên đoàn:** `getFixtures()` ghép lịch các giải cúp từ ESPN vào lịch của FDO cho mùa hiện hành, chuẩn hóa tên giải qua `competitionKey()` để không nhân đôi giải đấu đã có.
+- **Diễn biến theo phút & Đội hình:** Cung cấp chính xác số phút ghi bàn (bao gồm phân biệt bàn phản lưới nhà), thẻ phạt, thay người cùng đội hình đá chính và dự bị.
+- **28 chỉ số chuyên môn & dữ kiện sau trận:** `getMatchDetail(fixtureDate)` trả về sân vận động, lượng khán giả, trọng tài và bộ thống kê hai đội (kiểm soát bóng, dứt điểm, sút trúng đích, chuyền bóng, phạt góc, phạm lỗi...), phục vụ cả trang `/fixtures/[id]` lẫn trình tạo bài phân tích sau trận (`src/lib/site-articles/match-review-facts.ts`).
+- **Cập nhật trực tiếp:** `getLiveSnapshot()` cấp dữ liệu cho `/api/live-fixture` khi trận đấu đang diễn ra.
 
 ---
 
-## 5. Mock Provider (Fallback Khi Dev)
+## 4. Fantasy Premier League (FPL) & Hồ Sơ Cầu Thủ Nội Bộ
 
-**File:** `src/lib/football/mock-provider.ts`
-**Dữ liệu:** `src/lib/football/mock-data.ts`
-
-Tự động được dùng khi `FOOTBALL_DATA_ORG_KEY` không được đặt. Trả về dữ liệu tĩnh xác định — không có network calls, không có giới hạn rate.
-
-```typescript
-// mock-provider.ts
-export class MockProvider implements FootballDataProvider {
-  readonly name = 'mock';
-  async getSquad(): Promise<Player[]> { return MOCK_SQUAD; }
-  async getFixtures(): Promise<Fixture[]> { return MOCK_FIXTURES; }
-  // ... tất cả các method của interface đều trả về hằng số mock
-}
-```
-
-Để buộc dùng mock khi phát triển:
-
-```bash
-# Cách 1: xóa key khỏi .env.local
-# Cách 2: override tường minh (chưa có cơ chế này — chỉ cần unset key)
-unset FOOTBALL_DATA_ORG_KEY && npm run dev
-```
-
-Console sẽ log: `[football] Provider: fdo, FDO key: no` và các hàm sẽ trả về mảng rỗng kèm cảnh báo — mở rộng `MockProvider` nếu bạn cần dữ liệu dev phong phú hơn.
+- **Hồ sơ đội hình (`src/data/squad.json` + `src/data/player-bios.vi.json`):** Lưu thông tin, tiểu sử hoàn chỉnh hai ngôn ngữ Anh – Việt, danh hiệu, số áo và slug cho toàn bộ 31 cầu thủ đội một (`src/lib/squad-data.ts`).
+- **Thống kê FPL (`src/lib/football/fpl-stats.ts`):** Bổ sung số phút thi đấu, bàn thắng, kiến tạo, trận giữ sạch lưới, cứu thua và chỉ số kỳ vọng cho trang `/player/[id]`.
 
 ---
 
-## 6. Barrel Export & React.cache()
+## 5. Tra Cứu Kênh Phát Sóng ("Xem Ở Đâu")
 
-`src/lib/football/index.ts` là **điểm vào duy nhất** để sử dụng football data. Không bao giờ import trực tiếp từ các file provider.
-
-```typescript
-// ĐÚNG
-import { getSquad, getFixtures, getStandings } from '@/lib/football';
-
-// SAI — không bao giờ làm thế này
-import { FdoProvider } from '@/lib/football/fdo-provider';
-```
-
-Barrel áp dụng `React.cache()` cho mọi export:
-
-```typescript
-import 'server-only';
-import { cache } from 'react';
-
-export const getSquad = cache(() => provider.getSquad());
-export const getStandings = cache(async (season?: number) => { ... });
-export const getPlayerStats = cache((id: number) => provider.getPlayerStats(id));
-```
-
-`React.cache()` dedup trong một request đơn lẻ — nếu ba server components trên cùng một trang gọi `getSquad()`, chỉ có một network request được thực hiện.
+`src/lib/football/premier-league-broadcasters.ts` dựa trên **múi giờ IANA của thiết bị** (`useViewerTimeZone()`) — không phụ thuộc ngôn ngữ giao diện đang chọn — để hiển thị đơn vị nắm bản quyền Ngoại hạng Anh tại quốc gia của người xem (ví dụ: độc giả mở giao diện tiếng Anh tại Việt Nam vẫn thấy K+ / FPT Play, tại Indonesia thấy Vidio, tại Anh thấy Sky Sports / TNT Sports). Nếu không xác định được quốc gia hoặc không phải trận Ngoại hạng Anh, mục này tự ẩn.
 
 ---
 
-## 7. Luồng Dữ Liệu: Provider → Component
+## 6. Quản Lý Mùa Giải (`current-season.ts`)
 
-```typescript
-// src/app/squad/page.tsx (Server Component)
-import { getSquad } from '@/lib/football';
-
-export const revalidate = 3600; // ISR: re-fetch tối đa một lần mỗi giờ
-
-export default async function SquadPage() {
-  const players = await getSquad();
-  return <SquadGrid players={players} />;
-}
-```
-
-```typescript
-// src/app/standings/page.tsx — fetches song song
-import { getStandings, getUclStandings } from '@/lib/football';
-
-export default async function StandingsPage() {
-  const [pl, ucl] = await Promise.all([getStandings(), getUclStandings()]);
-  return <StandingsTabs pl={pl} ucl={ucl} />;
-}
-```
-
----
-
-## 8. Xử Lý Lỗi & Giảm Hạ Cấp An Toàn
-
-Mọi hàm export trong barrel đều theo cùng một pattern:
-
-1. Kiểm tra env var cần thiết — trả về rỗng / null và cảnh báo nếu thiếu
-2. `try/catch` bao quanh fetch thực tế
-3. Trả về mảng rỗng / `null` khi thất bại — không bao giờ throw lên trang
-
-```typescript
-export const getStandings = cache(async (season?: number) => {
-  if (!hasFdoKey) {
-    console.warn('[football] FOOTBALL_DATA_ORG_KEY not set — no standings');
-    return [];
-  }
-  try {
-    return await getFdoStandings(season);
-  } catch (err) {
-    console.error('[football] FDO standings failed:', err);
-    return []; // trang render empty state, không phải lỗi
-  }
-});
-```
-
-Các trang nên xử lý trường hợp rỗng bằng UI fallback thay vì giả định dữ liệu luôn tồn tại:
-
-```typescript
-// src/app/standings/page.tsx
-const standings = await getStandings();
-if (standings.length === 0) return <EmptyState message="Standings unavailable" />;
-```
-
----
-
-## 9. Thêm Provider Mới
-
-### Bước 1 — Tạo provider class
-
-```typescript
-// src/lib/football/sofascore-provider.ts
-import type { FootballDataProvider } from './provider';
-import type { Player, Fixture /* ... */ } from '@/lib/types/football';
-
-export class SofaScoreProvider implements FootballDataProvider {
-  readonly name = 'sofascore';
-
-  async getSquad(): Promise<Player[]> {
-    const res = await fetch('https://api.sofascore.com/...', {
-      next: { revalidate: 3600 },
-    });
-    const data = await res.json();
-    return data.players.map(mapSofaScorePlayer); // ánh xạ về canonical Player
-  }
-
-  // triển khai tất cả các method của interface ...
-}
-```
-
-### Bước 2 — Đăng ký trong barrel
-
-```typescript
-// src/lib/football/index.ts — thêm vào logic chọn provider
-import { SofaScoreProvider } from './sofascore-provider';
-
-function createProvider(): FootballDataProvider {
-  if (process.env.SOFASCORE_KEY) return new SofaScoreProvider();
-  if (process.env.FOOTBALL_DATA_ORG_KEY) return new FdoProvider();
-  return new MockProvider();
-}
-```
-
-### Bước 3 — Thêm env var
-
-```bash
-# .env.local
-SOFASCORE_KEY=your_key
-```
-
-### Bước 4 — Build lại
-
-```bash
-npm run build
-```
-
-### Quy tắc ánh xạ
-
-- Luôn ánh xạ về đúng cấu trúc được định nghĩa trong `src/lib/types/football.ts`
-- Không bao giờ để lộ provider-specific types ra ngoài file provider
-- Nếu một trường không có trong API mới, đặt nó thành `null` hoặc `undefined` theo định nghĩa kiểu
-- Thêm `console.info('[sofascore] provider loaded')` khi dev để dễ kiểm tra provider nào đang hoạt động
-
----
-
-## 10. Biến Môi Trường
-
-| Biến | Provider | Bắt buộc |
-|----------|---------|---------|
-| `FOOTBALL_DATA_ORG_KEY` | Football-Data.org | Có (để lấy dữ liệu live) |
-
-Khi không có `FOOTBALL_DATA_ORG_KEY`, tất cả hàm FDO trả về mảng rỗng/null và log cảnh báo. Ứng dụng vẫn hoạt động bình thường với empty states.
-
-ESPN không cần thông tin xác thực và luôn hoạt động.
+`getCurrentSeasonYear()` tính năm bắt đầu mùa bóng châu Âu theo giờ chuẩn UTC (chuyển mùa vào ngày 1 tháng 8 UTC), đảm bảo môi trường build, các cụm Cloudflare Workers ở mọi khu vực và các trang lưu trữ (`/season?season=2025`, `/stats/2025`, tra cứu ngược trận cũ trong `getFixtureById`) luôn nhất quán tuyệt đối.

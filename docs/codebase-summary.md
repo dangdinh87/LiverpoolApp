@@ -1,347 +1,108 @@
-# Liverpool FC Vietnam Fan Site — Codebase Summary
+# Anfield Daily — Codebase Summary
 
-Generated: 2026-03-20 | Last Updated: 2026-03-20
+Last Updated: 2026-11-18
 
 ## Overview
 
-Full-featured Next.js 16 fan site for Liverpool FC Vietnam community. Provides squad info, fixtures, standings, stats, multilingual news (17+ RSS sources), AI chat, gallery, history, and user profiles.
+**Anfield Daily** (`https://anfielddaily.com`) is an unofficial bilingual (`en` / `vi`) Liverpool FC news and match data application. It gathers reporting from 13 English outlets plus official club video (`lfctv`), removes duplicates, publishes a daily AI briefing and fact-validated post-match editorial reviews, and pairs news with live fixtures, standings, squad profiles, player statistics, fan score predictions, post-match player ratings, a spoiler-free mode, and an `.ics` fixture calendar.
 
-**Stack:** Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui + Supabase + Groq API + Vercel Cron
-
----
-
-## Recent Changes (2026-03-16 to 2026-03-20)
-
-### News Content Extraction & Video Support
-- **New:** `ArticleHtmlBody` component — renders raw HTML content with embedded video players
-- **New:** `ArticleVideoPlayer` component — HLS.js + native HTML5 video support (MP4, HLS streams)
-- **Enhanced:** `article-extractor.ts` — 24-hour cache TTL (CONTENT_CACHE_TTL_MS) to skip re-scraping recently extracted articles
-- **Enhanced:** Match widget junk text filtering — removes generic "next match" section from article content
-- **New fields in ArticleContent type:** `htmlContent` (sanitized HTML), `videoUrl` (embedded video URL)
-- **Removed:** `floating-action-bar.tsx`, `floating-action-bar-translate.tsx` (consolidated UI)
-- **Updated:** `translate-button.tsx` — simplified to work with new article detail layout
-- **Updated:** news detail page (`src/app/news/[...slug]/page.tsx`) — uses ArticleHtmlBody for HTML rendering
-
-### Design & Layout
-- Updated `src/app/globals.css` — styles for `.article-html-content`, `.article-video-container`, `.article-video-player`
-- i18n messages updated (`en.json`, `vi.json`) — new string keys for video player fallback text
+**Core Stack:** Next.js 16.4 (App Router, Turbopack) · React 19 · TypeScript 5 (`strict`) · Tailwind CSS v4 · `shadcn/ui` (`radix-ui`) · `next-intl` · Supabase (Auth, PostgreSQL, Storage) · VietAPI (`@ai-sdk/openai-compatible` + `ai`) · Cloudflare Workers (`@opennextjs/cloudflare` + R2 + D1 + Durable Objects) · Vitest & Playwright.
 
 ---
 
 ## Architecture Highlights
 
-### 1. Football Data Layer (`src/lib/football/`)
-- **Primary:** Football-Data.org (standings, fixtures, squad, coach) — 10 req/min free tier
-- **Supplement:** ESPN (cup fixtures, match events) — free, no key
-- **Fallback:** Mock data when `FOOTBALL_DATA_ORG_KEY` not set
-- All functions use `React.cache()` for per-request deduplication
-- Server-only with `import "server-only"` guard
+### 1. News Aggregation, Full-Article Extraction & Video (`src/lib/news/`)
 
-### 2. News System (`src/lib/news/`)
+- **13 English Press Outlets (`NEWS_OUTLET_COUNT = 13`):**
+  - `LfcAdapter` (`liverpoolfc.com` via `sitemap-news.xml`, filtered to Men's & Club stories)
+  - 12 RSS feeds (`src/lib/news/config.ts`): BBC Sport (`bbc`), The Guardian (`guardian`), This Is Anfield (`tia`, link-out only), Anfield Watch (`anfield-watch`), Empire of the Kop (`eotk`), Sky Sports (`sky`), Mirror (`mirror`), The Independent (`independent`), Anfield Index (`anfieldindex`), Liverpool.com (`liverpoolcom`), Liverpool Echo (`echo`), and ESPN (`espn`).
+- **Club Video (`lfctv`):** `YouTubeChannelAdapter` (`src/lib/news/youtube-data-api.ts`) pulls official Liverpool FC YouTube uploads via YouTube Data API v3 (`YOUTUBE_API_KEY`) for the `/news` video strip while excluding video items from text scraping, digests, and text search.
+- **Hourly Sync Pipeline (`src/lib/news/sync.ts`):**
+  1. Parallel feed fetch (`cache: "no-store"`, 14-day freshness cutoff, per-source status telemetry).
+  2. Canonical URL normalisation (`src/lib/news/url.ts`, stripping tracking query params and trailing slashes, plus `articleUrlVariants()` lookup compatibility) and Jaccard title similarity deduplication (`dedup.ts`).
+  3. Weighted Liverpool keyword scoring (`LFC_KEYWORDS_WEIGHTED`, aligned with the 2026/27 squad, head coach Andoni Iraola, and sporting director Julian Ward) and regex category classification (`match-report`, `transfer`, `injury`, `team-news`, `opinion`, `analysis`, `general`).
+  4. Batch upsert to Supabase `articles` (`mergeArticleRowForUpsert` preserving `is_active` and `read_count`).
+  5. `og:image` thumbnail enrichment (`og-meta.ts`) and adaptive pre-scraping (`article-extractor.ts`, 45s time budget safely inside Cloudflare's 100s timeout).
+- **Content Extraction & Reader (`/news/[...slug]`):**
+  - `article-extractor.ts` combines `linkedom`, `@mozilla/readability`, per-source Cheerio selectors, boilerplate stripping (`text.ts`, `junk.ts`), inline HLS/MP4 video detection, and `sanitize-html` (cached 24h in `articles.content_en`).
+  - `TranslatableExcerpt` renders full extracted HTML (`ArticleHtmlBody` + `ArticleVideoPlayer` via `hls.js`) with publisher credit and original link above the body (`noindex, follow`, no ads) and toggles smoothly to Vietnamese translation.
 
-#### Sources (17+ feeds in 2 languages)
-**English (8):**
-- LFC Official (liverpoolfc.com)
-- BBC Sport
-- The Guardian
-- Liverpool Echo
-- Anfield Watch
-- Empire of the Kop
-- Sky Sports
-- GOAL
+### 2. AI Editorial & Translation (`src/lib/ai/vietapi.ts`, `src/lib/site-articles/`)
 
-**Vietnamese (9):**
-- VnExpress
-- Tuổi Trẻ
-- Thanh Niên
-- Dân Trí
-- ZNews
-- VietNamNet
-- Bóng Đá
-- 24h
-- Bóng Đá+, Webthethao
+All LLM workloads call **VietAPI** (`VIETAPI_KEY`) lazily per request via `@ai-sdk/openai-compatible` and `ai`, anchored by `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts`):
 
-#### Sync Pipeline (`src/lib/news/sync.ts`)
-1. Fetch RSS feeds (parallel, with retries)
-2. Deduplicate by URL hash
-3. Extract metadata (title, publish date, author, snippet)
-4. Detect source & language
-5. Score relevance (keyword matching for Liverpool, Reds, etc.)
-6. Categorize (match-report, transfer, injury, opinion, team-news, analysis, general)
-7. Upsert to Supabase `articles` table
+- **On-Demand Article Translation (`POST /api/news/translate`):** Translates verified `articles` rows (`<= 18,000` chars) into idiomatic Vietnamese sports journalism (`deepseek-v4-flash` → `deepseek-v4-pro` → `claude-sonnet-5`), deduplicated in-flight per canonical URL, rate-limited per IP, and cached in `articles.content_vi` + browser `localStorage` (7-day TTL).
+- **AI Daily Briefing (`src/lib/news/digest.ts`, `/news/digest/[date]`):** Generated daily at `00:07 UTC` (with hourly idempotent retry `01:00–16:59 UTC`) in two parallel LLM calls (structured briefing + SEO article, `Europe/London` date key) and stored in `news_digests`.
+- **Fact-Validated Post-Match Analysis (`src/lib/site-articles/`, `/analysis/[slug]`):** `/api/site-articles/generate` turns verified fixture facts (`match-review-facts.ts`) into bilingual (`en` + `vi`) editorial reviews. Every draft must pass `validateDraft()` (`validate-draft.ts`: scoreline/player accuracy, brand positioning rules, anti-cliché & entity hygiene) and `tooSimilar()` before publishing to `site_articles` (rejected drafts are stored with `reject_reason` for auditability).
 
-#### Content Extraction (`src/lib/news/enrichers/article-extractor.ts`)
-- **Per-source selectors** (verified 2026-03-11) — DOM path to article body for each source
-- **24-hour cache** — skips re-extraction for recently scraped articles (stored in `content_en` column + `content_scraped_at` timestamp)
-- **Sanitization** — whitelist HTML tags (p, h1-h4, img, figure, figcaption, a, em, strong, code, pre, ul, ol, li, blockquote, table, tr, th, td, br)
-- **Image extraction** — collects all `<img src>` URLs from article body
-- **Reading time estimation** — word count / 200
-- **Thin content detection** — flags articles with <400 words as `isThinContent: true`
-- **Match widget filtering** — removes generic "next match" HTML sections from articles
-- **Video detection** — finds embedded video URLs (HLS/MP4) and inserts placeholder divs: `<div class="article-video-player" data-video-src="...">` for hydration
+### 3. Football Data & Community Features (`src/lib/football/`, `src/lib/fan-predictions/`, `src/lib/calendar/`)
 
-#### Translation (`src/lib/news/translation-cache.ts`)
-- On-demand Groq API call for article body
-- Cached in `content_vi` / `content_en` columns
-- Skips translation if content already exists
+- **Football Data Barrel (`src/lib/football/index.ts`, `server-only`, `React.cache()`):**
+  - **Football-Data.org v4 (`fdo-client.ts`):** PL & UCL standings, fixtures, multi-season archive (`current-season.ts`), H2H (`fdo-h2h.ts`), top scorers/assists, and coach. Features per-isolate in-flight deduplication, `HTTP 429` retry/backoff (`X-RequestCounter-Reset`), and `requireNonEmptyArray()` cache protection.
+  - **ESPN (`espn-events.ts`):** FA Cup & EFL Cup fixtures, live match polling (`/api/live-fixture`), minute-accurate match events, lineups, and 28 team stats (free, no key).
+  - **FPL API (`fpl-stats.ts`):** Granular Premier League player stats supplement.
+  - **Broadcaster Lookup (`premier-league-broadcasters.ts`):** Maps viewer IANA time zone to local Premier League TV/streaming broadcaster.
+- **Predictions & Player Ratings (`/predictions`, `/fixtures/[id]`):** Pre-match score predictions (3 pts exact, 1 pt outcome), largest-remainder community split, season leaderboard, and post-match 1–10 player ratings (`match_predictions`, `player_ratings` via service-role Server Actions in `src/app/actions/predictions.ts`).
+- **Spoiler-Free Mode (`src/lib/spoiler-mode.ts`):** Inline blocking `SPOILER_BOOT_SCRIPT` sets `data-spoiler-free` on `<html>` before first paint so shared ISR pages mask scores purely in CSS without flicker.
+- **iCalendar Feed (`/api/calendar/liverpool.ics`):** RFC 5545 UTC fixture subscription with localized competition names, 30-minute VALARM reminders, and spoiler-free summaries.
 
-#### Daily Digest (`src/lib/news/digest.ts`)
-- Cron job (`0 0 * * *` UTC) generates AI summary of top 10 articles
-- Groq prompt: "Create a brief Liverpool FC news digest for Vietnamese fans"
-- Stores in `news_digests` table with generated HTML summary
+### 4. Supabase Client Split & Resilience
 
-### 3. Supabase Architecture
-- **Browser client:** `src/lib/supabase.ts` — `createClient()`, safe for `"use client"` components
-- **Server client:** `src/lib/supabase-server.ts` — `createServerSupabaseClient()`, guarded with `import "server-only"`
-- **Service role client:** `src/lib/news/supabase-service.ts` — admin ops (content cache writes, digest storage)
-
-#### Database Schema
-| Table | Purpose | Key Columns |
+| Module | Context | Key & Protection |
 |---|---|---|
-| `profiles` | User info | `id`, `avatar_url`, `bio` |
-| `favourite_players` | User favorites | `user_id`, `player_id` |
-| `articles` | News storage | `url`, `title`, `source`, `category`, `content_en`, `content_vi`, `htmlContent`, `videoUrl`, `content_scraped_at` |
-| `article_likes` | Article engagement | `article_id`, `user_id` |
-| `article_comments` | Reader comments | `article_id`, `user_id`, `body`, `created_at` |
-| `saved_articles` | User bookmarks | `user_id`, `article_id` |
-| `gallery` | Image metadata | `image_url`, `title`, `description`, `tag` |
-| `conversations` | Chat history | `user_id`, `title`, `created_at` |
-| `messages` | Chat messages | `conversation_id`, `role`, `content` |
+| `src/lib/supabase.ts` | `"use client"` components | Anon key, RLS enforced, `createSupabaseFetch()` |
+| `src/lib/supabase-server.ts` | Server Components, Actions, Route Handlers (`server-only`) | Anon key + session cookies, `createSupabaseFetch()` |
+| `src/lib/news/supabase-service.ts` | Cron/admin routes & validated server writes (`server-only`) | Service role key, `createSupabaseFetch()` |
 
-### 4. UI Component System
-- **Framework:** shadcn/ui (Radix primitives) — new-york style, lucide icons, neutral base color
-- **Styling:** Tailwind CSS v4 with custom design tokens
-- **Layout:** RSC-friendly split pattern (NavbarAuth server → NavbarClient client)
+- **Timeout & Circuit Breaker (`src/lib/supabase-fetch-with-timeout.ts`):** Every client enforces a 3s Promise-race timeout (impervious to Next.js 16 stripping `AbortSignal` during stale `fetch-cache` foreground revalidation), `db: { retry: false }`, and a 30s circuit breaker on transport timeouts or `502`/`503`/`504`/`52x` gateway errors.
+- **Database Schema (`supabase/migrations/001`–`012`):** `profiles`, `favourite_players`, `articles`, `sync_logs`, `article_likes`, `article_comments`, `saved_articles`, `gallery`, `news_digests`, `site_articles`, `match_predictions`, `player_ratings` (plus unused legacy `conversations`/`messages` in `chat_schema.sql`).
 
-#### News Components
-| Component | Purpose | Type |
-|---|---|---|
-| `news-feed.tsx` | Paginated news list with filters | Client |
-| `article-end-sections.tsx` | Related articles, comments, engagement | Client |
-| `article-sidebar.tsx` | Table of contents, up-next, share | Client |
-| `article-html-body.tsx` | Renders htmlContent with video hydration | Client |
-| `article-video-player.tsx` | HLS.js + native video player | Client |
-| `comment-section.tsx` | Article comments (CRUD + likes) | Client |
-| `translate-button.tsx` | Toggle EN/VI translation | Client |
-| `related-articles.tsx` | Contextual article suggestions | Server |
-| `share-button.tsx` | Social share + copy link | Client |
-| `digest-card.tsx` | Daily digest preview | Server |
+### 5. Bilingual Routing & RSC Payload Optimisation (`src/i18n/`, `src/proxy.ts`)
 
-### 5. API Routes
-| Route | Method | Purpose | Auth | Cron? |
-|---|---|---|---|---|
-| `/api/news/sync` | GET | Sync RSS + pre-scrape article content | CRON_SECRET | Yes (GitHub Actions hourly) |
-| `/api/news/cleanup` | GET | Soft-delete >30d, hard-delete >60d articles | CRON_SECRET | Yes (3 AM UTC) |
-| `/api/news/digest/generate` | GET | AI daily digest generation | CRON_SECRET | Yes (midnight UTC) |
-| `/api/news/translate` | POST | On-demand article translation | Supabase session | No |
-| `/api/news/comments` | GET/POST | Article comments CRUD | Supabase session | No |
-| `/api/news/like` | POST | Like/unlike articles | Supabase session | No |
-| `/api/chat` | POST | AI streaming chat (Groq) | Supabase session | No |
-| `/api/gallery` | GET | Gallery metadata + Cloudinary featured | Public | No |
-| `/api/saved-articles` | GET/POST | User bookmarks | Supabase session | No |
-| `/api/conversations` | GET/POST | Chat history CRUD | Supabase session | No |
-| `/api/live-fixture` | POST | Live match polling | Public | No |
-| `/api/streak` | GET/POST | User activity streak | Supabase session | No |
+- **URL Strategy:** `en` is the default locale at `/` (unprefixed); `vi` lives at `/vi` (`localePrefix: "as-needed"` in `src/i18n/routing.ts`). All pages live under `src/app/[locale]/` and call `setRequestLocale(locale)` for full static/ISR prerendering.
+- **Request Proxy (`src/proxy.ts`):** Handles `next-intl` locale negotiation (`NEXT_LOCALE` cookie → `Accept-Language`), short-circuits CMS scanner probes (`404`), protects `/profile`, and sets `X-Robots-Tag: noindex, nofollow` on `/auth` and `/profile`.
+- **Client Message Trimming (`src/components/providers/client-messages.ts`):** `pickClientMessages()` strips heavy server-only namespaces (`Legal`, `History`, `About` prose, `Stats`, `Season`, `Analysis`, etc.) from `<NextIntlClientProvider>`, reducing serialised client i18n payloads by ~52% while `client-messages.test.ts` AST-verifies every client `useTranslations` namespace.
 
-### 6. i18n System
-- **Framework:** next-intl (EN/VI)
-- **Detection:** Cookie `NEXT_LOCALE` → `Accept-Language` header → default `en`
-- **Translation files:** `src/messages/{en,vi}.json`
-- **Static data:** Trophies, history, legends, club-info, player-bios have `.vi.json` variants
-- **Config:** `src/i18n/request.ts` — server-side locale detection for App Router
+### 6. Design System — "Dark Stadium" & Brand (`docs/brand.md`, `src/lib/brand.ts`)
 
-### 7. Design System — "Dark Stadium"
-| Element | Value | CSS Class |
-|---|---|---|
-| Background | `#0D0D0D` | `bg-stadium-bg` |
-| Surface 1 | `#1A1A1A` | `bg-stadium-surface` |
-| Surface 2 | `#252525` | `bg-stadium-surface2` |
-| LFC Red | `#C8102E` | `text-lfc-red`, `bg-lfc-red` |
-| LFC Gold | `#F6EB61` | `text-lfc-gold`, `bg-lfc-gold` |
-| Muted text | `#A0A0A0` | `text-stadium-muted` |
-| Border | `#2A2A2A` | `border-stadium-border` |
-| Fonts | Inter (body), Bebas (headlines), Barlow (labels) | `font-inter`, `font-bebas`, `font-barlow` |
+- **Brand Identity:** `BRAND`, `MARK` (aerial pitch centre circle on `#C8102E` rounded tile), and `WORDMARK` (`ANFIELD DAILY` in League Gothic caps) live solely in `src/lib/brand.ts`.
+- **Tokens (`src/app/globals.css`):** `#0D0D0D` background, `#1A1A1A` / `#252525` surfaces, `#2A2A2A` borders, `#A0A0A0` muted text, `#C8102E` red fills, `#FF3347` accessible AA red text (`text-lfc-red-text` / `text-brand`), `#F6EB61` sparse gold accents.
+- **Typography:** League Gothic (`font-bebas`), Newsreader (`font-serif`), Inter (`font-inter`), Barlow Condensed (`font-barlow`).
 
 ---
 
-## File Organization
+## API Routes & Server Actions
 
-### Key Directories
-
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── news/{sync,cleanup,digest,translate,comments,like}/
-│   │   ├── chat/
-│   │   ├── gallery/
-│   │   ├── saved-articles/
-│   │   ├── conversations/
-│   │   ├── live-fixture/
-│   │   └── streak/
-│   ├── auth/{login,register,callback}
-│   ├── chat/
-│   ├── fixtures/
-│   ├── gallery/
-│   ├── history/
-│   ├── news/
-│   │   ├── [...slug]/ (article detail)
-│   │   └── digest/ (daily digest viewer)
-│   ├── player/[id]/
-│   ├── players/
-│   ├── profile/
-│   ├── season/
-│   ├── squad/
-│   ├── standings/
-│   ├── stats/
-│   ├── about/
-│   └── legal/
-├── components/
-│   ├── ui/ (shadcn: button, dialog, tabs, select, input, avatar, badge, etc.)
-│   ├── news/ (article rendering, comments, digest, etc.)
-│   ├── fixtures/ (match timeline, detail)
-│   ├── squad/ (player grid, filters)
-│   ├── stats/ (charts, count-up)
-│   ├── gallery/ (grid, lightbox)
-│   ├── chat/ (floating, thread)
-│   ├── profile/ (form, favorites)
-│   └── layout/ (navbar, footer)
-├── lib/
-│   ├── football/ (server-only data layer)
-│   ├── news/ (sync, enrichment, db)
-│   ├── prompts/ (AI system prompts)
-│   ├── tools/ (AI function-calling tools)
-│   ├── types/ (TypeScript interfaces)
-│   ├── supabase.ts (browser client)
-│   ├── supabase-server.ts (server client)
-│   ├── cloudinary.ts (image config)
-│   └── utils.ts (cn() utility)
-├── data/ (static JSON: trophies, history, legends, club-info, squad, gallery)
-├── messages/ (i18n: en.json, vi.json)
-├── stores/ (Zustand: auth, user, navigation)
-└── proxy.ts (session refresh, route protection)
-```
+| Endpoint / Module | Method | Auth / Protection | Purpose |
+|---|---|---|---|
+| `/api/news/sync` | `GET` | `Bearer CRON_SECRET` | Hourly RSS + LFC + YouTube sync, OG enrich & 45s pre-scrape |
+| `/api/news/digest/generate` | `GET` | `Bearer CRON_SECRET` | Daily AI briefing + SEO article generation (idempotent) |
+| `/api/news/cleanup` | `GET` | `Bearer CRON_SECRET` | Daily retention cleanup for cached bodies, old articles & logs |
+| `/api/site-articles/generate` | `GET`/`POST` | `Bearer CRON_SECRET` | Fact-validated AI post-match review generator |
+| `/api/news/translate` | `POST` | IP rate limit + DB URL check | On-demand EN→VI full-article translation via VietAPI |
+| `/api/news/comments` | `GET`/`POST`/`DELETE` | Public read / Supabase auth write | Article comments CRUD with privacy scrubbing |
+| `/api/news/like` | `GET`/`POST` | Supabase session | Toggle/read article likes |
+| `/api/saved-articles/check` | `GET` | Supabase session | Bookmark status check across URL variants |
+| `/api/calendar/liverpool.ics` | `GET` | Public (`max-age=3600`) | RFC 5545 spoiler-free UTC fixture subscription |
+| `/api/live-fixture` | `GET` | Public | Live match polling snapshot |
+| `/api/gallery`, `/homepage`, `/settings` | `GET`/`POST` | Public read / admin write | Cloudinary gallery items & hero settings |
+| `/api/streak` | `GET`/`POST` | Supabase session | Reader daily visit streak |
+| `src/app/actions/predictions.ts` | Action | Supabase session + kickoff/lineup check | Submit score predictions & post-match player ratings |
+| `src/app/actions/profile.ts` & `auth.ts` | Action | Supabase session | Profile updates, avatar validation & auth actions |
 
 ---
 
-## Development Commands
+## Testing & Deployment
 
-```bash
-npm run dev          # Start Next.js dev server (localhost:3000)
-npm run build        # Production build
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run test         # Run Vitest unit tests
-npm run seed:gallery # Seed gallery data from Cloudinary
-```
-
----
-
-## Dependencies (Key)
-
-| Category | Packages |
-|---|---|
-| **Framework** | next@16.1.6, react@19.2.3, typescript@5 |
-| **Styling** | tailwindcss@4, @tailwindcss/postcss@4 |
-| **UI** | @radix-ui/*, lucide-react, shadcn@3.8.5 |
-| **Data** | @supabase/supabase-js, @tanstack/react-query |
-| **Football Data** | (external APIs: Football-Data.org, ESPN) |
-| **AI** | @ai-sdk/groq, ai@6.0.116, @assistant-ui/react |
-| **News** | rss-parser, cheerio, sanitize-html, @mozilla/readability |
-| **Video** | hls.js (HLS stream playback) |
-| **Animation** | framer-motion, recharts |
-| **i18n** | next-intl@4.8.3 |
-| **State** | zustand, next-themes |
-| **Dev** | vitest, eslint-9, tsx, patch-package |
-
----
-
-## Environment Variables
-
-Required for full functionality. See `.env.example`:
-
-| Variable | Purpose | Sensitive |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project endpoint | No |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Client-safe auth key | No |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server-only admin key | Yes |
-| `FOOTBALL_DATA_ORG_KEY` | Football-Data.org API | Yes |
-| `NEXT_PUBLIC_SITE_URL` | Canonical domain (SEO, OAuth redirects) | No |
-| `GROQ_API_KEY` | AI chat + translation + digest | Yes |
-| `CRON_SECRET` | Vercel cron job authentication | Yes |
-| `CLOUDINARY_CLOUD_NAME` | Cloudinary account | No |
-| `CLOUDINARY_API_KEY` | Cloudinary auth | Yes |
-| `CLOUDINARY_API_SECRET` | Cloudinary auth | Yes |
-
----
-
-## Critical Rules
-
-### 1. Supabase Client Split
-- `src/lib/supabase.ts` — browser only (`"use client"`)
-- `src/lib/supabase-server.ts` — server only (`import "server-only"`)
-- **Never cross the boundary** — build will fail
-
-### 2. Football Data Layer
-- All functions in `src/lib/football/` are server-only
-- Use `React.cache()` for per-request deduplication
-- Check `FOOTBALL_DATA_ORG_KEY` before calling Football-Data.org
-
-### 3. News Extraction
-- Article-extractor runs on sync (cron), not on page load
-- Content cached for 24 hours to avoid re-scraping
-- Video detection inserts placeholder divs with `data-video-src` attributes
-- HTML content is sanitized before storage
-
-### 4. Component Patterns
-- Use shadcn/ui before writing custom components
-- Server components for data fetching, client for interactivity
-- NavbarAuth (server) → NavbarClient (client) split for auth data
-
-### 5. i18n
-- Always detect locale server-side in layouts/pages
-- Pass locale to client components as props
-- Static data variants: `trophies.json` + `trophies.vi.json`
-
----
-
-## Performance Optimizations
-
-1. **Image optimization:** Cloudinary transforms + next/image
-2. **Caching:**
-   - Football data: Football-Data.org rate limits (10 req/min free)
-   - Article content: 24-hour DB cache
-   - Page revalidation: ISR on squad (30min), standings (6h), news (30min)
-3. **Streaming:** AI chat uses Vercel AI SDK for incremental token rendering
-4. **Code splitting:** Dynamic imports for HLS.js in ArticleVideoPlayer
-
----
-
-## Testing
-
-- Unit tests: Vitest in `src/**/*.test.ts`
-- Coverage: SEO builders, type safety, utility functions
-- No E2E tests (frontend focus)
-
----
-
-## Deployment
-
-- **Platform:** Vercel (Hobby plan)
-- **Scheduled jobs:**
-  - GitHub Actions (`.github/workflows/news-sync.yml`) → `/api/news/sync` hourly (300s timeout)
-  - Vercel cron → `/api/news/cleanup` (3 AM UTC)
-  - Vercel cron → `/api/news/digest/generate` (midnight UTC, 60s timeout)
-- **Environment variables:** Set in Vercel project settings
-- **Database:** Supabase PostgreSQL with RLS policies
+- **Unit Tests (`npm test`):** Vitest 4 (`vitest.config.mts`) — `74+` test suites, `764+` tests covering news sync/dedup/text cleaning, draft validation, SEO/ICS builders, API hardening, Supabase circuit breaker, EN/VI message parity (`1,156` keys), and client namespace AST coverage.
+- **E2E Tests (`npm run test:e2e`):** Playwright (`playwright.config.ts`, `e2e/*.spec.ts`) — `113+` active desktop + mobile tests against `next build && next start` with strict zero-console-error / zero-5xx assertions (`page-diagnostics.ts`).
+- **Cloudflare Workers Deployment:** Built with `@opennextjs/cloudflare` (`npm run cf:build`), backed by R2 (`liverpool-app-next-cache`), D1 (`liverpool-app-tag-cache`), and Durable Objects (`DOQueueHandler`), deployed automatically from `master` via `.github/workflows/deploy-cloudflare.yml`.
 
 ---
 
 ## References
 
-- [CLAUDE.md](../CLAUDE.md) — Project instructions & architecture rules
-- [Football Data Layer](./en/data-providers.md)
-- [News System](./en/news-system.md)
-- [i18n Setup](./en/i18n.md)
-- [Deployment](./en/deployment.md)
-- [Design System](./en/design-system.md)
+- [CLAUDE.md](../CLAUDE.md) — Engineering instructions & invariants
+- [Brand Guide](./brand.md) — Identity, positioning, logo, colour & typography rules
+- [English Docs](./en/architecture.md) · [Vietnamese Docs](./vi/architecture.md)

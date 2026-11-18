@@ -1,216 +1,89 @@
-# Deployment — Hoi & Dap
+# Hỏi & Đáp Về Triển Khai (Deployment FAQ)
 
-> **Cập nhật 13/10/2026:** site đã chuyển sang **https://anfielddaily.com** (mua ở Cloudflare, DNS ở
-> Cloudflare chế độ "DNS only", site chạy trên Vercel). `liverpoolfcvn.blog` chỉ còn chuyển hướng 308 về
-> tên miền mới. Các ví dụ bên dưới vẫn dùng tên miền cũ để giải thích khái niệm; cấu hình hiện tại xem
-> `docs/en/deployment.md` (mục Custom Domain) và `plans/261012-2207-domain-anfielddaily/runbook.md`.
-
-
-Tai lieu giai thich chi tiet cac khai niem deployment cho nguoi moi.
+Tài liệu giải thích ngắn gọn, dễ hiểu các khái niệm hạ tầng đang vận hành **Anfield Daily** tại **https://anfielddaily.com**. Cấu hình kỹ thuật chi tiết xem tại [`docs/vi/deployment.md`](./deployment.md).
 
 ---
 
-## 1. Vercel la gi? Tai sao dung Vercel?
+## 1. Tại sao Anfield Daily chạy trên Cloudflare Workers thay vì hosting tĩnh thông thường?
 
-**Vercel** la nen tang hosting chuyen cho Next.js (cung cong ty lam ra Next.js). Ban push code len GitHub → Vercel tu dong build va deploy.
+Ứng dụng Next.js 16 sử dụng **React Server Components**, **Incremental Static Regeneration (ISR)**, **Server Actions** và **API Routes** (đồng bộ tin tức, dịch bài qua AI, tạo tệp lịch `.ics`). Vì vậy hệ thống cần một môi trường thực thi máy chủ ở biên mạng (edge runtime) thay vì chỉ phục vụ các tệp HTML tĩnh cố định.
 
-**Tai sao khong dung hosting truyen thong (Hostinger, VPS)?**
-- Next.js dung **Server Components** + **API Routes** → can server chay Node.js, khong phai HTML tinh
-- Vercel toi uu san cho Next.js: cache, CDN toan cau, serverless functions
-- Hobby plan **mien phi** (du cho fan site)
-- Hostinger chi dung de **mua domain**, khong host code
+Thông qua bộ chuyển đổi `@opennextjs/cloudflare`, toàn bộ ứng dụng chạy trực tiếp trên Worker `liverpool-app` của Cloudflare, đặt vùng tính toán (`placement`) tại `aws:ap-southeast-1` ngay sát cơ sở dữ liệu Supabase để tối ưu độ trễ truy vấn, trong khi trang đã lưu đệm được phân phối tức thì từ mạng CDN toàn cầu của Cloudflare.
 
 ---
 
-## 2. Tai sao can ca Vercel LAN Hostinger?
+## 2. R2, D1 và Durable Objects đóng vai trò gì trong kiến trúc cache?
 
-| | Hostinger | Vercel |
-|---|---|---|
-| **Vai tro** | Ban domain (ten mien) | Host code + chay website |
-| **Vi du** | Mua `liverpoolfcvn.blog` | Chay Next.js app |
-| **Tuong tu** | Mua bien so xe | Xuong che tao xe |
+Trên Cloudflare Workers không có ổ đĩa cục bộ cố định như máy chủ truyền thống, nên bộ nhớ đệm ISR của Next.js được tách thành ba thành phần chuyên biệt trong `open-next.config.ts`:
 
-Hostinger chi giu "ten" (`liverpoolfcvn.blog`). Khi ai go ten do, DNS se chi duong den Vercel — noi code thuc su chay.
-
----
-
-## 3. DNS la gi? A Record, CNAME la gi?
-
-**DNS** (Domain Name System) = "danh ba dien thoai" cua internet.
-
-Trinh duyet khong hieu `liverpoolfcvn.blog` — no can **dia chi IP** (vi du `76.76.21.21`). DNS dich ten mien → IP.
-
-### A Record (Address Record)
-
-```
-liverpoolfcvn.blog → 76.76.21.21 (IP cua Vercel)
-```
-
-Noi thang: "domain nay o IP nay"
-
-### CNAME Record (Canonical Name)
-
-```
-www.liverpoolfcvn.blog → cname.vercel-dns.com
-```
-
-Noi gian tiep: "domain nay giong domain kia" (Vercel tu xu ly phan con lai)
-
-### Tai sao can ca 2?
-
-- A Record cho `liverpoolfcvn.blog` (khong www)
-- CNAME cho `www.liverpoolfcvn.blog` (co www)
-- Nguoi dung go kieu nao cung vao duoc
-
----
-
-## 4. NEXT_PUBLIC_SITE_URL dung de lam gi?
-
-Bien nay cho website biet "toi dang o domain nao". No duoc dung o:
-
-| Noi dung | Muc dich |
+| Dịch vụ Cloudflare | Vai trò trong Anfield Daily |
 |---|---|
-| `metadataBase` | Google biet domain chinh de index |
-| `canonical URL` | Tranh SEO trung lap (vercel.app vs domain chinh) |
-| `sitemap.xml` | Google bot crawl dung URL |
-| `robots.txt` | Chi Google bot toi sitemap |
-| `JSON-LD` | Google Rich Results hien thi dung |
-| `OAuth redirect` | Sau dang nhap, redirect ve dung domain |
-
-**Neu khong doi?** Google se index `liverpool-app-five.vercel.app` thay vi `liverpoolfcvn.blog`. Dang nhap co the loi redirect.
+| **R2 (`liverpool-app-next-cache`) + Regional Cache API** | Lưu trữ HTML/RSC đã prerender; các trang đang có nhiều người đọc được trả thẳng từ Cache API tại trung tâm dữ liệu gần nhất mà không cần khởi chạy lại Next.js (`enableCacheInterception: true`). |
+| **D1 (`liverpool-app-tag-cache`)** | Lưu bảng ánh xạ thẻ cache (`news`, `news-digest`, `site-articles`) để khi đồng bộ tin mới, lệnh `revalidateTag` / `revalidatePath` biết chính xác trang nào cần làm mới. |
+| **Durable Object (`DOQueueHandler`)** | Điều phối hàng đợi làm mới nền theo chu kỳ thời gian (`revalidate`), ngăn nhiều người đọc cùng kích hoạt render trùng lặp một trang vừa hết hạn. |
 
 ---
 
-## 5. Tai sao phai cap nhat Supabase Auth URLs?
+## 3. Custom Domain trên Cloudflare Workers hoạt động như thế nào?
 
-Khi user dang nhap (Google OAuth hoac email), flow la:
+Tên miền `anfielddaily.com` và `www.anfielddaily.com` được gắn trực tiếp vào Worker `liverpool-app` dưới dạng **Worker Custom Domains** trong `wrangler.jsonc`:
 
-```
-User bam Login
-  → Chuyen toi Supabase Auth
-  → Supabase xac thuc
-  → Redirect VE website ← day la van de
-```
-
-Supabase can biet **domain nao duoc phep redirect ve**. Neu ban chi cho phep `liverpool-app-five.vercel.app` ma user dang o `liverpoolfcvn.blog` → Supabase **tu choi redirect** → dang nhap that bai.
-
-**Cach fix:** Them `https://www.liverpoolfcvn.blog/**` vao Supabase Dashboard → Authentication → URL Configuration → Redirect URLs.
+- Cloudflare tự động tạo bản ghi DNS nội bộ và tự động cấp, gia hạn chứng chỉ bảo mật **SSL/HTTPS** — không cần trỏ địa chỉ IP thủ công sang bên thứ ba.
+- Mọi truy cập HTTP đều tự động nâng cấp lên HTTPS và đi qua lớp bảo vệ DDoS/CDN của Cloudflare trước khi chạm tới Worker.
 
 ---
 
-## 6. SSL/HTTPS tu dong la sao?
+## 4. Biến `NEXT_PUBLIC_SITE_URL` dùng để làm gì?
 
-**SSL** = chung chi bao mat cho `https://` (o khoa tren trinh duyet).
+Biến này cho ứng dụng biết địa chỉ gốc chính thức của trang (`https://anfielddaily.com`) và quyết định:
 
-Vercel **tu dong** cap SSL qua Let's Encrypt khi domain verified. Ban khong can lam gi.
-
-**Neu khong co SSL:**
-- Trinh duyet hien canh bao "Not Secure"
-- Google giam ranking SEO
-- Form dang nhap gui mat khau khong ma hoa
-
----
-
-## 7. Cron Jobs la gi? Tai sao can?
-
-**Cron Job** = tac vu tu dong chay theo lich (khong can ai bam).
-
-Website co 3 tac vu dinh ky:
-
-| Cron | Lich | Lam gi |
-|---|---|---|
-| `/api/news/sync` (GitHub Actions) | Moi gio (`0 * * * *`) | Lay tin moi + pre-scrape noi dung bai |
-| `/api/news/cleanup` | 3h sang UTC moi ngay | Xoa tin cu >30 ngay (soft), >60 ngay (hard) |
-| `/api/news/digest/generate` | 0h UTC moi ngay | AI tao ban tom tat tin tuc hang ngay |
-
-**Neu khong co cron?** Trang tin tuc se khong co bai moi, tin cu chat dong, khong co daily digest.
-
-**CRON_SECRET** la mat khau bao ve cac API nay. Khong co no, ai cung co the goi `/api/news/sync` va spam database.
-
-### Cau hinh vercel.json (chi cleanup + digest)
-
-```json
-{
-  "crons": [
-    { "path": "/api/news/cleanup", "schedule": "0 3 * * *" },
-    { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
-  ]
-}
-```
-
-`/api/news/sync` duoc goi boi GitHub Actions workflow `.github/workflows/news-sync.yml`.
-
-Vercel tu dong gui request kem header `Authorization: Bearer <CRON_SECRET>`.
-
----
-
-## 8. Redeploy la gi? Tai sao can sau khi doi env?
-
-Env variables duoc doc **luc build**, khong phai luc user truy cap. Khi ban doi `NEXT_PUBLIC_SITE_URL` tren Vercel, deployment cu van chay voi gia tri cu.
-
-**Redeploy** = build lai tu dau voi env moi → website moi se dung `liverpoolfcvn.blog` thay vi `vercel.app`.
-
-### Cach redeploy
-
-**CLI:**
-```bash
-vercel --prod
-```
-
-**Dashboard:** Vercel → Deployments → deployment moi nhat → ⋮ → Redeploy
-
----
-
-## 9. DNS Propagation mat bao lau?
-
-Sau khi doi DNS tren Hostinger, thay doi can **lan truyen** (propagate) den tat ca DNS server tren the gioi.
-
-- **Thuong:** 5-30 phut
-- **Toi da:** 48 gio (hiem)
-- **Kiem tra:** dung lenh `dig liverpoolfcvn.blog` hoac trang web dnschecker.org
-
-Trong thoi gian propagate, mot so nguoi co the vao duoc, mot so thi chua — binh thuong.
-
----
-
-## 10. Vercel Hobby Plan co gioi han gi?
-
-| Gioi han | Gia tri |
+| Thành phần | Tác dụng |
 |---|---|
-| Bandwidth | 100 GB/thang |
-| Serverless function timeout | 10 giay |
-| Cron jobs | 2 cron (nhung co the gop) |
-| Build time | 45 phut/build |
-| Deployments | Khong gioi han |
-| Gia | **Mien phi** |
-
-Du cho fan site. Neu luong truy cap tang manh → nang len Pro ($20/thang).
+| `metadataBase` & thẻ OpenGraph | Tạo đường dẫn tuyệt đối cho ảnh xem trước khi chia sẻ liên kết |
+| `rel="canonical"` & `hreflang` | Định danh phiên bản chuẩn tiếng Anh (`/`) và tiếng Việt (`/vi`), tránh trùng lặp chỉ mục trên Google |
+| `sitemap.xml`, `robots.txt`, `llms.txt` | Cung cấp đúng tên miền chính thức cho công cụ tìm kiếm và mô hình AI |
+| Lịch thi đấu `.ics` | Gắn liên kết mở thẳng trang chi tiết trận đấu trong ứng dụng lịch điện thoại |
 
 ---
 
-## 11. Quy trinh deploy day du (toan bo buoc)
+## 5. Khác biệt giữa biến môi trường lúc Build và Secret lúc Chạy trên Worker là gì?
 
-```
-1. Code xong → push len GitHub
-2. Vercel tu dong detect → build → deploy
-3. Kiem tra preview URL (*.vercel.app)
-4. Neu OK → Vercel tu dong alias sang domain chinh (liverpoolfcvn.blog)
-5. SSL tu dong cap
-6. Website live!
+- **Lúc đóng gói (`npm run cf:build` trong GitHub Actions):** Các biến bắt đầu bằng `NEXT_PUBLIC_*` được nhúng thẳng vào gói mã phía trình duyệt, đồng thời các khóa đọc dữ liệu (`SUPABASE_SERVICE_ROLE_KEY`, `FOOTBALL_DATA_ORG_KEY`) giúp tạo sẵn các trang tĩnh ban đầu. Các giá trị này lấy từ **GitHub Repository Secrets**, tuyệt đối không đóng gói từ máy cá nhân đang chứa tệp `.env.local` thử nghiệm.
+- **Lúc chạy thực tế trên Cloudflare (`wrangler secret put`):** Các khóa nhạy cảm như `VIETAPI_KEY`, `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` được lưu mã hóa trong cấu hình Worker và được mã nguồn truy xuất động theo từng request qua hàm `getEnv()` (`src/lib/env.ts`).
+
+---
+
+## 6. Tại sao phải cấu hình Redirect URLs trong Supabase Auth?
+
+Khi người đọc đăng nhập bằng Google, GitHub hoặc email xác nhận, quy trình diễn ra như sau:
+
+```text
+Người dùng bấm Đăng nhập → chuyển tới nhà cung cấp OAuth → xác thực qua Supabase → chuyển hướng ngược về trang web
 ```
 
-### Khi doi domain moi (lan dau)
+Supabase chỉ cho phép chuyển hướng về các tên miền nằm trong danh sách tin cậy (**Site URL** và **Redirect URLs**). Nếu thiếu `https://anfielddaily.com/auth/callback` (hoặc `http://localhost:3000/auth/callback` khi lập trình tại máy cá nhân), bước đăng nhập cuối cùng sẽ bị từ chối.
 
-```
-1. Mua domain tren Hostinger
-2. Them domain tren Vercel Dashboard (Settings → Domains)
-3. Cau hinh DNS tren Hostinger:
-   - A record:  @ → 76.76.21.21
-   - CNAME:     www → cname.vercel-dns.com
-4. Cho DNS propagate (5-30 phut)
-5. Verify tren Vercel (Valid Configuration)
-6. Doi NEXT_PUBLIC_SITE_URL tren Vercel env
-7. Cap nhat Supabase Auth URLs
-8. Redeploy (vercel --prod)
-9. Xong!
+---
+
+## 7. Các tác vụ tự động (Cron Jobs) được kích hoạt ra sao?
+
+Hệ thống sử dụng hai workflow trên **GitHub Actions** gọi vào các API được bảo vệ bằng khóa `CRON_SECRET`:
+
+1. **`news-sync.yml` (mỗi giờ tại phút `:00` UTC):** Gọi `/api/news/sync` để kéo bài mới từ 13 đầu báo tiếng Anh cùng kênh YouTube CLB, bù ảnh đại diện, bóc tách sẵn nội dung HTML trong giới hạn 45 giây, gửi báo cáo về Telegram và kiểm tra bù bản tin ngày trong khung `01:00–16:59 UTC`.
+2. **`news-daily.yml` (mỗi ngày):** Gọi `/api/news/digest/generate` lúc `00:07 UTC` để sinh bản tin AI đầu ngày và gọi `/api/news/cleanup` lúc `03:17 UTC` để dọn nội dung lưu đệm quá hạn.
+
+Mọi lời gọi đều truyền khóa qua header `Authorization: Bearer <CRON_SECRET>`, không bao giờ đặt khóa trên thanh địa chỉ URL để tránh lộ trong nhật ký truy cập.
+
+---
+
+## 8. Quy trình từ lúc sửa mã nguồn đến khi lên trang thật diễn ra thế nào?
+
+```text
+1. Phát triển trên nhánh riêng → chạy kiểm tra `npx tsc --noEmit && npm run lint && npm test`
+2. Gộp mã vào nhánh `master` và đẩy lên GitHub
+3. Workflow `deploy-cloudflare.yml` tự động kiểm tra kiểu, lint, chạy hơn 764 bài unit test
+4. Đóng gói OpenNext (`npm run cf:build`) và đẩy lên Cloudflare Worker (`npm run cf:deploy`)
+5. Dọn các bản cache R2 cũ (`cf-prune-r2-cache.ts`)
+6. Chạy smoke test kiểm tra HTTP 200 trên `/`, `/news`, `/vi`, `/fixtures`, `/sitemap.xml`
+7. Gửi thông báo hoàn tất qua Telegram — trang cập nhật trực tiếp tại https://anfielddaily.com.
 ```

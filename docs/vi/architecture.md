@@ -1,402 +1,125 @@
 # Kiến Trúc Hệ Thống
 
-LiverpoolApp là một ứng dụng Next.js 16 App Router với chiến lược server-first data fetching, football data provider dạng pluggable, pipeline tin tức đa nguồn, Supabase cho auth/storage, và các tính năng AI được cung cấp bởi Groq.
+**Anfield Daily** là ứng dụng Next.js 16.4 App Router vận hành trên **Cloudflare Workers** (`@opennextjs/cloudflare`), kết hợp kiến trúc ưu tiên React Server Components, tầng dữ liệu bóng đá đa nguồn, luồng tổng hợp 13 đầu báo tiếng Anh kèm bóc tách toàn văn, hệ thống xác thực/lưu trữ Supabase và các tác vụ biên tập/dịch thuật AI qua VietAPI.
 
 ---
 
-## Tổng Quan Hệ Thống
+## Sơ Đồ Tổng Quan
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                              │
-│  React 19 client components — Zustand, TanStack Query       │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ HTTP / RSC streaming
-┌───────────────────────▼─────────────────────────────────────┐
-│                    Vercel Edge / Node.js                     │
-│  Next.js 16 App Router                                       │
-│  ├── Server Components (lấy dữ liệu + render)               │
-│  ├── API Routes (REST endpoints + cron handlers)             │
-│  └── Middleware (làm mới session + bảo vệ route)            │
-└──────┬────────────────┬───────────────┬─────────────────────┘
-       │                │               │
-┌──────▼──────┐  ┌──────▼──────┐  ┌────▼───────────────┐
-│  Supabase   │  │  Football   │  │  External APIs      │
-│  PostgreSQL │  │  Data.org   │  │  Groq LLM           │
-│  Auth       │  │  ESPN (free)│  │  Cloudinary         │
-│  Storage    │  │  Mock (dev) │  │  17+ RSS feeds      │
-└─────────────┘  └─────────────┘  └────────────────────┘
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                            Trình duyệt                               │
+│  React 19 Client Components · Zustand · TanStack Query · Spoiler CSS │
+└─────────────────────────────────┬────────────────────────────────────┘
+                                  │ HTTPS / RSC Streaming
+┌─────────────────────────────────▼────────────────────────────────────┐
+│            Cloudflare Workers (`liverpool-app`, OpenNext)            │
+│  ├── Cache Interception → Regional Cache API + R2 (`next-cache`)     │
+│  ├── D1 Tag Cache (`tag-cache`) + Durable Object Queue (`DOQueue`)   │
+│  ├── `src/proxy.ts` (định tuyến `/vi`, chặn bot quét CMS, bảo vệ auth)│
+│  ├── Server Components (prerender SSG/ISR + `pickClientMessages`)    │
+│  └── Route Handlers & Server Actions (cron, API, ghi dữ liệu)        │
+└──────────┬──────────────────────┬───────────────────────┬────────────┘
+           │                      │                       │
+┌──────────▼──────────┐ ┌─────────▼───────────┐ ┌─────────▼────────────┐
+│ Supabase            │ │ Dữ liệu Bóng đá     │ │ Tin tức, Media & AI  │
+│ • PostgreSQL (RLS)  │ │ • Football-Data.org │ │ • 13 đầu báo Anh     │
+│ • Auth (OAuth/Email)│ │ • ESPN (cúp & live) │ │ • YouTube Data API   │
+│ • Storage (avatar)  │ │ • FPL API (cầu thủ) │ │ • VietAPI (LLM)      │
+│ • Timeout 3s/breaker│ │ • Bản đồ phát sóng  │ │ • Cloudinary         │
+└─────────────────────┘ └─────────────────────┘ └──────────────────────┘
 ```
 
 ---
 
-## Các Lớp Cốt Lõi
+## Các Tầng Cốt Lõi
 
-### Lớp 1: Nguồn Dữ Liệu
+### Tầng 1: Nguồn Dữ Liệu & Dịch Vụ Ngoài
 
-| Nguồn | Mục đích | Key | Giới hạn tốc độ |
+| Nguồn | Vai trò | Biến môi trường | Cơ chế bảo vệ & giới hạn |
 |---|---|---|---|
-| Football-Data.org | Đội hình, lịch thi đấu, bảng xếp hạng (PL + UCL) | `FOOTBALL_DATA_ORG_KEY` | 10 req/min (miễn phí) |
-| ESPN (không cần key) | Lịch cup (FA Cup, EFL Cup), sự kiện trận đấu | — | Không giới hạn |
-| Mock provider | Fallback khi dev không có API key | — | Không áp dụng |
-| Supabase PostgreSQL | Auth, dữ liệu người dùng, bài viết, gallery, lịch sử chat | — | Theo gói |
-| 17+ RSS feeds | Bài báo tin tức (nguồn EN + VI) | — | Không giới hạn |
-| Groq API | AI chat, dịch bài viết, daily digest | `GROQ_API_KEY` | Theo gói |
-| Cloudinary | Lưu trữ + biến đổi ảnh gallery | `CLOUDINARY_*` | Theo gói |
+| Football-Data.org v4 | Bảng xếp hạng Ngoại hạng Anh & Cúp C1, lịch thi đấu, mùa lưu trữ, đối đầu, đội hình, HLV | `FOOTBALL_DATA_ORG_KEY` | 10 req/phút; `fdo-client.ts` gộp request trùng & retry/backoff `HTTP 429` |
+| ESPN Soccer API | Cúp FA & Cúp Liên đoàn, tỷ số trực tiếp, diễn biến theo phút, đội hình ra sân, 28 chỉ số trận đấu | — (miễn phí) | Bọc `React.cache()` + ISR |
+| Fantasy Premier League | Thống kê chi tiết cầu thủ tại Ngoại hạng Anh | — (miễn phí) | Lưu đệm ISR |
+| 13 Đầu Báo Tiếng Anh | 12 nguồn RSS + adapter `sitemap-news.xml` của trang chủ CLB | — | Đồng bộ mỗi giờ + giới hạn cào 45 giây |
+| YouTube Data API v3 | Dải video chính thức của CLB (`lfctv`) trên `/news` | `YOUTUBE_API_KEY` | Tốn ~24 đơn vị quota/giờ (miễn phí 10.000/ngày); tự ẩn nếu không cấu hình |
+| VietAPI | Bản tin AI hằng ngày, dịch toàn văn sang tiếng Việt, bài phân tích sau trận | `VIETAPI_KEY` | Chuỗi model dự phòng + `AbortSignal.timeout` |
+| Supabase | Xác thực, PostgreSQL có RLS, lưu trữ ảnh đại diện | `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY` | `createSupabaseFetch()` (timeout 3 giây + ngắt mạch 30 giây) |
+| Cloudinary | Lưu trữ và biến đổi kích thước ảnh thư viện | `CLOUDINARY_*` | Đọc không cookie qua `unstable_cache` |
 
-### Lớp 2: Server Components
+### Tầng 2: Proxy Điều Phối Request (`src/proxy.ts`)
 
-Tất cả các trang nặng về dữ liệu đều là Server Component. Chúng lấy dữ liệu phía server, sau đó truyền xuống Client Component dưới dạng props để xử lý tương tác. Không có client-side data fetching khi tải trang lần đầu.
+Trên Next.js 16, `src/proxy.ts` thay thế `middleware.ts` và xử lý theo thứ tự:
+1. Trả `404` tức thì cho các truy vấn dò quét WordPress/CMS (`/wp-*`, `*.php`, `?rest_route=`) để tiết kiệm CPU của Worker.
+2. Điều phối ngôn ngữ `next-intl` (tiếng Anh mặc định tại `/`, tiếng Việt tại `/vi`, ưu tiên cookie `NEXT_LOCALE` và header `Accept-Language`).
+3. Làm mới phiên đăng nhập Supabase trên các đường dẫn cần bảo vệ (`/profile`, `/vi/profile`) bằng client có gắn timeout 3 giây; chuyển hướng khách chưa đăng nhập sang `/auth/login?redirect=...`.
+4. Gắn header `X-Robots-Tag: noindex, nofollow` cho `/auth` và `/profile`.
 
-```typescript
-// Pattern: server page fetches → truyền xuống client component
-// src/app/squad/page.tsx
-export default async function SquadPage() {
-  const squad = await getSquad(); // server-only, React.cache()
-  return <SquadGrid players={squad} />;  // client component để lọc
-}
-```
+### Tầng 3: Server Components & Tối Ưu Payload Client
 
-### Lớp 3: Client Components
-
-Chỉ dùng khi cần tương tác: lọc dữ liệu, nhập form, cập nhật real-time, animation, browser API. Luôn được đánh dấu `'use client'`.
+Mọi trang trong `src/app/[locale]/` đều gọi `setRequestLocale(locale)` để prerender tĩnh (SSG/ISR). Tại `src/app/[locale]/layout.tsx`, hàm `pickClientMessages()` chỉ truyền đúng 25 namespace mà Client Component thực sự sử dụng vào `<NextIntlClientProvider>`, giảm ~52% dung lượng JSON đa ngôn ngữ đính kèm HTML/RSC.
 
 ---
 
-## Tách Supabase Client (CỰC KỲ QUAN TRỌNG)
+## Phân Tách Supabase Client & Chống Treo Kết Nối (BẮT BUỘC)
 
-Hai client riêng biệt — **không bao giờ import server client vào client component** (build sẽ thất bại).
-
-| File | Dùng trong | Tạo bằng | Có thể truy cập |
-|---|---|---|---|
-| `src/lib/supabase.ts` | Client components, trình duyệt | `createClient()` | Anon key (RLS áp dụng) |
-| `src/lib/supabase-server.ts` | Server components, API routes | `createServerSupabaseClient()` | Anon key + session cookies |
-| `src/lib/news/supabase-service.ts` | API routes (chỉ thao tác admin) | `getServiceClient()` | Service role (bỏ qua RLS) |
-
-```typescript
-// Client component — Đúng
-import { createClient } from '@/lib/supabase';
-
-// Server component / API route — Đúng
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-
-// SAI: import server client vào client component
-// 'use client'
-// import { createServerSupabaseClient } from '@/lib/supabase-server'; // BUILD FAILURE
-```
-
----
-
-## Lớp Dữ Liệu Bóng Đá
-
-**Vị trí:** `src/lib/football/`
-
-Tất cả hàm đều là server-only và được bọc bởi `React.cache()`. Các trang luôn import từ barrel `@/lib/football`, không bao giờ import trực tiếp từ file provider.
-
-### Provider Interface
-
-```typescript
-// src/lib/football/provider.ts
-interface FootballDataProvider {
-  getSquad(): Promise<Player[]>;
-  getFixtures(): Promise<Fixture[]>;
-  getStandings(): Promise<Standing[]>;
-  getTopScorers(): Promise<TopScorer[]>;
-  getTopAssists(): Promise<TopScorer[]>;
-  getPlayerStats(playerId: number): Promise<PlayerStats | null>;
-  getCoach(): Promise<Coach | null>;
-  // ... thêm các method khác
-}
-```
-
-### Lựa Chọn Provider
-
-```
-FOOTBALL_DATA_ORG_KEY đã được đặt?
-  ├── CÓ → FDO (Football-Data.org) provider
-  └── KHÔNG → Mock provider (dữ liệu tĩnh, không gọi API)
-```
-
-```typescript
-// src/lib/football/index.ts — barrel + bọc React.cache
-export const getSquad    = cache(() => provider.getSquad());
-export const getFixtures = cache(() => provider.getFixtures());
-export const getStandings = cache(() => provider.getStandings());
-```
-
-### Ghi Chú FDO Provider
-
-- Team ID: 64 (Liverpool FC), League: 39 (Premier League)
-- Gói miễn phí: 10 req/min — rate limiting được xử lý bởi provider
-- Lịch cup (FA Cup, EFL Cup) lấy từ ESPN (miễn phí, không cần key)
-- Mock fallback trả về dữ liệu tĩnh thực tế cho tất cả các method
-
----
-
-## News Pipeline
-
-**Vị trí:** `src/lib/news/`
-
-```
-Vercel Cron (6AM UTC)
-  ↓
-/api/news/sync
-  ↓
-syncPipeline()
-  ├── Lấy 17+ RSS feeds song song
-  ├── Dedup (URL hash + Jaccard title similarity)
-  ├── Chấm điểm độ liên quan (LFC keywords có trọng số)
-  ├── Phân loại (chuyển nhượng, trận đấu, chấn thương, v.v.)
-  ├── Làm giàu nội dung (OG metadata)
-  └── Upsert vào bảng articles trong Supabase
-```
-
-**Nguồn:**
-
-| Ngôn ngữ | Nguồn |
-|---|---|
-| EN | LFC Official, BBC Sport, The Guardian, Liverpool Echo, Anfield Watch, Empire of the Kop, Sky Sports, GOAL |
-| VI | VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Webthethao |
-
-**Mã hóa URL bài viết:** Slug dễ đọc tại `/news/{source}/{path}` (ví dụ: `/news/bbc/sport/football/...`). Logic encode/decode trong `src/lib/news-config.ts`.
-
-**AI Daily Digest:** Cron lúc nửa đêm UTC gọi Groq (`llama-3.3-70b-versatile`), tóm tắt 15 bài viết hàng đầu trong 24h qua thành các mục bằng tiếng Việt. Lưu trong bảng `news_digests`. Idempotent — bỏ qua nếu digest cho ngày hôm nay đã tồn tại.
-
-**Dịch thuật:** Theo yêu cầu qua `/api/news/translate`. Groq dịch nội dung bài viết, kết quả được cache vào cột `content_en` / `content_vi`.
-
----
-
-## Luồng Auth
-
-Supabase Auth với email/password + OAuth (Google, GitHub).
-
-```
-Người dùng truy cập /profile (được bảo vệ)
-  ↓
-middleware.ts
-  ├── refreshSession() — làm mới Supabase session từ cookies
-  ├── Không có session? → redirect đến /auth/login?redirect=/profile
-  └── Session hợp lệ → tiếp tục
-         ↓
-       Trang /profile (server component)
-         ├── createServerSupabaseClient().auth.getUser()
-         └── render với dữ liệu người dùng
-```
-
-**OAuth callback:** `/auth/callback/route.ts` — đổi code lấy session, đặt cookie, redirect về đích ban đầu.
-
-**Middleware** (`src/middleware.ts`) chạy trên mỗi request:
-1. Làm mới Supabase session (cập nhật cookies)
-2. Chặn truy cập chưa xác thực vào `/profile`
-3. Redirect trở lại sau khi đăng nhập
-
----
-
-## Navbar Pattern
-
-Navbar cần cả trạng thái auth phía server (để hiển thị avatar người dùng) lẫn tương tác phía client (menu mobile, chuyển đổi theme). Giải quyết bằng cách tách thành hai component:
-
-```
-Root layout
-  └── <NavbarAuth />         ← Server component
-        ├── getUser()        ← Supabase server client
-        ├── getProfile()     ← DB query
-        └── <NavbarClient    ← Client component
-              user={user}
-              profile={profile}
-            />
-              ├── useState (menu mobile)
-              ├── useTheme (chuyển đổi dark/light)
-              └── render nav links + avatar người dùng
-```
-
-**Quy tắc:** Layout luôn dùng `<NavbarAuth />`. Không bao giờ dùng legacy `<Navbar />`.
-
----
-
-## Chiến Lược Caching
-
-### React.cache() — Dedup Cấp Request
-
-Tất cả hàm dữ liệu bóng đá đều được bọc:
-
-```typescript
-export const getSquad = cache(() => provider.getSquad());
-```
-
-Nhiều component cùng gọi `getSquad()` trong một server request sẽ dùng chung một kết quả — không gọi API trùng lặp.
-
-### ISR — Revalidation Cấp Route
-
-```typescript
-// Trang chủ — nội dung mới mỗi 30 phút
-export const revalidate = 1800;
-
-// Bảng xếp hạng — cập nhật mỗi 6 tiếng
-export const revalidate = 21600;
-
-// Lịch sử — hoàn toàn tĩnh, không bao giờ revalidate
-export const revalidate = false;
-
-// Bài báo tin tức — revalidate theo yêu cầu (sau cron sync)
-export const revalidate = 3600;
-```
-
-### Supabase Là Cache
-
-Bảng articles đóng vai trò là persistent cache cho nội dung RSS. Cron sync làm mới nó hàng ngày. Các trang query Supabase (nhanh) thay vì gọi RSS feeds trực tiếp trên mỗi request.
-
-### Browser Storage
-
-- Lịch sử đọc — `localStorage` (an toàn phía client, `src/lib/news/read-history.ts`)
-- Ẩn digest card — `localStorage`
-- Like/lưu bài viết — optimistic UI được backup bởi Supabase
-
----
-
-## Quản Lý State
-
-| Lớp | Công cụ | Dùng cho |
+| Tệp | Ngữ cảnh sử dụng | Quyền truy cập |
 |---|---|---|
-| Server | React.cache() | Dedup dữ liệu bóng đá theo request |
-| Server | ISR revalidate | Thời gian sống của cache cấp trang |
-| Client (global) | Zustand | Trạng thái auth, tùy chọn người dùng, điều hướng |
-| Client (server state) | TanStack Query | Lấy dữ liệu trong client components |
-| Client (local) | useState | Trạng thái UI (bộ lọc, modal, nhập form) |
-| Browser | localStorage | Lịch sử đọc, các phần tử UI đã ẩn |
+| `src/lib/supabase.ts` | Client Component (`"use client"`) | Anon key, chịu sự kiểm soát của RLS |
+| `src/lib/supabase-server.ts` | Server Components, Server Actions, Route Handlers (`import "server-only"`) | Anon key + cookie phiên đăng nhập |
+| `src/lib/news/supabase-service.ts` | Tác vụ cron & thao tác ghi đã kiểm tra hợp lệ phía server (`import "server-only"`) | Service role key (bỏ qua RLS) |
 
-### Zustand Stores
+### Timeout Cứng & Cơ Chế Ngắt Mạch (`src/lib/supabase-fetch-with-timeout.ts`)
 
-```
-src/stores/
-├── auth-store.ts        # Phiên đăng nhập Supabase
-├── user-store.ts        # Tùy chọn ngôn ngữ, cài đặt hiển thị
-└── navigation-store.ts  # Trạng thái menu mobile
+Mỗi Supabase client đều cấu hình `createSupabaseFetch()` và `db: { retry: false }`:
+- **Giới hạn thời gian cứng 3 giây bằng `Promise.race` (`SUPABASE_FETCH_TIMEOUT_MS`):** Đặt bộ đếm `setTimeout` song song với `AbortController`, đảm bảo không bao giờ treo 60–90 giây ngay cả khi Next.js 16 gỡ `init.signal` lúc làm mới ngầm `fetch-cache` hết hạn.
+- **Tắt retry ngầm của PostgREST:** Chuẩn hóa lỗi thành `DOMException("...", "AbortError")` để ngăn `postgrest-js` tự cộng thêm 1s + 2s + 4s chờ lặp lại.
+- **Ngắt mạch 30 giây (`SUPABASE_BREAKER_COOLDOWN_MS`):** Tự kích hoạt khi gặp lỗi mạng, quá hạn hoặc lỗi cổng (`502`, `503`, `504`, Cloudflare `520–530`), giúp các truy vấn kế tiếp trả về rỗng ngay lập tức thay vì làm nghẽn trang hay gãy quá trình build.
+
+---
+
+## Luồng Tin Tức, Bản Tin Ngày & Bài Phân Tích Sau Trận
+
+```text
+GitHub Actions (`news-sync.yml` mỗi giờ, `news-daily.yml` mỗi ngày)
+  ├── GET /api/news/sync
+  │     ├── Tải song song 13 đầu báo Anh + YouTube CLB (`lfctv`)
+  │     ├── Chuẩn hóa URL (`url.ts`) + lọc trùng tiêu đề Jaccard (`dedup.ts`)
+  │     ├── Chấm điểm mức độ liên quan + phân loại chuyên mục
+  │     ├── Upsert theo lô vào `articles` + bổ sung ảnh `og:image`
+  │     └── Cào sẵn toàn văn HTML & video nhúng (`article-extractor.ts`, tối đa 45s)
+  ├── GET /api/news/digest/generate
+  │     └── Hai lời gọi VietAPI song song → lưu bản tin ngày + bài SEO vào `news_digests`
+  ├── GET /api/news/cleanup
+  │     └── Xóa nội dung cào quá 7 ngày, bài quá 14 ngày & `sync_logs` quá 14 ngày
+  └── GET/POST /api/site-articles/generate
+        └── Dữ liệu trận đấu (`match-review-facts.ts`) → VietAPI (`en` + `vi`) → `validateDraft()` → `site_articles`
 ```
 
 ---
 
-## Xử Lý Lỗi
+## Chiến Lược Bộ Nhớ Đệm Trên Cloudflare Workers
 
-### Dữ Liệu Bóng Đá
-
-Tất cả các method của provider trả về mảng rỗng / null khi thất bại thay vì throw. Các trang hiển thị trạng thái rỗng một cách linh hoạt.
-
-```typescript
-// Provider bắt tất cả lỗi, trả về fallback
-async getSquad(): Promise<Player[]> {
-  try {
-    const data = await fetchFromApi(...);
-    return mapToCanonical(data);
-  } catch {
-    return []; // Không bao giờ throw ra trang
-  }
-}
-```
-
-### News Pipeline
-
-Xử lý lỗi năm cấp:
-
-1. Try/catch + timeout cấp adapter cho từng feed
-2. `Promise.allSettled()` — một feed thất bại không hủy toàn bộ sync
-3. Enrichment bị bỏ qua khi thất bại (OG fetch timeout)
-4. Chuỗi fallback khi scrape bài viết: Readability → Cheerio → chỉ OG meta
-5. `<ErrorBoundary>` cấp trang + fallback skeleton `loading.tsx`
-
-### API Routes
-
-Tất cả API routes xác thực `CRON_SECRET` cho cron endpoints:
-
-```typescript
-const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  ?? new URL(req.url).searchParams.get('key');
-if (secret !== process.env.CRON_SECRET) {
-  return new Response('Unauthorized', { status: 401 });
-}
-```
-
----
-
-## i18n
-
-**Framework:** next-intl
-
-**Ngôn ngữ:** `en` (mặc định), `vi` (tiếng Việt)
-
-**Thứ tự phát hiện:** Cookie `NEXT_LOCALE` → header `Accept-Language`
-
-```
-src/messages/en.json    # Chuỗi UI tiếng Anh
-src/messages/vi.json    # Chuỗi UI tiếng Việt
-
-src/data/*.vi.json      # Phiên bản tiếng Việt của nội dung tĩnh
-                        # (trophies, history, legends, club-info, player-bios)
-```
-
-**Cách dùng:**
-```typescript
-// Server component
-const t = await getTranslations('News.digest');
-
-// Client component
-const t = useTranslations('News.categories');
-```
-
----
-
-## Hạ Tầng SEO
-
-**Vị trí:** `src/lib/seo.ts`, `src/components/seo/json-ld.tsx`
-
-Các tiện ích chính:
-- `makePageMeta(title, desc, options)` — tạo đối tượng `Metadata` đầy đủ của Next.js với OG + Twitter cards
-- `getCanonical(path)` — xây dựng canonical URL từ `NEXT_PUBLIC_SITE_URL`
-- `getHreflangAlternates(path)` — thẻ hreflang i18n (cùng URL, ngôn ngữ dựa trên cookie)
-- JSON-LD builders: `buildBreadcrumbJsonLd`, `buildNewsArticleJsonLd`, `buildSportsEventJsonLd`, `buildPersonJsonLd`
-
-Các route động (`robots.txt`, `sitemap.xml`) là route handlers của Next.js tại `src/app/robots.txt/route.ts` và `src/app/sitemap.xml/route.ts`.
-
----
-
-## Schema Database
-
-| Bảng | Mục đích | Cột chính |
+| Cấp độ | Cơ chế | Mục đích |
 |---|---|---|
-| `profiles` | Tên hiển thị, avatar của người dùng | `id` (FK auth.users), `display_name`, `avatar_url` |
-| `favourite_players` | Quan hệ người dùng → cầu thủ yêu thích | `user_id`, `player_id` (API int) |
-| `articles` | Cache bài báo tin tức | `url`, `title`, `source`, `content_en`, `content_vi`, `relevance_score` |
-| `article_likes` | Lượt thích bài viết theo người dùng | `article_id`, `user_id` |
-| `article_comments` | Bình luận bài viết | `article_id`, `user_id`, `content` |
-| `saved_articles` | Bookmark của người dùng | `article_id`, `user_id` |
-| `gallery_images` | Metadata gallery | `cloudinary_id`, `title`, `category` |
-| `conversations` | Phiên AI chat | `user_id`, `title` |
-| `messages` | Tin nhắn AI chat | `conversation_id`, `role`, `content` |
-| `news_digests` | Tóm tắt AI hàng ngày | `digest_date` (PK), `summary`, `sections` (JSONB) |
-
-Tất cả bảng người dùng đều có Row Level Security (RLS) — người dùng chỉ có thể đọc/ghi hàng của chính mình.
+| Trong một request | `React.cache()` | Gộp các lời gọi hàm trùng nhau trong cùng lượt render RSC |
+| Dữ liệu dùng chung | `unstable_cache` + D1 tag cache | Lưu đệm xuyên request, làm mới tức thì qua `revalidateTag` / `revalidateLocalizedPath` |
+| Trang tĩnh & ISR tại biên | R2 (`liverpool-app-next-cache`) + `withRegionalCache` + `DOQueueHandler` | Trả thẳng trang ISR từ Cache API của trung tâm dữ liệu Cloudflare trước khi khởi chạy bundle Next.js (`enableCacheInterception: true`) |
+| Trình duyệt | `localStorage` + thuộc tính `<html>` | Lưu lịch sử đọc, bản dịch tiếng Việt (7 ngày) và chế độ ẩn tỷ số không nhấp nháy (`SPOILER_BOOT_SCRIPT`) |
 
 ---
 
-## Hệ Thống Thiết Kế — Dark Stadium
+## Bảng Dữ Liệu Chính Trong Supabase
 
-Tất cả token được định nghĩa trong `src/app/globals.css` dưới dạng biến CSS `@theme inline`:
-
-| Token | Giá trị | Dùng cho |
+| Bảng | Mục đích | Cơ chế bảo mật |
 |---|---|---|
-| `stadium-bg` | `#0D0D0D` | Nền trang |
-| `stadium-surface` | `#1A1A1A` | Card, panel |
-| `stadium-surface2` | `#252525` | Bề mặt nâng cao |
-| `lfc-red` | `#C8102E` | Hành động chính, accent |
-| `lfc-gold` | `#F6EB61` | Accent phụ, cúp |
-| `stadium-muted` | `#A0A0A0` | Văn bản phụ |
-| `stadium-border` | `#2A2A2A` | Viền, đường phân cách |
-
-**Fonts:**
-- `font-bebas` (League Gothic) — tiêu đề, thống kê, hero text
-- `font-inter` (Inter) — nội dung, UI, form
-- `font-barlow` (Barlow Condensed) — nhãn, tiêu đề phụ
-
-Chỉ dark mode. `enableSystem: false`, `defaultTheme: "dark"`.
-
-**Components:** shadcn/ui với style `new-york`, màu base `neutral`. Luôn kiểm tra registry trước khi tự viết component. Cài đặt: `npx shadcn@latest add <name>`.
+| `profiles` | Tên hiển thị, tiểu sử, ảnh đại diện | RLS (chỉ sửa hồ sơ cá nhân) |
+| `favourite_players` | Danh sách cầu thủ yêu thích | RLS theo `user_id` |
+| `articles` | Kho bài báo tiếng Anh, HTML gốc (`content_en`) và bản dịch tiếng Việt (`content_vi`) | Bật RLS; ghi qua service role |
+| `sync_logs` | Nhật ký đồng bộ và trạng thái từng nguồn tin | Bật RLS; ghi qua service role |
+| `article_likes` / `article_comments` | Lượt thích và bình luận bài viết (đã lọc ẩn địa chỉ email) | RLS + kiểm tra phiên đăng nhập |
+| `saved_articles` | Bài viết người đọc đã lưu | RLS theo `user_id` |
+| `news_digests` | Bản tin AI hằng ngày và bài tổng hợp SEO | Đọc công khai, ghi qua service role |
+| `site_articles` | Bài phân tích sau trận song ngữ (`/analysis`) đã qua kiểm chứng dữ kiện + lưu bản nháp bị loại | Đọc công khai (`published`), ghi qua service role |
+| `match_predictions` / `player_ratings` | Dự đoán tỷ số trước giờ bóng lăn & chấm điểm cầu thủ 1–10 sau trận | Đọc hàng của chính mình qua RLS; ghi qua Server Action kiểm tra giờ đá & đội hình |
+| `gallery` | Ảnh thư viện Cloudinary & cấu hình ảnh trang chủ | Đọc công khai, quản trị viên ghi |

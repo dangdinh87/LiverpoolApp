@@ -1,293 +1,120 @@
 # Deployment
 
-Deploy target: **Vercel (Hobby plan)** + **Cloudflare-registered domain** (`anfielddaily.com`).
+**Anfield Daily** runs in production on **Cloudflare Workers** (`@opennextjs/cloudflare`) at **[anfielddaily.com](https://anfielddaily.com)**, with scheduled jobs driven by **GitHub Actions**.
 
 ---
 
-## Vercel Project Setup
+## 1. Production Architecture (`wrangler.jsonc` & `open-next.config.ts`)
 
-### 1. Connect Repository
-
-1. Go to [vercel.com](https://vercel.com) → New Project
-2. Import your GitHub repository
-3. Framework preset: **Next.js** (auto-detected)
-4. Root directory: leave as `/` (default)
-5. Click **Deploy** — first deploy will likely fail until env vars are set
-
-### 2. Configure Environment Variables
-
-In Vercel Dashboard → Project → Settings → Environment Variables, add all required variables:
-
-| Variable | Environment | Value |
+| Component | Resource / Binding | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | All | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | All | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Supabase service role key |
-| `FOOTBALL_DATA_ORG_KEY` | All | Football-Data.org API key |
-| `NEXT_PUBLIC_SITE_URL` | Production | `https://anfielddaily.com` |
-| `NEXT_PUBLIC_SITE_URL` | Preview | Your Vercel preview URL (or leave blank) |
-| `GROQ_API_KEY` | All | Groq API key |
-| `CRON_SECRET` | All | Random secret string |
-| `CLOUDINARY_CLOUD_NAME` | All | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | All | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | All | Cloudinary API secret |
+| **Cloudflare Worker** | `liverpool-app` (Workers Paid, `nodejs_compat`) | Serves SSR, RSC, Server Actions & API routes (`cpu_ms: 60000`, placement `aws:ap-southeast-1` beside Supabase) |
+| **Custom Domains** | `anfielddaily.com`, `www.anfielddaily.com` | Proxied Worker custom domains with automatic Cloudflare TLS |
+| **R2 Incremental Cache** | `NEXT_INC_CACHE_R2_BUCKET` → `liverpool-app-next-cache` | Stores ISR/SSG payloads behind `withRegionalCache(..., { mode: "long-lived" })` |
+| **D1 Tag Cache** | `NEXT_TAG_CACHE_D1` → `liverpool-app-tag-cache` | Tracks `revalidateTag` and `revalidatePath` invalidations |
+| **Durable Object Queue** | `NEXT_CACHE_DO_QUEUE` → `DOQueueHandler` | Deduplicates background time-based ISR revalidations |
+| **Cache Interception** | `enableCacheInterception: true` | Serves warm ISR hits directly from the edge cache without booting the Next.js server bundle |
 
-> `SUPABASE_SERVICE_ROLE_KEY` has full database access — set it only on Production/Preview, never expose it to the browser.
+### Worker Compatibility Notes
 
-### 3. Redeploy
-
-After setting env vars: Deployments → latest deployment → three-dot menu → **Redeploy**.
+- `open-next.config.ts` runs `npx next build && node scripts/cf-patch-middleware-trace.mjs` so `@opentelemetry/api/build/esm` is included when bundling `src/proxy.ts`.
+- HTML extraction uses `linkedom` rather than `jsdom` (`workerd`-compatible).
+- Next.js image optimisation is disabled on Worker builds (`images.unoptimized` when `DEPLOY_TARGET=cloudflare`); gallery assets use Cloudinary URL transforms.
+- `wrangler.jsonc` sets `assets.html_handling = "none"` so static verification `.html` files are served without `307` slash redirects.
 
 ---
 
-## Cron Jobs
+## 2. Automated CI/CD (`.github/workflows/deploy-cloudflare.yml`)
 
-Cron jobs are split between GitHub Actions and Vercel:
+Every push to `master` (ignoring `docs/**`, `plans/**`, and `**/*.md`) runs:
 
-- `.github/workflows/news-sync.yml` triggers `/api/news/sync` hourly.
-- `vercel.json` keeps cleanup + digest daily.
+1. `npm ci` on Node 24
+2. `npx tsc --noEmit && npm run lint && npm test`
+3. `npm run cf:build` (`DEPLOY_TARGET=cloudflare opennextjs-cloudflare build`) with build-time `NEXT_PUBLIC_*` variables and prerender read keys from GitHub Actions secrets
+4. `npm run cf:deploy` (`opennextjs-cloudflare deploy`) using `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+5. `npx tsx scripts/cf-prune-r2-cache.ts --bucket liverpool-app-next-cache --apply` to clean up superseded build prefixes in R2
+6. Production HTTP `200` smoke test across `/`, `/news`, `/vi`, `/fixtures`, and `/sitemap.xml`
+7. Optional Telegram deployment notification (`scripts/deploy-notify.sh`)
 
-Vercel cron config at project root:
-
-```json
-{
-  "crons": [
-    { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
-    { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
-  ]
-}
-```
-
-| Route | Schedule | Purpose | Max Duration |
-|---|---|---|---|
-| `/api/news/sync` (GitHub Actions) | Every hour (`0 * * * *`) | Sync RSS feeds + pre-scrape article content | 300s |
-| `/api/news/cleanup` | 3:00 AM UTC daily | Soft-delete >30d, hard-delete >60d articles | default (10s) |
-| `/api/news/digest/generate` | 00:00 UTC daily | Generate AI daily digest via Groq | 60s |
-
-### How Cron Auth Works
-
-Vercel automatically sends `Authorization: Bearer <CRON_SECRET>` on Vercel cron requests. GitHub Actions sends the same header to `/api/news/sync`.
-
-```typescript
-// Inside each cron route handler
-const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  ?? new URL(req.url).searchParams.get('key');
-if (secret !== process.env.CRON_SECRET) {
-  return new Response('Unauthorized', { status: 401 });
-}
-```
-
-You can also trigger sync manually for testing:
+### Manual Build & Deploy
 
 ```bash
-curl -fsS https://anfielddaily.com/api/news/sync \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
+npm run cf:build     # Build .open-next/ worker bundle (run from a clean tree without local .env.local overrides)
+npm run cf:preview   # Preview locally in workerd via Wrangler
+npm run cf:deploy    # Deploy to Cloudflare Workers
 ```
-
-### Vercel Hobby Plan — Cron Limitations
-
-- Maximum **2 Vercel cron jobs** per project on Hobby plan
-- This project uses exactly 2 Vercel jobs (cleanup + digest)
-- Hourly sync is moved to GitHub Actions to bypass the once/day Vercel Hobby cron limit
-- Cron jobs only run when the deployment is active (not on preview deployments)
 
 ---
 
-## Custom Domain — Cloudflare (anfielddaily.com)
+## 3. Environment Variables & Secrets
 
-Since 13 Oct 2026 the site lives at **https://anfielddaily.com** (no `www`). The domain is
-registered at Cloudflare and its DNS stays there; Vercel serves the site. The old domain
-`liverpoolfcvn.blog` (Hostinger) is kept only to redirect — keep it renewed for at least a year.
-Full move log and checklist: `plans/261012-2207-domain-anfielddaily/runbook.md`.
+### Runtime Worker Secrets (`wrangler secret put <NAME>`)
 
-### DNS (Cloudflare → anfielddaily.com → DNS → Records)
+Runtime secrets live in the Cloudflare Worker (never committed to git) and are read lazily per request via `getEnv()` (`src/lib/env.ts`):
 
-| Type | Name | Value | Proxy |
-|---|---|---|---|
-| `A` | `@` | `76.76.21.21` | **DNS only** (grey cloud) |
-| `A` | `www` | `76.76.21.21` | **DNS only** (grey cloud) |
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FOOTBALL_DATA_ORG_KEY`
+- `VIETAPI_KEY`
+- `YOUTUBE_API_KEY` (optional)
+- `CRON_SECRET`
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- `NEXT_PUBLIC_SITE_URL` (`https://anfielddaily.com`)
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID`, `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` (optional)
 
-Keep the proxy off: an orange cloud puts Cloudflare between visitors and Vercel and breaks
-Vercel's certificates and cache. Use the exact values `vercel domains inspect <domain>` prints.
+### GitHub Repository Secrets
 
-### Vercel domains (Project → Settings → Domains)
-
-| Domain | Setting |
+| Secret | Used By |
 |---|---|
-| `anfielddaily.com` | Production (primary) |
-| `www.anfielddaily.com` | 308 → `anfielddaily.com` |
-| `liverpoolfcvn.blog`, `www.liverpoolfcvn.blog` | 308 → `anfielddaily.com` (path and query kept) |
-
-If the certificate does not appear a few minutes after DNS resolves, run
-`vercel certs issue anfielddaily.com www.anfielddaily.com`.
-
-Check DNS from outside the local resolver (a local cache can keep an old empty answer):
-```bash
-curl -s -H 'accept: application/dns-json' 'https://cloudflare-dns.com/dns-query?name=anfielddaily.com&type=A'
-```
-
-### NEXT_PUBLIC_SITE_URL
-
-Production value: `https://anfielddaily.com` (set as a non-sensitive variable so it can be read back).
-It drives `metadataBase`, canonical and hreflang URLs, the sitemap, robots.txt and JSON-LD.
-`NEXT_PUBLIC_*` is inlined at build time, so a change needs a redeploy.
-
-### Step 7: Redeploy
-
-Trigger a new deployment after updating the env var so the build picks it up.
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | `deploy-cloudflare.yml` |
+| `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_CF_ANALYTICS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `FOOTBALL_DATA_ORG_KEY` | `deploy-cloudflare.yml` (`cf:build` prerendering) |
+| `CRON_SECRET` | `news-sync.yml`, `news-daily.yml` |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `news-sync.yml` telemetry & alerts (optional) |
+| `DEPLOY_BOT_TOKEN`, `DEPLOY_CHAT_ID` | `deploy-cloudflare.yml` deploy ping (optional) |
 
 ---
 
-## Supabase — Update for Custom Domain
+## 4. Scheduled Jobs (GitHub Actions)
 
-After your domain is live, update Supabase Auth settings so OAuth redirects work correctly.
+All cron endpoints require `Authorization: Bearer <CRON_SECRET>`:
 
-### Update Site URL
+| Workflow | Cron (UTC) | Endpoint | Purpose |
+|---|---|---|---|
+| `news-sync.yml` | `0 * * * *` | `GET /api/news/sync` | Sync 13 English outlets + YouTube, enrich thumbnails, pre-scrape bodies (45s budget), send Telegram report |
+| `news-sync.yml` | `01:00–16:59` | `GET /api/news/digest/generate` | Idempotent hourly fallback check for today's briefing |
+| `news-daily.yml` | `7 0 * * *` | `GET /api/news/digest/generate` | Generate daily AI briefing + SEO article |
+| `news-daily.yml` | `17 3 * * *` | `GET /api/news/cleanup` | Prune cached bodies (>7d), old articles (>14d) & `sync_logs` (>14d) |
 
-1. Supabase Dashboard → Authentication → URL Configuration
-2. Set **Site URL** to: `https://anfielddaily.com`
-
-### Add Redirect URLs
-
-Under **Redirect URLs**, add:
-
-```
-https://anfielddaily.com/**
-https://anfielddaily.com/auth/callback
-```
-
-The wildcard `/**` covers all OAuth callback paths.
-
-### Update OAuth Provider Callbacks
-
-For each OAuth provider (Google, GitHub) configured in Supabase:
-
-- **Google:** Google Cloud Console → OAuth 2.0 credentials → Authorized redirect URIs → add `https://anfielddaily.com/auth/callback`
-- **GitHub:** GitHub → Settings → Developer settings → OAuth Apps → your app → Update callback URL to `https://anfielddaily.com/auth/callback`
-
----
-
-## SSL
-
-SSL is **automatic** — Vercel provisions a Let's Encrypt certificate as soon as DNS is correctly pointing to Vercel. No manual steps required.
-
-HTTPS is enforced automatically; HTTP requests are redirected to HTTPS.
-
----
-
-## Troubleshooting
-
-### DNS Not Propagating
+Manual trigger examples:
 
 ```bash
-# Check what's currently resolving
-nslookup anfielddaily.com
-dig anfielddaily.com CNAME
-
-# Flush local DNS cache (macOS)
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+gh workflow run news-sync.yml
+gh workflow run news-daily.yml -f job=digest
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://anfielddaily.com/api/news/sync
 ```
-
-If still not working after 1h: open Cloudflare → anfielddaily.com → DNS → Records and check both A records exist with the proxy off (DNS only).
-
-### SSL Certificate Errors
-
-Usually means DNS hasn't finished propagating when Vercel tried to issue the cert. Solution:
-
-1. Wait for DNS to fully propagate
-2. Vercel Dashboard → Domains → click the domain → **Refresh** / **Re-issue certificate**
-
-If Vercel shows "SSL Certificate Pending" for more than 24h, remove and re-add the domain.
-
-### OAuth Redirect Mismatch
-
-Error: `redirect_uri_mismatch` or "This site can't be reached after login"
-
-Check:
-1. `NEXT_PUBLIC_SITE_URL` in Vercel env vars matches the domain exactly (including `https://www.`)
-2. Supabase → Authentication → URL Configuration → Site URL and Redirect URLs are updated
-3. OAuth app (Google/GitHub) has the new callback URL
-4. Redeploy after changing env vars
-
-### Build Failures
-
-Common causes:
-
-```bash
-# TypeScript errors — run locally first
-npm run build
-
-# Missing env vars — check Vercel dashboard
-# If a required env var is missing, Next.js build will throw
-
-# Supabase types mismatch — regenerate types
-npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/database.types.ts
-```
-
-### Cron Jobs Not Running
-
-1. Verify `vercel.json` is committed and deployed
-2. Check Vercel Dashboard → Project → Settings → Crons — should list cleanup + digest
-3. Check GitHub Actions → "Hourly News Sync" runs for `/api/news/sync`
-4. Check function logs: Vercel Dashboard → Logs → filter by `/api/news/sync`
-5. Test manually with curl using `CRON_SECRET`
-
-### 504 Timeout on Sync/Digest Cron
-
-The route-level `maxDuration` should allow long sync runs (300s):
-
-```json
-{
-  "crons": [
-    { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
-    { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
-  ],
-  "functions": {
-    "src/app/api/news/sync/route.ts":            { "maxDuration": 300 },
-    "src/app/api/news/digest/generate/route.ts": { "maxDuration": 60 }
-  }
-}
-```
-
-Hobby plan max: 60s. Pro plan max: 300s.
 
 ---
 
-## Vercel Hobby Plan Limitations
+## 5. Supabase Auth & OAuth Configuration
 
-| Limit | Hobby | Pro |
-|---|---|---|
-| Serverless function timeout | 10s (default), 60s (configured) | 300s |
-| Cron jobs | 2 per project | Unlimited |
-| Bandwidth | 100GB/mo | 1TB/mo |
-| Deployments | Unlimited | Unlimited |
-| Team members | 1 | Unlimited |
-| Preview deployments | Yes | Yes |
+In Supabase Dashboard → Authentication → URL Configuration:
+- **Site URL:** `https://anfielddaily.com`
+- **Redirect URLs:**
+  - `https://anfielddaily.com/**`
+  - `https://anfielddaily.com/auth/callback`
+  - `http://localhost:3000/auth/callback` (local development)
 
-Key constraints for this project:
-- **Vercel cron limit** — only 2 Vercel cron jobs on Hobby (this project uses exactly 2).
-- **Function timeout** — news sync (300s) and digest (60s) must still complete within configured limits.
-- **No background functions** — all work must complete within the timeout window.
+Ensure Google Cloud Console and GitHub OAuth Apps list your Supabase project callback URL (`https://<project-ref>.supabase.co/auth/v1/callback`).
 
 ---
 
-## Deployment Checklist
+## 6. Post-Deploy Verification Checklist
 
-Before going live:
-
-- [ ] All env vars set on Vercel (Production environment)
-- [ ] `NEXT_PUBLIC_SITE_URL` set to production domain
-- [ ] `npm run build` passes locally
-- [ ] Supabase migrations applied to production database
-- [ ] Supabase Auth → Site URL updated to production domain
-- [ ] Supabase Auth → Redirect URLs includes production domain
-- [ ] OAuth providers (Google/GitHub) callback URLs updated
-- [ ] DNS records configured on Cloudflare (DNS only)
-- [ ] Domain shows "Valid Configuration" on Vercel
-- [ ] SSL certificate issued (green padlock in browser)
-- [ ] Vercel cron jobs visible in Vercel Dashboard → Settings → Crons
-- [ ] GitHub Actions "Hourly News Sync" succeeds with hourly schedule
-- [ ] Manual cron test: `curl -H "Authorization: Bearer SECRET" https://domain/api/news/sync`
-- [ ] Homepage loads, news articles appear
-- [ ] Login/register flow works
-- [ ] Gallery images load from Cloudinary
+- [ ] `deploy-cloudflare.yml` green (typecheck, lint, Vitest, OpenNext build, deploy, smoke check)
+- [ ] `https://anfielddaily.com` and `https://anfielddaily.com/vi` return `200` with clean Dark Stadium styles
+- [ ] `/news` renders recent English press articles and `/vi/news` renders full feed under Vietnamese UI
+- [ ] `/news/digest` and `/analysis` serve cached ISR responses rapidly
+- [ ] `/api/calendar/liverpool.ics` downloads a valid RFC 5545 calendar file
+- [ ] `/sitemap.xml`, `/robots.txt`, and `/llms.txt` resolve with `https://anfielddaily.com` URLs
+- [ ] Supabase login/OAuth callback redirects cleanly to `/profile`
