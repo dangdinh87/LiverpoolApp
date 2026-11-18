@@ -34,6 +34,9 @@ function isValidUserAvatarUrl(publicUrl: string, userId: string): boolean {
 }
 
 export async function updateProfile(formData: FormData) {
+  if (!(formData instanceof FormData)) {
+    return { error: "Invalid form data" };
+  }
   const username = String(formData.get("username") ?? "").trim() || null;
   const bio = String(formData.get("bio") ?? "").trim() || null;
 
@@ -47,21 +50,26 @@ export async function updateProfile(formData: FormData) {
     return { error: `Bio must be ${MAX_BIO_LENGTH} characters or less` };
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
 
-  const { error } = await supabase
-    .from("user_profiles")
-    .upsert({ user_id: user.id, username, bio }, { onConflict: "user_id" });
+    const { error } = await supabase
+      .from("user_profiles")
+      .upsert({ user_id: user.id, username, bio }, { onConflict: "user_id" });
 
-  if (error) {
-    console.error("[profile] updateProfile failed:", error.code);
+    if (error) {
+      console.error("[profile] updateProfile failed:", error.code);
+      return { error: "Failed to update profile" };
+    }
+
+    revalidateLocalizedPath("/profile");
+    return { success: true };
+  } catch (err) {
+    console.error("[profile] updateProfile threw:", err);
     return { error: "Failed to update profile" };
   }
-
-  revalidateLocalizedPath("/profile");
-  return { success: true };
 }
 
 /**
@@ -69,22 +77,27 @@ export async function updateProfile(formData: FormData) {
  * Only accepts URLs inside the caller's own folder on the project's Storage bucket.
  */
 export async function updateAvatarUrl(publicUrl: string) {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
 
-  if (!isValidUserAvatarUrl(publicUrl, user.id)) {
-    return { error: "Invalid avatar URL" };
+    if (!isValidUserAvatarUrl(publicUrl, user.id)) {
+      return { error: "Invalid avatar URL" };
+    }
+
+    const { error } = await supabase
+      .from("user_profiles")
+      .upsert({ user_id: user.id, avatar_url: publicUrl }, { onConflict: "user_id" });
+
+    if (error) return { error: "Failed to update avatar" };
+
+    revalidateLocalizedPath("/profile");
+    return { success: true };
+  } catch (err) {
+    console.error("[profile] updateAvatarUrl threw:", err);
+    return { error: "Failed to update avatar" };
   }
-
-  const { error } = await supabase
-    .from("user_profiles")
-    .upsert({ user_id: user.id, avatar_url: publicUrl }, { onConflict: "user_id" });
-
-  if (error) return { error: "Failed to update avatar" };
-
-  revalidateLocalizedPath("/profile");
-  return { success: true };
 }
 
 export async function toggleFavouritePlayer(
@@ -99,45 +112,50 @@ export async function toggleFavouritePlayer(
   const cleanPhoto = String(playerPhoto ?? "").trim().slice(0, MAX_URL_LENGTH);
   if (!cleanName) return { error: "Invalid player name" };
 
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
 
-  const { data: existing } = await supabase
-    .from("favourite_players")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("player_id", playerId)
-    .maybeSingle();
-
-  const slug = getPlayerById(playerId)?.slug;
-
-  if (existing) {
-    const { error } = await supabase
+    const { data: existing } = await supabase
       .from("favourite_players")
-      .delete()
+      .select("id")
       .eq("user_id", user.id)
-      .eq("player_id", playerId);
+      .eq("player_id", playerId)
+      .maybeSingle();
 
-    if (error) return { error: "Failed to remove favourite" };
+    const slug = getPlayerById(playerId)?.slug;
+
+    if (existing) {
+      const { error } = await supabase
+        .from("favourite_players")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("player_id", playerId);
+
+      if (error) return { error: "Failed to remove favourite" };
+
+      revalidateLocalizedPath("/profile");
+      if (slug) revalidateLocalizedPath(`/player/${slug}`);
+      return { favourited: false };
+    }
+
+    const { error } = await supabase.from("favourite_players").insert({
+      user_id: user.id,
+      player_id: playerId,
+      player_name: cleanName,
+      player_photo: cleanPhoto,
+    });
+
+    if (error) return { error: "Failed to add favourite" };
 
     revalidateLocalizedPath("/profile");
     if (slug) revalidateLocalizedPath(`/player/${slug}`);
-    return { favourited: false };
+    return { favourited: true };
+  } catch (err) {
+    console.error("[profile] toggleFavouritePlayer threw:", err);
+    return { error: "Failed to update favourite" };
   }
-
-  const { error } = await supabase.from("favourite_players").insert({
-    user_id: user.id,
-    player_id: playerId,
-    player_name: cleanName,
-    player_photo: cleanPhoto,
-  });
-
-  if (error) return { error: "Failed to add favourite" };
-
-  revalidateLocalizedPath("/profile");
-  if (slug) revalidateLocalizedPath(`/player/${slug}`);
-  return { favourited: true };
 }
 
 /* ── Saved Articles ── */
@@ -160,66 +178,76 @@ export async function toggleSavedArticle(article: {
   const canonicalUrl = canonicalizeArticleUrl(article.url);
   const variants = articleUrlVariants(article.url);
 
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
 
-  const { data: existing } = await supabase
-    .from("saved_articles")
-    .select("id")
-    .eq("user_id", user.id)
-    .in("article_url", variants)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
+    const { data: existing } = await supabase
       .from("saved_articles")
-      .delete()
+      .select("id")
       .eq("user_id", user.id)
-      .in("article_url", variants);
+      .in("article_url", variants)
+      .limit(1)
+      .maybeSingle();
 
-    if (error) return { error: "Failed to unsave" };
+    if (existing) {
+      const { error } = await supabase
+        .from("saved_articles")
+        .delete()
+        .eq("user_id", user.id)
+        .in("article_url", variants);
+
+      if (error) return { error: "Failed to unsave" };
+      revalidateLocalizedPath("/profile");
+      return { saved: false };
+    }
+
+    const cleanThumb =
+      article.thumbnail && /^https:\/\//i.test(article.thumbnail)
+        ? article.thumbnail.slice(0, MAX_URL_LENGTH)
+        : null;
+
+    const { error } = await supabase.from("saved_articles").insert({
+      user_id: user.id,
+      article_url: canonicalUrl,
+      article_title: cleanTitle,
+      article_snippet: article.snippet ? String(article.snippet).slice(0, MAX_SNIPPET_LENGTH) : null,
+      article_thumbnail: cleanThumb,
+      article_source: article.source ? String(article.source).slice(0, 40) : null,
+      article_language: article.language === "vi" ? "vi" : "en",
+      article_published_at: article.publishedAt ? String(article.publishedAt).slice(0, 64) : null,
+    });
+
+    if (error) return { error: "Failed to save" };
     revalidateLocalizedPath("/profile");
-    return { saved: false };
+    return { saved: true };
+  } catch (err) {
+    console.error("[profile] toggleSavedArticle threw:", err);
+    return { error: "Failed to update saved article" };
   }
-
-  const cleanThumb =
-    article.thumbnail && /^https:\/\//i.test(article.thumbnail)
-      ? article.thumbnail.slice(0, MAX_URL_LENGTH)
-      : null;
-
-  const { error } = await supabase.from("saved_articles").insert({
-    user_id: user.id,
-    article_url: canonicalUrl,
-    article_title: cleanTitle,
-    article_snippet: article.snippet ? String(article.snippet).slice(0, MAX_SNIPPET_LENGTH) : null,
-    article_thumbnail: cleanThumb,
-    article_source: article.source ? String(article.source).slice(0, 40) : null,
-    article_language: article.language === "vi" ? "vi" : "en",
-    article_published_at: article.publishedAt ? String(article.publishedAt).slice(0, 64) : null,
-  });
-
-  if (error) return { error: "Failed to save" };
-  revalidateLocalizedPath("/profile");
-  return { saved: true };
 }
 
 export async function unsaveArticle(articleUrl: string) {
   if (!articleUrl || typeof articleUrl !== "string" || articleUrl.length > MAX_URL_LENGTH) {
     return { error: "Invalid article URL" };
   }
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated" };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: "Not authenticated" };
 
-  const { error } = await supabase
-    .from("saved_articles")
-    .delete()
-    .eq("user_id", user.id)
-    .in("article_url", articleUrlVariants(articleUrl));
+    const { error } = await supabase
+      .from("saved_articles")
+      .delete()
+      .eq("user_id", user.id)
+      .in("article_url", articleUrlVariants(articleUrl));
 
-  if (error) return { error: "Failed to unsave" };
-  revalidateLocalizedPath("/profile");
-  return { success: true };
+    if (error) return { error: "Failed to unsave" };
+    revalidateLocalizedPath("/profile");
+    return { success: true };
+  } catch (err) {
+    console.error("[profile] unsaveArticle threw:", err);
+    return { error: "Failed to unsave" };
+  }
 }

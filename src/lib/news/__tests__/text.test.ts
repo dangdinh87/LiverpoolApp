@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { cleanFeedText, cleanSnippet, decodeHtmlEntities, stripSnippetBoilerplate } from "../text";
+import { sanitizeText } from "../enrichers/readability";
+import { isJunkParagraph } from "../junk";
 import { matchesAnyKeyword } from "../keywords";
 import { LFC_KEYWORDS } from "../config";
 import { feedCategoryNames, shouldDropFeedItem } from "../feed-rules";
@@ -32,6 +34,29 @@ describe("snippet boilerplate", () => {
     expect(
       cleanSnippet("£26m Liverpool star wanted by European giants - Report written on October 4, 2026 by Zachary Lewis. This article is about Featured, Liverpool FC News.")
     ).toBe("£26m Liverpool star wanted by European giants - Report");
+  });
+  it("strips 'Read more...', 'Click here...', syndication footers, and WordPress [...] markers", () => {
+    expect(cleanSnippet("Liverpool prepare bid for midfielder. Read more...")).toBe("Liverpool prepare bid for midfielder.");
+    expect(cleanSnippet("Slot praises Anfield display — Continue reading »")).toBe("Slot praises Anfield display");
+    expect(cleanSnippet("Read more...")).toBe("");
+    expect(cleanSnippet("Click here to read more.")).toBe("");
+    expect(cleanSnippet("Gakpo netted late for the Reds. Originally published on Liverpool Echo.")).toBe("Gakpo netted late for the Reds.");
+    expect(cleanSnippet("Reds seal three points. © 2026 Reach plc. All rights reserved.")).toBe("Reds seal three points.");
+    expect(cleanSnippet("Wirtz impressed in midfield [...]")).toBe("Wirtz impressed in midfield…");
+  });
+  it("truncates long snippets at whole-word boundaries and decodes full HTML entities in readability", () => {
+    const truncated = cleanSnippet("Liverpool controlled possession throughout the second half against Chelsea", 52);
+    expect(truncated).toBe("Liverpool controlled possession throughout the…");
+    expect(sanitizeText("<p>Slot&#8217;s &ldquo;best&rdquo; XI &amp; Wirtz&#39;s role</p>")).toBe(
+      "Slot’s “best” XI & Wirtz's role",
+    );
+  });
+  it("marks standalone 'Read more...' and WhatsApp/syndication promos as junk paragraphs", () => {
+    expect(isJunkParagraph("Read more...")).toBe(true);
+    expect(isJunkParagraph("Read next »")).toBe(true);
+    expect(isJunkParagraph("Đọc thêm...")).toBe(true);
+    expect(isJunkParagraph("Join our new WhatsApp community to receive daily Liverpool updates.")).toBe(true);
+    expect(isJunkParagraph("Originally published by The Mirror.")).toBe(true);
   });
 });
 

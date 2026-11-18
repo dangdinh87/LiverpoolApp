@@ -129,12 +129,16 @@ export async function hasArticleForFixture(
   kind: SiteArticleKind,
 ): Promise<boolean> {
   try {
-    const { data } = await getServiceClient()
+    const { data, error } = await getServiceClient()
       .from("site_articles")
       .select("id")
       .eq("fixture_id", fixtureId)
       .eq("kind", kind)
       .limit(1);
+    if (error) {
+      console.error("[site-articles] hasArticleForFixture:", error.message);
+      return true;
+    }
     return (data ?? []).length > 0;
   } catch {
     // Unknown means "do not generate": a duplicate article is worse than a gap.

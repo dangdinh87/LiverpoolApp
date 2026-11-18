@@ -1,5 +1,6 @@
 import { Readability } from "@mozilla/readability";
 import sanitize from "sanitize-html";
+import { decodeHtmlEntities } from "../text";
 
 const SANITIZE_OPTS: sanitize.IOptions = {
   allowedTags: sanitize.defaults.allowedTags.concat([
@@ -58,10 +59,5 @@ export function estimateReadingTime(text: string): number {
 
 // Re-export for use in article-extractor
 export function sanitizeText(html: string): string {
-  return sanitize(html, { allowedTags: [] })
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;/g, "'");
+  return decodeHtmlEntities(sanitize(html, { allowedTags: [] }));
 }

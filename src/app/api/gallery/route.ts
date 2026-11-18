@@ -27,6 +27,15 @@ export async function GET(req: NextRequest) {
     const limit =
       Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 50;
     const category = searchParams.get("category") || "all";
+    if (
+      category !== "all" &&
+      !GALLERY_CATEGORIES.includes(category as (typeof GALLERY_CATEGORIES)[number])
+    ) {
+      return NextResponse.json(
+        { error: `Invalid category. Must be one of: all, ${GALLERY_CATEGORIES.join(", ")}` },
+        { status: 400 },
+      );
+    }
     const search = (searchParams.get("search") || "").slice(0, 120);
 
     const { images, total } = await listGalleryImagesFromDB({
@@ -36,45 +45,52 @@ export async function GET(req: NextRequest) {
       search,
     });
 
-    return NextResponse.json({
-      images: images.map((img) => ({
-        id: img.id,
-        src: img.cloudinary_url,
-        alt: img.alt,
-        category: img.category,
-        width: img.width ?? undefined,
-        height: img.height ?? undefined,
-        cloudinaryId: img.cloudinary_public_id,
-        isHomepageEligible: img.is_homepage_eligible,
-      })),
-      total,
-      hasMore: offset + images.length < total,
-    });
+    return NextResponse.json(
+      {
+        images: images.map((img) => ({
+          id: img.id,
+          src: img.cloudinary_url,
+          alt: img.alt,
+          category: img.category,
+          width: img.width ?? undefined,
+          height: img.height ?? undefined,
+          cloudinaryId: img.cloudinary_public_id,
+          isHomepageEligible: img.is_homepage_eligible,
+        })),
+        total,
+        hasMore: offset + images.length < total,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        },
+      },
+    );
   } catch (error) {
     console.error("[gallery] list error:", error);
     return NextResponse.json(
       { error: "Failed to list images" },
-      { status: 500 },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
 }
 
 /** POST /api/gallery — upload image (admin only) */
 export async function POST(req: NextRequest) {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAdminEmail(user.email)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !isAdminEmail(user.email)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const alt = (formData.get("alt") as string) || "";
-    const category = (formData.get("category") as string) || "anfield";
+    const alt = String(formData.get("alt") ?? "").trim().slice(0, 300);
+    const category = String(formData.get("category") ?? "anfield").trim() || "anfield";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -139,20 +155,20 @@ export async function POST(req: NextRequest) {
 
 /** DELETE /api/gallery — delete image (admin only) */
 export async function DELETE(req: NextRequest) {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !isAdminEmail(user.email)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   try {
+    const supabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || !isAdminEmail(user.email)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json().catch(() => null);
     const id = typeof body?.id === "string" ? body.id.trim() : "";
-    if (!id) {
-      return NextResponse.json({ error: "No id provided" }, { status: 400 });
+    if (!id || id.length > 128) {
+      return NextResponse.json({ error: "No valid id provided" }, { status: 400 });
     }
 
     // Look up the image to get Cloudinary public_id

@@ -23,8 +23,8 @@ const ARCHIVE_DEPTH = 3;
  * through July still belong to the season that started the previous year.
  */
 export function getCurrentSeasonYear(now: Date = new Date()): number {
-  const month = now.getMonth() + 1;
-  return month >= SEASON_START_MONTH ? now.getFullYear() : now.getFullYear() - 1;
+  const month = now.getUTCMonth() + 1;
+  return month >= SEASON_START_MONTH ? now.getUTCFullYear() : now.getUTCFullYear() - 1;
 }
 
 /** Render a season year as its conventional label: 2026 → "2026/27". */

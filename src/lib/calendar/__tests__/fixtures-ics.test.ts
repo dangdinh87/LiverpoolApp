@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Fixture } from "@/lib/types/football";
+import { BRAND } from "@/lib/brand";
 import { buildFixturesIcs, icsEscape, icsFold, icsUtc } from "@/lib/calendar/fixtures-ics";
 
-function fixture(over: Partial<{ id: number; date: string; status: string; home: string; away: string; venue: string | null }> = {}): Fixture {
+function fixture(over: Partial<{ id: number; date: string; status: string; home: string; away: string; venue: string | null; league: string }> = {}): Fixture {
   return {
     fixture: {
       id: over.id ?? 560598,
@@ -10,7 +11,7 @@ function fixture(over: Partial<{ id: number; date: string; status: string; home:
       venue: { id: null, name: over.venue === undefined ? "Anfield" : over.venue, city: null },
       status: { long: "", short: over.status ?? "NS", elapsed: null },
     },
-    league: { id: 2021, name: "Premier League", country: "England", logo: "", season: 2026, round: "Matchday 6" },
+    league: { id: 2021, name: over.league ?? "Premier League", country: "England", logo: "", season: 2026, round: "Matchday 6" },
     teams: {
       home: { id: 40, name: over.home ?? "Liverpool FC", logo: "", winner: null },
       away: { id: 65, name: over.away ?? "Manchester City FC", logo: "", winner: null },
@@ -21,33 +22,59 @@ function fixture(over: Partial<{ id: number; date: string; status: string; home:
 }
 
 const options = {
-  siteUrl: "https://redsabroad.com",
+  siteUrl: "https://anfielddaily.com",
   matchPath: (id: number) => `/fixtures/${id}`,
-  text: { calendarName: "Liverpool fixtures", calendarDescription: "Every match, in your time zone", matchPage: "Match page", reminder: "Kick-off in 30 minutes" },
+  text: { calendarName: "Liverpool fixtures · Anfield Daily", calendarDescription: "Every match, in your time zone", matchPage: "Match page", reminder: "Kick-off in 30 minutes" },
   now: new Date("2026-10-12T00:00:00Z"),
 };
 
 describe("fixtures ics", () => {
-  it("writes UTC times, a stable UID, a reminder and no score", () => {
+  it("writes UTC times, BRAND.name PRODID, a stable UID, a reminder and no score", () => {
     const ics = buildFixturesIcs([fixture()], options);
+    expect(ics).toContain(`PRODID:-//${BRAND.name}//Liverpool fixtures//EN\r\n`);
     expect(ics).toContain("DTSTART:20261011T153000Z\r\n");
     expect(ics).toContain("DTEND:20261011T172500Z\r\n");
-    expect(ics).toContain("UID:fixture-560598@redsabroad.com\r\n");
+    expect(ics).toContain("UID:fixture-560598@anfielddaily.com\r\n");
     expect(ics).toContain("SUMMARY:Liverpool v Manchester City (Premier League)\r\n");
     expect(ics).toContain("TRIGGER:-PT30M");
-    expect(ics).toContain("URL:https://redsabroad.com/fixtures/560598");
+    expect(ics).toContain("URL:https://anfielddaily.com/fixtures/560598");
     expect(ics).not.toMatch(/2\s*[-–]\s*1/);
+    expect(ics).not.toMatch(/redsabroad|lfcvn|liverpool daily|fans abroad/i);
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
   });
 
-  it("orders events by kick-off and marks postponed matches tentative", () => {
+  it("normalises competition labels per locale and strips trailing slashes on siteUrl", () => {
+    const uclEn = buildFixturesIcs([fixture({ league: "UEFA Champions League" }), fixture({ id: 2, league: "Carabao Cup" })], {
+      ...options,
+      siteUrl: "https://anfielddaily.com///",
+      locale: "en",
+    });
+    expect(uclEn).toContain("SUMMARY:Liverpool v Manchester City (Champions League)\r\n");
+    expect(uclEn).toContain("SUMMARY:Liverpool v Manchester City (EFL Cup)\r\n");
+    expect(uclEn).toContain("URL:https://anfielddaily.com/fixtures/560598\r\n");
+
+    const plVi = buildFixturesIcs([fixture({ league: "Premier League" })], {
+      ...options,
+      locale: "vi",
+      matchPath: (id) => `/vi/fixtures/${id}`,
+    });
+    expect(plVi).toContain("SUMMARY:Liverpool v Manchester City (Ngoại hạng Anh)\r\n");
+    expect(plVi).toContain("URL:https://anfielddaily.com/vi/fixtures/560598\r\n");
+  });
+
+  it("orders events by kick-off and marks postponed/abandoned matches accurately", () => {
     const ics = buildFixturesIcs(
-      [fixture({ id: 2, date: "2026-11-01T15:00:00Z", status: "PST" }), fixture({ id: 1, date: "2026-10-01T15:00:00Z" })],
+      [
+        fixture({ id: 3, date: "2026-12-01T15:00:00Z", status: "ABD" }),
+        fixture({ id: 2, date: "2026-11-01T15:00:00Z", status: "PST" }),
+        fixture({ id: 1, date: "2026-10-01T15:00:00Z" }),
+      ],
       options,
     );
     expect(ics.indexOf("fixture-1@")).toBeLessThan(ics.indexOf("fixture-2@"));
     expect(ics).toContain("STATUS:TENTATIVE");
+    expect(ics).toContain("STATUS:CANCELLED");
   });
 
   it("skips a missing venue and an unparseable date", () => {
@@ -56,8 +83,8 @@ describe("fixtures ics", () => {
     expect(ics).not.toContain("fixture-9@");
   });
 
-  it("escapes text and folds long lines without splitting characters", () => {
-    expect(icsEscape("a,b;c\\d\ne")).toBe("a\\,b\\;c\\\\d\\ne");
+  it("escapes text (including bare CR) and folds long lines without splitting characters", () => {
+    expect(icsEscape("a,b;c\\d\ne\rf")).toBe("a\\,b\\;c\\\\d\\ne\\nf");
     const long = "DESCRIPTION:" + "Đây là một dòng tiếng Việt rất dài ".repeat(5);
     const folded = icsFold(long);
     for (const line of folded.split("\r\n")) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);

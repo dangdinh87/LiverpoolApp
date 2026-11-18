@@ -42,15 +42,18 @@ export const GET = withCronAuth(async (req) => {
       for (const url of liveBlogsRefreshed) revalidateLocalizedPath(getArticleUrl(url));
     }
 
-    return NextResponse.json({
-      ok: true,
-      ...result,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        ...result,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     console.error("[sync] Fatal:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal error" },
-      { status: 500 }
+      { ok: false, error: "News sync failed" },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 });

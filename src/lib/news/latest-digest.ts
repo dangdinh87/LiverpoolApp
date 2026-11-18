@@ -20,7 +20,7 @@ export const getCachedLatestDigest = unstable_cache(async () => getLatestDigest(
 /**
  * The digest's headline for every page that links to it: the SEO article's
  * title, which is the one the digest page itself opens with. The stored
- * `title` is the plain "Liverpool Daily — date" label.
+ * `title` is the plain "Anfield Daily — date" label.
  */
 export function getDigestHeadline(digest: Pick<DigestRecord, "title" | "sections" | "seo_article">): string {
   return getSeoArticleFromDigest(digest)?.title || digest.title;

@@ -1,29 +1,34 @@
 import type { Metadata } from "next";
 import { BRAND } from "./brand";
+import { getEnv } from "./env";
 import { routing, withLocalePrefix } from "@/i18n/routing";
 
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// ─── Constants & Lazy Env Helpers ───────────────────────────────────────────
 
 const SITE_NAME = BRAND.name;
 
 /**
- * Host of the site's own canonical URL, e.g. `www.example.com`.
+ * Resolve canonical site origin lazily per call (Cloudflare Workers populates
+ * `process.env` bindings per request, and env strings may carry trailing `/`).
+ */
+export function getSiteUrl(): string {
+  return (getEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+}
+
+/**
+ * Host of the site's own canonical URL, e.g. `anfielddaily.com`.
  *
  * Lets a link be classified as internal without naming a domain in the code.
- * The chat renderer used to hardcode `liverpoolfcvn.blog`, which would quietly
- * start opening the site's own links in a new tab the day the domain changes —
- * and that rename is already planned.
  */
-export const SITE_HOST = (() => {
+export function getSiteHost(): string {
   try {
-    return new URL(SITE_URL).host;
+    return new URL(getSiteUrl()).host;
   } catch {
     return "";
   }
-})();
+}
+
+export const SITE_HOST = getSiteHost();
 
 
 /**
@@ -45,44 +50,49 @@ export const DEFAULT_OG_IMAGE = {
  * publisher, website and club are each one node in the graph, not several.
  */
 export const SCHEMA_IDS = {
-  publisher: `${SITE_URL}/#publisher`,
-  website: `${SITE_URL}/#website`,
-  club: `${SITE_URL}/#club`,
-};
-
-const PUBLISHER = {
-  "@type": "Organization" as const,
-  "@id": SCHEMA_IDS.publisher,
-  name: SITE_NAME,
-  url: SITE_URL,
-  logo: {
-    "@type": "ImageObject" as const,
-    url: `${SITE_URL}${BRAND.assets.icon512}`,
+  get publisher() {
+    return `${getSiteUrl()}/#publisher`;
+  },
+  get website() {
+    return `${getSiteUrl()}/#website`;
+  },
+  get club() {
+    return `${getSiteUrl()}/#club`;
   },
 };
 
-/** OpenGraph wants a language_TERRITORY code, not a bare locale. */
+function buildPublisher() {
+  const siteUrl = getSiteUrl();
+  return {
+    "@type": "Organization" as const,
+    "@id": `${siteUrl}/#publisher`,
+    name: SITE_NAME,
+    url: siteUrl,
+    logo: {
+      "@type": "ImageObject" as const,
+      url: `${siteUrl}${BRAND.assets.icon512}`,
+    },
+  };
+}
+
 /**
  * Site-level keywords, per locale.
  *
- * These used to be one fixed list, mostly Vietnamese ("fan Liverpool Việt Nam",
- * "giờ đá Liverpool", "Ngoại hạng Anh"), served to English readers as well. The
- * English set is not a translation of the Vietnamese one: each is the wording
- * that readers in that language actually search for, and neither names a
- * country, because the site is for supporters anywhere.
+ * Each set uses the wording that readers in that language actually search for,
+ * naming no country, because the site serves Liverpool readers everywhere.
  */
 const KEYWORDS: Record<string, string[]> = {
   en: [
-    "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    SITE_NAME, "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    "Liverpool news", "Liverpool daily briefing", "Liverpool transfers",
     "Liverpool kick-off time", "Liverpool fixtures", "Liverpool results", "Liverpool squad",
-    "Premier League table", "Liverpool news", "Liverpool transfers",
-    "Premier League", "where to watch Liverpool", "You'll Never Walk Alone",
+    "Premier League table", "Premier League", "where to watch Liverpool", "You'll Never Walk Alone",
   ],
   vi: [
-    "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    SITE_NAME, "Liverpool FC", "LFC", "The Reds", "The Kop", "Anfield", "YNWA",
+    "tin Liverpool", "bản tin Liverpool", "chuyển nhượng Liverpool",
     "giờ đá Liverpool", "lịch thi đấu Liverpool", "kết quả Liverpool", "đội hình Liverpool",
-    "bảng xếp hạng Ngoại hạng Anh", "tin Liverpool", "chuyển nhượng Liverpool",
-    "Premier League", "Ngoại hạng Anh", "xem Liverpool ở đâu", "You'll Never Walk Alone",
+    "bảng xếp hạng Ngoại hạng Anh", "Premier League", "Ngoại hạng Anh", "xem Liverpool ở đâu", "You'll Never Walk Alone",
   ],
 };
 
@@ -96,11 +106,16 @@ const ogLocale = (locale: string) => OG_LOCALES[locale] ?? OG_LOCALES[routing.de
 
 // ─── Canonical & Hreflang ───────────────────────────────────────────────────
 
-/** Build full canonical URL from a path (e.g. "/squad" → `${SITE_URL}/squad`). */
+/** Build full canonical URL from a path (e.g. "/squad" → `${siteUrl}/squad`). */
 export function getCanonical(path: string): string {
-  // Normalize: ensure leading slash, strip trailing slash (except root)
-  const normalized = path === "/" ? "" : path.replace(/\/+$/, "");
-  return `${SITE_URL}${normalized}`;
+  // Normalize: ensure leading slash, strip trailing slash (except root), preserve query string
+  const trimmed = path.trim();
+  const withSlash = !trimmed || trimmed.startsWith("/") ? trimmed || "/" : `/${trimmed}`;
+  const qIdx = withSlash.indexOf("?");
+  const rawPath = qIdx >= 0 ? withSlash.slice(0, qIdx) : withSlash;
+  const search = qIdx >= 0 ? withSlash.slice(qIdx) : "";
+  const cleanPath = rawPath === "/" ? (search ? "/" : "") : rawPath.replace(/\/+$/, "");
+  return `${getSiteUrl()}${cleanPath}${search}`;
 }
 
 /**
@@ -247,6 +262,14 @@ export function buildNewsArticleJsonLd(article: {
   sourceName?: string;
   inLanguage?: string;
 }) {
+  const cleanAuthor = article.author?.trim() || "";
+  const cleanSource = article.sourceName?.trim() || "";
+  const authorName = cleanAuthor || cleanSource || SITE_NAME;
+  const isOrgAuthor =
+    !cleanAuthor ||
+    authorName === SITE_NAME ||
+    (Boolean(cleanSource) && authorName.toLowerCase() === cleanSource.toLowerCase());
+
   return {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -266,16 +289,17 @@ export function buildNewsArticleJsonLd(article: {
       dateModified: article.modifiedAt ?? article.publishedAt,
     }),
     author: {
-      "@type": article.sourceName ? "Organization" : "Person",
-      name: article.author || article.sourceName || SITE_NAME,
+      "@type": isOrgAuthor ? "Organization" : "Person",
+      name: authorName,
     },
-    publisher: PUBLISHER,
+    publisher: buildPublisher(),
   };
 }
 
 /** Fixture status codes that change a match's schema.org eventStatus; anything else is scheduled. */
 const EVENT_STATUS: Record<string, string> = {
   PST: "EventPostponed",
+  SUSP: "EventPostponed",
   CANC: "EventCancelled",
   ABD: "EventCancelled",
 };
@@ -360,6 +384,7 @@ export function buildPersonJsonLd(player: {
     ...(player.position && { jobTitle: `Football ${player.position}` }),
     memberOf: {
       "@type": "SportsTeam",
+      "@id": SCHEMA_IDS.club,
       name: "Liverpool FC",
       url: "https://www.liverpoolfc.com",
     },

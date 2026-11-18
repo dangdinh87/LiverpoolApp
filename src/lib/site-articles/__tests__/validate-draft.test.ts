@@ -337,3 +337,35 @@ describe("validateDraft — articles inside a name run", () => {
     expect(validateDraft(draft, REVIEW_FACTS).problems).toEqual([]);
   });
 });
+
+describe("validateDraft — brand rules, boilerplate & markup hygiene", () => {
+  it("rejects forbidden 'fans abroad' positioning in both English and Vietnamese", () => {
+    for (const phrase of [
+      "A late win for fans abroad.",
+      " Liverpool won far from home.",
+      "Chiến thắng ý nghĩa cho fan ở xa.",
+      "Ở đâu cũng là Anfield sau bàn thắng phút 78.",
+    ]) {
+      const draft = goodDraft();
+      draft.sections[0].body = `Cody Gakpo scored on 78. ${phrase}`;
+      const report = validateDraft(draft, REVIEW_FACTS);
+      expect(report.ok, phrase).toBe(false);
+      expect(report.problems.join(" "), phrase).toMatch(/forbidden 'for fans abroad' positioning/i);
+    }
+  });
+
+  it("rejects publisher boilerplate, raw HTML entities/tags, banned AI clichés, and legacy brand names", () => {
+    for (const bad of [
+      "Cody Gakpo scored on 78. Read more...",
+      "Cody Gakpo scored on 78. Click here for updates.",
+      "Cody Gakpo&#x27;s goal on 78 settled it.",
+      "<strong>Cody Gakpo</strong> scored on 78.",
+      "What a night at Anfield as Cody Gakpo scored on 78.",
+      "Reds Abroad covered the 2-1 win.",
+    ]) {
+      const draft = goodDraft();
+      draft.sections[0].body = bad;
+      expect(validateDraft(draft, REVIEW_FACTS).ok, bad).toBe(false);
+    }
+  });
+});

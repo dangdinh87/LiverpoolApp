@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 
+const NO_STORE = { headers: { "Cache-Control": "private, no-store" } };
+
 /**
  * GET /api/streak — Record visit & return current streak.
  * Streak logic:
@@ -12,7 +14,7 @@ export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ streak: 0 }, { status: 401 });
+    if (!user) return NextResponse.json({ streak: 0 }, { status: 401, ...NO_STORE });
 
     const { data: profile } = await supabase
       .from("user_profiles")
@@ -20,25 +22,28 @@ export async function GET() {
       .eq("user_id", user.id)
       .single();
 
-    if (!profile) return NextResponse.json({ streak: 0 });
+    if (!profile) return NextResponse.json({ streak: 0 }, NO_STORE);
 
     const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const lastVisit = profile.last_visit_date;
 
     // Already visited today
     if (lastVisit === today) {
-      return NextResponse.json({ streak: profile.streak_count ?? 1 });
+      return NextResponse.json({ streak: profile.streak_count ?? 1 }, NO_STORE);
     }
 
     let newStreak = 1;
 
-    if (lastVisit) {
+    if (lastVisit && /^\d{4}-\d{2}-\d{2}$/.test(lastVisit)) {
       const lastDate = new Date(lastVisit + "T00:00:00Z");
       const todayDate = new Date(today + "T00:00:00Z");
       const diffDays = Math.floor(
         (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
       );
 
+      if (diffDays <= 0) {
+        return NextResponse.json({ streak: profile.streak_count ?? 1 }, NO_STORE);
+      }
       if (diffDays === 1) {
         // Consecutive day
         newStreak = (profile.streak_count ?? 0) + 1;
@@ -51,8 +56,8 @@ export async function GET() {
       .update({ streak_count: newStreak, last_visit_date: today })
       .eq("user_id", user.id);
 
-    return NextResponse.json({ streak: newStreak });
+    return NextResponse.json({ streak: newStreak }, NO_STORE);
   } catch {
-    return NextResponse.json({ streak: 0 }, { status: 500 });
+    return NextResponse.json({ streak: 0 }, { status: 500, ...NO_STORE });
   }
 }

@@ -5,6 +5,8 @@ vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.liverpoolfcvn.blog");
 
 const {
   DEFAULT_OG_IMAGE,
+  SCHEMA_IDS,
+  keywordsFor,
   getCanonical,
   getHreflangAlternates,
   getLocalizedUrl,
@@ -16,10 +18,23 @@ const {
   buildImageGalleryJsonLd,
   buildFaqJsonLd,
 } = await import("../seo");
+const { clampCardText } = await import("../og/story-card");
 
 describe("getCanonical", () => {
   it("builds full URL from path", () => {
     expect(getCanonical("/squad")).toBe("https://www.liverpoolfcvn.blog/squad");
+  });
+
+  it("ensures a leading slash and preserves query strings", () => {
+    expect(getCanonical("squad")).toBe("https://www.liverpoolfcvn.blog/squad");
+    expect(getCanonical("/season?season=2025")).toBe("https://www.liverpoolfcvn.blog/season?season=2025");
+  });
+
+  it("reads NEXT_PUBLIC_SITE_URL lazily and strips trailing slashes", () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://anfielddaily.com/");
+    expect(getCanonical("/news")).toBe("https://anfielddaily.com/news");
+    expect(SCHEMA_IDS.publisher).toBe("https://anfielddaily.com/#publisher");
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://www.liverpoolfcvn.blog");
   });
 
   it("handles root path", () => {
@@ -143,7 +158,7 @@ describe("buildNewsArticleJsonLd", () => {
     expect(result.author.name).toBe("BBC Sport");
   });
 
-  it("omits optional fields when not provided", () => {
+  it("omits optional fields when not provided and types Anfield Daily fallback author as Organization", () => {
     const result = buildNewsArticleJsonLd({
       title: "Test",
       description: "Desc",
@@ -151,6 +166,18 @@ describe("buildNewsArticleJsonLd", () => {
     });
     expect(result.image).toBeUndefined();
     expect(result.datePublished).toBeUndefined();
+    expect(result.author).toEqual({ "@type": "Organization", name: "Anfield Daily" });
+  });
+
+  it("types named journalists as Person even when sourceName is also passed", () => {
+    const result = buildNewsArticleJsonLd({
+      title: "Test",
+      description: "Desc",
+      url: "https://example.com",
+      author: "Paul Joyce",
+      sourceName: "The Times",
+    });
+    expect(result.author).toEqual({ "@type": "Person", name: "Paul Joyce" });
   });
 });
 
@@ -289,5 +316,24 @@ describe("makePageMeta share image", () => {
     expect(og.images).toEqual([DEFAULT_OG_IMAGE]);
     expect(og.url).toBe(getCanonical("/squad"));
     expect((meta.twitter as Record<string, unknown>).images).toEqual([DEFAULT_OG_IMAGE.url]);
+  });
+});
+
+describe("keywordsFor & OG story card text", () => {
+  it("includes Anfield Daily and avoids country or 'fans abroad' positioning", () => {
+    for (const loc of ["en", "vi"]) {
+      const kw = keywordsFor(loc);
+      expect(kw).toContain("Anfield Daily");
+      expect(kw.join(" ")).not.toMatch(/fans abroad|far from home|cho fan ở xa|Việt Nam|Vietnam/i);
+    }
+  });
+
+  it("decodes HTML entities, fixes legacy brand names, and truncates OG text on word boundaries", () => {
+    expect(clampCardText("Liverpool&#x27;s win &amp; Reds Abroad recap", 180)).toBe(
+      "Liverpool's win & Anfield Daily recap",
+    );
+    const long = clampCardText("Mohamed Salah scores twice at Anfield in a thrilling Premier League victory", 50);
+    expect(long.endsWith("…")).toBe(true);
+    expect(long).not.toContain("Prem…");
   });
 });

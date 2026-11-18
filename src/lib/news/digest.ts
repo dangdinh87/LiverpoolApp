@@ -124,7 +124,8 @@ const DIGEST_MODELS = [
 ] as const;
 
 /** The site's own URL, named once: the prompt and the stored record both need it. */
-const SITE_URL = getEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000";
+const SITE_URL = (getEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const resolveDigestSiteUrl = () => (getEnv("NEXT_PUBLIC_SITE_URL") ?? SITE_URL).replace(/\/+$/, "");
 
 /**
  * English, because the bare URL is English and the briefing is the biggest body
@@ -187,6 +188,7 @@ Write like a person. Avoid the tells:
 - Do not scatter em dashes; use ordinary punctuation
 - Do not end on something that could be said about any club on any day — have a position
 - Supporters' language is fine where it fits ("The Kop", "the Reds", "the Anfield crowd") but do not pack it in
+- Never call the site or its audience "for fans abroad" or "far from home"
 
 Content rules:
 - Name every player and manager that matters; leave none out
@@ -446,10 +448,11 @@ export async function generateDigestFromArticles(
     .join("\n\n");
 
   const today = formatDigestDate(now);
+  const siteUrl = resolveDigestSiteUrl();
 
   // Current facts (head coach, season, squad) come first and override the model's memory:
   // without them the model "knew" a previous head coach and contradicted the articles.
-  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${SITE_URL}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
+  const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
 
   const apiKey = getEnv("VIETAPI_KEY");
   if (!apiKey) throw new Error("VIETAPI_KEY not configured");
@@ -479,7 +482,7 @@ export async function generateDigestFromArticles(
     title: parsed.title,
     summary: parsed.summary,
     sections: parsed.sections,
-    seoArticle: normalizeSeoArticle(seo?.value.seoArticle ?? parsed.seoArticle, parsed, SITE_URL),
+    seoArticle: normalizeSeoArticle(seo?.value.seoArticle ?? parsed.seoArticle, parsed, siteUrl),
     articleCount: articles.length,
     tokensUsed: core.tokens + (seo?.tokens ?? 0),
     model: core.model,
@@ -587,13 +590,23 @@ export async function getLatestDigest(): Promise<DigestRecord | null> {
 export const getDigestByDate = cache(async function getDigestByDate(
   date: string
 ): Promise<DigestRecord | null> {
-  const supabase = getServiceClient();
-  const { data } = await supabase
-    .from("news_digests")
-    .select("*")
-    .eq("digest_date", date)
-    .maybeSingle();
-  return data && cleanDigestText(data);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  try {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("news_digests")
+      .select("*")
+      .eq("digest_date", date)
+      .maybeSingle();
+    if (error) {
+      console.error("[digest] getDigestByDate error:", error.message);
+      return null;
+    }
+    return data && cleanDigestText(data);
+  } catch (err) {
+    console.error("[digest] getDigestByDate failed:", err);
+    return null;
+  }
 });
 
 /** Lightweight query for sitemap: all digest dates + generated timestamps */

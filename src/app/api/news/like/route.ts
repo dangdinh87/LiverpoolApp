@@ -6,39 +6,60 @@ import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
 import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
 
+const MAX_URL_LEN = 2048;
+
 // GET /api/news/like?url=... — get like count + whether current user liked
 export async function GET(req: NextRequest) {
   const articleUrl = req.nextUrl.searchParams.get("url");
-  if (!articleUrl) {
-    return NextResponse.json({ error: "Missing url param" }, { status: 400 });
+  if (!articleUrl || articleUrl.length > MAX_URL_LEN) {
+    return NextResponse.json({ error: "Missing or invalid url param" }, { status: 400 });
+  }
+  if (!isKnownNewsSourceUrl(articleUrl)) {
+    return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
   }
 
-  const urlVariants = articleUrlVariants(articleUrl);
-  const supabase = await createServerSupabaseClient();
+  try {
+    const urlVariants = articleUrlVariants(articleUrl);
+    const supabase = await createServerSupabaseClient();
 
-  // Get current user (optional — anon users can still see counts)
-  const { data: { user } } = await supabase.auth.getUser();
+    // Get current user (optional — anon users can still see counts)
+    const { data: { user } } = await supabase.auth.getUser();
 
-  // Count likes
-  const { count } = await supabase
-    .from("article_likes")
-    .select("*", { count: "exact", head: true })
-    .in("article_url", urlVariants);
-
-  // Check if current user liked
-  let userLiked = false;
-  if (user) {
-    const { data } = await supabase
+    // Count likes
+    const { count, error } = await supabase
       .from("article_likes")
-      .select("id")
-      .in("article_url", urlVariants)
-      .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
-    userLiked = !!data;
-  }
+      .select("*", { count: "exact", head: true })
+      .in("article_url", urlVariants);
 
-  return NextResponse.json({ count: count ?? 0, userLiked });
+    if (error) {
+      console.error("[like] count error:", error.message);
+      return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+    }
+
+    // Check if current user liked
+    let userLiked = false;
+    if (user) {
+      const { data } = await supabase
+        .from("article_likes")
+        .select("id")
+        .in("article_url", urlVariants)
+        .eq("user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+      userLiked = !!data;
+    }
+
+    return NextResponse.json(
+      { count: count ?? 0, userLiked },
+      { headers: { "Cache-Control": "private, no-store" } },
+    );
+  } catch (err) {
+    console.error("[like] GET failed:", err);
+    return NextResponse.json(
+      { error: "Likes are unavailable right now" },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 }
 
 // POST /api/news/like — toggle like
@@ -49,69 +70,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  const body = await req.json().catch(() => null);
-  const articleUrl: unknown = body?.url;
-  if (typeof articleUrl !== "string" || !articleUrl) {
-    return NextResponse.json({ error: "Missing url" }, { status: 400 });
-  }
-  // Same rule as comments: only real news-source articles can be liked, so a
-  // client cannot create like rows for arbitrary strings (they feed "trending").
-  if (!isKnownNewsSourceUrl(articleUrl)) {
-    return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
-  }
+    const body = await req.json().catch(() => null);
+    const articleUrl: unknown = body?.url;
+    if (typeof articleUrl !== "string" || !articleUrl || articleUrl.length > MAX_URL_LEN) {
+      return NextResponse.json({ error: "Missing or invalid url" }, { status: 400 });
+    }
+    // Same rule as comments: only real news-source articles can be liked, so a
+    // client cannot create like rows for arbitrary strings (they feed "trending").
+    if (!isKnownNewsSourceUrl(articleUrl)) {
+      return NextResponse.json({ error: "Unsupported article URL" }, { status: 400 });
+    }
 
-  // New rows use the canonical URL; older ones may hold a legacy spelling.
-  const canonicalUrl = canonicalizeArticleUrl(articleUrl);
-  const urlVariants = articleUrlVariants(articleUrl);
+    // New rows use the canonical URL; older ones may hold a legacy spelling.
+    const canonicalUrl = canonicalizeArticleUrl(articleUrl);
+    const urlVariants = articleUrlVariants(articleUrl);
 
-  // Check if already liked
-  const { data: existing } = await supabase
-    .from("article_likes")
-    .select("id")
-    .in("article_url", urlVariants)
-    .eq("user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing) {
-    // Unlike
-    const { error } = await supabase
+    // Check if already liked
+    const { data: existing } = await supabase
       .from("article_likes")
-      .delete()
-      .eq("id", existing.id);
-    if (error) {
-      console.error("[like] delete error:", error.message);
-      return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+      .select("id")
+      .in("article_url", urlVariants)
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      // Unlike
+      const { error } = await supabase
+        .from("article_likes")
+        .delete()
+        .eq("id", existing.id);
+      if (error) {
+        console.error("[like] delete error:", error.message);
+        return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+      }
+    } else {
+      // Like
+      const { error } = await supabase.from("article_likes").insert({
+        user_id: user.id,
+        article_url: canonicalUrl,
+      });
+      if (error && error.code !== "23505") {
+        console.error("[like] insert error:", error.message);
+        return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
+      }
     }
-  } else {
-    // Like
-    const { error } = await supabase.from("article_likes").insert({
-      user_id: user.id,
-      article_url: canonicalUrl,
-    });
-    if (error && error.code !== "23505") {
-      console.error("[like] insert error:", error.message);
-      return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
-    }
+
+    // The article page renders the count from a snapshot shared by every
+    // article, so without this a new like stays invisible to everyone else until
+    // that snapshot's TTL runs out.
+    revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
+
+    // Return updated count
+    const { count } = await supabase
+      .from("article_likes")
+      .select("*", { count: "exact", head: true })
+      .in("article_url", urlVariants);
+
+    return NextResponse.json({ count: count ?? 0, userLiked: !existing });
+  } catch (err) {
+    console.error("[like] POST failed:", err);
+    return NextResponse.json({ error: "Likes are unavailable right now" }, { status: 500 });
   }
-
-  // The article page renders the count from a snapshot shared by every
-  // article, so without this a new like stays invisible to everyone else until
-  // that snapshot's TTL runs out.
-  revalidateTag(ARTICLE_ENGAGEMENT_TAG, "max");
-
-  // Return updated count
-  const { count } = await supabase
-    .from("article_likes")
-    .select("*", { count: "exact", head: true })
-    .in("article_url", urlVariants);
-
-  return NextResponse.json({ count: count ?? 0, userLiked: !existing });
 }

@@ -14,8 +14,9 @@ describe("getCurrentSeasonYear", () => {
     expect(getCurrentSeasonYear(new Date("2026-08-01T00:00:00Z"))).toBe(2026);
   });
 
-  it("keeps July in the season that started the previous year", () => {
+  it("keeps July in the season that started the previous year (UTC boundary, timezone-independent)", () => {
     expect(getCurrentSeasonYear(new Date("2026-07-31T00:00:00Z"))).toBe(2025);
+    expect(getCurrentSeasonYear(new Date("2026-07-31T23:30:00Z"))).toBe(2025);
   });
 
   it("keeps mid-season January with the starting year", () => {
