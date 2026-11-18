@@ -15,6 +15,8 @@ const JUNK_ANYWHERE: RegExp[] = [
   /\ball the latest\b.*\b(news|page)\b/i,
   /\bdedicated .* page\b/i,
   /\bappeared first on\b/i,
+  /\b(?:syndicated from|originally published (?:on|by)|reproduced with permission)\b/i,
+  /\bjoin our (?:new )?whatsapp (?:community|channel)\b/i,
   /\ball rights reserved\b/i,
   /^\s*©/,
   /^\s*view \d+ images?\s*$/i,
@@ -59,7 +61,7 @@ const JUNK_WHEN_SHORT: { re: RegExp; max: number }[] = [
 
 /** Lines that open with a navigation/credit marker. */
 const JUNK_PREFIX =
-  /^\s*(read (more|next|also)|related( articles?| stories)?|see also|more:|watch:|listen:|share( this)?|tags?|tác giả|nguồn|ảnh|đọc thêm|xem thêm|đọc tiếp|tin liên quan|bài liên quan|theo dõi|photo|image|video|credit|source|via)\s*[:：]?(\s|$)/i;
+  /^\s*(read (more|next|also)|related( articles?| stories)?|see also|more:|watch:|listen:|share( this)?|tags?|tác giả|nguồn|ảnh|đọc thêm|xem thêm|đọc tiếp|tin liên quan|bài liên quan|theo dõi|photo|image|video|credit|source|via)\s*[:：.…»›-]*(\s|$)/i;
 
 /** "By Jamie Jackson", "Bởi Minh Anh": short capitalised byline with no sentence punctuation. */
 const BYLINE = /^\s*([Bb]y|[Bb]ởi)\s+\p{Lu}[\p{L}'.-]*(\s+\p{Lu}[\p{L}'.-]*){0,3}\s*$/u;

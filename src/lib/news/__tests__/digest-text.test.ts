@@ -105,8 +105,10 @@ describe("fixJoinedWords: spaces the model dropped", () => {
 });
 
 describe("fixBrandName", () => {
-  it("replaces the name this site never had", () => {
+  it("replaces legacy or hallucinated site names with Anfield Daily", () => {
     expect(fixBrandName("Liverpool Daily — 12 October 2026")).toBe("Anfield Daily — 12 October 2026");
+    expect(fixBrandName("Reds Abroad morning briefing")).toBe("Anfield Daily morning briefing");
+    expect(fixBrandName("Bản tin LFCVN hôm nay")).toBe("Bản tin Anfield Daily hôm nay");
     expect(fixBrandName("Anfield Daily — 12 October 2026")).toBe("Anfield Daily — 12 October 2026");
   });
 });

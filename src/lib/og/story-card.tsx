@@ -2,6 +2,8 @@ import { ImageResponse } from "next/og";
 import { BRAND, WORDMARK } from "@/lib/brand";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { leagueGothicFontData } from "@/assets/fonts/league-gothic-base64";
+import { fixBrandName } from "@/lib/news/digest-text";
+import { cleanFeedText } from "@/lib/news/text";
 
 /**
  * The share card for a single story.
@@ -34,8 +36,8 @@ function headlineSize(length: number): number {
 }
 
 /** Trim to whole words — a card ending mid-word reads as broken, not as truncated. */
-function clamp(text: string, max: number): string {
-  const clean = text.replace(/\s+/g, " ").trim();
+export function clampCardText(text: string, max: number): string {
+  const clean = fixBrandName(cleanFeedText(text));
   if (clean.length <= max) return clean;
   const cut = clean.slice(0, max);
   const lastSpace = cut.lastIndexOf(" ");
@@ -53,7 +55,10 @@ export function renderStoryCard({
   /** Small line at the bottom; the brand name when nothing better fits. */
   footer?: string;
 }) {
-  const text = clamp(headline, 180);
+  const wordmarkSize = 52;
+  const text = clampCardText(headline, 180) || BRAND.name;
+  const cleanKicker = kicker ? clampCardText(kicker, 48) : "";
+  const cleanFooter = footer ? clampCardText(footer, 80) : BRAND.name;
 
   return new ImageResponse(
     (
@@ -74,23 +79,33 @@ export function renderStoryCard({
 
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <BrandMark size={56} />
-          <div
-            style={{
-              fontFamily: "League Gothic",
-              fontSize: 52,
-              lineHeight: 0.82,
-              color: "#ffffff",
-              textTransform: "uppercase",
-              letterSpacing: 52 * Number(WORDMARK.bar.thicknessEm) * 2,
-              display: "flex",
-            }}
-          >
-            {BRAND.name}
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div
+              style={{
+                fontFamily: "League Gothic",
+                fontSize: wordmarkSize,
+                lineHeight: 0.82,
+                color: "#ffffff",
+                textTransform: "uppercase",
+                letterSpacing: wordmarkSize * Number.parseFloat(WORDMARK.letterSpacing),
+                display: "flex",
+              }}
+            >
+              {BRAND.name}
+            </div>
+            <div
+              style={{
+                width: 56,
+                height: wordmarkSize * Number(WORDMARK.bar.thicknessEm),
+                marginTop: wordmarkSize * Number(WORDMARK.bar.gapEm),
+                background: BRAND.red,
+              }}
+            />
           </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
-          {kicker && (
+          {cleanKicker && (
             <div
               style={{
                 fontSize: 24,
@@ -102,7 +117,7 @@ export function renderStoryCard({
                 display: "flex",
               }}
             >
-              {clamp(kicker, 48)}
+              {cleanKicker}
             </div>
           )}
           <div
@@ -118,7 +133,7 @@ export function renderStoryCard({
           </div>
         </div>
 
-        <div style={{ fontSize: 22, color: "#a0a0a0", display: "flex" }}>{footer ?? BRAND.name}</div>
+        <div style={{ fontSize: 22, color: "#a0a0a0", display: "flex" }}>{cleanFooter}</div>
       </div>
     ),
     {

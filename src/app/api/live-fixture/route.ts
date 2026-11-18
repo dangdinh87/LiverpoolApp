@@ -57,11 +57,14 @@ export async function GET() {
       await getLivePayload(),
       {
         headers: {
-          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=30",
+          "Cache-Control": "public, max-age=15, s-maxage=30, stale-while-revalidate=30",
         },
       }
     );
   } catch {
-    return NextResponse.json({ fixture: null, live: null }, { status: 500 });
+    return NextResponse.json(
+      { fixture: null, live: null },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
+    );
   }
 }

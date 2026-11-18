@@ -28,14 +28,22 @@ const MAX_GOALS = 20;
 
 export type PredictionWriteError = "signIn" | "closed" | "invalid" | "unavailable";
 
-async function currentUserId(): Promise<string | null> {
+async function currentAuth(): Promise<{ ok: true; userId: string | null } | { ok: false }> {
   try {
     const supabase = await createServerSupabaseClient();
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id ?? null;
+    const { data, error } = await supabase.auth.getUser();
+    if (error && (error.status === undefined || error.status === 0 || error.status >= 500)) {
+      return { ok: false };
+    }
+    return { ok: true, userId: data.user?.id ?? null };
   } catch {
-    return null;
+    return { ok: false };
   }
+}
+
+async function currentUserId(): Promise<string | null> {
+  const auth = await currentAuth();
+  return auth.ok ? auth.userId : null;
 }
 
 /** Open until kick-off, and never for a match that is postponed or already under way. */
@@ -55,7 +63,14 @@ export interface PredictionState {
 
 const EMPTY_COMMUNITY: CommunityPrediction = { count: 0, split: { home: 0, draw: 0, away: 0 }, topScores: [] };
 
+function isValidFixtureId(id: unknown): id is number {
+  return typeof id === "number" && Number.isInteger(id) && id > 0;
+}
+
 export async function getPredictionState(fixtureId: number): Promise<PredictionState> {
+  if (!isValidFixtureId(fixtureId)) {
+    return { available: false, signedIn: false, open: false, mine: null, community: EMPTY_COMMUNITY };
+  }
   const [fixture, userId] = await Promise.all([getFixtureById(fixtureId), currentUserId()]);
   const base = { available: false, signedIn: !!userId, open: false, mine: null, community: EMPTY_COMMUNITY };
   if (!fixture) return base;
@@ -85,23 +100,32 @@ export async function savePrediction(
   home: number,
   away: number,
 ): Promise<{ ok: true } | { ok: false; error: PredictionWriteError }> {
-  const valid = (n: number) => Number.isInteger(n) && n >= 0 && n <= MAX_GOALS;
-  if (!valid(home) || !valid(away)) return { ok: false, error: "invalid" };
+  const valid = (n: number) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= MAX_GOALS;
+  if (!isValidFixtureId(fixtureId) || !valid(home) || !valid(away)) {
+    return { ok: false, error: "invalid" };
+  }
 
-  const userId = await currentUserId();
+  const auth = await currentAuth();
+  if (!auth.ok) return { ok: false, error: "unavailable" };
+  const userId = auth.userId;
   if (!userId) return { ok: false, error: "signIn" };
 
   const fixture = await getFixtureById(fixtureId);
   if (!fixture || !predictionsOpen(fixture, Date.now())) return { ok: false, error: "closed" };
 
-  const { error } = await getServiceClient()
-    .from("match_predictions")
-    .upsert(
-      { user_id: userId, fixture_id: fixtureId, home_goals: home, away_goals: away, updated_at: new Date().toISOString() },
-      { onConflict: "user_id,fixture_id" },
-    );
-  if (error) {
-    console.error("[predictions] save failed:", error);
+  try {
+    const { error } = await getServiceClient()
+      .from("match_predictions")
+      .upsert(
+        { user_id: userId, fixture_id: fixtureId, home_goals: home, away_goals: away, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,fixture_id" },
+      );
+    if (error) {
+      console.error("[predictions] save failed:", error);
+      return { ok: false, error: "unavailable" };
+    }
+  } catch (err) {
+    console.error("[predictions] save threw:", err);
     return { ok: false, error: "unavailable" };
   }
   // updateTag, not revalidateTag: this is the reader's own write, so the next
@@ -156,6 +180,9 @@ function ratingsOpen(f: Fixture, now: number): boolean {
 }
 
 export async function getRatingsState(fixtureId: number): Promise<RatingsState> {
+  if (!isValidFixtureId(fixtureId)) {
+    return { available: false, signedIn: false, open: false, players: [], mine: {} };
+  }
   const [fixture, userId] = await Promise.all([getFixtureById(fixtureId), currentUserId()]);
   const base = { available: false, signedIn: !!userId, open: false, players: [], mine: {} };
   if (!fixture || !FINISHED.has(fixture.fixture.status.short)) return base;
@@ -196,12 +223,21 @@ export async function saveRatings(
   fixtureId: number,
   ratings: Record<string, number>,
 ): Promise<{ ok: true } | { ok: false; error: PredictionWriteError }> {
+  if (!isValidFixtureId(fixtureId) || !ratings || typeof ratings !== "object" || Array.isArray(ratings)) {
+    return { ok: false, error: "invalid" };
+  }
   const entries = Object.entries(ratings);
-  if (entries.length === 0 || entries.some(([, r]) => !Number.isInteger(r) || r < 1 || r > 10)) {
+  if (
+    entries.length === 0 ||
+    entries.length > 30 ||
+    entries.some(([name, r]) => !name || typeof r !== "number" || !Number.isInteger(r) || r < 1 || r > 10)
+  ) {
     return { ok: false, error: "invalid" };
   }
 
-  const userId = await currentUserId();
+  const auth = await currentAuth();
+  if (!auth.ok) return { ok: false, error: "unavailable" };
+  const userId = auth.userId;
   if (!userId) return { ok: false, error: "signIn" };
 
   const fixture = await getFixtureById(fixtureId);
@@ -210,15 +246,20 @@ export async function saveRatings(
   const allowed = new Set((await liverpoolPlayers(fixture)).map((p) => p.name));
   if (entries.some(([name]) => !allowed.has(name))) return { ok: false, error: "invalid" };
 
-  const now = new Date().toISOString();
-  const { error } = await getServiceClient()
-    .from("player_ratings")
-    .upsert(
-      entries.map(([player_name, rating]) => ({ user_id: userId, fixture_id: fixtureId, player_name, rating, updated_at: now })),
-      { onConflict: "user_id,fixture_id,player_name" },
-    );
-  if (error) {
-    console.error("[ratings] save failed:", error);
+  try {
+    const now = new Date().toISOString();
+    const { error } = await getServiceClient()
+      .from("player_ratings")
+      .upsert(
+        entries.map(([player_name, rating]) => ({ user_id: userId, fixture_id: fixtureId, player_name, rating, updated_at: now })),
+        { onConflict: "user_id,fixture_id,player_name" },
+      );
+    if (error) {
+      console.error("[ratings] save failed:", error);
+      return { ok: false, error: "unavailable" };
+    }
+  } catch (err) {
+    console.error("[ratings] save threw:", err);
     return { ok: false, error: "unavailable" };
   }
   updateTag(FAN_PREDICTIONS_CACHE_TAG);

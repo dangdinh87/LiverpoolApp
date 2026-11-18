@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getEnv } from "@/lib/env";
 import { withCronAuth } from "@/lib/cron";
@@ -31,54 +32,78 @@ export const GET = withCronAuth(async (req) => {
     return NextResponse.json({ error: "VIETAPI_KEY not configured" }, { status: 503 });
   }
 
-  const force = req.nextUrl.searchParams.get("force") === "1";
-  // One named fixture, for backfilling a match the window has moved past.
-  const only = Number(req.nextUrl.searchParams.get("fixture")) || null;
-  const now = Date.now();
+  const rawFixture = req.nextUrl.searchParams.get("fixture");
+  let only: number | null = null;
+  if (rawFixture !== null && rawFixture !== "") {
+    const parsed = Number(rawFixture);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      return NextResponse.json({ error: "Invalid fixture id" }, { status: 400 });
+    }
+    only = parsed;
+  }
 
-  const fixtures = await getFixtures();
-  const candidates = fixtures
-    .filter((f) => FINISHED.has(f.fixture.status.short))
-    .filter((f) => (only ? f.fixture.id === only : now - new Date(f.fixture.date).getTime() <= REVIEW_WINDOW_MS))
-    .sort((a, b) => b.fixture.date.localeCompare(a.fixture.date));
+  try {
+    const force = req.nextUrl.searchParams.get("force") === "1";
+    const now = Date.now();
 
-  const results: GenerationOutcome[] = [];
-  for (const fixture of candidates) {
-    if (results.length >= MAX_PER_RUN) break;
+    const fixtures = await getFixtures();
+    const candidates = fixtures
+      .filter((f) => FINISHED.has(f.fixture.status.short))
+      .filter((f) => (only ? f.fixture.id === only : now - new Date(f.fixture.date).getTime() <= REVIEW_WINDOW_MS))
+      .sort((a, b) => b.fixture.date.localeCompare(a.fixture.date));
 
-    const id = fixture.fixture.id;
-    if (!force && (await hasArticleForFixture(id, "review"))) continue;
+    const results: GenerationOutcome[] = [];
+    for (const fixture of candidates) {
+      if (results.length >= MAX_PER_RUN) break;
 
-    const facts = await loadMatchReviewFacts(id);
-    if (!facts) continue;
+      const id = fixture.fixture.id;
+      if (!force && (await hasArticleForFixture(id, "review"))) continue;
 
-    // A match that produced goals but no goal detail is not writable: asked to
-    // report a 1-0 with no scorer, the model invents one. The free data tier
-    // omits scorers often enough that this has to be checked, not assumed.
-    const scored = facts.home.score + facts.away.score;
-    if (scored > 0 && facts.goals.length === 0) continue;
-    // Nothing beyond the score is nothing worth publishing.
-    if (facts.goals.length === 0 && !facts.stats) continue;
+      const facts = await loadMatchReviewFacts(id);
+      if (!facts) continue;
 
-    results.push(
-      await generateSiteArticle({
-        slug: matchArticleSlug("review", fixture),
-        kind: "review",
-        facts,
-        fixtureId: id,
-      }),
+      // A match that produced goals but no goal detail is not writable: asked to
+      // report a 1-0 with no scorer, the model invents one. The free data tier
+      // omits scorers often enough that this has to be checked, not assumed.
+      const scored = facts.home.score + facts.away.score;
+      if (scored > 0 && facts.goals.length === 0) continue;
+      // Nothing beyond the score is nothing worth publishing.
+      if (facts.goals.length === 0 && !facts.stats) continue;
+
+      results.push(
+        await generateSiteArticle({
+          slug: matchArticleSlug("review", fixture),
+          kind: "review",
+          facts,
+          fixtureId: id,
+        }),
+      );
+    }
+
+    const written = results.filter((r) => r.ok);
+    if (written.length > 0) {
+      revalidateTag("site-articles", "max");
+      revalidateLocalizedPath("/analysis");
+      revalidateLocalizedPath("/");
+      for (const r of written) {
+        revalidateLocalizedPath(`/analysis/${r.slug}`);
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ok: true,
+        considered: candidates.length,
+        written: written.length,
+        rejected: results.filter((r) => !r.ok),
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (err) {
+    console.error("[site-articles/generate] Fatal:", err);
+    return NextResponse.json(
+      { ok: false, error: "Site article generation failed" },
+      { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }
-
-  if (results.some((r) => r.ok)) {
-    revalidateLocalizedPath("/analysis");
-    revalidateLocalizedPath("/");
-  }
-
-  return NextResponse.json({
-    ok: true,
-    considered: candidates.length,
-    written: results.filter((r) => r.ok).length,
-    rejected: results.filter((r) => !r.ok),
-  });
 });

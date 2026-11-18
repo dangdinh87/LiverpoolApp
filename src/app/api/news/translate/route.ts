@@ -15,6 +15,9 @@ export const maxDuration = 60;
 // Cap input characters sent to the LLM so giant liveblogs cannot overrun the
 // 60s route budget or exhaust maxOutputTokens.
 const MAX_TRANSLATE_CHARS = 18_000;
+const TRANSLATE_ATTEMPT_TIMEOUT_MS = 28_000;
+const TRANSLATE_DEADLINE_MS = 55_000;
+const MIN_TRANSLATE_ATTEMPT_MS = 8_000;
 
 function buildTranslateSystemPrompt(): string {
   return `You are a senior Vietnamese sports journalist who writes for a top football news site. Translate the following English football article into natural, fluent Vietnamese that reads like it was originally written in Vietnamese.
@@ -74,8 +77,8 @@ interface TranslationPayload {
 const inflightTranslations = new Map<string, Promise<TranslationPayload>>();
 
 function shouldTryNextModel(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return /429|rate limit|tokens per|does not exist|do not have access|model|overloaded|timeout|503|502|504|500/i.test(msg);
+  const msg = err instanceof Error ? `${err.name} ${err.message}` : String(err);
+  return /429|rate limit|tokens per|does not exist|do not have access|model|overloaded|timeout|abort|503|502|504|500/i.test(msg);
 }
 
 function isUsableTranslation(content: unknown): content is CachedTranslationContent {
@@ -170,7 +173,7 @@ export async function POST(req: NextRequest) {
         return null;
       }
 
-      const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|IconSport|Getty Images|Image:/i;
+      const junkPattern = /FOLLOW\s+(OUR|US)|FACEBOOK\s+PAGE|join our (?:new )?whatsapp|Sign up|Newsletter|Subscribe|Click here|READ MORE|READ NEXT|Continue reading|appeared first on|IconSport|Getty Images|Image:/i;
       const cleanParagraphs = capParagraphsByChars(
         content.paragraphs.filter((p) => !junkPattern.test(p)),
         MAX_TRANSLATE_CHARS
@@ -182,15 +185,20 @@ export async function POST(req: NextRequest) {
       const input = sections.join("\n|||\n");
       const systemPrompt = buildTranslateSystemPrompt();
 
+      const startedAt = Date.now();
       let result;
       let usedModel: string = TRANSLATE_MODELS[0];
       for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
+        const remaining = TRANSLATE_DEADLINE_MS - (Date.now() - startedAt);
+        const attemptMs = Math.min(remaining, TRANSLATE_ATTEMPT_TIMEOUT_MS);
+        if (attemptMs < MIN_TRANSLATE_ATTEMPT_MS) break;
         try {
           result = await generateText({
             model: getVietapiModel(modelId),
             system: systemPrompt,
             prompt: input,
             maxOutputTokens: 4000,
+            abortSignal: AbortSignal.timeout(attemptMs),
           });
           if (hasUnexpectedScript(result.text) && index < TRANSLATE_MODELS.length - 1) {
             console.warn(`[translate] ${modelId} returned unexpected script, falling back...`);

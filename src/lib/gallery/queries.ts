@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidateTag } from "next/cache";
 import { createClient } from "@supabase/supabase-js";
+import { getEnv } from "@/lib/env";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
 import type { GalleryCategory } from "@/lib/constants";
@@ -18,9 +19,14 @@ export const SITE_SETTINGS_CACHE_TAG = "site-settings";
  * whose session the admin RLS policies check.
  */
 function createPublicReadClient() {
+  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  if (!url || !anonKey) {
+    throw new Error("Missing Supabase public env vars");
+  }
   return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       // Bounded fetch, no postgrest retries: see supabase-fetch-with-timeout.ts.
       global: { fetch: createSupabaseFetch() },
@@ -28,6 +34,11 @@ function createPublicReadClient() {
       auth: { persistSession: false, autoRefreshToken: false },
     },
   );
+}
+
+/** Escape SQL LIKE wildcards so user search input matches literal characters. */
+export function escapeIlikePattern(raw: string): string {
+  return raw.replace(/[\\%_]/g, "\\$&");
 }
 
 export interface GalleryImage {
@@ -63,7 +74,7 @@ export async function listGalleryImagesFromDB(options?: {
   }
 
   if (options?.search?.trim()) {
-    query = query.ilike("alt", `%${options.search.trim()}%`);
+    query = query.ilike("alt", `%${escapeIlikePattern(options.search.trim())}%`);
   }
 
   const { data, error, count } = await query

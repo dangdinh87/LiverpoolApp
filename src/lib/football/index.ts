@@ -4,6 +4,8 @@
 import { getCurrentSeasonYear, getSelectableSeasons } from "./current-season";
 import "server-only";
 import { cache } from "react";
+import { hasEnv } from "@/lib/env";
+import { competitionKey } from "@/lib/competition-labels";
 import type { Standing } from "@/lib/types/football";
 import { FdoProvider } from "./fdo-provider";
 import { getFdoStandings, getFdoUclStandings } from "./fdo-standings";
@@ -21,7 +23,11 @@ export type { SeasonStats, SeasonOverview, MonthlyGoals, CompetitionStats, Seaso
 const provider = new FdoProvider();
 
 function hasFdoKey(): boolean {
-  return Boolean(process.env.FOOTBALL_DATA_ORG_KEY);
+  return hasEnv("FOOTBALL_DATA_ORG_KEY");
+}
+
+function normalizedCompId(name: string): string {
+  return competitionKey(name) ?? name;
 }
 
 // Re-export all functions wrapped in React.cache() for per-request deduplication.
@@ -36,7 +42,7 @@ export const getFixtures = cache(async (season?: number) => {
 
   try {
     const allFixtures = await getFdoLfcFixtures(season);
-    const coveredComps = new Set(allFixtures.map((f) => f.league.name));
+    const coveredComps = new Set(allFixtures.map((f) => normalizedCompId(f.league.name)));
 
     // ESPN: FA Cup, EFL Cup (free, no key needed). ESPN only serves the
     // current campaign's schedule, which can still contain last season's cup
@@ -46,7 +52,7 @@ export const getFixtures = cache(async (season?: number) => {
       try {
         const espnCups = await getEspnCupFixtures();
         const newCups = espnCups.filter(
-          (f) => f.league.season === currentSeason && !coveredComps.has(f.league.name),
+          (f) => f.league.season === currentSeason && !coveredComps.has(normalizedCompId(f.league.name)),
         );
         allFixtures.push(...newCups);
       } catch (err) {

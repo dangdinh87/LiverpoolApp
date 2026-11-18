@@ -1,6 +1,7 @@
 import type { NewsArticle } from "../types";
 import { extractImageUrlFromHtml } from "../image";
 import { NEWS_USER_AGENT } from "../http";
+import { cleanFeedText, stripSnippetBoilerplate } from "../text";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
 
 interface OgMeta {
@@ -67,14 +68,19 @@ export async function fetchOgMeta(url: string, timeoutMs = 6000): Promise<OgMeta
     // covers data-src/data-original/srcset plus bad-image filtering.
     // Date: extractMetaContent matches both property= and name=, single or double
     // quotes, in either attribute order — stricter inline regexes miss those.
+    const rawTitle = extractMetaContent(html, "og:title") || extractMetaContent(html, "twitter:title");
+    const rawDesc = extractMetaContent(html, "og:description") || extractMetaContent(html, "description");
+    const cleanTitle = rawTitle ? cleanFeedText(rawTitle) : undefined;
+    const cleanDesc = rawDesc ? stripSnippetBoilerplate(cleanFeedText(rawDesc)) : undefined;
+
     return {
       image: extractImageUrlFromHtml(html, url),
       publishedAt:
         extractMetaContent(html, "article:published_time") ||
         extractMetaContent(html, "pubdate") ||
         extractMetaContent(html, "date"),
-      title: extractMetaContent(html, "og:title") || extractMetaContent(html, "twitter:title"),
-      description: extractMetaContent(html, "og:description") || extractMetaContent(html, "description"),
+      title: cleanTitle || undefined,
+      description: cleanDesc || undefined,
     };
   } catch {
     return {};

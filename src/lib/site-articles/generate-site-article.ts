@@ -142,7 +142,7 @@ export async function generateSiteArticle(args: {
       problems.push(`${model} (vi): ${err instanceof Error ? err.message : String(err)}`);
     }
 
-    await saveSiteArticle({
+    const saved = await saveSiteArticle({
       slug, kind, fixtureId,
       contentEn: draft, contentVi, facts,
       status: "published", model,
@@ -150,6 +150,9 @@ export async function generateSiteArticle(args: {
       // version explains itself.
       rejectReason: contentVi ? null : problems.join(" | ") || null,
     });
+    if (!saved) {
+      return { ok: false, slug, reason: "failed to save published article" };
+    }
     return { ok: true, slug, model, vi: contentVi !== null };
   }
 

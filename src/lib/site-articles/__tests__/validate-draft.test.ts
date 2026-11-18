@@ -337,3 +337,59 @@ describe("validateDraft — articles inside a name run", () => {
     expect(validateDraft(draft, REVIEW_FACTS).problems).toEqual([]);
   });
 });
+
+describe("validateDraft — brand rules, boilerplate & markup hygiene", () => {
+  it("rejects forbidden 'fans abroad' audience positioning in both English and Vietnamese", () => {
+    for (const phrase of [
+      "A late win for fans abroad.",
+      "Written for supporters far from home.",
+      "Readers outside England saw Liverpool win 2-1.",
+      "Chiến thắng ý nghĩa cho fan ở xa.",
+      "Tin vui cho người hâm mộ xa nhà.",
+      "Dành cho cổ động viên ngoài nước Anh.",
+      "Ở đâu cũng là Anfield sau bàn thắng phút 78.",
+    ]) {
+      const draft = goodDraft();
+      draft.sections[0].body = `Cody Gakpo scored on 78. ${phrase}`;
+      const report = validateDraft(draft, REVIEW_FACTS);
+      expect(report.ok, phrase).toBe(false);
+      expect(report.problems.join(" "), phrase).toMatch(/forbidden 'for fans abroad' positioning/i);
+    }
+  });
+
+  it("allows legitimate away-fixture match prose ('far from home', 'xa nhà', 'outside England')", () => {
+    const enDraft = goodDraft();
+    enDraft.sections[0].body =
+      "Liverpool won 2-1 far from home, playing outside England as Cody Gakpo scored on 78.";
+    expect(validateDraft(enDraft, REVIEW_FACTS).problems).toEqual([]);
+
+    const viDraft = {
+      title: "Liverpool 2-1 Manchester City",
+      excerpt: "Cody Gakpo ấn định tỷ số.",
+      metaTitle: "Liverpool 2-1 Manchester City",
+      metaDescription: "Cody Gakpo ghi bàn ở phút 78.",
+      sections: [
+        {
+          heading: "Kết quả",
+          body: "Cody Gakpo ghi bàn ở phút 78 khi Liverpool làm khách xa nhà và thi đấu ngoài nước Anh.",
+        },
+      ],
+    };
+    expect(validateDraft(viDraft, REVIEW_FACTS).problems).toEqual([]);
+  });
+
+  it("rejects publisher boilerplate, raw HTML entities/tags, banned AI clichés, and legacy brand names", () => {
+    for (const bad of [
+      "Cody Gakpo scored on 78. Read more...",
+      "Cody Gakpo scored on 78. Click here for updates.",
+      "Cody Gakpo&#x27;s goal on 78 settled it.",
+      "<strong>Cody Gakpo</strong> scored on 78.",
+      "What a night at Anfield as Cody Gakpo scored on 78.",
+      "Reds Abroad covered the 2-1 win.",
+    ]) {
+      const draft = goodDraft();
+      draft.sections[0].body = bad;
+      expect(validateDraft(draft, REVIEW_FACTS).ok, bad).toBe(false);
+    }
+  });
+});

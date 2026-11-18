@@ -72,9 +72,12 @@ export function fixJoinedWords(text: string): string {
   });
 }
 
-/** The prompt once asked for "Liverpool Daily", a name this site never had. */
+/** Replace legacy or hallucinated site names with the canonical brand name. */
 export function fixBrandName(text: string): string {
-  return text.replaceAll("Liverpool Daily", BRAND.name);
+  return text
+    .replaceAll("Liverpool Daily", BRAND.name)
+    .replace(/\bReds Abroad\b/gi, BRAND.name)
+    .replace(/\bLFCVN\b/g, BRAND.name);
 }
 
 /** Rows stored before a field existed may lack it: pass anything that is not text through. */

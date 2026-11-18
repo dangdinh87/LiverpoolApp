@@ -35,6 +35,36 @@ const UNSUPPORTABLE = [
 ];
 
 /**
+ * Editorial, brand, and markup hygiene checks (forbidden positioning, legacy site
+ * names, publisher boilerplate, unescaped HTML entities/tags, and banned AI clichés).
+ */
+const EDITORIAL_VIOLATIONS = [
+  {
+    pattern:
+      /(?<![\p{L}\p{N}])(?:(?:for\s+)?(?:fans?|supporters?|readers?)\s+(?:abroad|far\s+from\s+home|outside\s+(?:the\s+uk|england)|everywhere)|(?:cho\s+)?(?:fan|người\s+hâm\s+mộ|cổ\s+động\s+viên|độc\s+giả)(?:\s+liverpool)?\s+(?:ở\s+xa|xa\s+nhà|ngoài\s+nước\s+anh|khắp\s+thế\s+giới)|ở\s+đâu\s+cũng\s+là\s+anfield)(?![\p{L}\p{N}])/iu,
+    why: "uses forbidden 'for fans abroad' positioning",
+  },
+  {
+    pattern: /(?<![\p{L}\p{N}])(?:reds\s*abroad|lfcvn|liverpool\s+daily)(?![\p{L}\p{N}])/iu,
+    why: "uses a legacy or wrong site name instead of Anfield Daily",
+  },
+  {
+    pattern:
+      /(?<![\p{L}\p{N}])(?:read\s+(?:more|next|full\s+story)|click\s+here|continue\s+reading|appeared\s+first\s+on|syndicated\s+from|đọc\s+thêm|xem\s+thêm)(?![\p{L}\p{N}])/iu,
+    why: "leaks publisher boilerplate",
+  },
+  {
+    pattern: /&(?:amp|lt|gt|quot|nbsp|apos|#\d+|#x[0-9a-f]+);|<\/?[a-z][a-z0-9]*(?:\s[^>]*)?>/i,
+    why: "contains raw HTML entities or markup tags",
+  },
+  {
+    pattern:
+      /(?<![\p{L}\p{N}])(?:what a night at anfield|only time will tell|in the world of|it is worth noting|it cannot be denied)(?![\p{L}\p{N}])/iu,
+    why: "uses banned AI cliché phrasing",
+  },
+];
+
+/**
  * Words that open a sentence or heading without naming anyone.
  *
  * English capitalises the first word of every sentence, so position alone
@@ -108,7 +138,7 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
   // The club this site is about, by the names its supporters use. Safe to allow
   // outright: they cannot be mistaken for another team.
   const names = new Set<string>([
-    "reds", "kop", "liverpool", "anfield", "lfc",
+    "reds", "kop", "liverpool", "anfield", "lfc", "england", "anh",
     // The clock's zone, which the kick-off timestamp carries.
     "utc", "gmt",
   ]);
@@ -321,6 +351,12 @@ export function validateDraft(
   for (const { pattern, why } of UNSUPPORTABLE) {
     if (pattern.test(text)) {
       problems.push(`${why} — that cannot be seen in the data this article was built from`);
+    }
+  }
+
+  for (const { pattern, why } of EDITORIAL_VIOLATIONS) {
+    if (pattern.test(text)) {
+      problems.push(why);
     }
   }
 

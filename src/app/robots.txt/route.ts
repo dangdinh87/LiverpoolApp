@@ -1,4 +1,5 @@
 import { routing, withLocalePrefix } from "@/i18n/routing";
+import { getSiteUrl } from "@/lib/seo";
 
 /**
  * SEO-tool crawlers. They index the web for paying customers' backlink and
@@ -22,7 +23,7 @@ const SEO_TOOL_BOTS = [
 ];
 
 export function GET() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getSiteUrl();
   // `Disallow: /*?*` used to sit here and blocked every URL carrying a query
   // string. That is worse than it sounds: `/news?source=bbc` and
   // `/fixtures?view=results` are real links readers share, and a disallowed URL

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
+import { getSiteUrl } from "@/lib/seo";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getSafeRedirect } from "@/lib/safe-redirect";
 import { toAuthErrorCode, type AuthErrorCode } from "@/lib/auth-error-code";
@@ -13,6 +14,7 @@ export type AuthFormError = AuthErrorCode | "emailRequired" | "passwordRequired"
 type AuthFormResult = { error?: AuthFormError; success?: "checkEmail" } | undefined;
 
 export async function loginWithEmail(formData: FormData): Promise<AuthFormResult> {
+  if (!(formData instanceof FormData)) return { error: "unknown" };
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const redirectTo = getSafeRedirect(String(formData.get("redirectTo") ?? "/"));
@@ -20,45 +22,55 @@ export async function loginWithEmail(formData: FormData): Promise<AuthFormResult
   if (!email) return { error: "emailRequired" };
   if (!password) return { error: "passwordRequired" };
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) return { error: toAuthErrorCode(error) };
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: toAuthErrorCode(error) };
+  } catch (err) {
+    console.error("[auth] loginWithEmail threw:", err);
+    return { error: "unavailable" };
+  }
 
   revalidateLocalizedPath("/");
   redirect(redirectTo);
 }
 
 export async function registerWithEmail(formData: FormData): Promise<AuthFormResult> {
+  if (!(formData instanceof FormData)) return { error: "unknown" };
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
   if (!email) return { error: "emailRequired" };
   if (password.length < 6) return { error: "passwordShort" };
 
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`,
-    },
-  });
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      },
+    });
 
-  if (error) return { error: toAuthErrorCode(error) };
+    if (error) return { error: toAuthErrorCode(error) };
 
-  if (data.user) {
-    // Always create profile row (even for unconfirmed users). Insert-only, so a
-    // repeat signup can never blank out a profile the user already filled in.
-    await supabase.from("user_profiles").upsert(
-      { user_id: data.user.id, username: null, avatar_url: null, bio: null },
-      { onConflict: "user_id", ignoreDuplicates: true }
-    );
+    if (data.user) {
+      // Always create profile row (even for unconfirmed users). Insert-only, so a
+      // repeat signup can never blank out a profile the user already filled in.
+      await supabase.from("user_profiles").upsert(
+        { user_id: data.user.id, username: null, avatar_url: null, bio: null },
+        { onConflict: "user_id", ignoreDuplicates: true }
+      );
 
-    // If email not yet confirmed, tell user to check email
-    if (!data.user.email_confirmed_at) {
-      return { success: "checkEmail" };
+      // If email not yet confirmed, tell user to check email
+      if (!data.user.email_confirmed_at) {
+        return { success: "checkEmail" };
+      }
     }
+  } catch (err) {
+    console.error("[auth] registerWithEmail threw:", err);
+    return { error: "unavailable" };
   }
 
   revalidateLocalizedPath("/");
@@ -66,8 +78,12 @@ export async function registerWithEmail(formData: FormData): Promise<AuthFormRes
 }
 
 export async function logout() {
-  const supabase = await createServerSupabaseClient();
-  await supabase.auth.signOut();
+  try {
+    const supabase = await createServerSupabaseClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("[auth] logout signOut failed:", err);
+  }
   revalidatePath("/", "layout");
   redirect("/");
 }

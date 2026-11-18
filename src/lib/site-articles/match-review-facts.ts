@@ -27,10 +27,14 @@ const LFC_ID = 40;
  */
 const COMPETITION_ALIASES: Record<string, string[]> = {
   "Premier League": ["Ngoại hạng Anh", "EPL"],
-  "UEFA Champions League": ["Champions League", "Cúp C1", "C1"],
+  "UEFA Champions League": ["Champions League", "UCL", "Cúp C1", "C1"],
+  "Champions League": ["UEFA Champions League", "UCL", "Cúp C1", "C1"],
   "FA Cup": ["Cúp FA"],
-  "EFL Cup": ["Carabao Cup", "Cúp Liên đoàn"],
-  "Carabao Cup": ["EFL Cup", "Cúp Liên đoàn"],
+  "EFL Cup": ["Carabao Cup", "League Cup", "Cúp Liên đoàn"],
+  "Carabao Cup": ["EFL Cup", "League Cup", "Cúp Liên đoàn"],
+  "League Cup": ["EFL Cup", "Carabao Cup", "Cúp Liên đoàn"],
+  "Community Shield": ["FA Community Shield", "Siêu cúp Anh"],
+  "FA Community Shield": ["Community Shield", "Siêu cúp Anh"],
 };
 
 /** Statistic labels the providers use, mapped to the fields we report. */

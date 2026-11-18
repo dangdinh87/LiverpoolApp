@@ -19,8 +19,10 @@
 
 import "server-only";
 
+import { getEnv } from "@/lib/env";
 import type { NewsArticle } from "./types";
 import { NEWS_USER_AGENT } from "./http";
+import { cleanFeedText, cleanSnippet } from "./text";
 import { type FeedAdapter, type SourceFetchStatus, statusFromError } from "./adapters/base";
 
 /**
@@ -79,7 +81,7 @@ export function mapPlaylistItems(
   return (data.items ?? []).flatMap((item) => {
     const s = item.snippet;
     const videoId = s?.resourceId?.videoId;
-    const title = s?.title?.trim();
+    const title = cleanFeedText(s?.title);
     // A deleted or private upload keeps its playlist row but loses both.
     if (!videoId || !title) return [];
     // YouTube uses these two titles for rows whose video is gone.
@@ -87,6 +89,8 @@ export function mapPlaylistItems(
 
     const published = s?.publishedAt ? Date.parse(s.publishedAt) : NaN;
     if (Number.isNaN(published) || published < oldest) return [];
+
+    const firstLine = s?.description?.split("\n").find((l) => l.trim()) ?? "";
 
     return [
       {
@@ -99,7 +103,7 @@ export function mapPlaylistItems(
         pubDate: new Date(published).toISOString(),
         // First line only. The full description is the club's copy, and these
         // cards show a one-line excerpt.
-        contentSnippet: s?.description?.split("\n").find((l) => l.trim())?.slice(0, 220) ?? "",
+        contentSnippet: cleanSnippet(firstLine, 220),
         thumbnail: pickThumbnail(s?.thumbnails),
         author: s?.channelTitle ?? undefined,
       } satisfies NewsArticle,
@@ -115,7 +119,7 @@ export class YouTubeChannelAdapter implements FeedAdapter {
   constructor(private readonly channelId: string = LFC_CHANNEL_ID) {}
 
   async fetch(): Promise<NewsArticle[]> {
-    const key = process.env.YOUTUBE_API_KEY;
+    const key = getEnv("YOUTUBE_API_KEY");
     if (!key) {
       // Not an error: the site is expected to run without the key. Saying so
       // beats an empty section nobody can explain.

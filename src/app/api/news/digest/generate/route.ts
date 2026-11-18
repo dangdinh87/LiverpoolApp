@@ -49,23 +49,24 @@ export const GET = withCronAuth(async (req) => {
     revalidateLocalizedPath("/news/digest");
     revalidateLocalizedPath(`/news/digest/${today}`);
 
-    return NextResponse.json({
-      ok: true,
-      date: today,
-      title: digest.title,
-      sections: digest.sections.length,
-      seoArticle: true,
-      articleCount: digest.articleCount,
-      tokensUsed: digest.tokensUsed,
-      model: digest.model,
-    });
+    return NextResponse.json(
+      {
+        ok: true,
+        date: today,
+        title: digest.title,
+        sections: digest.sections.length,
+        seoArticle: true,
+        articleCount: digest.articleCount,
+        tokensUsed: digest.tokensUsed,
+        model: digest.model,
+      },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch (err) {
     console.error("[digest] Generation failed:", err);
     return NextResponse.json(
-      {
-        error: err instanceof Error ? err.message : "Digest generation failed",
-      },
-      { status: 500 }
+      { ok: false, error: "Digest generation failed" },
+      { status: 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 });
