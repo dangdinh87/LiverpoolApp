@@ -52,6 +52,7 @@ export function ChipBar({ items, active, onSelect, ariaLabel, sticky, className 
   return (
     <div
       className={cn(
+        !sticky && "min-w-0 max-w-full",
         sticky && "sticky top-[var(--header-h)] z-30 -mx-4 border-b border-[var(--line)] bg-stadium-bg/90 px-4 py-2.5 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
         className,
       )}

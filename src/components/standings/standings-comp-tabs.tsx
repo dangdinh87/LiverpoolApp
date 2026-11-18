@@ -26,6 +26,7 @@ export function StandingsCompTabs({ plStandings, uclStandings, nextOpponentId }:
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {hasUcl ? (
           <ChipBar
+            className="min-w-0 max-w-full"
             ariaLabel={t("compLabel")}
             active={comp}
             onSelect={(k) => setComp(k as "pl" | "ucl")}

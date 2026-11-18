@@ -3,7 +3,7 @@
 // Returns real W/D/L/GF/GA/form data (FPL teams have zeros for these fields).
 
 import "server-only";
-import { seasonRevalidate } from "@/lib/football/current-season";
+import { getCurrentSeasonYear, seasonRevalidate } from "@/lib/football/current-season";
 import type { Standing, StandingRecord } from "@/lib/types/football";
 import { CANONICAL_LFC_ID, fdoFetch, mapFdoTeamId as mapTeamId } from "./fdo-client";
 import { derivePLFormMap } from "./fdo-matches";
@@ -96,10 +96,11 @@ function mapEntry(
 
 /** Fetch PL standings from Football-Data.org. Cache 6h (standings don't change often). */
 export async function getFdoStandings(season?: number): Promise<Standing[]> {
-  const seasonParam = season ? `?season=${season}` : "";
+  const archivedSeason = season && season !== getCurrentSeasonYear() ? season : undefined;
+  const seasonParam = archivedSeason ? `?season=${archivedSeason}` : "";
   const [data, formMap] = await Promise.all([
-    fdoFetch<FdoStandingsResponse>(`/competitions/PL/standings${seasonParam}`, seasonRevalidate(season, 21600)),
-    derivePLFormMap(season).catch(() => new Map<number, string>()),
+    fdoFetch<FdoStandingsResponse>(`/competitions/PL/standings${seasonParam}`, seasonRevalidate(archivedSeason, 21600)),
+    derivePLFormMap(archivedSeason).catch(() => new Map<number, string>()),
   ]);
 
   const totalGroup = data.standings.find((s) => s.type === "TOTAL");
@@ -119,10 +120,11 @@ export async function getFdoStandings(season?: number): Promise<Standing[]> {
 
 /** Fetch UCL league-phase standings from Football-Data.org. Cache 6h. */
 export async function getFdoUclStandings(season?: number): Promise<Standing[]> {
-  const seasonParam = season ? `?season=${season}` : "";
+  const archivedSeason = season && season !== getCurrentSeasonYear() ? season : undefined;
+  const seasonParam = archivedSeason ? `?season=${archivedSeason}` : "";
   const data = await fdoFetch<FdoStandingsResponse>(
     `/competitions/CL/standings${seasonParam}`,
-    seasonRevalidate(season, 21600)
+    seasonRevalidate(archivedSeason, 21600)
   );
 
   const totalGroup = data.standings.find((s) => s.type === "TOTAL");

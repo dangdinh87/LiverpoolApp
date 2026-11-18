@@ -187,10 +187,11 @@ export function mapMatchToFixture(m: FdoMatch): Fixture {
  * Returns Map<canonical_team_id, form_string> e.g. Map(40 → "WDWLW")
  */
 export async function derivePLFormMap(season?: number): Promise<Map<number, string>> {
-  const seasonParam = season ? `&season=${season}` : "";
+  const archivedSeason = season && season !== getCurrentSeasonYear() ? season : undefined;
+  const seasonParam = archivedSeason ? `&season=${archivedSeason}` : "";
   const data = await fdoFetch<FdoMatchesResponse>(
     `/competitions/PL/matches?status=FINISHED${seasonParam}`,
-    seasonRevalidate(season, 21600), // 6h — same as standings; finished seasons 30d
+    seasonRevalidate(archivedSeason, 21600), // 6h — same as standings; finished seasons 30d
   );
 
   // Group matches by team, sorted by date
@@ -228,9 +229,10 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 
 /** Fetch all Liverpool matches across all competitions. Cache 1h. */
 export async function getFdoLfcFixtures(season?: number): Promise<Fixture[]> {
-  const seasonParam = season ? `?season=${season}` : "";
+  const archivedSeason = season && season !== getCurrentSeasonYear() ? season : undefined;
+  const seasonParam = archivedSeason ? `?season=${archivedSeason}` : "";
   // Use shorter cache (5min) for current season to pick up live status faster
-  const revalidate = season ? seasonRevalidate(season, 3600) : 300;
+  const revalidate = archivedSeason ? seasonRevalidate(archivedSeason, 3600) : 300;
   const data = await fdoFetch<FdoMatchesResponse>(
     `/teams/${FDO_LFC_ID}/matches${seasonParam}`,
     revalidate,

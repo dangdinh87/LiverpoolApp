@@ -6,10 +6,19 @@ export const FDO_LFC_ID = 64;
 export const CANONICAL_LFC_ID = 40;
 
 const DEFAULT_TIMEOUT_MS = 10_000;
-const MAX_429_RETRIES = 2;
-const MAX_RETRY_WAIT_MS = 12_000;
+const RUNTIME_MAX_429_RETRIES = 2;
+const RUNTIME_MAX_RETRY_WAIT_MS = 12_000;
+// During `next build`, 7 worker processes compete against FDO's 10 req/60s bucket.
+// Honour the full `x-requestcounter-reset` window with wide jitter so the first
+// worker populates `.next/cache/fetch-cache` and trailing workers read from disk.
+const BUILD_MAX_429_RETRIES = 5;
+const BUILD_MAX_RETRY_WAIT_MS = 65_000;
 
 const inflight = new Map<string, Promise<unknown>>();
+
+function isProductionBuild(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
 
 export function mapFdoTeamId(fdoId: number): number {
   return fdoId === FDO_LFC_ID ? CANONICAL_LFC_ID : fdoId;
@@ -27,14 +36,17 @@ export async function requireNonEmptyArray<T>(promise: Promise<T[]>): Promise<T[
   return rows;
 }
 
-function computeRetryDelayMs(res: Response, attempt: number): number {
+function computeRetryDelayMs(res: Response, attempt: number, isBuild: boolean): number {
   if (process.env.VITEST) return 15;
+  const maxWaitMs = isBuild ? BUILD_MAX_RETRY_WAIT_MS : RUNTIME_MAX_RETRY_WAIT_MS;
   const resetHeader = Number(res.headers.get("x-requestcounter-reset") ?? "");
-  const jitter = Math.floor(Math.random() * 400);
+  const jitter = isBuild
+    ? 500 + Math.floor(Math.random() * 3500)
+    : Math.floor(Math.random() * 400);
   if (Number.isFinite(resetHeader) && resetHeader > 0) {
-    return Math.min(resetHeader * 1000 + jitter, MAX_RETRY_WAIT_MS);
+    return Math.min(resetHeader * 1000 + jitter, maxWaitMs);
   }
-  return Math.min(1500 * Math.pow(2, attempt) + jitter, MAX_RETRY_WAIT_MS);
+  return Math.min(1500 * Math.pow(2, attempt) + jitter, maxWaitMs);
 }
 
 /**
@@ -55,8 +67,11 @@ export async function fdoFetch<T>(
   const existing = inflight.get(dedupKey) as Promise<T> | undefined;
   if (existing) return existing;
 
+  const isBuild = isProductionBuild();
+  const maxRetries = isBuild ? BUILD_MAX_429_RETRIES : RUNTIME_MAX_429_RETRIES;
+
   const task = (async (): Promise<T> => {
-    for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       const res = await fetch(`${FDO_BASE}${path}`, {
         headers: { "X-Auth-Token": key },
         next: { revalidate },
@@ -67,8 +82,8 @@ export async function fdoFetch<T>(
         return (await res.json()) as T;
       }
 
-      if (res.status === 429 && attempt < MAX_429_RETRIES) {
-        const waitMs = computeRetryDelayMs(res, attempt);
+      if (res.status === 429 && attempt < maxRetries) {
+        const waitMs = computeRetryDelayMs(res, attempt, isBuild);
         await new Promise((resolve) => setTimeout(resolve, waitMs));
         continue;
       }

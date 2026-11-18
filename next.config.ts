@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: import.meta.dirname,
   },
+  // Allow static build workers to wait out one 60s Football-Data.org 429 reset window
+  // instead of aborting page generation at Next's 60s default and baking empty fallbacks.
+  staticPageGenerationTimeout: 180,
   serverExternalPackages: ['rss-parser'],
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }];
