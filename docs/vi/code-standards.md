@@ -1,388 +1,110 @@
-# Tiêu Chuẩn Code
+# Quy Chuẩn Mã Nguồn
 
-LiverpoolApp — Next.js 16 (App Router) + TypeScript + Tailwind v4 + Supabase.
+Quy ước kỹ thuật và danh mục kiểm tra chất lượng cho **Anfield Daily** — Next.js 16.4 (App Router), React 19, TypeScript 5 (`strict`), Tailwind CSS v4 và Supabase.
 
 ---
 
-## 1. Server vs Client Components
+## 1. Ranh Giới Server Component và Client Component
 
-### Nguyên tắc cơ bản
-
-Mặc định dùng **Server Components**. Chỉ thêm `'use client'` khi cần tương tác (hooks, event handlers, browser APIs).
+Mặc định viết **React Server Component**. Chỉ khai báo `"use client"` khi tệp thực sự cần React hooks, xử lý sự kiện tương tác hoặc truy cập API trình duyệt.
 
 ### Server Components
 
-```typescript
-// src/app/squad/page.tsx
-import { getSquad } from '@/lib/football'; // server-only import
+```tsx
+// src/app/[locale]/squad/page.tsx
+import { setRequestLocale } from "next-intl/server";
+import { getSquad } from "@/lib/football";
 
-export default async function SquadPage() {
-  const players = await getSquad(); // await trực tiếp, React.cache tự dedup
+export default async function SquadPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const players = await getSquad();
   return <SquadGrid players={players} />;
 }
 ```
 
-- Có thể `await` promise trực tiếp trong thân component
-- Có thể import từ `src/lib/football` và `src/lib/supabase-server`
-- Không dùng được `useState`, `useEffect`, event handlers
-- Dữ liệu chạy một chiều: server render → truyền serialisable props xuống client
+- Luôn `await params` (quy ước tham số bất đồng bộ của Next.js 16) và gọi `setRequestLocale(locale)` ở mọi trang/layout dưới `src/app/[locale]/` để hỗ trợ prerender tĩnh.
+- Tự do sử dụng các module `server-only` (`@/lib/football`, `@/lib/supabase-server`, `@/lib/news/*`).
+- Chỉ truyền dữ liệu tuần tự hóa gọn nhẹ xuống Client Component.
 
-### Client Components
+### Client Components & Quản Lý Namespace Đa Ngôn Ngữ
 
-```typescript
-// src/components/squad/squad-grid.tsx
-'use client';
-
-import { useState } from 'react';
-
-export default function SquadGrid({ players }: { players: Player[] }) {
-  const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? players : players.filter(p => p.position === filter);
-  return (
-    <>
-      <PositionTabs value={filter} onChange={setFilter} />
-      {filtered.map(p => <PlayerCard key={p.id} player={p} />)}
-    </>
-  );
-}
-```
-
-- Phải khai báo `'use client'` ở đầu file
-- Dùng được tất cả React hooks
-- Không thể `await` ở top-level; không import được module `server-only`
-- Nhận dữ liệu từ server dưới dạng serialisable props
-
-### Navbar pattern (phân tách quan trọng)
-
-```typescript
-// src/components/layout/navbar.tsx — Server
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import NavbarClient from './navbar-client';
-
-export default async function NavbarAuth() {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await getProfile(user.id) : null;
-  return <NavbarClient user={user} profile={profile} />;
-}
-
-// src/components/layout/navbar-client.tsx — Client
-'use client';
-export default function NavbarClient({ user, profile }: Props) {
-  // hooks, event handlers đặt ở đây
-}
-```
-
-Root layout dùng `<NavbarAuth />`, không dùng `<Navbar />` cũ.
+- Khai báo `"use client"` ở dòng đầu tiên.
+- Khi thêm lời gọi `useTranslations("Namespace")` mới trong cây module phía client, phải khai báo namespace đó trong `CLIENT_MESSAGE_NAMESPACES` (`src/components/providers/client-messages.ts`). Bài kiểm thử `client-messages.test.ts` phân tích cú pháp AST toàn bộ cây import client và sẽ báo lỗi ngay nếu thiếu namespace.
+- Giữ kích thước mỗi tệp gọn gàng (ưu tiên `< 400–500` dòng; tách nhỏ các khối lớn như `NavbarClient` + `NavbarMobileSheet` hoặc `CommentSection` + `CommentItem`).
 
 ---
 
-## 2. Phân Tách Supabase Client (QUAN TRỌNG)
+## 2. Phân Tách Supabase Client & Đọc Biến Môi Trường
 
-Hai client riêng biệt — **tuyệt đối không dùng lẫn lộn**.
+### Quy Tắc 3 Client
 
-| File | Mục đích | Dùng ở đâu |
-|------|---------|--------------|
-| `src/lib/supabase.ts` | Browser client (`createBrowserClient`) | Chỉ dùng trong `'use client'` components |
-| `src/lib/supabase-server.ts` | Server client (`createServerClient`) | Server components, API routes |
-| `src/lib/news/supabase-service.ts` | Service role client | Chỉ dùng trong admin/cron API routes |
+| Tệp | Phạm vi được phép | Ghi chú |
+|---|---|---|
+| `src/lib/supabase.ts` | `"use client"` components | Anon key phía trình duyệt |
+| `src/lib/supabase-server.ts` | Server Components, Actions, Route Handlers | Có chốt chặn `import "server-only"` |
+| `src/lib/news/supabase-service.ts` | Route cron & thao tác ghi đã xác thực trên server | Service role; bỏ qua RLS |
 
-```typescript
-// SAI — sẽ gây lỗi build
-// Trong một client component:
-import { createServerSupabaseClient } from '@/lib/supabase-server'; // có guard "server-only"
+Mọi Supabase client **bắt buộc** truyền `global: { fetch: createSupabaseFetch() }` và `db: { retry: false }`.
 
-// SAI — trạng thái auth sẽ không đồng bộ
-// Trong một server component:
-import { createClient } from '@/lib/supabase'; // browser-only client
-```
+### Truy Xuất Biến Môi Trường Tại Thời Điểm Thực Thi (`src/lib/env.ts`)
 
-```typescript
-// Đúng — client component
-'use client';
-import { createClient } from '@/lib/supabase';
-const supabase = createClient();
-
-// Đúng — server component / API route
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-const supabase = createServerSupabaseClient();
-```
-
-`supabase-server.ts` có `import "server-only"` — nếu import nó trong client component sẽ gây **lỗi build**, đây là cố ý.
+Trên Cloudflare Workers, biến môi trường được cấp theo từng request thay vì lúc nạp module. Luôn truy xuất qua `getEnv("KEY")` / `hasEnv("KEY")` bên trong hàm thay vì gán cố định `process.env.KEY` ở hằng số cấp module.
 
 ---
 
-## 3. Hệ Thống Kiểu
+## 3. Hệ Thống Kiểu & Chuẩn Hóa Dữ Liệu
 
-### Các kiểu chuẩn (canonical types)
-
-Toàn bộ kiểu dữ liệu bóng đá nằm trong `src/lib/types/football.ts`. Mỗi provider đều ánh xạ response từ API của mình về các kiểu này. Không bao giờ dùng `any` trong component props.
-
-```typescript
-// src/lib/types/football.ts
-export interface Player {
-  id: number;
-  name: string;
-  position: string;
-  number: number;
-  photo?: string;
-  nationality?: string;
-  age?: number;
-  stats: PlayerStats | null;
-}
-
-export interface Fixture {
-  id: number;
-  date: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  status: 'scheduled' | 'live' | 'finished' | 'postponed';
-  league: { name: string; round: string };
-}
-```
-
-### Kiểu DB của Supabase
-
-`src/lib/supabase.ts` export `UserProfile`, `FavouritePlayer`, `SavedArticle` — được suy luận từ schema Supabase. Dùng những kiểu này cho mọi thao tác với DB row.
-
-### Cấu hình TypeScript
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true
-  }
-}
-```
-
-Strict mode được bật bắt buộc. `npm run build` sẽ thất bại nếu có lỗi kiểu.
+- Bật bắt buộc `strict: true` và `noImplicitAny: true`. **Không dùng `: any` hay `@ts-ignore`** trong `src/`.
+- Mọi dữ liệu từ nhà cung cấp ngoài phải được ánh xạ về kiểu chuẩn trong `src/lib/types/football.ts`.
+- Năm mùa giải hiện hành luôn lấy từ `getCurrentSeasonYear()` / `getCurrentSeasonLabel()` (`src/lib/football/current-season.ts`), tuyệt đối không gõ số năm cố định.
+- Giao diện phụ thuộc thời gian thực phải dùng `useNowAfterMount()` (`src/hooks/use-now-after-mount.ts`) thay vì gọi `Date.now()` trực tiếp lúc render để tránh lệch hydration.
 
 ---
 
 ## 4. Quy Ước Đặt Tên
 
-| Loại | Quy ước | Ví dụ |
-|----------|-----------|---------|
-| Files | kebab-case | `player-card.tsx`, `fdo-provider.ts` |
-| Thư mục | kebab-case | `src/components/squad/` |
-| Components | PascalCase | `PlayerCard`, `SquadGrid` |
-| Functions | camelCase | `getSquad()`, `mapToPlayer()` |
-| Constants | UPPER_SNAKE_CASE | `MOCK_SQUAD`, `FDO_LFC_ID` |
-| CSS classes | kebab-case | `bg-lfc-red`, `text-stadium-muted` |
-| DB tables | snake_case | `user_profiles`, `favourite_players` |
-| DB columns | snake_case | `user_id`, `created_at` |
-| Types / Interfaces | PascalCase | `Player`, `FootballDataProvider` |
-| Enums | PascalCase | `MatchStatus`, `PlayerPosition` |
+| Thành phần | Quy ước | Ví dụ |
+|---|---|---|
+| Tệp & thư mục | `kebab-case` | `match-score-header.tsx`, `fdo-client.ts` |
+| React component | `PascalCase` | `MatchScoreHeader`, `BrandMark` |
+| Hàm & custom hook | `camelCase` | `pickClientMessages()`, `useSpoilerFree()` |
+| Hằng số | `UPPER_SNAKE_CASE` | `NEWS_OUTLET_COUNT`, `SUPABASE_FETCH_TIMEOUT_MS` |
+| Bảng & cột CSDL | `snake_case` | `site_articles`, `match_predictions`, `digest_date` |
 
 ---
 
-## 5. Xử Lý Lỗi
+## 5. Bảo Mật API Route & Server Action
 
-### Error boundaries ở cấp trang
-
-Mỗi thư mục route có thể có một file `error.tsx` (phải là `'use client'`):
-
-```typescript
-// src/app/squad/error.tsx
-'use client';
-export default function SquadError({ error, reset }: { error: Error; reset: () => void }) {
-  return (
-    <div className="text-center py-20">
-      <p className="text-stadium-muted">{error.message}</p>
-      <button onClick={reset} className="mt-4 bg-lfc-red text-white px-6 py-2 rounded">
-        Thử lại
-      </button>
-    </div>
-  );
-}
-```
-
-### Giảm hạ cấp API một cách an toàn
-
-Tất cả các hàm football data đều bắt lỗi và trả về giá trị rỗng an toàn — trang sẽ render trạng thái rỗng thay vì crash.
-
-```typescript
-export const getStandings = cache(async () => {
-  if (!hasFdoKey) {
-    console.warn('[football] FOOTBALL_DATA_ORG_KEY not set');
-    return [];
-  }
-  try {
-    return await getFdoStandings();
-  } catch (err) {
-    console.error('[football] standings failed:', err);
-    return []; // trạng thái rỗng an toàn
-  }
-});
-```
-
-### try/catch trong server actions và API routes
-
-```typescript
-// src/app/api/news/sync/route.ts
-export async function GET(req: Request) {
-  try {
-    await syncRssFeeds();
-    return Response.json({ ok: true });
-  } catch (err) {
-    console.error('[news/sync] failed:', err);
-    return Response.json({ ok: false, error: String(err) }, { status: 500 });
-  }
-}
-```
+- **Xác thực cron:** Bọc các route định kỳ bằng `withCronAuth()` (`src/lib/cron.ts`), chỉ chấp nhận header `Authorization: Bearer <CRON_SECRET>` (không nhận khóa qua query string).
+- **Giới hạn tần suất (Rate limit):** Dùng `checkRateLimit(getClientIP(req), ...)` (`src/lib/rate-limit.ts`), ưu tiên `cf-connecting-ip` → `x-real-ip` → hop cuối của `x-forwarded-for`, tự dọn bộ nhớ với trần `MAX_ENTRIES = 2000`.
+- **Kiểm tra URL an toàn:** Kiểm tra URL bài báo qua `isKnownNewsSourceUrl()` trước khi tải nội dung từ server; ràng buộc đường dẫn ảnh đại diện đúng thư mục người dùng đang đăng nhập.
+- **Ẩn chi tiết lỗi nội bộ:** Ghi log đầy đủ ở server (`console.error`), nhưng chỉ trả mã/thông báo tổng quát ở phản hồi `4xx`/`5xx` — không bao giờ trả trực tiếp `err.message` ra ngoài.
 
 ---
 
-## 6. Quy Tắc Styling
+## 6. Quy Tắc Giao Diện & Chuyển Động
 
-### Chỉ dùng Tailwind — không dùng inline styles
-
-```typescript
-// ĐÚNG
-<div className="flex items-center gap-4 p-6 bg-stadium-surface border border-stadium-border rounded-lg" />
-
-// SAI
-<div style={{ display: 'flex', padding: '24px' }} />
-```
-
-### Utility cn()
-
-Dùng `cn()` từ `src/lib/utils.ts` (bao gồm `clsx` + `tailwind-merge`) khi classes có điều kiện:
-
-```typescript
-import { cn } from '@/lib/utils';
-
-<div className={cn(
-  'px-4 py-2 rounded font-barlow text-sm uppercase tracking-wide',
-  isActive && 'bg-lfc-red text-white',
-  !isActive && 'text-stadium-muted hover:text-white'
-)} />
-```
-
-### Không dùng CSS modules
-
-Không tạo file `.module.css`. Tất cả styles đều qua Tailwind utility classes.
-
-### Design tokens
-
-Dùng semantic token classes (`bg-stadium-bg`, `text-lfc-red`, `border-stadium-border`) thay vì giá trị hex trực tiếp. Tokens được định nghĩa là CSS custom properties trong `src/app/globals.css` và ánh xạ trong Tailwind config.
+- **Token Tailwind CSS v4:** Sử dụng các lớp ngữ nghĩa Dark Stadium (`bg-stadium-bg`, `bg-stadium-surface`, `border-stadium-border`, `bg-lfc-red`, `text-lfc-red-text` / `text-brand`, `text-stadium-muted`) trong `src/app/globals.css`; không dùng `.module.css`.
+- **Căn thẳng chữ số:** Gắn `tabular-nums` cho toàn bộ tỷ số, bảng xếp hạng, đồng hồ đếm ngược, thống kê và bảng điểm dự đoán.
+- **Chuyển động mượt 60fps:** Chỉ tạo hiệu ứng trên `transform` và `opacity` (không dùng `transition-all` hay `transition-[width]`). Giữ thời lượng `140–200ms` cho nút bấm (`active:scale-[0.97]`) và `<= 260ms` cho hộp thoại/ngăn kéo.
+- **Tôn trọng giảm chuyển động:** Tuân thủ `prefers-reduced-motion: reduce` qua `<MotionConfig reducedMotion="user">`, quy tắc CSS toàn cục và kiểm tra `matchMedia` trước khi cuộn trang.
 
 ---
 
-## 7. Các Pattern Animation
+## 7. Nhận Diện Thương Hiệu & Ngôn Ngữ
 
-### Framer Motion variants
-
-Định nghĩa variants bên ngoài component để tránh tạo lại mỗi lần render:
-
-```typescript
-// Tái sử dụng từ src/lib/animation-variants.ts (hoặc định nghĩa inline cho trường hợp dùng một lần)
-export const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-};
-
-export const stagger = {
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-```
-
-```typescript
-import { motion } from 'framer-motion';
-import { fadeUp, stagger } from '@/lib/animation-variants';
-
-<motion.ul variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-  {items.map(item => (
-    <motion.li key={item.id} variants={fadeUp}>{item.name}</motion.li>
-  ))}
-</motion.ul>
-```
-
-### Tôn trọng reduced motion
-
-Tất cả animation Framer Motion tự động tuân thủ `prefers-reduced-motion` khi dùng `whileInView`/`animate`. Với CSS keyframes, thêm override trong `globals.css`:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+- Đọc kỹ [`docs/brand.md`](../brand.md) trước khi chỉnh sửa câu chữ giao diện hoặc prompt AI.
+- Tên trang là **Anfield Daily** (`BRAND.name` từ `src/lib/brand.ts`). Không dùng huy hiệu CLB (`/assets/lfc/crest.webp`) làm biểu tượng trang, ảnh đại diện mặc định hay trang báo lỗi — dùng `<BrandMark />` cho nhận diện trang và `<TeamCrest />` cho dữ liệu đội bóng.
+- Duy trì đồng bộ 100% khóa và tham số `{placeholder}` giữa `src/messages/en.json` và `src/messages/vi.json` (`messages-parity.test.ts`).
 
 ---
 
-## 8. Xử Lý Hình Ảnh
+## 8. Danh Mục Kiểm Tra Trước Khi Commit
 
-### Luôn dùng `<Image>` của Next.js
-
-```typescript
-import Image from 'next/image';
-
-<Image
-  src={player.photo ?? '/placeholder-player.png'}
-  alt={player.name}
-  width={300}
-  height={400}
-  className="w-full aspect-[3/4] object-cover object-top"
-  priority={isAboveFold}
-/>
-```
-
-- Đặt `width` và `height` rõ ràng — tránh layout shift
-- Dùng `priority` cho ảnh above-the-fold (hero, 3 cầu thủ đầu tiên trong lưới)
-- Ảnh Cloudinary đi qua helper `src/lib/cloudinary.ts` để lấy transform URL
-
-### Ảnh cầu thủ
-
-```typescript
-import { getPlayerPhoto } from '@/lib/player-photos';
-// Trả về URL đã ánh xạ hoặc '/placeholder-player.png'
-const src = getPlayerPhoto(player.id);
-```
-
----
-
-## 9. Quy Ước Git Commit
-
-```
-feat: add ESPN cup fixtures to match feed
-fix: handle FDO rate limit error response
-refactor: extract FDO standings to separate module
-perf: wrap getStandings in React.cache()
-docs: add data-providers guide
-test: add unit tests for season-stats computation
-chore: upgrade to Next.js 16.2
-```
-
-Dùng chữ thường, thể mệnh lệnh. Không có dấu chấm cuối. Tiêu đề tối đa 72 ký tự.
-
----
-
-## 10. Checklist Hiệu Suất
-
-- [ ] Tất cả hàm trong `src/lib/football` được bọc bằng `React.cache()` (đã làm trong barrel `index.ts`)
-- [ ] Các fetch ở cấp trang được chạy song song bằng `Promise.all()` khi độc lập nhau
-- [ ] Thời gian ISR revalidation được đặt cho từng route (`export const revalidate = 3600`)
-- [ ] `<Image>` dùng với kích thước rõ ràng trên mọi ảnh
-- [ ] Không có module `server-only` nào được import trong client bundles
-- [ ] Danh sách dài được phân trang hoặc virtualised
-- [ ] Thêm `loading.tsx` cho các route có async data fetches
-
----
-
-## 11. Checklist Accessibility
-
-- [ ] Độ tương phản màu ≥4.5:1 cho body text (WCAG AA) — chữ trắng trên `#1A1A1A` là ~13:1
-- [ ] Focus rings trên tất cả phần tử tương tác: `focus-visible:ring-2 focus-visible:ring-lfc-red`
-- [ ] Touch targets ≥44×44px
-- [ ] ARIA labels trên các nút chỉ có icon (`aria-label="Toggle navigation"`)
-- [ ] Alt text trên tất cả `<Image>` components
-- [ ] HTML ngữ nghĩa — `<button>` không phải `<div onClick>`, `<nav>`, `<main>`, `<article>`
-- [ ] Skip link trong layout: `<a href="#main" className="sr-only focus:not-sr-only">`
-- [ ] `prefers-reduced-motion` được tuân thủ trong toàn bộ code animation
+- [ ] `npx tsc --noEmit` đạt 0 lỗi
+- [ ] `npm run lint` đạt 0 lỗi, 0 cảnh báo
+- [ ] `npm test` vượt qua 100% (bao gồm `messages-parity.test.ts` và `client-messages.test.ts`)
+- [ ] Vùng chạm tối thiểu `44×44px` trên di động, có viền `focus-visible`, đúng thẻ ngữ nghĩa (`<button>`, `<nav>`, `<main>`, duy nhất một `<h1>` mỗi trang)
+- [ ] Liên kết mở tab mới có đủ `rel="noopener noreferrer"`
+- [ ] Mọi tỷ số và kết quả trận đấu đều tương thích với chế độ ẩn tỷ số (`spoiler-hide` / `SpoilerControls`)

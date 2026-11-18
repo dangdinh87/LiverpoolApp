@@ -1,314 +1,120 @@
-# Triển Khai
+# Triển Khai (Deployment)
 
-Mục tiêu triển khai: **Vercel (gói Hobby)** + **Hostinger custom domain** (`www.liverpoolfcvn.blog`).
+**Anfield Daily** vận hành thực tế trên **Cloudflare Workers** (`@opennextjs/cloudflare`) tại tên miền **[anfielddaily.com](https://anfielddaily.com)**, kết hợp các tác vụ định kỳ qua **GitHub Actions**.
 
 ---
 
-## Thiết Lập Dự Án Vercel
+## 1. Kiến Trúc Hạ Tầng (`wrangler.jsonc` & `open-next.config.ts`)
 
-### 1. Kết Nối Repository
-
-1. Truy cập [vercel.com](https://vercel.com) → New Project
-2. Import GitHub repository của bạn
-3. Framework preset: **Next.js** (tự động phát hiện)
-4. Root directory: để nguyên `/` (mặc định)
-5. Nhấn **Deploy** — lần deploy đầu tiên có thể thất bại cho đến khi env vars được thiết lập
-
-### 2. Cấu Hình Biến Môi Trường
-
-Trong Vercel Dashboard → Project → Settings → Environment Variables, thêm tất cả biến cần thiết:
-
-| Biến | Môi trường | Giá trị |
+| Thành phần | Tài nguyên / Binding | Vai trò |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Tất cả | URL Supabase project của bạn |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Tất cả | Supabase anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Production, Preview | Supabase service role key |
-| `FOOTBALL_DATA_ORG_KEY` | Tất cả | Football-Data.org API key |
-| `NEXT_PUBLIC_SITE_URL` | Production | `https://www.liverpoolfcvn.blog` |
-| `NEXT_PUBLIC_SITE_URL` | Preview | URL Vercel preview (hoặc để trống) |
-| `GROQ_API_KEY` | Tất cả | Groq API key |
-| `CRON_SECRET` | Tất cả | Chuỗi secret ngẫu nhiên |
-| `CLOUDINARY_CLOUD_NAME` | Tất cả | Cloudinary cloud name |
-| `CLOUDINARY_API_KEY` | Tất cả | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | Tất cả | Cloudinary API secret |
+| **Cloudflare Worker** | `liverpool-app` (Workers Paid, `nodejs_compat`) | Xử lý SSR, RSC, Server Actions & API routes (`cpu_ms: 60000`, đặt tại `aws:ap-southeast-1` sát cạnh Supabase) |
+| **Tên miền tùy chỉnh** | `anfielddaily.com`, `www.anfielddaily.com` | Worker Custom Domains đi kèm chứng chỉ TLS tự động của Cloudflare |
+| **Bộ đệm ISR trên R2** | `NEXT_INC_CACHE_R2_BUCKET` → `liverpool-app-next-cache` | Lưu trữ trang SSG/ISR phía sau lớp đệm biên `withRegionalCache(..., { mode: "long-lived" })` |
+| **Bộ đệm thẻ trên D1** | `NEXT_TAG_CACHE_D1` → `liverpool-app-tag-cache` | Theo dõi lệnh làm mới `revalidateTag` và `revalidatePath` |
+| **Hàng đợi Durable Object** | `NEXT_CACHE_DO_QUEUE` → `DOQueueHandler` | Khử trùng lặp các tác vụ làm mới ISR ngầm theo thời gian |
+| **Phục vụ trực tiếp từ Cache biên** | `enableCacheInterception: true` | Trả thẳng trang ISR đã lưu trong cache biên mà không cần nạp bundle server Next.js |
 
-> `SUPABASE_SERVICE_ROLE_KEY` có toàn quyền truy cập database — chỉ đặt cho Production/Preview, không bao giờ để lộ ra trình duyệt.
+### Lưu Ý Tương Thích Trên Môi Trường Worker
 
-### 3. Redeploy
-
-Sau khi đặt env vars: Deployments → deployment mới nhất → menu ba chấm → **Redeploy**.
+- `open-next.config.ts` chạy lệnh `npx next build && node scripts/cf-patch-middleware-trace.mjs` để bổ sung `@opentelemetry/api/build/esm` vào file trace trước khi đóng gói `src/proxy.ts`.
+- Bộ cào nội dung bài báo sử dụng `linkedom` thay vì `jsdom` để chạy tương thích hoàn toàn trên runtime `workerd`.
+- Trình tối ưu ảnh mặc định của Next.js được tắt khi đóng gói cho Cloudflare (`images.unoptimized` khi `DEPLOY_TARGET=cloudflare`); ảnh thư viện sử dụng URL biến đổi trực tiếp của Cloudinary.
+- `wrangler.jsonc` đặt `assets.html_handling = "none"` nhằm giữ nguyên tệp xác minh `.html` của Google Search Console không bị chuyển hướng `307`.
 
 ---
 
-## Cron Jobs
+## 2. Quy Trình CI/CD Tự Động (`.github/workflows/deploy-cloudflare.yml`)
 
-Cron jobs hiện chia giữa GitHub Actions và Vercel:
+Mỗi khi đẩy mã nguồn mới lên nhánh `master` (bỏ qua thay đổi chỉ thuộc `docs/**`, `plans/**` hoặc `**/*.md`), GitHub Actions tự động thực thi:
 
-- `.github/workflows/news-sync.yml` gọi `/api/news/sync` mỗi giờ.
-- `vercel.json` giữ cleanup + digest hằng ngày.
+1. `npm ci` trên Node 24
+2. `npx tsc --noEmit && npm run lint && npm test`
+3. `npm run cf:build` (`DEPLOY_TARGET=cloudflare opennextjs-cloudflare build`) với các biến `NEXT_PUBLIC_*` và khóa đọc dữ liệu prerender từ GitHub Secrets
+4. `npm run cf:deploy` (`opennextjs-cloudflare deploy`) qua `CLOUDFLARE_API_TOKEN` và `CLOUDFLARE_ACCOUNT_ID`
+5. `npx tsx scripts/cf-prune-r2-cache.ts --bucket liverpool-app-next-cache --apply` để dọn các thư mục cache của bản build cũ trên R2
+6. Kiểm tra nhanh đầu cuối (smoke test) xác nhận mã HTTP `200` trên `/`, `/news`, `/vi`, `/fixtures` và `/sitemap.xml`
+7. Gửi thông báo hoàn tất qua Telegram (`scripts/deploy-notify.sh`)
 
-Cấu hình Vercel cron trong `vercel.json`:
+### Đóng Gói & Triển Khai Thủ Công
 
-```json
-{
-  "crons": [
-    { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
-    { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
-  ]
-}
+```bash
+npm run cf:build     # Đóng gói thư mục .open-next/ (không đặt tệp .env.local tại thư mục gốc khi chạy lệnh này)
+npm run cf:preview   # Chạy thử trên workerd tại máy cá nhân qua Wrangler
+npm run cf:deploy    # Đẩy bản build lên Cloudflare Workers
 ```
 
-| Route | Lịch chạy | Mục đích | Thời gian tối đa |
+---
+
+## 3. Biến Môi Trường & Bí Mật Hệ Thống
+
+### Secret Lúc Chạy Trên Worker (`wrangler secret put <TÊN_BIẾN>`)
+
+Các khóa bí mật lúc chạy được lưu trực tiếp trong Cloudflare Worker (không bao giờ lưu vào git) và được truy xuất động theo từng request qua `getEnv()` (`src/lib/env.ts`):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FOOTBALL_DATA_ORG_KEY`
+- `VIETAPI_KEY`
+- `YOUTUBE_API_KEY` (tùy chọn)
+- `CRON_SECRET`
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- `NEXT_PUBLIC_SITE_URL` (`https://anfielddaily.com`)
+- `NEXT_PUBLIC_ADSENSE_CLIENT_ID`, `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` (tùy chọn)
+
+### GitHub Repository Secrets
+
+| Secret | Nơi sử dụng |
+|---|---|
+| `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | `deploy-cloudflare.yml` |
+| `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_GTM_ID`, `NEXT_PUBLIC_CF_ANALYTICS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `FOOTBALL_DATA_ORG_KEY` | Bước `cf:build` trong `deploy-cloudflare.yml` |
+| `CRON_SECRET` | `news-sync.yml`, `news-daily.yml` |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Báo cáo và cảnh báo đồng bộ tin trong `news-sync.yml` (tùy chọn) |
+| `DEPLOY_BOT_TOKEN`, `DEPLOY_CHAT_ID` | Thông báo triển khai trong `deploy-cloudflare.yml` (tùy chọn) |
+
+---
+
+## 4. Các Tác Vụ Định Kỳ (GitHub Actions)
+
+Mọi endpoint cron đều bắt buộc header `Authorization: Bearer <CRON_SECRET>`:
+
+| Workflow | Lịch (UTC) | Endpoint | Mục đích |
 |---|---|---|---|
-| `/api/news/sync` (GitHub Actions) | Mỗi giờ (`0 * * * *`) | Đồng bộ RSS + pre-scrape nội dung bài | 300s |
-| `/api/news/cleanup` | 3:00 SA UTC hàng ngày | Soft-delete bài >30 ngày, hard-delete bài >60 ngày | mặc định (10s) |
-| `/api/news/digest/generate` | 00:00 UTC hàng ngày | Tạo AI daily digest qua Groq | 60s |
+| `news-sync.yml` | `0 * * * *` | `GET /api/news/sync` | Đồng bộ 13 đầu báo + YouTube, bù ảnh đại diện, cào toàn văn (ngân sách 45s) & gửi báo cáo Telegram |
+| `news-sync.yml` | `01:00–16:59` | `GET /api/news/digest/generate` | Kiểm tra dự phòng mỗi giờ nếu bản tin đầu ngày chưa có |
+| `news-daily.yml` | `7 0 * * *` | `GET /api/news/digest/generate` | Tạo bản tin AI hằng ngày và bài SEO |
+| `news-daily.yml` | `17 3 * * *` | `GET /api/news/cleanup` | Xóa nội dung cào quá 7 ngày, bài quá 14 ngày & `sync_logs` quá 14 ngày |
 
-### Cách Xác Thực Cron Hoạt Động
-
-Vercel tự gửi `Authorization: Bearer <CRON_SECRET>` cho request cron của Vercel. GitHub Actions cũng gửi header này khi gọi `/api/news/sync`.
-
-```typescript
-// Bên trong mỗi cron route handler
-const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  ?? new URL(req.url).searchParams.get('key');
-if (secret !== process.env.CRON_SECRET) {
-  return new Response('Unauthorized', { status: 401 });
-}
-```
-
-Bạn cũng có thể gọi sync thủ công để kiểm tra:
+Lệnh kích hoạt thủ công khi cần kiểm tra:
 
 ```bash
-curl -fsS https://www.liverpoolfcvn.blog/api/news/sync \
-  -H "Authorization: Bearer YOUR_CRON_SECRET"
+gh workflow run news-sync.yml
+gh workflow run news-daily.yml -f job=digest
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://anfielddaily.com/api/news/sync
 ```
-
-### Giới Hạn Cron Trên Vercel Hobby
-
-- Tối đa **2 cron jobs của Vercel** trên mỗi dự án Hobby
-- Dự án đang dùng đúng 2 cron Vercel (cleanup + digest)
-- Sync mỗi giờ được chuyển sang GitHub Actions để vượt giới hạn cron hằng ngày của Vercel Hobby
-- Cron jobs chỉ chạy khi deployment đang active (không chạy trên preview deployments)
 
 ---
 
-## Custom Domain — Hostinger
+## 5. Cấu Hình Supabase Auth & OAuth
 
-### Bước 1: Mua Domain Trên Hostinger
+Trong Supabase Dashboard → Authentication → URL Configuration:
+- **Site URL:** `https://anfielddaily.com`
+- **Redirect URLs:**
+  - `https://anfielddaily.com/**`
+  - `https://anfielddaily.com/auth/callback`
+  - `http://localhost:3000/auth/callback` (phục vụ phát triển tại local)
 
-Mua domain tại [hostinger.com](https://www.hostinger.com). Domain `liverpoolfcvn.blog` đã được đăng ký sẵn.
-
-### Bước 2: Thêm Domain Trên Vercel
-
-1. Vercel Dashboard → Project → Settings → Domains
-2. Nhấn **Add Domain**
-3. Nhập: `www.liverpoolfcvn.blog`
-4. Thêm cả apex domain: `liverpoolfcvn.blog` (Vercel sẽ gợi ý redirect từ apex → www)
-5. Vercel hiển thị các DNS records cần cấu hình — giữ trang này mở
-
-### Bước 3: Cấu Hình DNS Trên Hostinger
-
-Đăng nhập Hostinger → hPanel → Domains → tên miền của bạn → **DNS / Nameservers**.
-
-Thêm các records sau:
-
-| Loại | Tên | Giá trị | TTL |
-|---|---|---|---|
-| `A` | `@` | `76.76.21.21` | 3600 |
-| `CNAME` | `www` | `cname.vercel-dns.com` | 3600 |
-
-> Vercel có thể cung cấp IP hoặc CNAME khác trong dashboard — luôn dùng chính xác giá trị Vercel hiển thị vì họ có thể cập nhật.
-
-Nếu Hostinger dùng **nameservers** (không phải DNS zone editor), bạn có thể cần chuyển sang nameservers tùy chỉnh hoặc dùng DNS Zone editor của Hostinger.
-
-### Bước 4: Chờ DNS Propagation
-
-DNS propagation thường mất **5–30 phút**, tối đa 48h trong trường hợp hiếm gặp.
-
-Kiểm tra trạng thái propagation:
-```bash
-# Kiểm tra A record
-dig A liverpoolfcvn.blog
-
-# Kiểm tra CNAME
-dig CNAME www.liverpoolfcvn.blog
-
-# Kiểm tra nhanh online
-# https://dnschecker.org
-```
-
-### Bước 5: Xác Nhận Trên Vercel
-
-Vercel Dashboard → Project → Settings → Domains. Khi DNS đã propagate, domain hiển thị **Valid Configuration** với dấu tick xanh.
-
-Nếu hiển thị "Invalid Configuration" sau 30 phút, kiểm tra lại các DNS records đã được lưu đúng trên Hostinger.
-
-### Bước 6: Cập Nhật NEXT_PUBLIC_SITE_URL
-
-Trong Vercel Environment Variables, cập nhật `NEXT_PUBLIC_SITE_URL` thành `https://www.liverpoolfcvn.blog`.
-
-Biến này được dùng cho:
-- `metadataBase` (URL OpenGraph)
-- Canonical URL cho sitemap
-- Xây dựng OAuth redirect URI
-
-### Bước 7: Redeploy
-
-Kích hoạt một deployment mới sau khi cập nhật env var để build lấy được giá trị mới.
+Trên Google Cloud Console và GitHub OAuth Apps, đảm bảo callback URL trỏ đúng về địa chỉ xác thực của dự án Supabase (`https://<project-ref>.supabase.co/auth/v1/callback`).
 
 ---
 
-## Supabase — Cập Nhật Cho Custom Domain
+## 6. Danh Mục Kiểm Tra Sau Khi Triển Khai
 
-Sau khi domain đã hoạt động, cập nhật cài đặt Supabase Auth để OAuth redirect hoạt động đúng.
-
-### Cập Nhật Site URL
-
-1. Supabase Dashboard → Authentication → URL Configuration
-2. Đặt **Site URL** thành: `https://www.liverpoolfcvn.blog`
-
-### Thêm Redirect URLs
-
-Trong phần **Redirect URLs**, thêm:
-
-```
-https://www.liverpoolfcvn.blog/**
-https://www.liverpoolfcvn.blog/auth/callback
-```
-
-Wildcard `/**` bao phủ tất cả các đường dẫn OAuth callback.
-
-### Cập Nhật OAuth Provider Callbacks
-
-Cho từng OAuth provider (Google, GitHub) được cấu hình trong Supabase:
-
-- **Google:** Google Cloud Console → OAuth 2.0 credentials → Authorized redirect URIs → thêm `https://www.liverpoolfcvn.blog/auth/callback`
-- **GitHub:** GitHub → Settings → Developer settings → OAuth Apps → app của bạn → Cập nhật callback URL thành `https://www.liverpoolfcvn.blog/auth/callback`
-
----
-
-## SSL
-
-SSL là **tự động** — Vercel cấp chứng chỉ Let's Encrypt ngay khi DNS trỏ đúng về Vercel. Không cần thao tác thủ công.
-
-HTTPS được áp dụng tự động; các request HTTP sẽ được redirect sang HTTPS.
-
----
-
-## Xử Lý Sự Cố
-
-### DNS Không Propagate
-
-```bash
-# Kiểm tra những gì đang được resolve
-nslookup www.liverpoolfcvn.blog
-dig www.liverpoolfcvn.blog CNAME
-
-# Xóa cache DNS local (macOS)
-sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
-```
-
-Nếu vẫn không hoạt động sau 1h: đăng nhập Hostinger hPanel → DNS Zone và xác nhận các record đã được lưu. Một số gói Hostinger yêu cầu tắt "Auto-renew DNS" hoặc tùy chọn tương tự trước khi custom records có hiệu lực.
-
-### Lỗi SSL Certificate
-
-Thường là do DNS chưa propagate xong khi Vercel cố cấp cert. Cách xử lý:
-
-1. Chờ DNS propagate hoàn toàn
-2. Vercel Dashboard → Domains → nhấn vào domain → **Refresh** / **Re-issue certificate**
-
-Nếu Vercel hiển thị "SSL Certificate Pending" hơn 24h, hãy xóa và thêm lại domain.
-
-### OAuth Redirect Mismatch
-
-Lỗi: `redirect_uri_mismatch` hoặc "This site can't be reached after login"
-
-Kiểm tra:
-1. `NEXT_PUBLIC_SITE_URL` trong Vercel env vars khớp chính xác với domain (bao gồm `https://www.`)
-2. Supabase → Authentication → URL Configuration → Site URL và Redirect URLs đã được cập nhật
-3. OAuth app (Google/GitHub) đã có callback URL mới
-4. Redeploy sau khi thay đổi env vars
-
-### Build Thất Bại
-
-Nguyên nhân thường gặp:
-
-```bash
-# Lỗi TypeScript — chạy locally trước
-npm run build
-
-# Thiếu env vars — kiểm tra Vercel dashboard
-# Nếu thiếu env var bắt buộc, Next.js build sẽ throw
-
-# Supabase types không khớp — tạo lại types
-npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/lib/database.types.ts
-```
-
-### Cron Jobs Không Chạy
-
-1. Xác nhận `vercel.json` đã được commit và deploy
-2. Kiểm tra Vercel Dashboard → Project → Settings → Crons — phải liệt kê đủ 3 jobs
-3. Trên gói Hobby, chỉ hỗ trợ 2 crons — cái thứ 3 sẽ âm thầm không chạy
-4. Kiểm tra function logs: Vercel Dashboard → Logs → lọc theo `/api/news/sync`
-5. Kiểm tra thủ công bằng curl với `CRON_SECRET`
-
-### 504 Timeout Trên Cron Sync/Digest
-
-`maxDuration` trong `vercel.json` phải được đặt là 60s cho sync và digest routes:
-
-```json
-{
-  "crons": [
-    { "path": "/api/news/cleanup",         "schedule": "0 3 * * *" },
-    { "path": "/api/news/digest/generate", "schedule": "0 0 * * *" }
-  ],
-  "functions": {
-    "src/app/api/news/sync/route.ts":            { "maxDuration": 300 },
-    "src/app/api/news/digest/generate/route.ts": { "maxDuration": 60 }
-  }
-}
-```
-
-Gói Hobby tối đa: 60s. Gói Pro tối đa: 300s.
-
----
-
-## Giới Hạn Gói Vercel Hobby
-
-| Giới hạn | Hobby | Pro |
-|---|---|---|
-| Timeout serverless function | 10s (mặc định), 60s (đã cấu hình) | 300s |
-| Cron jobs | 2 mỗi dự án | Không giới hạn |
-| Băng thông | 100GB/tháng | 1TB/tháng |
-| Deployments | Không giới hạn | Không giới hạn |
-| Thành viên team | 1 | Không giới hạn |
-| Preview deployments | Có | Có |
-
-Các hạn chế quan trọng cho dự án này:
-- **Giới hạn cron Vercel** — chỉ 2 cron jobs trên Hobby (dự án dùng đủ 2).
-- **Function timeout** — news sync (300s) và digest (60s) cần hoàn thành trong giới hạn đã cấu hình.
-- **Không có background functions** — tất cả công việc phải hoàn thành trong cửa sổ timeout.
-
----
-
-## Danh Sách Kiểm Tra Trước Khi Go Live
-
-Trước khi ra mắt chính thức:
-
-- [ ] Tất cả env vars đã được đặt trên Vercel (môi trường Production)
-- [ ] `NEXT_PUBLIC_SITE_URL` được đặt thành production domain
-- [ ] `npm run build` chạy thành công ở local
-- [ ] Supabase migrations đã được áp dụng cho production database
-- [ ] Supabase Auth → Site URL đã cập nhật thành production domain
-- [ ] Supabase Auth → Redirect URLs bao gồm production domain
-- [ ] OAuth providers (Google/GitHub) đã cập nhật callback URLs
-- [ ] DNS records đã cấu hình trên Hostinger
-- [ ] Domain hiển thị "Valid Configuration" trên Vercel
-- [ ] SSL certificate đã được cấp (ổ khóa xanh trên trình duyệt)
-- [ ] Vercel cron jobs hiển thị trong Vercel Dashboard → Settings → Crons
-- [ ] GitHub Actions "Hourly News Sync" chạy thành công theo lịch
-- [ ] Kiểm tra cron thủ công: `curl -H "Authorization: Bearer SECRET" https://domain/api/news/sync`
-- [ ] Trang chủ tải được, bài báo tin tức hiển thị
-- [ ] Luồng đăng nhập/đăng ký hoạt động
-- [ ] Ảnh gallery tải từ Cloudinary
+- [ ] Pipeline `deploy-cloudflare.yml` xanh toàn bộ (kiểm tra kiểu, lint, Vitest, OpenNext build, deploy, smoke check)
+- [ ] `https://anfielddaily.com` và `https://anfielddaily.com/vi` trả mã `200` với giao diện Dark Stadium chuẩn
+- [ ] `/news` và `/vi/news` hiển thị đầy đủ danh sách tin tức mới nhất
+- [ ] `/news/digest` và `/analysis` phản hồi nhanh từ bộ đệm ISR
+- [ ] `/api/calendar/liverpool.ics` tải về tệp lịch RFC 5545 hợp lệ
+- [ ] `/sitemap.xml`, `/robots.txt` và `/llms.txt` hiển thị đúng tên miền `https://anfielddaily.com`
+- [ ] Đăng nhập Supabase / OAuth chuyển hướng mượt về `/profile`

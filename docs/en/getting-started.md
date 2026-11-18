@@ -1,7 +1,7 @@
 # Getting Started
 
-Liverpool FC Việt Nam fan site — Next.js 16 App Router + TypeScript + Supabase + Vercel.
-Live: [www.liverpoolfcvn.blog](https://www.liverpoolfcvn.blog)
+**Anfield Daily** — unofficial bilingual (`en` / `vi`) Liverpool FC news, AI briefing, post-match analysis, and match centre built with Next.js 16.4 (App Router), TypeScript, Tailwind CSS v4, Supabase, and Cloudflare Workers.
+Live site: [anfielddaily.com](https://anfielddaily.com)
 
 ---
 
@@ -9,20 +9,21 @@ Live: [www.liverpoolfcvn.blog](https://www.liverpoolfcvn.blog)
 
 | Requirement | Version | Notes |
 |---|---|---|
-| Node.js | 18.17+ | LTS recommended |
-| npm | 9+ | Comes with Node |
-| Git | any | — |
-| Supabase account | — | [supabase.com](https://supabase.com) — free tier works |
-| Football-Data.org key | — | [football-data.org](https://www.football-data.org) — free registration |
-| Groq API key | — | [console.groq.com](https://console.groq.com) — free tier works |
-| Cloudinary account | — | [cloudinary.com](https://cloudinary.com) — free tier works |
+| Node.js | 20+ | Node 22 or 24 LTS recommended |
+| npm | 10+ | Bundled with Node |
+| Git | Any | — |
+| Supabase project | — | [supabase.com](https://supabase.com) — PostgreSQL, Auth & Storage |
+| Football-Data.org key | — | [football-data.org](https://www.football-data.org) — free tier (10 req/min) |
+| VietAPI key | — | [vietapi.tech](https://vietapi.tech) — OpenAI-compatible LLM proxy for briefings, translations & match reviews |
+| Cloudinary account | Optional | [cloudinary.com](https://cloudinary.com) — required for `/gallery` image transforms |
+| YouTube Data API v3 key | Optional | Google Cloud Console — enables the official club video strip (`lfctv`) on `/news` |
 
 ---
 
 ## Clone & Install
 
 ```bash
-git clone https://github.com/your-org/LiverpoolApp.git
+git clone https://github.com/dangdinh87/LiverpoolApp.git
 cd LiverpoolApp
 npm install
 ```
@@ -31,144 +32,136 @@ npm install
 
 ## Environment Variables
 
-Copy the example file and fill in values:
+Copy `.env.example` to `.env.local` and fill in your credentials:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local`:
-
 | Variable | Required | Where to get it |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase Dashboard → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase Dashboard → Settings → API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase Dashboard → Settings → API → service_role |
-| `FOOTBALL_DATA_ORG_KEY` | Yes* | [football-data.org](https://www.football-data.org) — free registration |
-| `NEXT_PUBLIC_SITE_URL` | Yes | `http://localhost:3000` for dev, production URL for prod |
-| `GROQ_API_KEY` | Yes | [console.groq.com](https://console.groq.com) → API Keys |
-| `CRON_SECRET` | Yes | Any random string (e.g. `openssl rand -hex 32`) |
-| `CLOUDINARY_CLOUD_NAME` | Yes | Cloudinary Dashboard → Settings |
-| `CLOUDINARY_API_KEY` | Yes | Cloudinary Dashboard → Settings → Access Keys |
-| `CLOUDINARY_API_SECRET` | Yes | Cloudinary Dashboard → Settings → Access Keys |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase Dashboard → Project Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase Dashboard → Project Settings → API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase Dashboard → Project Settings → API (`service_role`, server-only) |
+| `FOOTBALL_DATA_ORG_KEY` | Yes* | [football-data.org/client/register](https://www.football-data.org/client/register) |
+| `NEXT_PUBLIC_SITE_URL` | Yes | `http://localhost:3000` locally, `https://anfielddaily.com` in production |
+| `VIETAPI_KEY` | Yes | [vietapi.tech](https://vietapi.tech) — powers daily briefing, VI translation & match analysis |
+| `CRON_SECRET` | Yes | Random secret (e.g. `openssl rand -hex 32`) protecting cron routes |
+| `YOUTUBE_API_KEY` | Optional | Google Cloud Console → YouTube Data API v3 (skipped gracefully if unset) |
+| `CLOUDINARY_CLOUD_NAME` | Optional | Cloudinary Dashboard → Settings |
+| `CLOUDINARY_API_KEY` | Optional | Cloudinary Dashboard → Settings → Access Keys |
+| `CLOUDINARY_API_SECRET` | Optional | Cloudinary Dashboard → Settings → Access Keys |
+| `NEXT_PUBLIC_ADSENSE_CLIENT_ID` | Optional | Google AdSense publisher ID (leave empty to disable ads) |
+| `NEXT_PUBLIC_CF_ANALYTICS_TOKEN` | Optional | Cloudflare Web Analytics site token |
 
-> *`FOOTBALL_DATA_ORG_KEY` is optional in dev. Without it, the app uses mock data automatically.
+> *Without `FOOTBALL_DATA_ORG_KEY`, football data helpers log a warning and return empty arrays/`null` so pages render clean empty states (there is no mock provider).
 
 ---
 
 ## Database Setup
 
-Run all migrations against your Supabase project. You can do this via the Supabase CLI or SQL editor.
+Apply the migrations in `supabase/migrations/` to your Supabase project using either the Supabase CLI or the SQL Editor.
 
 ### Option A — Supabase CLI (recommended)
 
 ```bash
-# Install Supabase CLI if not already installed
-npm install -g supabase
-
-# Link to your project (get project ref from Supabase Dashboard URL)
-supabase link --project-ref your-project-ref
-
-# Push all migrations
-supabase db push
+npx supabase link --project-ref your-project-ref
+npx supabase db push
 ```
 
-### Option B — SQL Editor (manual)
+### Option B — SQL Editor (in order)
 
-In Supabase Dashboard → SQL Editor, run each migration file in order:
-
-```
-supabase/migrations/001_initial.sql          # profiles, favourite_players + RLS
-supabase/migrations/002_articles.sql         # articles table (news storage)
-supabase/migrations/003_article_interactions.sql  # article_likes, article_comments
-supabase/migrations/004_saved_articles.sql   # user bookmarks
-supabase/migrations/005_gallery.sql          # gallery images metadata
-supabase/migrations/chat_schema.sql          # conversations, messages (AI chat)
+```text
+supabase/migrations/001_initial.sql                          # profiles, favourite_players + RLS
+supabase/migrations/002_articles.sql                         # articles, sync_logs
+supabase/migrations/003_article_interactions.sql             # article_likes, article_comments
+supabase/migrations/004_saved_articles.sql                   # saved_articles bookmarks
+supabase/migrations/005_gallery.sql                          # gallery metadata & site settings
+supabase/migrations/006_news_digests_seo_article.sql         # news_digests + SEO article payload
+supabase/migrations/007_news_tables_rls_and_comment_privacy.sql # RLS & comment privacy scrubbing
+supabase/migrations/008_repair_articles_null_flags.sql       # non-null is_active / read_count repair
+supabase/migrations/009_site_articles.sql                    # site_articles (/analysis reviews)
+supabase/migrations/010_rls_repair_and_function_hardening.sql # RLS & SQL function hardening
+supabase/migrations/011_rls_initplan_and_fk_indexes.sql      # RLS initplan & FK indexes
+supabase/migrations/012_fan_predictions_and_ratings.sql      # match_predictions, player_ratings
 ```
 
 ### OAuth Setup (Supabase)
 
-For Google/GitHub login to work locally:
+To enable Google or GitHub sign-in locally:
 
-1. Supabase Dashboard → Authentication → Providers → enable Google and/or GitHub
-2. Add OAuth app credentials from Google Cloud Console / GitHub Developer Settings
-3. Set redirect URL in each provider: `http://localhost:3000/auth/callback`
+1. Open Supabase Dashboard → Authentication → Providers and enable Google and/or GitHub.
+2. Add your OAuth client ID and secret from Google Cloud Console / GitHub Developer Settings.
+3. Add `http://localhost:3000/auth/callback` under Authentication → URL Configuration → Redirect URLs.
 
 ---
 
-## Running Dev Server
+## Running the Dev Server
 
 ```bash
 npm run dev
-# Opens at http://localhost:3000
 ```
 
-The app detects missing `FOOTBALL_DATA_ORG_KEY` and falls back to mock data automatically. All pages are functional without it.
+- English (default): `http://localhost:3000`
+- Vietnamese: `http://localhost:3000/vi`
 
 ---
 
-## All Commands
+## Available Commands
 
 ```bash
-npm run dev          # Start dev server (next dev --turbopack)
-npm run build        # Production build (fails on TS errors)
-npm run lint         # ESLint
-npm run test         # Vitest unit tests
-npm run seed:gallery # Seed gallery with sample Cloudinary images
+npm run dev          # Start Next.js 16 dev server (Turbopack)
+npm run build        # Production Next.js build
+npm run start        # Run local production server
+npm run lint         # ESLint 9
+npm test             # Vitest unit tests
+npm run test:e2e     # Playwright E2E suite (builds + runs desktop & mobile projects)
+npm run test:e2e:ui  # Playwright interactive UI runner
+npm run seed:gallery # Seed gallery metadata from Cloudinary
+npm run cf:build     # Build OpenNext bundle for Cloudflare Workers
+npm run cf:preview   # Preview Worker locally via Wrangler
+npm run cf:deploy    # Deploy Worker to Cloudflare
 ```
 
 ---
 
-## Project Structure (condensed)
+## Condensed Project Structure
 
-```
+```text
 src/
-├── app/                  # Next.js App Router — pages + API routes
-│   ├── page.tsx          # Homepage (Hero + BentoGrid)
-│   ├── layout.tsx        # Root layout (NavbarAuth, Footer, GlobalChat)
-│   ├── api/              # API routes + cron endpoints
-│   ├── auth/             # Login, register, OAuth callback
-│   ├── news/             # News feed + article reader + digest
-│   ├── squad/            # Player grid + position filter
-│   ├── player/[id]/      # Player detail page
-│   ├── fixtures/         # Match fixtures + detail
-│   ├── standings/        # Premier League table
-│   ├── stats/            # Stats dashboard
-│   ├── gallery/          # Photo gallery + lightbox
-│   ├── history/          # Club history (static JSON)
-│   ├── profile/          # User profile (protected)
-│   └── chat/             # AI chat (BRO AI)
-├── components/           # React components (mirroring app/ structure)
-│   └── ui/               # shadcn/ui primitives
-├── lib/
-│   ├── football/         # Football data layer (server-only, cached)
-│   ├── news/             # News pipeline (RSS sync, digest, translation)
-│   ├── supabase.ts       # Browser Supabase client
-│   └── supabase-server.ts # Server-only Supabase client
-├── data/                 # Static JSON (trophies, history, legends, squad)
-└── messages/             # i18n strings (en.json, vi.json)
+├── app/
+│   ├── [locale]/          # Localised pages (/, /vi, /news, /analysis, /fixtures, /standings, /predictions, /squad, /player/[id], /stats, /season, /history, /gallery, /profile, /auth, /about, /legal)
+│   ├── actions/           # Server Actions (auth, profile, news pagination, fan predictions)
+│   ├── api/               # Route handlers (news sync/digest/cleanup/translate/comments/like, site-articles, calendar .ics, gallery, live-fixture, streak)
+│   ├── auth/callback/     # Supabase OAuth callback
+│   ├── llms.txt/          # AI crawler guide
+│   ├── robots.txt/        # Dynamic robots.txt
+│   └── sitemap.xml/       # Localised XML sitemap
+├── components/            # Feature UI + shadcn/ui primitives + pickClientMessages
+├── data/                  # Static JSON + .vi.json localised variants
+├── hooks/                 # Spoiler-free, hydration-safe clock, viewer timezone, favourites
+├── i18n/                  # next-intl routing, navigation & request config
+├── lib/                   # Brand, football, news, site-articles, fan-predictions, calendar, ai, seo, supabase
+├── messages/              # en.json & vi.json (1,156 keys in strict parity)
+├── stores/                # Zustand stores (auth, toast)
+└── proxy.ts               # Next.js 16 request proxy (locale routing, scanner guard, /profile auth)
 ```
 
 ---
 
-## Key Architecture Decisions
+## Key Architectural Invariants
 
-**Supabase client split** — `supabase.ts` (browser) vs `supabase-server.ts` (server-only). Never mix them. See [architecture.md](./architecture.md#supabase-client-split).
-
-**Football data via provider pattern** — all football functions live in `src/lib/football/`, wrapped in `React.cache()`, with automatic mock fallback. Pages always import from `@/lib/football`, never from provider files directly.
-
-**Navbar is split** — `NavbarAuth` (server component) fetches auth state and passes it to `NavbarClient` (client component) as props. Never import `supabase-server.ts` in the client component.
-
-**i18n via next-intl** — two locales (`en`/`vi`), detected from `NEXT_LOCALE` cookie or `Accept-Language` header. Static content has `.vi.json` variants in `src/data/`.
-
-**Dark mode only** — the design system uses CSS custom properties defined in `src/app/globals.css`. No light mode.
+- **Brand source of truth** — `src/lib/brand.ts` and [`docs/brand.md`](../brand.md) define **Anfield Daily**'s identity, pitch-circle mark, typography, and news-first voice. Never use the Liverpool FC crest as the site's own icon.
+- **Supabase client split** — `src/lib/supabase.ts` (browser) vs `src/lib/supabase-server.ts` (`server-only`) vs `src/lib/news/supabase-service.ts` (service role). Every client uses `createSupabaseFetch()` (`3s` timeout + `30s` circuit breaker) and `db: { retry: false }`.
+- **Server-first football barrel** — import football queries exclusively from `@/lib/football`, where every function is `server-only` and wrapped in `React.cache()`.
+- **Bilingual URL & RSC payload discipline** — English lives at `/` and Vietnamese under `/vi` via `src/i18n/routing.ts`; `<NextIntlClientProvider>` receives only client-used namespaces via `pickClientMessages()`.
 
 ---
 
 ## Further Reading
 
-- [architecture.md](./architecture.md) — system layers, data flow, caching strategy
-- [deployment.md](./deployment.md) — Vercel deployment + Hostinger DNS + cron jobs
-- `docs/code-standards.md` — naming conventions, component patterns
-- `docs/news-feature.md` — news pipeline deep-dive
-- `docs/design-guidelines.md` — UI tokens, Dark Stadium design system
+- [Architecture](./architecture.md) — system layers, Cloudflare Workers runtime, caching & resilience
+- [Code Standards](./code-standards.md) — component patterns, TypeScript rules, motion & accessibility
+- [Design System](./design-system.md) — Dark Stadium tokens, 4-font typography & `shadcn/ui`
+- [News System](./news-system.md) — 13 English outlets, pre-scraper, VietAPI briefing, translation & `/analysis`
+- [Deployment](./deployment.md) — Cloudflare Workers (`@opennextjs/cloudflare`), R2/D1/DO & GitHub Actions

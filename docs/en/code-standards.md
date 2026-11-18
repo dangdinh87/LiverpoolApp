@@ -1,388 +1,110 @@
 # Code Standards
 
-LiverpoolApp — Next.js 16 (App Router) + TypeScript + Tailwind v4 + Supabase.
+Engineering conventions and quality checklists for **Anfield Daily** — Next.js 16.4 (App Router), React 19, TypeScript 5 (`strict`), Tailwind CSS v4, and Supabase.
 
 ---
 
 ## 1. Server vs Client Components
 
-### Rule of thumb
-
-Default to **Server Components**. Add `'use client'` only when you need interactivity (hooks, event handlers, browser APIs).
+Default to **React Server Components**. Add `"use client"` only when a file requires state, effects, event listeners, or browser APIs.
 
 ### Server Components
 
-```typescript
-// src/app/squad/page.tsx
-import { getSquad } from '@/lib/football'; // server-only import
+```tsx
+// src/app/[locale]/squad/page.tsx
+import { setRequestLocale } from "next-intl/server";
+import { getSquad } from "@/lib/football";
 
-export default async function SquadPage() {
-  const players = await getSquad(); // direct await, React.cache dedupes
+export default async function SquadPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const players = await getSquad();
   return <SquadGrid players={players} />;
 }
 ```
 
-- Can `await` promises directly in component body
-- Can import from `src/lib/football` and `src/lib/supabase-server`
-- Cannot use `useState`, `useEffect`, event handlers
-- Data flows one-way: server renders → passes serialisable props to client
+- Always `await params` (Next.js 16 async route params) and call `setRequestLocale(locale)` in localised pages/layouts so routes prerender statically.
+- Import server-only modules (`@/lib/football`, `@/lib/supabase-server`, `@/lib/news/*`) freely.
+- Pass minimal, serialisable props across client boundaries.
 
-### Client Components
+### Client Components & i18n Namespace Discipline
 
-```typescript
-// src/components/squad/squad-grid.tsx
-'use client';
-
-import { useState } from 'react';
-
-export default function SquadGrid({ players }: { players: Player[] }) {
-  const [filter, setFilter] = useState('all');
-  const filtered = filter === 'all' ? players : players.filter(p => p.position === filter);
-  return (
-    <>
-      <PositionTabs value={filter} onChange={setFilter} />
-      {filtered.map(p => <PlayerCard key={p.id} player={p} />)}
-    </>
-  );
-}
-```
-
-- Must declare `'use client'` at top of file
-- Can use all React hooks
-- Cannot `await` top-level; cannot import `server-only` modules
-- Receives server-rendered data as serialisable props
-
-### Navbar pattern (critical split)
-
-```typescript
-// src/components/layout/navbar.tsx — Server
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import NavbarClient from './navbar-client';
-
-export default async function NavbarAuth() {
-  const supabase = createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  const profile = user ? await getProfile(user.id) : null;
-  return <NavbarClient user={user} profile={profile} />;
-}
-
-// src/components/layout/navbar-client.tsx — Client
-'use client';
-export default function NavbarClient({ user, profile }: Props) {
-  // hooks, event handlers here
-}
-```
-
-Root layout uses `<NavbarAuth />`, never `<Navbar />`.
+- Declare `"use client"` at line 1.
+- Whenever you add a new `useTranslations("Namespace")` call inside a client module graph, ensure that namespace is listed in `CLIENT_MESSAGE_NAMESPACES` (`src/components/providers/client-messages.ts`). `client-messages.test.ts` parses the full TypeScript import graph and fails `npm test` if a client namespace is missing.
+- Keep individual modules focused (aim for `< 400–500` lines; split complex shells such as `NavbarClient` + `NavbarMobileSheet` or `CommentSection` + `CommentItem`).
 
 ---
 
-## 2. Supabase Client Split (CRITICAL)
+## 2. Supabase & Environment Boundaries
 
-Two separate clients — **never mix them**.
+### Three-Client Rule
 
-| File | Purpose | Where to use |
-|------|---------|--------------|
-| `src/lib/supabase.ts` | Browser client (`createBrowserClient`) | `'use client'` components only |
-| `src/lib/supabase-server.ts` | Server client (`createServerClient`) | Server components, API routes |
-| `src/lib/news/supabase-service.ts` | Service role client | Admin/cron API routes only |
+| Module | Allowed In | Notes |
+|---|---|---|
+| `src/lib/supabase.ts` | `"use client"` components | Browser anon client |
+| `src/lib/supabase-server.ts` | Server Components, Actions, Route Handlers | Guarded by `import "server-only"` |
+| `src/lib/news/supabase-service.ts` | Cron routes & server-validated mutations | Service role; bypasses RLS |
 
-```typescript
-// WRONG — will cause build error
-// In a client component:
-import { createServerSupabaseClient } from '@/lib/supabase-server'; // has "server-only" guard
+Every Supabase client **must** configure `global: { fetch: createSupabaseFetch() }` and `db: { retry: false }`.
 
-// WRONG — auth state won't sync
-// In a server component:
-import { createClient } from '@/lib/supabase'; // browser-only client
-```
+### Lazy Environment Access (`src/lib/env.ts`)
 
-```typescript
-// Correct — client component
-'use client';
-import { createClient } from '@/lib/supabase';
-const supabase = createClient();
-
-// Correct — server component / API route
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-const supabase = createServerSupabaseClient();
-```
-
-`supabase-server.ts` carries `import "server-only"` — importing it in a client component causes a **build-time error**, which is intentional.
+Cloudflare Workers populates runtime bindings per request rather than at module evaluation time. Read environment variables inside functions via `getEnv("KEY")` / `hasEnv("KEY")` instead of freezing `process.env.KEY` in top-level constants.
 
 ---
 
-## 3. Type System
+## 3. TypeScript & Data Hygiene
 
-### Canonical types
-
-All football data types live in `src/lib/types/football.ts`. Every provider maps its API response to these types. Never use `any` in component props.
-
-```typescript
-// src/lib/types/football.ts
-export interface Player {
-  id: number;
-  name: string;
-  position: string;
-  number: number;
-  photo?: string;
-  nationality?: string;
-  age?: number;
-  stats: PlayerStats | null;
-}
-
-export interface Fixture {
-  id: number;
-  date: string;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number | null;
-  awayScore: number | null;
-  status: 'scheduled' | 'live' | 'finished' | 'postponed';
-  league: { name: string; round: string };
-}
-```
-
-### Supabase DB types
-
-`src/lib/supabase.ts` exports `UserProfile`, `FavouritePlayer`, `SavedArticle` — inferred from Supabase schema. Use these for all DB row operations.
-
-### TypeScript config
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": true
-  }
-}
-```
-
-Strict mode is enforced. `npm run build` fails on type errors.
+- `strict: true` and `noImplicitAny: true` are enforced. **Zero `: any` or `@ts-ignore`** in `src/`.
+- Map external provider payloads into canonical types in `src/lib/types/football.ts` inside the provider layer.
+- Derive the active season dynamically via `getCurrentSeasonYear()` / `getCurrentSeasonLabel()` (`src/lib/football/current-season.ts`) — never hardcode a season year.
+- Read wall-clock time in UI via `useNowAfterMount()` (`src/hooks/use-now-after-mount.ts`) rather than calling `Date.now()` during render, avoiding SSR/hydration mismatches.
 
 ---
 
 ## 4. Naming Conventions
 
 | Category | Convention | Example |
-|----------|-----------|---------|
-| Files | kebab-case | `player-card.tsx`, `fdo-provider.ts` |
-| Folders | kebab-case | `src/components/squad/` |
-| Components | PascalCase | `PlayerCard`, `SquadGrid` |
-| Functions | camelCase | `getSquad()`, `mapToPlayer()` |
-| Constants | UPPER_SNAKE_CASE | `MOCK_SQUAD`, `FDO_LFC_ID` |
-| CSS classes | kebab-case | `bg-lfc-red`, `text-stadium-muted` |
-| DB tables | snake_case | `user_profiles`, `favourite_players` |
-| DB columns | snake_case | `user_id`, `created_at` |
-| Types / Interfaces | PascalCase | `Player`, `FootballDataProvider` |
-| Enums | PascalCase | `MatchStatus`, `PlayerPosition` |
+|---|---|---|
+| Files & folders | `kebab-case` | `match-score-header.tsx`, `fdo-client.ts` |
+| React components | `PascalCase` | `MatchScoreHeader`, `BrandMark` |
+| Functions & hooks | `camelCase` | `pickClientMessages()`, `useSpoilerFree()` |
+| Constants | `UPPER_SNAKE_CASE` | `NEWS_OUTLET_COUNT`, `SUPABASE_FETCH_TIMEOUT_MS` |
+| Database tables & columns | `snake_case` | `site_articles`, `match_predictions`, `digest_date` |
 
 ---
 
-## 5. Error Handling
+## 5. API Route & Server Action Hardening
 
-### Page-level error boundaries
-
-Each route directory can include an `error.tsx` (must be `'use client'`):
-
-```typescript
-// src/app/squad/error.tsx
-'use client';
-export default function SquadError({ error, reset }: { error: Error; reset: () => void }) {
-  return (
-    <div className="text-center py-20">
-      <p className="text-stadium-muted">{error.message}</p>
-      <button onClick={reset} className="mt-4 bg-lfc-red text-white px-6 py-2 rounded">
-        Try again
-      </button>
-    </div>
-  );
-}
-```
-
-### Graceful API degradation
-
-All football data functions catch errors and return safe empty values — pages render an empty state rather than crashing.
-
-```typescript
-export const getStandings = cache(async () => {
-  if (!hasFdoKey) {
-    console.warn('[football] FOOTBALL_DATA_ORG_KEY not set');
-    return [];
-  }
-  try {
-    return await getFdoStandings();
-  } catch (err) {
-    console.error('[football] standings failed:', err);
-    return []; // graceful empty state
-  }
-});
-```
-
-### try/catch in server actions and API routes
-
-```typescript
-// src/app/api/news/sync/route.ts
-export async function GET(req: Request) {
-  try {
-    await syncRssFeeds();
-    return Response.json({ ok: true });
-  } catch (err) {
-    console.error('[news/sync] failed:', err);
-    return Response.json({ ok: false, error: String(err) }, { status: 500 });
-  }
-}
-```
+- **Cron authentication:** Wrap cron endpoints with `withCronAuth()` (`src/lib/cron.ts`), accepting `Authorization: Bearer <CRON_SECRET>` only (never URL query params).
+- **Rate limiting:** Apply `checkRateLimit(getClientIP(req), ...)` (`src/lib/rate-limit.ts`), which prioritises `cf-connecting-ip` → `x-real-ip` → final `x-forwarded-for` hop with bounded memory (`MAX_ENTRIES = 2000`).
+- **SSRF & URL validation:** Validate external article URLs with `isKnownNewsSourceUrl()` before server-side fetching, and restrict user avatar URLs to the authenticated user's storage prefix.
+- **Error redaction:** Log detailed errors server-side (`console.error`), but return generic error codes/messages in `4xx`/`5xx` JSON responses — never leak raw `err.message` or stack traces to clients.
 
 ---
 
-## 6. Styling Rules
+## 6. Styling & Motion Rules
 
-### Tailwind only — no inline styles
-
-```typescript
-// CORRECT
-<div className="flex items-center gap-4 p-6 bg-stadium-surface border border-stadium-border rounded-lg" />
-
-// WRONG
-<div style={{ display: 'flex', padding: '24px' }} />
-```
-
-### cn() utility
-
-Use `cn()` from `src/lib/utils.ts` (wraps `clsx` + `tailwind-merge`) whenever classes are conditional:
-
-```typescript
-import { cn } from '@/lib/utils';
-
-<div className={cn(
-  'px-4 py-2 rounded font-barlow text-sm uppercase tracking-wide',
-  isActive && 'bg-lfc-red text-white',
-  !isActive && 'text-stadium-muted hover:text-white'
-)} />
-```
-
-### No CSS modules
-
-Do not create `.module.css` files. All styles go through Tailwind utility classes.
-
-### Design tokens
-
-Use semantic token classes (`bg-stadium-bg`, `text-lfc-red`, `border-stadium-border`) rather than raw hex values. Tokens are defined as CSS custom properties in `src/app/globals.css` and mapped in the Tailwind config.
+- **Tailwind CSS v4 tokens:** Use semantic Dark Stadium classes (`bg-stadium-bg`, `bg-stadium-surface`, `border-stadium-border`, `bg-lfc-red`, `text-lfc-red-text` / `text-brand`, `text-stadium-muted`) defined in `src/app/globals.css` rather than raw hex values or `.module.css` files.
+- **Numeric alignment:** Apply `tabular-nums` to all scores, league tables, timers, counts, and leaderboards.
+- **Compositor-only motion:** Animate only `transform` and `opacity` (never `transition-all` or `transition-[width]`). Keep micro-interactions snappy (`140–200ms` with `active:scale-[0.97]`) and overlays `<= 260ms`.
+- **Reduced motion:** Honour `prefers-reduced-motion: reduce` everywhere via `<MotionConfig reducedMotion="user">`, global CSS overrides, and `matchMedia` checks before smooth scrolling.
 
 ---
 
-## 7. Animation Patterns
+## 7. Brand & Copy Rules
 
-### Framer Motion variants
-
-Define variants outside the component to avoid re-creation on each render:
-
-```typescript
-// Reuse from src/lib/animation-variants.ts (or define inline for one-off use)
-export const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-};
-
-export const stagger = {
-  visible: { transition: { staggerChildren: 0.08 } },
-};
-```
-
-```typescript
-import { motion } from 'framer-motion';
-import { fadeUp, stagger } from '@/lib/animation-variants';
-
-<motion.ul variants={stagger} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-  {items.map(item => (
-    <motion.li key={item.id} variants={fadeUp}>{item.name}</motion.li>
-  ))}
-</motion.ul>
-```
-
-### Respect reduced motion
-
-All Framer Motion animations automatically honour `prefers-reduced-motion` when using `whileInView`/`animate`. For CSS keyframes, add the override in `globals.css`:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+- Read [`docs/brand.md`](../brand.md) before writing UI copy or prompts.
+- Site name is **Anfield Daily** (`BRAND.name` from `src/lib/brand.ts`). Never use the Liverpool FC crest (`/assets/lfc/crest.webp`) as the site's own icon, avatar fallback, or error graphic — use `<BrandMark />` for brand identity and `<TeamCrest />` strictly for club match data.
+- Maintain 100% key and ICU placeholder parity between `src/messages/en.json` and `src/messages/vi.json` (`messages-parity.test.ts`).
 
 ---
 
-## 8. Image Handling
+## 8. Pre-Commit Verification Checklist
 
-### Always use Next.js `<Image>`
-
-```typescript
-import Image from 'next/image';
-
-<Image
-  src={player.photo ?? '/placeholder-player.png'}
-  alt={player.name}
-  width={300}
-  height={400}
-  className="w-full aspect-[3/4] object-cover object-top"
-  priority={isAboveFold}
-/>
-```
-
-- Set explicit `width` and `height` — prevents layout shift
-- Use `priority` for above-the-fold images (hero, first 3 players in a grid)
-- Cloudinary images go through `src/lib/cloudinary.ts` helpers for transform URLs
-
-### Player photos
-
-```typescript
-import { getPlayerPhoto } from '@/lib/player-photos';
-// Returns mapped URL or '/placeholder-player.png'
-const src = getPlayerPhoto(player.id);
-```
-
----
-
-## 9. Git Commit Conventions
-
-```
-feat: add ESPN cup fixtures to match feed
-fix: handle FDO rate limit error response
-refactor: extract FDO standings to separate module
-perf: wrap getStandings in React.cache()
-docs: add data-providers guide
-test: add unit tests for season-stats computation
-chore: upgrade to Next.js 16.2
-```
-
-Use lowercase, imperative mood. No period at end. Keep subject ≤72 chars.
-
----
-
-## 10. Performance Checklist
-
-- [ ] All `src/lib/football` functions wrapped in `React.cache()` (done by barrel in `index.ts`)
-- [ ] Page-level fetches parallelised with `Promise.all()` when independent
-- [ ] ISR revalidation times set per route (`export const revalidate = 3600`)
-- [ ] `<Image>` used with explicit dimensions on every image
-- [ ] No `server-only` modules imported in client bundles
-- [ ] Long lists paginated or virtualised
-- [ ] `loading.tsx` added for routes with async data fetches
-
----
-
-## 11. Accessibility Checklist
-
-- [ ] Color contrast ≥4.5:1 for body text (WCAG AA) — white on `#1A1A1A` is ~13:1
-- [ ] Focus rings on all interactive elements: `focus-visible:ring-2 focus-visible:ring-lfc-red`
-- [ ] Touch targets ≥44×44px
-- [ ] ARIA labels on icon-only buttons (`aria-label="Toggle navigation"`)
-- [ ] Alt text on all `<Image>` components
-- [ ] Semantic HTML — `<button>` not `<div onClick>`, `<nav>`, `<main>`, `<article>`
-- [ ] Skip link in layout: `<a href="#main" className="sr-only focus:not-sr-only">`
-- [ ] `prefers-reduced-motion` respected in all animation code
+- [ ] `npx tsc --noEmit` passes with 0 errors
+- [ ] `npm run lint` passes with 0 errors and 0 warnings
+- [ ] `npm test` passes (including `messages-parity.test.ts` and `client-messages.test.ts`)
+- [ ] Interactive controls meet `>= 44×44px` mobile tap target size, carry visible `focus-visible` outlines, and use semantic HTML (`<button>`, `<nav>`, `<main>`, single `<h1>` per page)
+- [ ] External links opening in a new tab include `rel="noopener noreferrer"`
+- [ ] Scores and match outcomes respect spoiler-free mode (`spoiler-hide` / `SpoilerControls`)

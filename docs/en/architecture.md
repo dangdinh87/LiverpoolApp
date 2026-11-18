@@ -1,402 +1,148 @@
 # Architecture
 
-LiverpoolApp is a Next.js 16 App Router application with server-first data fetching, a pluggable football data provider, a multi-source news pipeline, Supabase auth/storage, and Groq-powered AI features.
+**Anfield Daily** is a Next.js 16.4 App Router application running on **Cloudflare Workers** (`@opennextjs/cloudflare`), backed by server-first React Server Components, a multi-provider football data layer, a 13-outlet English news & full-article scraping pipeline, Supabase Auth/PostgreSQL/Storage, and VietAPI-powered editorial & translation workflows.
 
 ---
 
 ## System Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Browser                              │
-│  React 19 client components — Zustand, TanStack Query       │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ HTTP / RSC streaming
-┌───────────────────────▼─────────────────────────────────────┐
-│                    Vercel Edge / Node.js                     │
-│  Next.js 16 App Router                                       │
-│  ├── Server Components (data fetch + render)                 │
-│  ├── API Routes (REST endpoints + cron handlers)             │
-│  └── Middleware (session refresh + route protection)         │
-└──────┬────────────────┬───────────────┬─────────────────────┘
-       │                │               │
-┌──────▼──────┐  ┌──────▼──────┐  ┌────▼───────────────┐
-│  Supabase   │  │  Football   │  │  External APIs      │
-│  PostgreSQL │  │  Data.org   │  │  Groq LLM           │
-│  Auth       │  │  ESPN (free)│  │  Cloudinary         │
-│  Storage    │  │  Mock (dev) │  │  17+ RSS feeds      │
-└─────────────┘  └─────────────┘  └────────────────────┘
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│                              Browser                                 │
+│  React 19 Client Components · Zustand · TanStack Query · Spoiler CSS │
+└─────────────────────────────────┬────────────────────────────────────┘
+                                  │ HTTPS / RSC Streaming
+┌─────────────────────────────────▼────────────────────────────────────┐
+│            Cloudflare Workers (`liverpool-app`, OpenNext)            │
+│  ├── Cache Interception → Regional Cache API + R2 (`next-cache`)     │
+│  ├── D1 Tag Cache (`tag-cache`) + Durable Object Queue (`DOQueue`)   │
+│  ├── `src/proxy.ts` (next-intl `/vi` routing, scanner guard, auth)   │
+│  ├── Server Components (SSG/ISR prerender + `pickClientMessages`)    │
+│  └── Route Handlers & Server Actions (cron jobs, APIs, mutations)    │
+└──────────┬──────────────────────┬───────────────────────┬────────────┘
+           │                      │                       │
+┌──────────▼──────────┐ ┌─────────▼───────────┐ ┌─────────▼────────────┐
+│ Supabase            │ │ Football Providers  │ │ News, Media & AI     │
+│ • PostgreSQL (RLS)  │ │ • Football-Data.org │ │ • 13 English outlets │
+│ • Auth (OAuth/Email)│ │ • ESPN (cups/events)│ │ • YouTube Data API   │
+│ • Storage (avatars) │ │ • FPL API (stats)   │ │ • VietAPI (LLM)      │
+│ • 3s breaker fetch  │ │ • Broadcaster map   │ │ • Cloudinary         │
+└─────────────────────┘ └─────────────────────┘ └──────────────────────┘
 ```
 
 ---
 
 ## Core Layers
 
-### Layer 1: Data Sources
+### Layer 1: External Data & Services
 
-| Source | Purpose | Key | Rate Limit |
+| Source | Purpose | Env Variable | Rate / Runtime Protection |
 |---|---|---|---|
-| Football-Data.org | Squad, fixtures, standings (PL + UCL) | `FOOTBALL_DATA_ORG_KEY` | 10 req/min (free) |
-| ESPN (no key) | Cup fixtures (FA Cup, EFL Cup), match events | — | None |
-| Mock provider | Dev fallback when no API key | — | N/A |
-| Supabase PostgreSQL | Auth, user data, articles, gallery, chat history | — | Per plan |
-| 17+ RSS feeds | News articles (EN + VI sources) | — | None |
-| Groq API | AI chat, article translation, daily digest | `GROQ_API_KEY` | Per plan |
-| Cloudinary | Gallery image hosting + transforms | `CLOUDINARY_*` | Per plan |
+| Football-Data.org v4 | PL & UCL standings, fixtures, archived seasons, H2H, squad, coach | `FOOTBALL_DATA_ORG_KEY` | 10 req/min; `fdo-client.ts` in-flight dedup + 429 retry/backoff |
+| ESPN Soccer API | FA Cup & EFL Cup fixtures, live snapshots, events, lineups, 28 match stats | — (free) | Wrapped in `React.cache()` + ISR |
+| Fantasy Premier League | Granular Premier League player stats supplement | — (free) | ISR cached |
+| 13 English Press Outlets | 12 RSS feeds + LFC Official `sitemap-news.xml` adapter | — | Hourly sync + 45s pre-scrape budget |
+| YouTube Data API v3 | Official LFC YouTube video strip (`lfctv`) on `/news` | `YOUTUBE_API_KEY` | 24 quota units/hour (10k/day free); skipped if unset |
+| VietAPI | Daily briefing, EN→VI full-article translation, post-match reviews | `VIETAPI_KEY` | Model fallback chains + `AbortSignal.timeout` |
+| Supabase | Auth, PostgreSQL tables with RLS, avatar storage | `NEXT_PUBLIC_SUPABASE_*`, `SUPABASE_SERVICE_ROLE_KEY` | `createSupabaseFetch()` (3s timeout + 30s circuit breaker) |
+| Cloudinary | Photo gallery hosting & on-the-fly transforms | `CLOUDINARY_*` | Cookie-less `unstable_cache` reads |
 
-### Layer 2: Server Components
+### Layer 2: Request Proxy (`src/proxy.ts`)
 
-All data-heavy pages are server components. They fetch data server-side, then pass it as props to client components for interactivity. No client-side data fetching for initial page loads.
+Next.js 16 replaces `middleware.ts` with `src/proxy.ts`. On every page request it:
+1. Short-circuits automated WordPress/CMS scanner probes (`/wp-*`, `*.php`, `?rest_route=`) with an immediate `404` before rendering localised layouts.
+2. Runs `next-intl` routing (`en` unprefixed at `/`, `vi` under `/vi`, honouring `NEXT_LOCALE` cookie and `Accept-Language`).
+3. Refreshes Supabase auth cookies on protected routes (`/profile`, `/vi/profile`) using a bounded `createSupabaseFetch()` client and redirects unauthenticated visitors to `/auth/login?redirect=...`.
+4. Attaches `X-Robots-Tag: noindex, nofollow` on `/auth` and `/profile` routes.
 
-```typescript
-// Pattern: server page fetches → passes to client component
-// src/app/squad/page.tsx
-export default async function SquadPage() {
-  const squad = await getSquad(); // server-only, React.cache()
-  return <SquadGrid players={squad} />;  // client component for filtering
-}
-```
+### Layer 3: Server Components & Static/ISR Prerendering
 
-### Layer 3: Client Components
-
-Used only when interactivity is needed: filtering, form inputs, real-time updates, animations, browser APIs. Always annotated `'use client'`.
+All routes under `src/app/[locale]/` call `setRequestLocale(locale)` and fetch data on the server, passing serialisable props to focused Client Components. `src/app/[locale]/layout.tsx` filters `<NextIntlClientProvider>` messages through `pickClientMessages()`, cutting serialised client i18n JSON by ~52%.
 
 ---
 
-## Supabase Client Split (CRITICAL)
+## Supabase Client Split & Resilience (CRITICAL)
 
-Two separate clients — **never import the server client in a client component** (build will fail).
+Three distinct client factories keep credentials and caching safe:
 
-| File | Use in | Created with | Can access |
-|---|---|---|---|
-| `src/lib/supabase.ts` | Client components, browser | `createClient()` | Anon key (RLS-enforced) |
-| `src/lib/supabase-server.ts` | Server components, API routes | `createServerSupabaseClient()` | Anon key + session cookies |
-| `src/lib/news/supabase-service.ts` | API routes (admin ops only) | `getServiceClient()` | Service role (bypasses RLS) |
-
-```typescript
-// Client component — OK
-import { createClient } from '@/lib/supabase';
-
-// Server component / API route — OK
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-
-// WRONG: importing server client in a client component
-// 'use client'
-// import { createServerSupabaseClient } from '@/lib/supabase-server'; // BUILD FAILURE
-```
-
----
-
-## Football Data Layer
-
-**Location:** `src/lib/football/`
-
-All functions are server-only and wrapped in `React.cache()`. Pages always import from the barrel `@/lib/football`, never from individual provider files.
-
-### Provider Interface
-
-```typescript
-// src/lib/football/provider.ts
-interface FootballDataProvider {
-  getSquad(): Promise<Player[]>;
-  getFixtures(): Promise<Fixture[]>;
-  getStandings(): Promise<Standing[]>;
-  getTopScorers(): Promise<TopScorer[]>;
-  getTopAssists(): Promise<TopScorer[]>;
-  getPlayerStats(playerId: number): Promise<PlayerStats | null>;
-  getCoach(): Promise<Coach | null>;
-  // ... more methods
-}
-```
-
-### Provider Selection
-
-```
-FOOTBALL_DATA_ORG_KEY set?
-  ├── YES → FDO (Football-Data.org) provider
-  └── NO  → Mock provider (static data, no API calls)
-```
-
-```typescript
-// src/lib/football/index.ts — barrel + React.cache wrapping
-export const getSquad    = cache(() => provider.getSquad());
-export const getFixtures = cache(() => provider.getFixtures());
-export const getStandings = cache(() => provider.getStandings());
-```
-
-### FDO Provider Notes
-
-- Team ID: 64 (Liverpool FC), League: 39 (Premier League)
-- Free tier: 10 req/min — rate limiting is handled by provider
-- Cup fixtures (FA Cup, EFL Cup) are fetched from ESPN (free, no key needed)
-- Mock fallback returns realistic static data for all methods
-
----
-
-## News Pipeline
-
-**Location:** `src/lib/news/`
-
-```
-Vercel Cron (6AM UTC)
-  ↓
-/api/news/sync
-  ↓
-syncPipeline()
-  ├── Fetch 17+ RSS feeds in parallel
-  ├── Dedup (URL hash + Jaccard title similarity)
-  ├── Score relevance (LFC keywords weighted)
-  ├── Categorize (transfers, match, injury, etc.)
-  ├── Enrich (OG metadata)
-  └── Upsert to Supabase articles table
-```
-
-**Sources:**
-
-| Language | Sources |
-|---|---|
-| EN | LFC Official, BBC Sport, The Guardian, Liverpool Echo, Anfield Watch, Empire of the Kop, Sky Sports, GOAL |
-| VI | VnExpress, Tuổi Trẻ, Thanh Niên, Dân Trí, ZNews, VietNamNet, Bóng Đá, 24h, Bóng Đá+, Webthethao |
-
-**Article URL encoding:** Readable slugs at `/news/{source}/{path}` (e.g., `/news/bbc/sport/football/...`). Encoding/decoding in `src/lib/news-config.ts`.
-
-**AI Daily Digest:** Cron at midnight UTC calls Groq (`llama-3.3-70b-versatile`), summarises top 15 articles from last 24h into Vietnamese sections. Stored in `news_digests` table. Idempotent — skips if digest for today already exists.
-
-**Translation:** On-demand via `/api/news/translate`. Groq translates article content, result cached in `content_en` / `content_vi` columns.
-
----
-
-## Auth Flow
-
-Supabase Auth with email/password + OAuth (Google, GitHub).
-
-```
-User visits /profile (protected)
-  ↓
-middleware.ts
-  ├── refreshSession() — refresh Supabase session from cookies
-  ├── No session? → redirect to /auth/login?redirect=/profile
-  └── Session OK → proceed
-         ↓
-       /profile page (server component)
-         ├── createServerSupabaseClient().auth.getUser()
-         └── render with user data
-```
-
-**OAuth callback:** `/auth/callback/route.ts` — exchanges code for session, sets cookie, redirects to original destination.
-
-**Middleware** (`src/middleware.ts`) runs on every request:
-1. Refresh Supabase session (update cookies)
-2. Block unauthenticated access to `/profile`
-3. Redirect back after login
-
----
-
-## Navbar Pattern
-
-The navbar needs both server-side auth state (to show user avatar) and client-side interactivity (mobile menu, theme toggle). Solved by splitting into two components:
-
-```
-Root layout
-  └── <NavbarAuth />         ← Server component
-        ├── getUser()        ← Supabase server client
-        ├── getProfile()     ← DB query
-        └── <NavbarClient    ← Client component
-              user={user}
-              profile={profile}
-            />
-              ├── useState (mobile menu)
-              ├── useTheme (dark/light toggle)
-              └── render nav links + user avatar
-```
-
-**Rule:** Layout always uses `<NavbarAuth />`. Never use the legacy `<Navbar />`.
-
----
-
-## Caching Strategy
-
-### React.cache() — Request-Level Deduplication
-
-All football data functions are wrapped:
-
-```typescript
-export const getSquad = cache(() => provider.getSquad());
-```
-
-Multiple components calling `getSquad()` within the same server request share one result — no duplicate API calls.
-
-### ISR — Route-Level Revalidation
-
-```typescript
-// Homepage — fresh content every 30 minutes
-export const revalidate = 1800;
-
-// Standings — updated every 6 hours
-export const revalidate = 21600;
-
-// History — fully static, never revalidates
-export const revalidate = false;
-
-// News article — revalidate on-demand (after sync cron)
-export const revalidate = 3600;
-```
-
-### Supabase as Cache
-
-The articles table acts as a persistent cache for RSS content. The cron sync refreshes it daily. Pages query Supabase (fast) rather than hitting RSS feeds on every request.
-
-### Browser Storage
-
-- Read history — `localStorage` (client-safe, `src/lib/news/read-history.ts`)
-- Dismissed digest card — `localStorage`
-- Article likes/saves — optimistic UI backed by Supabase
-
----
-
-## State Management
-
-| Layer | Tool | Used for |
+| File | Context | Key & Behaviour |
 |---|---|---|
-| Server | React.cache() | Per-request football data dedup |
-| Server | ISR revalidate | Page-level cache lifetime |
-| Client (global) | Zustand | Auth state, user preferences, navigation |
-| Client (server state) | TanStack Query | Data fetching in client components |
-| Client (local) | useState | UI state (filters, modals, form inputs) |
-| Browser | localStorage | Read history, dismissed UI elements |
+| `src/lib/supabase.ts` | `"use client"` browser components | Anon key, RLS enforced |
+| `src/lib/supabase-server.ts` | Server Components, Server Actions, Route Handlers (`import "server-only"`) | Anon key + SSR session cookies |
+| `src/lib/news/supabase-service.ts` | Cron handlers & server-validated writes (`import "server-only"`) | Service role key (bypasses RLS) |
 
-### Zustand Stores
+### Circuit Breaker & Hard Timeout (`src/lib/supabase-fetch-with-timeout.ts`)
 
-```
-src/stores/
-├── auth-store.ts        # Supabase user session
-├── user-store.ts        # Locale preference, display settings
-└── navigation-store.ts  # Mobile menu state
+Every Supabase client uses `createSupabaseFetch()` and `db: { retry: false }`:
+- **3-second Promise-race timeout (`SUPABASE_FETCH_TIMEOUT_MS`):** Races a hard `setTimeout` alongside `AbortController` because Next.js 16 strips `init.signal` when foreground-revalidating stale implicit `fetch-cache` entries.
+- **Zero PostgREST retry backoff:** Errors surface as `DOMException("...", "AbortError")`, preventing `postgrest-js` from adding 1s + 2s + 4s retries.
+- **30-second circuit breaker (`SUPABASE_BREAKER_COOLDOWN_MS`):** Trips on timeouts, network errors, and gateway failures (`502`, `503`, `504`, Cloudflare `520–530`) so subsequent queries fail instantaneously during an outage instead of stalling renders or builds.
+- **Cookie-less public caches:** Shared public queries (gallery, player news mentions, `/analysis` listings, sitemap digests) use cookie-less clients wrapped in `unstable_cache` because `cookies()` cannot be read inside `unstable_cache`.
+
+---
+
+## Football Data Architecture
+
+**Location:** `src/lib/football/` (`import "server-only"`)
+
+- Pages import exclusively from `@/lib/football`, where every function is wrapped in `React.cache()` for per-request deduplication.
+- `fdoFetch()` (`src/lib/football/fdo-client.ts`) deduplicates concurrent in-flight requests per isolate and retries `HTTP 429` responses using `X-RequestCounter-Reset` backoff so multi-worker `next build` runs never fail on Football-Data.org's 10 req/min limit.
+- `requireNonEmptyArray()` prevents `unstable_cache` from pinning empty arrays returned during transient upstream failures.
+- Without `FOOTBALL_DATA_ORG_KEY`, functions log a warning and return empty arrays or `null` cleanly.
+
+---
+
+## News, Briefing & Post-Match Analysis Pipeline
+
+```text
+GitHub Actions (`news-sync.yml` hourly, `news-daily.yml` daily)
+  ├── GET /api/news/sync
+  │     ├── Fetch 13 English outlets + LFC YouTube (`lfctv`) in parallel
+  │     ├── Canonicalise URLs (`url.ts`) + Jaccard title dedup (`dedup.ts`)
+  │     ├── Score Liverpool relevance + regex category classification
+  │     ├── Batch upsert to `articles` + fill missing `og:image` thumbnails
+  │     └── Pre-scrape full HTML & embedded video (`article-extractor.ts`, 45s budget)
+  ├── GET /api/news/digest/generate
+  │     └── Two parallel VietAPI calls → daily briefing + SEO article in `news_digests`
+  ├── GET /api/news/cleanup
+  │     └── Prune cached bodies (>7d), old articles (>14d) & `sync_logs` (>14d)
+  └── GET/POST /api/site-articles/generate
+        └── Match facts (`match-review-facts.ts`) → VietAPI (`en` + `vi`) → `validateDraft()` → `site_articles`
 ```
 
 ---
 
-## Error Handling
+## Navbar & Interactive State
 
-### Football Data
-
-All provider methods return empty arrays / null on failure rather than throwing. Pages render empty states gracefully.
-
-```typescript
-// Provider catches all errors, returns fallback
-async getSquad(): Promise<Player[]> {
-  try {
-    const data = await fetchFromApi(...);
-    return mapToCanonical(data);
-  } catch {
-    return []; // Never throws to the page
-  }
-}
-```
-
-### News Pipeline
-
-Five-level error handling:
-
-1. Adapter-level try/catch + timeout per feed
-2. `Promise.allSettled()` — one failed feed doesn't abort the sync
-3. Enrichment skipped on failure (OG fetch timeout)
-4. Article scraping fallback chain: Readability → Cheerio → OG meta only
-5. Page-level `<ErrorBoundary>` + `loading.tsx` skeleton fallbacks
-
-### API Routes
-
-All API routes validate `CRON_SECRET` for cron endpoints:
-
-```typescript
-const secret = req.headers.get('authorization')?.replace('Bearer ', '')
-  ?? new URL(req.url).searchParams.get('key');
-if (secret !== process.env.CRON_SECRET) {
-  return new Response('Unauthorized', { status: 401 });
-}
-```
+- **Server/Client Navbar Split:** `NavbarAuth` (Server Component) reads the user session and profile, passing props to `NavbarClient` and `NavbarMobileSheet` (Client Components).
+- **Spoiler-Free Mode (`src/lib/spoiler-mode.ts`):** Blocking inline `SPOILER_BOOT_SCRIPT` sets `data-spoiler-free` on `<html>` before first paint so shared ISR HTML hides scores via CSS with zero flash.
+- **Client Stores (`src/stores/`):** Lightweight Zustand stores for `auth-store.ts` (client session state without storing PII emails in `localStorage`) and `toast-store.ts` (primitive-selector toast notifications).
 
 ---
 
-## i18n
+## Caching Strategy on Cloudflare Workers
 
-**Framework:** next-intl
-
-**Locales:** `en` (default), `vi` (Vietnamese)
-
-**Detection order:** `NEXT_LOCALE` cookie → `Accept-Language` header
-
-```
-src/messages/en.json    # English UI strings
-src/messages/vi.json    # Vietnamese UI strings
-
-src/data/*.vi.json      # Vietnamese variants of static content
-                        # (trophies, history, legends, club-info, player-bios)
-```
-
-**Usage:**
-```typescript
-// Server component
-const t = await getTranslations('News.digest');
-
-// Client component
-const t = useTranslations('News.categories');
-```
-
----
-
-## SEO Infrastructure
-
-**Location:** `src/lib/seo.ts`, `src/components/seo/json-ld.tsx`
-
-Key utilities:
-- `makePageMeta(title, desc, options)` — generates full Next.js `Metadata` object with OG + Twitter cards
-- `getCanonical(path)` — builds canonical URL from `NEXT_PUBLIC_SITE_URL`
-- `getHreflangAlternates(path)` — i18n hreflang tags (same URL, cookie-based locale)
-- JSON-LD builders: `buildBreadcrumbJsonLd`, `buildNewsArticleJsonLd`, `buildSportsEventJsonLd`, `buildPersonJsonLd`
-
-Dynamic routes (`robots.txt`, `sitemap.xml`) are Next.js route handlers at `src/app/robots.txt/route.ts` and `src/app/sitemap.xml/route.ts`.
-
----
-
-## Database Schema
-
-| Table | Purpose | Key Columns |
+| Layer | Mechanism | Purpose |
 |---|---|---|
-| `profiles` | User display name, avatar | `id` (FK auth.users), `display_name`, `avatar_url` |
-| `favourite_players` | User → player relationships | `user_id`, `player_id` (API int) |
-| `articles` | News article cache | `url`, `title`, `source`, `content_en`, `content_vi`, `relevance_score` |
-| `article_likes` | Per-user article likes | `article_id`, `user_id` |
-| `article_comments` | Article comments | `article_id`, `user_id`, `content` |
-| `saved_articles` | User bookmarks | `article_id`, `user_id` |
-| `gallery_images` | Gallery metadata | `cloudinary_id`, `title`, `category` |
-| `conversations` | AI chat sessions | `user_id`, `title` |
-| `messages` | AI chat messages | `conversation_id`, `role`, `content` |
-| `news_digests` | Daily AI summaries | `digest_date` (PK), `summary`, `sections` (JSONB) |
-
-All user tables have Row Level Security (RLS) — users can only read/write their own rows.
+| Per-request | `React.cache()` | Deduplicates repeated calls inside a single RSC render |
+| Data cache | `unstable_cache` + D1 tag cache | Cross-request cache busted via `revalidateTag` / `revalidateLocalizedPath` |
+| Edge ISR | R2 (`liverpool-app-next-cache`) + `withRegionalCache` + `DOQueueHandler` | Serves cached ISR pages directly from Cloudflare data-centre Cache API before booting Next.js (`enableCacheInterception: true`) |
+| Database | `articles`, `news_digests`, `site_articles` | Persistent storage refreshed by background workflows |
+| Browser | `localStorage` | Read history, 7-day VI translation cache, spoiler-free toggle |
 
 ---
 
-## Design System — Dark Stadium
+## Database Schema Overview
 
-All tokens defined in `src/app/globals.css` as `@theme inline` CSS variables:
-
-| Token | Value | Usage |
+| Table | Purpose | Security |
 |---|---|---|
-| `stadium-bg` | `#0D0D0D` | Page background |
-| `stadium-surface` | `#1A1A1A` | Cards, panels |
-| `stadium-surface2` | `#252525` | Elevated surfaces |
-| `lfc-red` | `#C8102E` | Primary actions, accents |
-| `lfc-gold` | `#F6EB61` | Secondary accents, trophies |
-| `stadium-muted` | `#A0A0A0` | Secondary text |
-| `stadium-border` | `#2A2A2A` | Borders, dividers |
-
-**Fonts:**
-- `font-bebas` (League Gothic) — headlines, stats, hero text
-- `font-inter` (Inter) — body, UI, forms
-- `font-barlow` (Barlow Condensed) — labels, sub-headlines
-
-Dark mode only. `enableSystem: false`, `defaultTheme: "dark"`.
-
-**Components:** shadcn/ui with `new-york` style, `neutral` base color. Always check the registry before writing custom components. Install: `npx shadcn@latest add <name>`.
+| `profiles` | Display name, bio, avatar URL | RLS (own row write) |
+| `favourite_players` | Saved squad favourites | RLS (own rows) |
+| `articles` | Synced English news items, cached HTML (`content_en`) & VI translation (`content_vi`) | RLS enabled; service-role sync writes |
+| `sync_logs` | Hourly sync telemetry & per-source health | RLS enabled; service-role writes |
+| `article_likes` / `article_comments` | Reader likes & privacy-scrubbed comments | RLS + authenticated route checks |
+| `saved_articles` | User article bookmarks | RLS (own rows) |
+| `news_digests` | Daily AI briefings & companion SEO articles | Public read, service-role write |
+| `site_articles` | Fact-validated bilingual match reviews (`/analysis`) + rejected draft audit log | Public read (`published`), service-role write |
+| `match_predictions` / `player_ratings` | Pre-match score predictions & post-match 1–10 ratings | Read-own RLS; validated service-role Server Actions |
+| `gallery` | Cloudinary photo metadata & homepage settings | Public read, admin write |
