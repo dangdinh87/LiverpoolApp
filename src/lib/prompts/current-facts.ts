@@ -23,7 +23,7 @@ export function buildCurrentFactsBlock(now: Date = new Date()): string {
     .join("; ");
 
   return `## Current Facts (authoritative — override anything you remember)
-- Today is ${today} (Vietnam time).
+- Today is ${today} (GMT+7).
 - Current season: ${getCurrentSeasonLabel(now)}.
 - Liverpool head coach: ${getCoach().name}.
 - First-team squad on this site: ${squad}.

@@ -24,13 +24,13 @@ export const BRAND = {
   },
   /** Meta description: the tagline expanded to one readable sentence. */
   description: {
-    vi: "Tin Liverpool từ các báo Anh, gom về một chỗ, lọc trùng và tóm tắt mỗi ngày. Kèm lịch thi đấu, kết quả và bảng xếp hạng. Trang fan không chính thức.",
-    en: "Liverpool news from across the English press, gathered in one place, de-duplicated and summed up every day. Plus fixtures, results and the table. Unofficial fan site.",
+    vi: "Tin tức Liverpool FC tổng hợp từ báo chí thể thao Anh, lọc trùng và tóm tắt thành bản tin hằng ngày — cùng lịch thi đấu, kết quả và bảng xếp hạng. Trang tin không chính thức của người hâm mộ.",
+    en: "Liverpool FC coverage from across the English press, de-duplicated and distilled into a daily briefing — alongside fixtures, results and standings. Unofficial independent publication.",
   },
   /** One-line notice for places without room for the full footer text (share image). */
   unofficial: {
-    vi: "Fan site không chính thức, không liên kết với Liverpool FC hay Premier League",
-    en: "Unofficial fan site, not affiliated with Liverpool FC or the Premier League",
+    vi: "Trang tin độc lập không chính thức, không liên kết với Liverpool FC hay Premier League",
+    en: "Unofficial independent site, not affiliated with Liverpool FC or the Premier League",
   },
   /** Shown in the footer. It is the owner's personal address: flagged to the lead. */
   contactEmail: "nguyendangdinh47@gmail.com",

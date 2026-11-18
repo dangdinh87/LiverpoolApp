@@ -6,12 +6,12 @@
     "errorMessage": "Unable to load data. Please try again shortly.",
     "tryAgain": "Try Again",
     "notFoundTitle": "Offside!",
-    "notFoundMessage": "The page you are looking for doesn't exist or has moved.",
+    "notFoundMessage": "The page you requested could not be found or has moved.",
     "backHome": "Back to Home",
     "scrollToTop": "Scroll to top",
     "skipToContent": "Skip to content",
     "dismiss": "Dismiss",
-    "notFoundHint": "Try one of these sections instead",
+    "notFoundHint": "Continue to one of these sections",
     "errorRef": "Reference: {digest}",
     "nav": {
       "home": "Home",
@@ -75,10 +75,10 @@
   },
   "Hero": {
     "tagline": "The latest Liverpool news, all in one place",
-    "title": "Liverpool news in one place",
-    "subtitle": "Anfield Daily — Liverpool news, gathered and summed up",
-    "description": "<b>{brand}</b> gathers the news from {count} English outlets, drops the duplicates and sums it up in a daily briefing.",
-    "badge": "Liverpool news, gathered daily",
+    "title": "Liverpool FC coverage, in one place",
+    "subtitle": "Anfield Daily — Liverpool reporting, de-duplicated and distilled daily",
+    "description": "<b>{brand}</b> gathers Liverpool coverage from {count} English outlets, removes duplicate reporting and distils the day into one concise briefing.",
+    "badge": "Daily Liverpool briefing",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings",
@@ -110,22 +110,22 @@
       "aria": "{result} against {opponent}, {venue}"
     },
     "news": {
-      "emptyTitle": "News is taking a breather",
-      "emptyDescription": "We couldn't load the latest headlines right now. Try again in a few minutes.",
+      "emptyTitle": "Headlines temporarily unavailable",
+      "emptyDescription": "Unable to load the latest headlines right now. Please try again shortly.",
       "emptyAction": "Open news",
-      "byCategory": "More by topic",
-      "title": "Quick news",
+      "byCategory": "By topic",
+      "title": "Latest headlines",
       "viewAll": "All news"
     },
     "standings": {
-      "emptyTitle": "Table unavailable",
-      "emptyDescription": "The league table couldn't be loaded right now. It will refresh automatically.",
-      "emptyAction": "Open the table",
+      "emptyTitle": "Standings unavailable",
+      "emptyDescription": "Unable to load the league table right now. Data refreshes automatically.",
+      "emptyAction": "View standings",
       "viewAll": "Full table"
     },
     "metadata": {
-      "title": "Latest Liverpool news, daily briefing, fixtures & results",
-      "description": "Liverpool news from across the English press, de-duplicated and summed up every day. Plus fixtures, results and the Premier League table."
+      "title": "Latest Liverpool FC news, daily briefing, fixtures & standings",
+      "description": "Liverpool FC coverage gathered from the English press, de-duplicated and distilled into a daily briefing — with fixtures, results and Premier League standings."
     },
     "digest": {
       "kicker": "Today's briefing",
@@ -156,18 +156,18 @@
   "News": {
     "metadata": {
       "title": "Liverpool news roundup",
-      "description": "Liverpool FC stories from across the English press, reproduced in full with clear credit and a link to the original, plus a concise daily briefing."
+      "description": "Liverpool FC reporting from across the English press, reproduced in full with publisher attribution and a direct link to the original, alongside a daily briefing."
     },
-    "tagline": "Quick Liverpool headlines",
+    "tagline": "Liverpool FC press coverage",
     "title": "News roundup",
-    "heroDesc": "Full articles from across the English press, credited and linked to the original, plus a daily briefing.",
-    "description": "Liverpool FC news gathered from major English outlets including LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, This Is Anfield and more.",
+    "heroDesc": "Reporting from across the English football press, credited and linked to each publisher, alongside a daily briefing.",
+    "description": "Liverpool FC reporting from 13 English outlets — including LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports and This Is Anfield.",
     "search": "Search news...",
     "filter": "Filter",
     "langAll": "All",
     "langGlobal": "International",
     "viewAll": "All News →",
-    "attribution": "Articles are reproduced in full with credit and a direct link to the original. Copyright belongs to each named outlet. Unofficial fan site, not affiliated with Liverpool FC or those publishers.",
+    "attribution": "Articles are reproduced with full attribution and a direct link to the original report. Copyright remains with each named publisher. Independent, unofficial site — not affiliated with Liverpool FC or the outlets featured.",
     "categories": {
       "all": "All",
       "official": "Official",
@@ -186,37 +186,37 @@
       "send": "Send",
       "login": "Sign in to comment",
       "loginBtn": "Sign In",
-      "empty": "No comments yet. Start the conversation!",
+      "empty": "No comments yet. Share your thoughts below.",
       "deleteConfirm": "Delete this comment?",
       "justNow": "just now",
       "minutesAgo": "{n} min ago",
       "hoursAgo": "{n}h ago",
       "daysAgo": "{n}d ago",
       "charCount": "{n}/1000",
-      "totalArticle": "{count} comments",
+      "totalArticle": "{count, plural, one {# comment} other {# comments}}",
       "reply": "Reply",
       "replyingTo": "Replying to {name}",
       "replyPlaceholder": "Write a reply...",
       "tooShort": "Comment must be at least 2 characters",
       "tooLong": "Comment must be under 1,000 characters",
-      "duplicate": "You just posted the same comment",
-      "submitError": "Couldn't post your comment. Please try again.",
+      "duplicate": "Duplicate comment already submitted",
+      "submitError": "Unable to post comment. Please try again.",
       "cancel": "Cancel reply",
       "delete": "Delete comment",
       "deleteCancel": "Cancel",
       "deleteAction": "Delete",
-      "deleteError": "Couldn't delete this comment. Please try again."
+      "deleteError": "Unable to delete comment. Please try again."
     },
     "article": {
       "backToNews": "Back to news roundup",
-      "contentUnavailable": "Couldn't open this story",
-      "contentUnavailableDesc": "We couldn't load this story's text right now. You can read it directly on the publisher's site.",
+      "contentUnavailable": "Article text unavailable",
+      "contentUnavailableDesc": "Unable to load the article body right now. Read the full story on the publisher's site.",
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
-      "thinContentMsg": "This story is best read directly on the publisher's site.",
+      "thinContentMsg": "Read the complete report on the original publisher's site.",
       "sourcedFrom": "Published by <source>{sourceName}</source>. All rights belong to the original outlet; reproduced here in full with credit.",
-      "videoUnavailable": "This video can't be played here. Open the original article to watch.",
-      "linkOutMsg": "The full story is only available on {source}. Open the original to continue reading.",
+      "videoUnavailable": "Video playback is unavailable here. Open the original report to watch.",
+      "linkOutMsg": "Full text is published exclusively on {source}.",
       "moreFrom": "More from {source}",
       "viewAll": "View all",
       "readOriginalOn": "Read the original on {source}",
@@ -248,7 +248,7 @@
       "langAll": "All",
       "langGlobal": "International",
       "chipVietnamese": "Vietnamese",
-      "chipInternational": "International",
+      "chipInternational": "English",
       "catAll": "All",
       "catTeamNews": "Team News",
       "catTransfer": "Transfer",
@@ -263,15 +263,15 @@
       "searchLabel": "Search news",
       "clearSearch": "Clear search",
       "latest": "Latest news",
-      "resultsCount": "{count} stories",
-      "unavailableTitle": "Couldn't load the news",
-      "unavailableDesc": "We couldn't fetch the latest stories right now. Try again in a few minutes.",
+      "resultsCount": "{count, plural, one {# story} other {# stories}}",
+      "unavailableTitle": "Unable to load headlines",
+      "unavailableDesc": "Unable to load stories right now. Please try again shortly.",
       "retry": "Reload",
-      "loadMoreError": "Couldn't load more stories. Please try again.",
+      "loadMoreError": "Unable to load additional stories. Please try again.",
       "langGroupLabel": "Language of the news",
       "langVi": "Vietnamese",
       "langEn": "English",
-      "showResults": "Show {count} stories",
+      "showResults": "{count, plural, one {Show # story} other {Show # stories}}",
       "close": "Close",
       "alsoCovering": "{count, plural, one {Also in # more outlet:} other {Also in # more outlets:}}",
       "newSince": "New since {time}",
@@ -287,11 +287,11 @@
       "title": "Related news"
     },
     "translate": {
-      "aiDisclaimer": "Automated Vietnamese translation — phrasing or nuance may occasionally vary.",
+      "aiDisclaimer": "Automated Vietnamese translation — wording may differ slightly from the English original.",
       "translating": "Translating...",
       "showOriginal": "Show original",
       "showTranslated": "Translate to Vietnamese",
-      "error": "Couldn't translate right now. Please try again shortly."
+      "error": "Translation unavailable right now. Please try again shortly."
     },
     "actions": {
       "like": "Like",
@@ -319,7 +319,7 @@
       "expand": "Read article",
       "collapse": "Collapse",
       "readFull": "Read the briefing",
-      "articleCount": "From {count} articles",
+      "articleCount": "{count, plural, one {From # article} other {From # articles}}",
       "backToNews": "Back to news roundup",
       "sourceArticle": "Source {n}",
       "generatedAt": "Published <t></t>",
@@ -328,16 +328,16 @@
       "navLabel": "Browse daily briefings",
       "prevDay": "Previous day",
       "nextDay": "Next day",
-      "notGeneratedTitle": "No briefing for this date",
-      "notGeneratedDesc": "There is no briefing recorded for this date. Open the latest edition or head back to the news roundup.",
+      "notGeneratedTitle": "No briefing published for this date",
+      "notGeneratedDesc": "No daily briefing was published on this date. Open the latest edition or return to the news roundup.",
       "openLatest": "Open latest briefing",
-      "unavailableTitle": "Briefing unavailable",
-      "unavailableDesc": "We couldn't load the daily briefing right now. Try again in a few minutes.",
+      "unavailableTitle": "Briefing temporarily unavailable",
+      "unavailableDesc": "Unable to load the daily briefing right now. Please try again shortly.",
       "sourcesLabel": "Read the originals",
       "opensNewTab": "(opens in a new tab)",
-      "latestHint": "You're viewing the latest briefing",
-      "oldestHint": "You're viewing the earliest briefing",
-      "aiNote": "This briefing is drafted with AI from the linked articles, so occasional details can slip. Check the original outlet when accuracy matters.",
+      "latestHint": "Viewing the latest briefing",
+      "oldestHint": "Viewing the earliest archived briefing",
+      "aiNote": "Drafted with AI from the linked reports below. Consult the original publisher when exact wording matters.",
       "inThisBriefing": "In this briefing",
       "storyCount": "{count, plural, one {# story} other {# stories}}",
       "sourcesShort": "Sources",
@@ -532,7 +532,7 @@
     },
     "fanRating": {
       "title": "Supporters' rating this season",
-      "detail": "Average across {matches, plural, one {# match} other {# matches}} ({votes} fan ratings on match pages)."
+      "detail": "Average across {matches, plural, one {# match} other {# matches}} ({votes, plural, one {# fan rating} other {# fan ratings}} on match pages)."
     }
   },
   "Season": {
@@ -567,9 +567,9 @@
       "pts": "Pts",
       "form": "Form"
     },
-    "next": "Next: ",
-    "vs": "vs ",
-    "at": "@ ",
+    "next": "Next:",
+    "vs": "vs",
+    "at": "@",
     "seasonSelect": "Select season",
     "tabs": {
       "fixtures": "Fixtures",
@@ -581,21 +581,21 @@
     },
     "tabsLabel": "Fixtures or table",
     "outage": {
-      "title": "Season data unavailable",
-      "description": "We couldn't load fixtures and standings right now. Please try again in a few minutes.",
-      "action": "Read quick news"
+      "title": "Season archive unavailable",
+      "description": "Unable to load fixtures and standings right now. Please try again shortly.",
+      "action": "Browse news"
     }
   },
   "Stats": {
     "metadata": {
       "title": "Statistics",
-      "description": "Liverpool FC statistics for {season}: wins, draws, losses, goals, top scorers, form and club records."
+      "description": "Liverpool FC statistics for {season}: results breakdown, goalscoring trends, leading contributors, form and season records."
     },
     "hero": {
       "season": "Season {season} · All Competitions",
       "seasonLabel": "Season",
       "title": "Statistics",
-      "description": "Wins, draws, losses, goals, top scorers, form and records across every competition this season."
+      "description": "Results breakdown, goalscoring trends, leading contributors and season milestones across every competition."
     },
     "overview": {
       "title": "Season Overview",
@@ -828,19 +828,19 @@
     },
     "label": "About",
     "eyebrow": {
-      "story": "The site",
+      "story": "The publication",
       "features": "Features",
       "news": "Editorial",
       "ai": "AI",
       "data": "Sources",
-      "support": "Chip in"
+      "support": "Support"
     },
-    "title": "Liverpool news, gathered and summed up",
+    "title": "Liverpool FC coverage, gathered and distilled daily",
     "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, crests and trademarks belong to their respective owners.",
     "whatIs": {
-      "title": "What is {brand}?",
-      "description": "Anfield Daily is an independent Liverpool FC news site built for fast daily reading. It gathers coverage from major English outlets, filters out duplicate reporting on the same story, and distils the day into one concise briefing — alongside fixtures, results, league tables and squad data.",
-      "featuresTitle": "What's on the site",
+      "title": "About {brand}",
+      "description": "Anfield Daily is an independent Liverpool FC news site designed for calm, focused daily reading. It gathers reporting from major English football outlets, removes duplicate coverage of the same story, and distils the day into one concise briefing — alongside fixtures, results, standings and squad profiles.",
+      "featuresTitle": "Coverage & features",
       "features": {
         "gathered": {
           "title": "Gathered news",
@@ -877,17 +877,17 @@
       },
       "dataTitle": "Data sources",
       "dataSources": "Fixtures, results and league tables come from Football-Data.org and ESPN. Player statistics come from the public Fantasy Premier League API, and squad profiles from liverpoolfc.com. News is gathered from English football outlets, always credited with a direct link to the original publisher.",
-      "techTitle": "Tech Stack",
+      "techTitle": "Tech stack",
       "techStack": "Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Framer Motion · Recharts · Supabase · Cloudflare Workers · next-intl (EN/VI)"
     },
     "creator": {
-      "title": "Who makes this",
-      "role": "Developer & Liverpool supporter",
-      "bio": "I'm a software developer and Liverpool supporter. Anfield Daily started as a personal tool to read the day's Liverpool coverage in one clean place without opening a dozen tabs."
+      "title": "Behind the project",
+      "role": "Software engineer & Liverpool supporter",
+      "bio": "Built and maintained by an independent software engineer and Liverpool supporter. Anfield Daily began as a way to read the day's serious Liverpool reporting in one calm, uncluttered place rather than across a dozen open tabs."
     },
     "contact": {
       "title": "Contact",
-      "description": "Spotted a bug, a broken feed or a factual error? Send me a note.",
+      "description": "Report a technical issue, broken feed or factual correction via email or GitHub.",
       "email": "Email",
       "github": "GitHub",
       "githubUrl": "https://github.com/dangdinh87",
@@ -895,20 +895,20 @@
     },
     "support": {
       "title": "Support the site",
-      "description": "{brand} is free to read. If you find it useful, buying a coffee helps cover hosting, worker and API costs.",
-      "buyCoffee": "Buy me a coffee",
+      "description": "{brand} is free to read. Optional reader contributions help cover server, worker and football data costs.",
+      "buyCoffee": "Buy a coffee",
       "momoAlt": "MoMo QR — Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code",
       "close": "Close"
     },
-    "tagline": "Fast Liverpool news, a daily briefing, fixtures, results and standings in one place.",
+    "tagline": "Liverpool FC reporting, a concise daily briefing, fixtures, results and standings in one place.",
     "news": {
-      "title": "How news is handled",
-      "body": "Reader pages on {brand} display articles from each outlet with clear attribution and a direct link to the original publisher above the body. Mirrored reader pages carry no advertising and stay excluded from search indexing (noindex). If you are an author or publisher and want an item amended or removed, email me and I will act on it promptly."
+      "title": "Editorial & attribution policy",
+      "body": "Reader pages on {brand} display full articles with clear publisher attribution and a direct link to the original report above the text. Mirrored reader pages carry no advertising and remain excluded from search indexing (noindex). Publishers or authors requesting an amendment or removal may write to the contact address below for immediate action."
     },
     "ai": {
-      "title": "AI on {brand}",
-      "body": "On-demand Vietnamese article translation, the daily briefing and data-driven match reports use AI assistance via VietAPI. Automated output can occasionally miss nuance or context — for critical details such as kick-off changes or ticketing, always check Liverpool FC's official channels."
+      "title": "Use of AI",
+      "body": "On-demand Vietnamese article translation, the daily briefing and data-driven match reports use AI via VietAPI. Every match report is checked programmatically against the underlying match feed, though automated text can still miss nuance — consult Liverpool FC's official channels for kick-off changes or ticketing."
     }
   },
   "Standings": {
@@ -920,7 +920,7 @@
       "season": "Premier League · {season}",
       "title": "Standings",
       "lfcPosition": "Liverpool FC · {rank}{suffix} place",
-      "points": "{count} points",
+      "points": "{count, plural, one {# point} other {# points}}",
       "suffixes": {
         "st": "st",
         "nd": "nd",
@@ -955,8 +955,8 @@
     "compLabel": "Competition",
     "outage": {
       "title": "Standings unavailable",
-      "description": "We couldn't load the league table right now. Please try again in a few minutes.",
-      "action": "Read quick news"
+      "description": "Unable to load the league table right now. Please try again shortly.",
+      "action": "Browse news"
     },
     "summary": {
       "label": "Liverpool in the table",
@@ -979,7 +979,7 @@
     "hero": {
       "season": "{season} Season",
       "title": "Fixtures & results",
-      "subtitle": "{count} matches this season · your local time"
+      "subtitle": "{count, plural, one {# match} other {# matches}} this season · your local time"
     },
     "timeline": {
       "filter": {
@@ -1011,7 +1011,7 @@
       "back": "Back to fixtures",
       "matchTimeline": "Match Timeline",
       "statistics": "Statistics",
-      "lineups": "Lineups",
+      "lineups": "Line-ups",
       "lineupsConfirmed": "Confirmed",
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
@@ -1028,7 +1028,7 @@
           "description": "Match statistics have not been published by the data provider."
         },
         "lineups": {
-          "title": "Lineups not announced yet",
+          "title": "Line-ups not announced yet",
           "description": "Official team sheets are typically confirmed around 60 minutes before kick-off."
         },
         "h2h": {
@@ -1038,15 +1038,15 @@
       },
       "kickoffVn": "Kick-off",
       "sectionsLabel": "Match sections",
-      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Broadcast info, lineups and head-to-head.",
-      "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and lineups.",
+      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Broadcast info, line-ups and head-to-head.",
+      "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and line-ups.",
       "attendance": "Attendance: {count}",
       "referee": "Referee: {name}"
     },
     "outage": {
       "title": "Fixtures temporarily unavailable",
-      "description": "We couldn't load the match schedule right now. Please try again in a few minutes.",
-      "action": "Read quick news"
+      "description": "Unable to load the match schedule right now. Please try again shortly.",
+      "action": "Browse news"
     },
     "nav": {
       "label": "Match centre",
@@ -1121,11 +1121,11 @@
       "loading": "Creating account...",
       "hasAccount": "Already have an account?",
       "login": "Sign in here",
-      "error": "Couldn't create your account",
+      "error": "Unable to create account",
       "confirm": "Confirm password",
       "confirmMismatch": "Passwords do not match",
       "passwordShort": "Password must be at least 6 characters",
-      "checkEmail": "Confirmation email sent. Open your inbox (check spam if needed) and follow the link to finish signing up.",
+      "checkEmail": "Verification email sent. Open your inbox (check spam if needed) and follow the link to complete registration.",
       "passwordHint": "At least 6 characters."
     },
     "errors": {
@@ -1179,7 +1179,7 @@
       "upload": "Upload",
       "change": "Change",
       "removing": "Removing...",
-      "error": "Couldn't upload avatar",
+      "error": "Unable to upload avatar",
       "clickToChange": "Click to change avatar (max 2 MB)",
       "uploading": "Uploading...",
       "errorType": "Use a JPEG, PNG, WebP or GIF image.",
@@ -1198,7 +1198,7 @@
     "coverUpdated": "Homepage background updated.",
     "coverReset": "Reset to default",
     "coverResetDone": "Homepage background reset to default.",
-    "coverError": "Couldn't update homepage background.",
+    "coverError": "Unable to update homepage background.",
     "coverDefault": "Default",
     "streakCount": "{count}-day streak",
     "streakLabel": "Daily reading streak",
@@ -1237,7 +1237,7 @@
     },
     "h2h": {
       "title": "Head to Head",
-      "subtitle": "{count} matches",
+      "subtitle": "{count, plural, one {# match} other {# matches}}",
       "dataRange": "Meetings from {from} to {to}",
       "goalsFor": "Goals For",
       "goalsAgainst": "Goals Against",
@@ -1252,7 +1252,7 @@
     "tabs": {
       "timeline": "Timeline",
       "stats": "Statistics",
-      "lineups": "Lineups",
+      "lineups": "Line-ups",
       "h2h": "H2H"
     },
     "statLabels": {
@@ -1438,7 +1438,7 @@
     "hero": {
       "eyebrow": "Written here",
       "title": "Analysis",
-      "description": "Match reports built directly from the match data feed — lineups, events and statistics — never rewritten from another outlet."
+      "description": "Match reports generated directly from verified match data — line-ups, events and tactical numbers — never rewritten from second-hand coverage."
     },
     "kinds": {
       "review": "Match report",
@@ -1491,7 +1491,7 @@
       "signIn": "Please sign in first.",
       "closed": "Predictions for this match have closed.",
       "invalid": "Enter a valid scoreline.",
-      "unavailable": "Couldn't save your prediction right now. Try again shortly."
+      "unavailable": "Unable to save prediction right now. Please try again shortly."
     },
     "ratings": {
       "title": "Rate the players",
@@ -1499,7 +1499,7 @@
       "hint": "Slide 1–10 for each player you watched. Community averages appear on the right.",
       "closed": "Player ratings closed seven days after full-time. Community averages:",
       "rate": "Rate {player}",
-      "average": "Average from {count} fans",
+      "average": "{count, plural, one {Average from # fan} other {Average from # fans}}",
       "save": "Save ratings",
       "saved": "Saved",
       "signIn": "Sign in to rate",
@@ -1507,7 +1507,7 @@
         "signIn": "Please sign in first.",
         "closed": "Player ratings for this match have closed.",
         "invalid": "One or more ratings are out of range.",
-        "unavailable": "Couldn't save your ratings right now. Try again shortly."
+        "unavailable": "Unable to save ratings right now. Please try again shortly."
       }
     },
     "page": {
@@ -1526,7 +1526,7 @@
       "emptyDesc": "Standings populate as soon as the first predicted fixture finishes.",
       "emptyAction": "Predict the next match",
       "unavailableTitle": "Leaderboard unavailable",
-      "unavailableDesc": "We couldn't load the prediction standings right now. Try again in a few minutes."
+      "unavailableDesc": "Unable to load the prediction leaderboard right now. Please try again shortly."
     }
   }
 }

@@ -10,6 +10,7 @@ export const SITE_ARTICLE_VOICE = `You write for Anfield Daily, an unofficial Li
 
 HOW TO WRITE
 - Short sentences. Plain words. Address the reader as "you" when you address them at all.
+- Use British English spelling and football terminology ("defence", "centre-back", "honours", "equaliser", "kick-off", "half-time", "line-up").
 - Sentence case for the title and every heading. Not Title Case: capitalise only
   the first word and any actual names.
 - No hype, no cliché openings ("What a night at Anfield"), no self-congratulation.
@@ -33,5 +34,5 @@ You are working from a match data feed, not from watching the game. Write like s
 
 /** Appended when the article is written in Vietnamese. */
 export const SITE_ARTICLE_VOICE_VI = `Viết bằng tiếng Việt tự nhiên, mạch lạc, đúng văn phong báo chí thể thao hiện đại; xưng "bạn" với người đọc khi cần.
-Câu ngắn, từ ngữ bóng đá chuẩn xác và quen thuộc: "giờ bóng lăn", "kết quả", "bảng xếp hạng", "đội hình xuất phát", "dự bị", "hiệu số", "giữ sạch lưới", "kiến tạo", "vòng đấu", "Ngoại hạng Anh", "The Reds", "The Kop".
-Không dịch máy móc từ tiếng Anh, không dùng sáo ngữ cường điệu. Mọi ràng buộc ở trên vẫn giữ nguyên.`;
+Câu ngắn, từ ngữ bóng đá chuẩn xác và quen thuộc: "giờ bóng lăn", "kết quả", "bảng xếp hạng", "đội hình xuất phát", "đá chính", "dự bị", "hiệu số", "giữ sạch lưới", "kiến tạo", "vòng đấu", "Ngoại hạng Anh", "The Reds", "The Kop".
+Không dịch máy móc từ tiếng Anh, không dùng sáo ngữ cường điệu, không gắn vị trí địa lý của người đọc. Mọi ràng buộc ở trên vẫn giữ nguyên.`;

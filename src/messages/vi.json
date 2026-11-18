@@ -6,12 +6,12 @@
     "errorMessage": "Không thể tải dữ liệu lúc này. Vui lòng thử lại sau ít phút.",
     "tryAgain": "Thử lại",
     "notFoundTitle": "Việt vị!",
-    "notFoundMessage": "Trang bạn tìm không tồn tại hoặc đã được chuyển sang địa chỉ khác.",
+    "notFoundMessage": "Trang bạn truy cập không tồn tại hoặc đã chuyển sang địa chỉ khác.",
     "backHome": "Về trang chủ",
     "scrollToTop": "Lên đầu trang",
     "skipToContent": "Chuyển thẳng tới nội dung",
     "dismiss": "Đóng",
-    "notFoundHint": "Bạn có thể ghé một trong các mục sau",
+    "notFoundHint": "Chuyển tới một trong các mục chính",
     "errorRef": "Mã tham chiếu: {digest}",
     "nav": {
       "home": "Trang chủ",
@@ -75,10 +75,10 @@
   },
   "Hero": {
     "tagline": "Tin Liverpool mới nhất, đầy đủ ở một nơi",
-    "title": "Tin Liverpool gọn ở một nơi",
-    "subtitle": "Anfield Daily — tin tức Liverpool tổng hợp và tóm tắt mỗi ngày",
-    "description": "<b>{brand}</b> tổng hợp tin Liverpool từ {count} đầu báo Anh, lọc bài trùng và tóm tắt thành bản tin hằng ngày.",
-    "badge": "Tin Liverpool tổng hợp mỗi ngày",
+    "title": "Tin tức Liverpool FC tại một nơi",
+    "subtitle": "Anfield Daily — tổng hợp báo Anh, lọc trùng và tóm tắt mỗi ngày",
+    "description": "<b>{brand}</b> tổng hợp tin tức Liverpool từ {count} đầu báo Anh, loại bỏ tin trùng lặp và đúc kết thành bản tin hằng ngày.",
+    "badge": "Bản tin Liverpool hằng ngày",
     "scroll": "Cuộn xuống",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng",
@@ -110,22 +110,22 @@
       "aria": "{result} trước {opponent}, {venue}"
     },
     "news": {
-      "emptyTitle": "Mục tin tức đang tạm gián đoạn",
-      "emptyDescription": "Chưa tải được các tin mới nhất lúc này. Bạn thử lại sau ít phút nhé.",
+      "emptyTitle": "Tin mới tạm thời gián đoạn",
+      "emptyDescription": "Không thể tải tin mới lúc này. Vui lòng thử lại sau ít phút.",
       "emptyAction": "Mở trang tin",
-      "byCategory": "Đọc thêm theo chủ đề",
-      "title": "Tin nhanh",
+      "byCategory": "Theo chủ đề",
+      "title": "Tin mới nhất",
       "viewAll": "Xem tất cả tin"
     },
     "standings": {
-      "emptyTitle": "Chưa tải được bảng xếp hạng",
-      "emptyDescription": "Dữ liệu bảng xếp hạng đang tạm gián đoạn và sẽ tự động cập nhật lại.",
+      "emptyTitle": "Bảng xếp hạng tạm thời gián đoạn",
+      "emptyDescription": "Không thể tải bảng xếp hạng lúc này. Dữ liệu sẽ tự động cập nhật lại.",
       "emptyAction": "Mở bảng xếp hạng",
       "viewAll": "Xem đầy đủ"
     },
     "metadata": {
-      "title": "Tin Liverpool mới nhất, bản tin hằng ngày, lịch thi đấu & kết quả",
-      "description": "Tin tức Liverpool từ báo chí thể thao Anh, lọc trùng và tóm tắt mỗi ngày — đi kèm lịch thi đấu, kết quả và bảng xếp hạng Ngoại hạng Anh."
+      "title": "Tin tức Liverpool FC, bản tin hằng ngày, lịch thi đấu & bảng xếp hạng",
+      "description": "Tin tức Liverpool FC từ báo chí thể thao Anh, lọc trùng và tóm tắt mỗi ngày — đi kèm lịch thi đấu, kết quả và bảng xếp hạng Ngoại hạng Anh."
     },
     "digest": {
       "kicker": "Bản tin hôm nay",
@@ -156,18 +156,18 @@
   "News": {
     "metadata": {
       "title": "Điểm tin Liverpool",
-      "description": "Tin tức Liverpool cập nhật mỗi ngày từ báo chí Anh: đọc toàn văn kèm liên kết tới bài gốc và bản tin tóm tắt hằng ngày."
+      "description": "Tin tức Liverpool FC cập nhật từ báo chí thể thao Anh: hiển thị toàn văn kèm ghi nhận nguồn, liên kết bài gốc và bản tin tóm tắt hằng ngày."
     },
-    "tagline": "Tin nhanh về Liverpool",
+    "tagline": "Tổng hợp báo chí Anh",
     "title": "Điểm tin",
-    "heroDesc": "Đọc toàn văn từ báo chí thể thao Anh kèm dẫn nguồn tới bài gốc, cùng bản tin tóm tắt mỗi ngày.",
-    "description": "Tin tức Liverpool FC tổng hợp từ các đầu báo uy tín tại Anh như LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, This Is Anfield...",
+    "heroDesc": "Tin bài chọn lọc từ báo chí thể thao Anh, ghi rõ nguồn kèm liên kết tới bài gốc và bản tin tóm tắt hằng ngày.",
+    "description": "Tin tức Liverpool FC từ 13 đầu báo thể thao Anh — gồm LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, This Is Anfield và các nguồn uy tín khác.",
     "search": "Tìm kiếm tin tức...",
     "filter": "Lọc",
     "langAll": "Tất cả",
     "langGlobal": "Quốc tế",
     "viewAll": "Tất cả tin tức →",
-    "attribution": "Bài viết được hiển thị toàn văn kèm ghi nhận nguồn và liên kết trực tiếp tới bài gốc. Bản quyền thuộc về từng tòa soạn được nêu tên. Đây là trang fan không chính thức, không liên kết với Liverpool FC hay các đơn vị xuất bản.",
+    "attribution": "Bài viết được dẫn lại toàn văn kèm ghi nhận nguồn và liên kết trực tiếp tới bài gốc. Bản quyền thuộc về từng đơn vị xuất bản được nêu tên. Trang tin độc lập không chính thức, không liên kết với Liverpool FC hay các cơ quan báo chí.",
     "categories": {
       "all": "Tất cả",
       "official": "Chính thức",
@@ -186,7 +186,7 @@
       "send": "Gửi",
       "login": "Đăng nhập để bình luận",
       "loginBtn": "Đăng nhập",
-      "empty": "Chưa có bình luận nào. Hãy mở lời đầu tiên!",
+      "empty": "Chưa có bình luận. Hãy chia sẻ góc nhìn của bạn.",
       "deleteConfirm": "Xóa bình luận này?",
       "justNow": "vừa xong",
       "minutesAgo": "{n} phút trước",
@@ -199,7 +199,7 @@
       "replyPlaceholder": "Viết câu trả lời...",
       "tooShort": "Bình luận cần tối thiểu 2 ký tự",
       "tooLong": "Bình luận không vượt quá 1.000 ký tự",
-      "duplicate": "Bạn vừa gửi nội dung này rồi",
+      "duplicate": "Nội dung bình luận trùng lặp",
       "submitError": "Không thể gửi bình luận. Vui lòng thử lại.",
       "cancel": "Hủy trả lời",
       "delete": "Xóa bình luận",
@@ -209,14 +209,14 @@
     },
     "article": {
       "backToNews": "Về Điểm tin",
-      "contentUnavailable": "Chưa mở được bài viết này",
-      "contentUnavailableDesc": "Hiện chưa tải được toàn văn bài viết. Bạn vẫn có thể đọc trực tiếp trên trang của tòa soạn gốc.",
+      "contentUnavailable": "Không thể hiển thị nội dung bài viết",
+      "contentUnavailableDesc": "Không thể tải nội dung bài viết lúc này. Đọc toàn văn trực tiếp trên trang của tòa soạn gốc.",
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc toàn văn trên {source}",
-      "thinContentMsg": "Bài viết này hiển thị đầy đủ nhất trực tiếp trên trang gốc.",
+      "thinContentMsg": "Xem đầy đủ nội dung trực tiếp trên trang xuất bản gốc.",
       "sourcedFrom": "Bài viết do <source>{sourceName}</source> xuất bản. Bản quyền thuộc về tòa soạn gốc; nội dung được dẫn lại toàn văn kèm ghi nguồn.",
-      "videoUnavailable": "Không phát được video tại đây. Mở bài gốc để xem trực tiếp.",
-      "linkOutMsg": "Bài viết này chỉ xem toàn văn được trên {source}. Mời bạn mở trang gốc để đọc tiếp.",
+      "videoUnavailable": "Không thể phát video tại đây. Mở bài viết gốc để xem trực tiếp.",
+      "linkOutMsg": "Đọc toàn văn bài viết gốc trên {source}.",
       "moreFrom": "Tin khác từ {source}",
       "viewAll": "Xem tất cả",
       "readOriginalOn": "Đọc bài gốc trên {source}",
@@ -264,10 +264,10 @@
       "clearSearch": "Xóa tìm kiếm",
       "latest": "Tin mới nhất",
       "resultsCount": "{count} bài viết",
-      "unavailableTitle": "Chưa tải được tin tức",
-      "unavailableDesc": "Hiện chưa kết nối được danh sách tin mới. Bạn thử tải lại sau ít phút nhé.",
+      "unavailableTitle": "Không thể tải danh sách tin",
+      "unavailableDesc": "Không thể tải tin mới lúc này. Vui lòng thử lại sau ít phút.",
       "retry": "Tải lại",
-      "loadMoreError": "Chưa tải thêm được bài viết. Vui lòng thử lại.",
+      "loadMoreError": "Không thể tải thêm bài viết. Vui lòng thử lại.",
       "langGroupLabel": "Ngôn ngữ bài báo",
       "langVi": "Tiếng Việt",
       "langEn": "Tiếng Anh",
@@ -287,11 +287,11 @@
       "title": "Tin liên quan"
     },
     "translate": {
-      "aiDisclaimer": "Bản dịch tiếng Việt tự động bằng AI — đôi chỗ diễn đạt có thể chưa thật sát bản gốc.",
+      "aiDisclaimer": "Bản dịch tiếng Việt tự động bằng AI — diễn đạt có thể chênh lệch nhẹ so với nguyên bản tiếng Anh.",
       "translating": "Đang dịch...",
       "showOriginal": "Xem bản gốc",
       "showTranslated": "Dịch sang tiếng Việt",
-      "error": "Chưa dịch được bài viết lúc này. Vui lòng thử lại sau."
+      "error": "Không thể dịch bài viết lúc này. Vui lòng thử lại sau ít phút."
     },
     "actions": {
       "like": "Thích",
@@ -328,16 +328,16 @@
       "navLabel": "Xem bản tin các ngày khác",
       "prevDay": "Ngày trước",
       "nextDay": "Ngày sau",
-      "notGeneratedTitle": "Chưa có bản tin cho ngày này",
-      "notGeneratedDesc": "Chưa ghi nhận bản tin tóm tắt cho ngày được chọn. Mời bạn mở bản tin mới nhất hoặc quay lại Điểm tin.",
+      "notGeneratedTitle": "Không có bản tin cho ngày này",
+      "notGeneratedDesc": "Không có bản tin lưu trữ cho ngày được chọn. Xem bản tin mới nhất hoặc quay lại Điểm tin.",
       "openLatest": "Mở bản tin mới nhất",
-      "unavailableTitle": "Chưa tải được bản tin",
-      "unavailableDesc": "Hiện chưa tải được bản tin hằng ngày. Bạn thử lại sau ít phút nhé.",
+      "unavailableTitle": "Bản tin tạm thời gián đoạn",
+      "unavailableDesc": "Không thể tải bản tin hằng ngày lúc này. Vui lòng thử lại sau ít phút.",
       "sourcesLabel": "Đọc các bài gốc",
       "opensNewTab": "(mở trong tab mới)",
       "latestHint": "Đang xem bản tin mới nhất",
-      "oldestHint": "Đang xem bản tin đầu tiên",
-      "aiNote": "Bản tin được tổng hợp tự động bằng AI từ các bài báo dẫn nguồn nên đôi khi có thể thiếu hoặc lệch chi tiết. Hãy mở bài gốc khi cần kiểm chứng thông tin quan trọng.",
+      "oldestHint": "Đang xem bản tin lưu trữ đầu tiên",
+      "aiNote": "Bản tin được tổng hợp bằng AI từ các bài báo dẫn nguồn bên dưới. Đối chiếu trực tiếp bài gốc khi cần kiểm chứng chi tiết.",
       "inThisBriefing": "Trong bản tin này",
       "storyCount": "{count} chủ đề",
       "sourcesShort": "Nguồn",
@@ -439,7 +439,7 @@
       "pastSeasons": "Các mùa trước",
       "playerInfo": "Thông tin cầu thủ",
       "honours": "Danh hiệu tại Liverpool FC",
-      "biography": "Tiểu sử sự nghiệp",
+      "biography": "Tiểu sử",
       "news": "Tin mới về {name}",
       "allNews": "Tất cả tin"
     },
@@ -482,7 +482,7 @@
       "penMissed": "Hỏng phạt đền",
       "penSaved": "Cản phạt đền",
       "subIn": "Vào sân",
-      "bench": "Dự bị không vào",
+      "bench": "Dự bị không ra sân",
       "competition": "Giải đấu",
       "attack": "Tấn công",
       "defence": "Phòng ngự",
@@ -567,9 +567,9 @@
       "pts": "Điểm",
       "form": "Phong độ"
     },
-    "next": "Tiếp theo: ",
-    "vs": "gặp ",
-    "at": "tại ",
+    "next": "Tiếp theo:",
+    "vs": "gặp",
+    "at": "tại",
     "seasonSelect": "Chọn mùa giải",
     "tabs": {
       "fixtures": "Lịch đấu",
@@ -581,21 +581,21 @@
     },
     "tabsLabel": "Lịch thi đấu hoặc bảng xếp hạng",
     "outage": {
-      "title": "Chưa tải được dữ liệu mùa giải",
-      "description": "Hiện chưa kết nối được lịch thi đấu và bảng xếp hạng. Bạn thử lại sau ít phút nhé.",
-      "action": "Đọc tin nhanh"
+      "title": "Dữ liệu mùa giải tạm thời gián đoạn",
+      "description": "Không thể tải lịch thi đấu và bảng xếp hạng lúc này. Vui lòng thử lại sau ít phút.",
+      "action": "Xem tin tức"
     }
   },
   "Stats": {
     "metadata": {
       "title": "Thống kê",
-      "description": "Thống kê Liverpool FC mùa {season}: số trận thắng, hòa, thua, bàn thắng, vua phá lưới, phong độ và các kỷ lục mùa giải."
+      "description": "Thống kê Liverpool FC mùa {season}: phân tích kết quả thắng–hòa–thua, hiệu suất ghi bàn, danh sách lập công và các cột mốc mùa giải."
     },
     "hero": {
       "season": "Mùa giải {season} · Tất cả đấu trường",
       "seasonLabel": "Mùa giải",
       "title": "Thống kê",
-      "description": "Thành tích thắng, hòa, thua, hiệu suất ghi bàn, danh sách lập công và các cột mốc của Liverpool trên mọi đấu trường."
+      "description": "Phân tích kết quả thắng–hòa–thua, hiệu suất ghi bàn, cầu thủ đóng góp nhiều nhất và các cột mốc của Liverpool trên mọi đấu trường."
     },
     "overview": {
       "title": "Tổng quan mùa giải",
@@ -630,7 +630,7 @@
       "scored": "Bàn thắng",
       "conceded": "Bàn thua",
       "homeAway": "Sân nhà & Sân khách",
-      "homeAwaySub": "Đối chiếu thành tích thi đấu",
+      "homeAwaySub": "Thành tích theo sân đấu",
       "home": "Sân nhà",
       "away": "Sân khách",
       "formTimeline": "Diễn biến phong độ",
@@ -686,7 +686,7 @@
     },
     "comparison": {
       "title": "So sánh qua các mùa",
-      "subtitle": "Đối chiếu thông số các mùa giải gần đây"
+      "subtitle": "So sánh thông số qua các mùa giải gần đây"
     },
     "noData": {
       "title": "Chưa có thống kê mùa này",
@@ -804,7 +804,7 @@
         "summary": "Bill Shankly tiếp quản đội bóng đang ở giải Hạng Nhì và gây dựng Liverpool hiện đại: thăng hạng, vô địch quốc gia, chiếc Cúp FA đầu tiên và truyền thống Boot Room."
       },
       "paisley": {
-        "name": "Thập niên hoàng kim",
+        "name": "Thời kỳ hoàng kim",
         "summary": "Dưới tay Paisley, Fagan và Dalglish, Liverpool thống trị bóng đá Anh và châu Âu suốt hai thập kỷ — đi qua cả tột đỉnh vinh quang lẫn hai thảm kịch Heysel và Hillsborough."
       },
       "rebuild": {
@@ -817,7 +817,7 @@
       },
       "today": {
         "name": "Chương mới tại Anfield",
-        "summary": "Arne Slot mang về chức vô địch quốc gia thứ 20 mùa 2024/25 trước khi Andoni Iraola tiếp quản mùa hè 2026 cùng thế hệ trụ cột mới tại Anfield."
+        "summary": "Arne Slot mang về chức vô địch quốc gia thứ 20 san bằng kỷ lục vào năm 2025, trước khi Andoni Iraola tiếp quản đội bóng vào mùa hè 2026."
       }
     }
   },
@@ -828,19 +828,19 @@
     },
     "label": "Giới thiệu",
     "eyebrow": {
-      "story": "Về trang",
+      "story": "Chuyên trang",
       "features": "Tính năng",
       "news": "Biên tập",
       "ai": "AI",
       "data": "Nguồn dữ liệu",
-      "support": "Ủng hộ"
+      "support": "Đồng hành"
     },
-    "title": "Tin Liverpool, tổng hợp và tóm tắt mỗi ngày",
+    "title": "Tin tức Liverpool FC, tổng hợp và chắt lọc mỗi ngày",
     "disclaimer": "{brand} là trang tin <status>độc lập, không chính thức</status> của người hâm mộ. Trang không liên kết, không được tài trợ hay chứng thực bởi Liverpool FC, Fenway Sports Group, Premier League hoặc các cơ quan báo chí được dẫn nguồn. Mọi tên gọi, huy hiệu và nhãn hiệu thuộc về chủ sở hữu tương ứng.",
     "whatIs": {
-      "title": "{brand} là gì?",
-      "description": "Anfield Daily là trang tin Liverpool FC độc lập, được thiết kế để theo dõi tin tức nhanh và gọn mỗi ngày. Trang tổng hợp bài viết từ các đầu báo thể thao uy tín tại Anh, lọc bỏ các bản tin trùng lặp cùng sự kiện và đúc kết trọn ngày trong một bản tin ngắn — đi kèm lịch thi đấu, kết quả, bảng xếp hạng và dữ liệu đội hình.",
-      "featuresTitle": "Trên trang có gì",
+      "title": "Về {brand}",
+      "description": "Anfield Daily là trang tin Liverpool FC độc lập, thiết kế cho trải nghiệm đọc tập trung và mạch lạc mỗi ngày. Trang tổng hợp bài viết từ các đầu báo thể thao uy tín tại Anh, loại bỏ tin bài trùng lặp cùng sự kiện và đúc kết trọn ngày trong một bản tin ngắn — đi kèm lịch thi đấu, kết quả, bảng xếp hạng và dữ liệu đội hình.",
+      "featuresTitle": "Chuyên mục & tính năng",
       "features": {
         "gathered": {
           "title": "Tổng hợp báo Anh",
@@ -881,13 +881,13 @@
       "techStack": "Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Framer Motion · Recharts · Supabase · Cloudflare Workers · next-intl (EN/VI)"
     },
     "creator": {
-      "title": "Người thực hiện",
-      "role": "Lập trình viên & CĐV Liverpool",
-      "bio": "Mình là lập trình viên và là người hâm mộ Liverpool. Anfield Daily khởi đầu từ nhu cầu đọc nhanh toàn bộ tin tức Liverpool mỗi sáng ở một nơi gọn gàng mà không phải mở hàng chục tab báo."
+      "title": "Thực hiện dự án",
+      "role": "Kỹ sư phần mềm & CĐV Liverpool",
+      "bio": "Dự án do một kỹ sư phần mềm kiêm cổ động viên Liverpool phát triển và vận hành độc lập, khởi nguồn từ nhu cầu đọc trọn tin tức Liverpool mỗi ngày trong một không gian gọn, tĩnh và không phải mở hàng chục tab báo."
     },
     "contact": {
       "title": "Liên hệ",
-      "description": "Phát hiện lỗi hiển thị, nguồn tin gián đoạn hoặc thông tin cần đính chính? Nhắn cho mình bất cứ lúc nào.",
+      "description": "Gửi phản hồi kỹ thuật, báo lỗi nguồn tin hoặc yêu cầu đính chính thông tin qua email hoặc GitHub.",
       "email": "Email",
       "github": "GitHub",
       "githubUrl": "https://github.com/dangdinh87",
@@ -895,20 +895,20 @@
     },
     "support": {
       "title": "Ủng hộ duy trì trang",
-      "description": "{brand} hoàn toàn miễn phí. Nếu thấy trang hữu ích, bạn có thể mời mình một ly cà phê để phụ chi phí hạ tầng máy chủ và API.",
-      "buyCoffee": "Mời mình ly cà phê",
+      "description": "{brand} mở đọc hoàn toàn miễn phí. Sự đồng hành từ độc giả giúp duy trì chi phí hạ tầng máy chủ và nguồn dữ liệu bóng đá.",
+      "buyCoffee": "Ủng hộ chi phí duy trì",
       "momoAlt": "Mã QR MoMo — Nguyễn Đăng Định",
       "momoTitle": "Mã QR MoMo",
       "close": "Đóng"
     },
-    "tagline": "Tin nhanh, bản tin tóm tắt hằng ngày, lịch thi đấu, kết quả và bảng xếp hạng Liverpool ở một nơi.",
+    "tagline": "Tin tức Liverpool FC chọn lọc, bản tin hằng ngày, lịch thi đấu, kết quả và bảng xếp hạng tại một nơi.",
     "news": {
-      "title": "Nguyên tắc dẫn nguồn tin tức",
-      "body": "Các trang đọc bài trên {brand} hiển thị nội dung kèm ghi nhận rõ tên tòa soạn và liên kết trực tiếp tới bài gốc ngay phía trên văn bản. Những trang dẫn lại này không đặt quảng cáo và được gắn thẻ noindex để không lập chỉ mục tìm kiếm. Nếu bạn là tác giả hoặc đại diện đơn vị xuất bản muốn điều chỉnh hay gỡ bỏ bài viết, vui lòng gửi email để mình xử lý ngay."
+      "title": "Nguyên tắc biên tập & dẫn nguồn",
+      "body": "Các trang đọc bài trên {brand} hiển thị nội dung kèm ghi nhận rõ tên đơn vị xuất bản và liên kết trực tiếp tới bài gốc ngay đầu trang. Những trang dẫn lại này không đặt quảng cáo và được gắn thẻ noindex để không lập chỉ mục tìm kiếm. Tác giả hoặc đại diện tòa soạn cần điều chỉnh hay gỡ bỏ bài viết vui lòng liên hệ qua địa chỉ email bên dưới để được xử lý ngay."
     },
     "ai": {
-      "title": "Ứng dụng AI trên {brand}",
-      "body": "Tính năng dịch bài báo sang tiếng Việt, bản tin tóm tắt hằng ngày và bài phân tích từ dữ liệu trận đấu có sử dụng AI hỗ trợ qua VietAPI. Nội dung tự động đôi khi có thể thiếu sắc thái hoặc bối cảnh — với thông tin quan trọng như lịch thi đấu điều chỉnh hay vé vào sân, bạn hãy đối chiếu trên kênh chính thức của Liverpool FC."
+      "title": "Ứng dụng AI trong biên tập",
+      "body": "Tính năng dịch bài báo sang tiếng Việt, bản tin hằng ngày và bài phân tích sau trận sử dụng AI qua VietAPI. Dù mọi số liệu trận đấu đều được đối soát tự động với nguồn dữ liệu gốc, văn bản tự động đôi khi vẫn có thể thiếu sắc thái — với thay đổi giờ bóng lăn hoặc thông tin vé, độc giả nên đối chiếu trực tiếp trên kênh chính thức của Liverpool FC."
     }
   },
   "Standings": {
@@ -922,10 +922,10 @@
       "lfcPosition": "Liverpool FC · Hạng {rank}",
       "points": "{count} điểm",
       "suffixes": {
-        "st": "",
-        "nd": "",
-        "rd": "",
-        "th": ""
+        "st": "st",
+        "nd": "nd",
+        "rd": "rd",
+        "th": "th"
       }
     },
     "rank": "Hạng",
@@ -954,9 +954,9 @@
     "description": "Bảng xếp hạng Ngoại hạng Anh và Champions League cập nhật.",
     "compLabel": "Giải đấu",
     "outage": {
-      "title": "Chưa tải được bảng xếp hạng",
-      "description": "Hiện chưa kết nối được dữ liệu bảng xếp hạng. Bạn thử lại sau ít phút nhé.",
-      "action": "Đọc tin nhanh"
+      "title": "Bảng xếp hạng tạm thời gián đoạn",
+      "description": "Không thể tải dữ liệu bảng xếp hạng lúc này. Vui lòng thử lại sau ít phút.",
+      "action": "Xem tin tức"
     },
     "summary": {
       "label": "Vị thế của Liverpool",
@@ -1044,9 +1044,9 @@
       "referee": "Trọng tài: {name}"
     },
     "outage": {
-      "title": "Lịch thi đấu tạm gián đoạn",
-      "description": "Hiện chưa tải được danh sách trận đấu. Bạn thử lại sau ít phút nhé.",
-      "action": "Đọc tin nhanh"
+      "title": "Lịch thi đấu tạm thời gián đoạn",
+      "description": "Không thể tải danh sách trận đấu lúc này. Vui lòng thử lại sau ít phút.",
+      "action": "Xem tin tức"
     },
     "nav": {
       "label": "Trung tâm trận đấu",
@@ -1081,7 +1081,7 @@
     "sections": {
       "privacy": {
         "title": "Chính sách bảo mật",
-        "content": "{brand} là dự án độc lập và không liên kết với Liverpool Football Club hay Fenway Sports Group. Chúng tôi chỉ lưu trữ những thông tin tối thiểu cần thiết cho tính năng tài khoản tùy chọn (địa chỉ email, tên hiển thị, ảnh đại diện, mục đã lưu, chấm điểm cầu thủ và dự đoán tỷ số). Quy trình xác thực và cơ sở dữ liệu được bảo mật qua Supabase, còn hình ảnh thư viện được lưu trữ trên Cloudinary. Chúng tôi cam kết không bán hoặc chia sẻ dữ liệu cá nhân của bạn cho bên thứ ba. Các trang nội dung riêng của website có thể hiển thị quảng cáo Google AdSense, riêng các trang đọc bài dẫn lại từ báo ngoài hoàn toàn không đặt quảng cáo. Google và đối tác có thể sử dụng cookie để phân phối quảng cáo, và bạn có thể tắt quảng cáo cá nhân hóa bất cứ lúc nào trong phần Cài đặt quảng cáo của Google."
+        "content": "{brand} là dự án độc lập và không liên kết với Liverpool Football Club hay Fenway Sports Group. {brand} chỉ lưu trữ những thông tin tối thiểu cần thiết cho tính năng tài khoản tùy chọn (địa chỉ email, tên hiển thị, ảnh đại diện, mục đã lưu, chấm điểm cầu thủ và dự đoán tỷ số). Quy trình xác thực và cơ sở dữ liệu được bảo mật qua Supabase, còn hình ảnh thư viện được lưu trữ trên Cloudinary. {brand} cam kết không bán hoặc cho thuê dữ liệu cá nhân của bạn cho bên thứ ba. Các trang nội dung riêng của website có thể hiển thị quảng cáo Google AdSense, riêng các trang đọc bài dẫn lại từ báo ngoài hoàn toàn không đặt quảng cáo. Google và đối tác có thể sử dụng cookie để phân phối và đo lường quảng cáo, và bạn có thể quản lý quảng cáo cá nhân hóa bất cứ lúc nào trong phần Cài đặt quảng cáo của Google."
       },
       "terms": {
         "title": "Điều khoản sử dụng",
@@ -1125,7 +1125,7 @@
       "confirm": "Nhập lại mật khẩu",
       "confirmMismatch": "Mật khẩu xác nhận không khớp",
       "passwordShort": "Mật khẩu cần tối thiểu 6 ký tự",
-      "checkEmail": "Đã gửi email xác nhận. Bạn mở hộp thư đến (kiểm tra cả mục thư rác) và nhấn vào liên kết để hoàn tất đăng ký.",
+      "checkEmail": "Đã gửi email xác nhận. Hãy mở hộp thư đến (kiểm tra cả mục thư rác nếu cần) và nhấn vào liên kết để hoàn tất đăng ký.",
       "passwordHint": "Tối thiểu 6 ký tự."
     },
     "errors": {
@@ -1133,7 +1133,7 @@
       "invalidCredentials": "Email hoặc mật khẩu không chính xác.",
       "emailNotConfirmed": "Tài khoản chưa xác nhận email — vui lòng kiểm tra hộp thư của bạn.",
       "userExists": "Email này đã được đăng ký tài khoản. Hãy chuyển sang đăng nhập.",
-      "weakPassword": "Mật khẩu còn đơn giản. Hãy chọn mật khẩu dài và khó đoán hơn.",
+      "weakPassword": "Mật khẩu quá yếu. Hãy chọn mật khẩu dài và khó đoán hơn.",
       "rateLimited": "Thao tác quá nhiều lần liên tiếp. Vui lòng đợi ít phút rồi thử lại.",
       "emailRequired": "Vui lòng nhập địa chỉ email.",
       "emailInvalid": "Vui lòng nhập địa chỉ email hợp lệ.",
@@ -1188,7 +1188,7 @@
       "errorUpload": "Tải ảnh thất bại. Vui lòng thử lại."
     },
     "savedArticles": "Bài viết đã lưu",
-    "savedArticlesEmpty": "Chưa lưu bài viết nào. Nhấn biểu tượng đánh dấu ở mục Tin tức để lưu đọc lại sau.",
+    "savedArticlesEmpty": "Chưa có bài viết đã lưu. Nhấn biểu tượng lưu trên bất kỳ bài báo nào ở mục Tin tức để đọc lại sau.",
     "unsave": "Bỏ lưu",
     "confirmUnsave": "Bỏ lưu bài viết?",
     "confirmUnsaveDesc": "Bài viết sẽ được gỡ khỏi danh sách đã lưu của bạn.",
@@ -1330,7 +1330,7 @@
     "legal": "Pháp lý",
     "contact": "Liên hệ",
     "rights": "Bảo lưu mọi quyền.",
-    "disclaimer": "Trang fan không chính thức, không liên kết với Liverpool FC hay Premier League. Mọi tên gọi, huy hiệu và hình ảnh thuộc về chủ sở hữu tương ứng.",
+    "disclaimer": "Trang tin độc lập không chính thức, không liên kết với Liverpool FC hay Premier League. Mọi tên gọi, huy hiệu và hình ảnh thuộc về chủ sở hữu tương ứng.",
     "newsSources": "Nguồn tin",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
@@ -1364,7 +1364,7 @@
   "Gallery": {
     "metadata": {
       "title": "Thư viện ảnh",
-      "description": "Sân Anfield, đội hình một, các huyền thoại và những khoảnh khắc định hình lịch sử Liverpool FC."
+      "description": "Sân Anfield, đội một, các huyền thoại và những khoảnh khắc định hình lịch sử Liverpool FC."
     },
     "hero": {
       "label": "Thư viện ảnh",
@@ -1438,7 +1438,7 @@
     "hero": {
       "eyebrow": "Tự biên tập",
       "title": "Phân tích",
-      "description": "Bài phân tích được dựng trực tiếp từ nguồn dữ liệu trận đấu — đội hình, diễn biến và thông số — không viết lại từ báo khác."
+      "description": "Bài phân tích được biên soạn trực tiếp từ dữ liệu trận đấu đã xác thực — đội hình xuất phát, diễn biến và thông số chuyên môn — không viết lại từ nguồn thứ cấp."
     },
     "kinds": {
       "review": "Sau trận đấu",
@@ -1491,13 +1491,13 @@
       "signIn": "Bạn cần đăng nhập trước.",
       "closed": "Trận đấu này đã khóa dự đoán.",
       "invalid": "Tỷ số nhập vào không hợp lệ.",
-      "unavailable": "Chưa lưu được dự đoán lúc này. Vui lòng thử lại sau ít phút."
+      "unavailable": "Không thể lưu dự đoán lúc này. Vui lòng thử lại sau ít phút."
     },
     "ratings": {
       "title": "Chấm điểm cầu thủ",
       "votes": "{count, plural, =0 {Chưa có lượt chấm} other {# CĐV đã chấm}}",
       "hint": "Kéo thanh từ 1–10 để chấm các cầu thủ bạn đã theo dõi. Điểm trung bình cộng đồng hiển thị ở cột phải.",
-      "closed": "Đã khóa chấm điểm sau trận 7 ngày. Điểm trung bình từ cộng đồng:",
+      "closed": "Đã khóa chấm điểm 7 ngày sau khi hết giờ. Điểm trung bình cộng đồng:",
       "rate": "Chấm điểm {player}",
       "average": "Trung bình từ {count} CĐV",
       "save": "Lưu điểm chấm",
@@ -1507,7 +1507,7 @@
         "signIn": "Bạn cần đăng nhập trước.",
         "closed": "Trận đấu này đã khóa chấm điểm cầu thủ.",
         "invalid": "Điểm chấm nằm ngoài phạm vi hợp lệ.",
-        "unavailable": "Chưa lưu được điểm chấm lúc này. Vui lòng thử lại sau ít phút."
+        "unavailable": "Không thể lưu điểm chấm lúc này. Vui lòng thử lại sau ít phút."
       }
     },
     "page": {
@@ -1525,8 +1525,8 @@
       "emptyTitle": "Chưa có điểm số",
       "emptyDesc": "Bảng xếp hạng sẽ cập nhật ngay sau khi trận đấu có dự đoán đầu tiên khép lại.",
       "emptyAction": "Dự đoán trận tiếp theo",
-      "unavailableTitle": "Chưa tải được bảng điểm",
-      "unavailableDesc": "Hiện chưa kết nối được bảng xếp hạng dự đoán. Bạn thử lại sau ít phút nhé."
+      "unavailableTitle": "Bảng điểm tạm thời gián đoạn",
+      "unavailableDesc": "Không thể tải bảng xếp hạng dự đoán lúc này. Vui lòng thử lại sau ít phút."
     }
   }
 }
