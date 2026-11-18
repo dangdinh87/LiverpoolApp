@@ -41,7 +41,7 @@ const UNSUPPORTABLE = [
 const EDITORIAL_VIOLATIONS = [
   {
     pattern:
-      /(?<![\p{L}\p{N}])(?:for\s+fans?\s+abroad|fans?\s+abroad|far\s+from\s+home|outside\s+england|cho\s+fan\s+ở\s+xa|fan\s+xa\s+nhà|xa\s+nhà|ngoài\s+nước\s+anh|ở\s+đâu\s+cũng\s+là\s+anfield)(?![\p{L}\p{N}])/iu,
+      /(?<![\p{L}\p{N}])(?:(?:for\s+)?(?:fans?|supporters?|readers?)\s+(?:abroad|far\s+from\s+home|outside\s+(?:the\s+uk|england)|everywhere)|(?:cho\s+)?(?:fan|người\s+hâm\s+mộ|cổ\s+động\s+viên|độc\s+giả)(?:\s+liverpool)?\s+(?:ở\s+xa|xa\s+nhà|ngoài\s+nước\s+anh|khắp\s+thế\s+giới)|ở\s+đâu\s+cũng\s+là\s+anfield)(?![\p{L}\p{N}])/iu,
     why: "uses forbidden 'for fans abroad' positioning",
   },
   {
@@ -138,7 +138,7 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
   // The club this site is about, by the names its supporters use. Safe to allow
   // outright: they cannot be mistaken for another team.
   const names = new Set<string>([
-    "reds", "kop", "liverpool", "anfield", "lfc",
+    "reds", "kop", "liverpool", "anfield", "lfc", "england", "anh",
     // The clock's zone, which the kick-off timestamp carries.
     "utc", "gmt",
   ]);
