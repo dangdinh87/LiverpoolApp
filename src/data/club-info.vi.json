@@ -34,7 +34,7 @@
       {
         "name": "The Kop",
         "capacity": 12982,
-        "description": "Khán đài biểu tượng phía sau cầu môn, nơi hội tụ những cổ động viên máu lửa nhất của Liverpool mang biệt danh 'Kopites'. Từ khán đài đứng truyền thống, The Kop được xây lại hoàn toàn bằng ghế ngồi vào năm 1994 và nay lắp đặt 12.850 ghế có thanh chắn an toàn."
+        "description": "Khán đài biểu tượng phía sau cầu môn, nơi hội tụ những cổ động viên máu lửa nhất của Liverpool mang biệt danh 'Kopites'. Từ khán đài đứng truyền thống, The Kop được xây lại hoàn toàn bằng ghế ngồi vào năm 1994 và nay tích hợp hệ thống ghế đứng an toàn có thanh chắn."
       },
       {
         "name": "Main Stand",
@@ -63,7 +63,7 @@
       },
       {
         "name": "Đài tưởng niệm Hillsborough",
-        "description": "Đài tưởng niệm vĩnh cửu dành cho 97 cổ động viên Liverpool thiệt mạng trong thảm kịch Hillsborough ngày 15 tháng 4 năm 1989."
+        "description": "Đài tưởng niệm vĩnh cửu tôn vinh 97 cổ động viên — cả trẻ em, phụ nữ và đàn ông — thiệt mạng oan uổng trong thảm kịch Hillsborough ngày 15 tháng 4 năm 1989."
       },
       {
         "name": "The Paisley Gateway",
@@ -161,7 +161,7 @@
     {
       "name": "Gérard Houllier",
       "years": "1998–2004",
-      "trophies": "1 Cúp FA, 1 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA, 1 Siêu cúp Anh"
+      "trophies": "1 Cúp FA, 2 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA, 1 Siêu cúp Anh"
     },
     {
       "name": "Rafael Benítez",
