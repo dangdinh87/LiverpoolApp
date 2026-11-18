@@ -29,45 +29,45 @@
     "opened": 1884,
     "address": "Anfield Road, Liverpool, L4 0TH",
     "pitch": "105m × 68m",
-    "recordAttendance": "61.905 (2 tháng 2, 1952 vs Wolves)",
+    "recordAttendance": "61.905 (2 tháng 2 năm 1952, gặp Wolves)",
     "stands": [
       {
         "name": "The Kop",
         "capacity": 12982,
-        "description": "Khán đài huyền thoại phía sau khung thành. Nơi tập trung những cổ động viên cuồng nhiệt nhất của Liverpool, được gọi là 'Kopites'. Ban đầu là khán đài đứng, được xây lại thành khán đài ngồi năm 1994. Hiện có 12.850 ghế có tay vịn."
+        "description": "Khán đài biểu tượng phía sau cầu môn, nơi hội tụ những cổ động viên máu lửa nhất của Liverpool mang biệt danh 'Kopites'. Từ khán đài đứng truyền thống, The Kop được xây lại hoàn toàn bằng ghế ngồi vào năm 1994 và nay lắp đặt 12.850 ghế có thanh chắn an toàn."
       },
       {
         "name": "Main Stand",
         "capacity": 20500,
-        "description": "Được mở rộng năm 2016 với tầng trên mới, trở thành một trong những khán đài một tầng lớn nhất bóng đá châu Âu. Bao gồm phòng báo chí, khu vực VIP và cơ sở doanh nghiệp."
+        "description": "Được mở rộng vào năm 2016 với tầng ba đồ sộ, trở thành một trong những khán đài lớn nhất châu Âu. Đây là nơi đặt phòng thay đồ hai đội, khu tác nghiệp báo chí, phòng điều hành và dịch vụ tiếp đón cao cấp."
       },
       {
         "name": "Anfield Road End",
         "capacity": 15967,
-        "description": "Hoàn thành mở rộng năm 2024, thêm hơn 7.000 chỗ ngồi. Công trình bao gồm tầng trên mới và khu vực hospitality cao cấp."
+        "description": "Hoàn tất nâng cấp vào năm 2024, bổ sung hơn 7.000 chỗ ngồi ở tầng trên cùng hệ thống sảnh chung và khu vực tiếp đón hiện đại."
       },
       {
         "name": "Kenny Dalglish Stand",
         "capacity": 11762,
-        "description": "Được đặt theo tên cầu thủ vĩ đại nhất lịch sử Liverpool. Trước đây là Centenary Stand, được đổi tên năm 2017 để vinh danh Sir Kenny Dalglish."
+        "description": "Đặt theo tên cầu thủ vĩ đại nhất lịch sử Liverpool. Khánh thành năm 1992 dưới tên gọi Centenary Stand, khán đài chính thức mang tên Sir Kenny Dalglish từ năm 2017."
       }
     ],
     "landmarks": [
       {
         "name": "This Is Anfield",
-        "description": "Tấm biển biểu tượng trong đường hầm mà các cầu thủ chạm vào trước khi bước ra sân. Một truyền thống do Bill Shankly khởi xướng nhằm gây áp lực cho đội khách."
+        "description": "Tấm biển biểu tượng gắn phía trên bậc thang đường hầm ra sân — truyền thống do Bill Shankly khởi xướng để nhắc các cầu thủ Liverpool họ đang chiến đấu vì ai và khiến đối thủ phải dè chừng."
       },
       {
         "name": "Shankly Gates",
-        "description": "Cổng sắt trang trí tại lối vào Anfield, tưởng nhớ Bill Shankly với dòng chữ 'You'll Never Walk Alone'."
+        "description": "Cổng sắt nghệ thuật trên đường Anfield Road, khánh thành năm 1982 nhằm tri ân Bill Shankly với dòng chữ 'You'll Never Walk Alone' uốn cong phía trên."
       },
       {
         "name": "Đài tưởng niệm Hillsborough",
-        "description": "Đài tưởng niệm vĩnh cửu dành cho 97 cổ động viên Liverpool đã mất mạng tại Hillsborough ngày 15 tháng 4 năm 1989."
+        "description": "Đài tưởng niệm vĩnh cửu dành cho 97 cổ động viên Liverpool thiệt mạng trong thảm kịch Hillsborough ngày 15 tháng 4 năm 1989."
       },
       {
         "name": "The Paisley Gateway",
-        "description": "Cổng tại lối vào Anfield Road End, vinh danh di sản của Bob Paisley."
+        "description": "Cổng vinh danh dựng năm 1999 gần lối vào khán đài The Kop nhằm tôn vinh di sản của Bob Paisley cùng ba chiếc Cúp C1 châu Âu giành được dưới thời ông."
       }
     ]
   },
@@ -80,16 +80,16 @@
       "name": "Ian Callaghan",
       "appearances": 857
     },
-    "biggestWin": "11–0 vs Strømsgodset (1974, Cúp C2)",
-    "biggestLeagueWin": "10–1 vs Rotherham United (1896)",
+    "biggestWin": "11–0 trước Strømsgodset (1974, Cúp C2)",
+    "biggestLeagueWin": "10–1 trước Rotherham Town (1896)",
     "recordTransferIn": {
       "name": "Alexander Isak",
-      "fee": "£125 triệu (2025)",
+      "fee": "125 triệu bảng (2025)",
       "from": "Newcastle United"
     },
     "recordTransferOut": {
       "name": "Philippe Coutinho",
-      "fee": "£145 triệu (2018)",
+      "fee": "145 triệu bảng (2018)",
       "to": "Barcelona"
     }
   },
@@ -103,24 +103,24 @@
     "clubWorldCup": 1,
     "communityShield": 16
   },
-  "foundingStory": "Liverpool FC ra đời từ một cuộc tranh chấp gay gắt. Năm 1892, Everton FC rời Anfield do bất đồng tiền thuê sân với chủ đất John Houlding. Còn lại một sân vận động nhưng không có đội bóng, Houlding thành lập Liverpool Football Club vào ngày 15 tháng 3 năm 1892. Câu lạc bộ được gia nhập Football League năm sau và giành chức vô địch giải đấu đầu tiên năm 1901. Điều bắt đầu từ quyết tâm của một người muốn lấp đầy sân vận động trống đã phát triển thành một trong những câu lạc bộ bóng đá thành công và được yêu mến nhất thế giới.",
+  "foundingStory": "Liverpool FC khởi nguồn từ một cuộc tranh chấp lịch sử. Năm 1892, Everton rời sân Anfield sau bất đồng về tiền thuê sân với chủ sở hữu John Houlding. Có trong tay cả một sân vận động nhưng không còn đội bóng thi đấu, Houlding quyết định thành lập Liverpool Football Club vào ngày 15 tháng 3 năm 1892. Đội gia nhập Football League một năm sau đó và giành chức vô địch quốc gia đầu tiên vào năm 1901. Khởi đầu từ quyết tâm giữ lửa cho những khán đài trống của một con người, Liverpool đã vươn mình thành một trong những câu lạc bộ vĩ đại và giàu truyền thống nhất thế giới.",
   "traditions": [
     {
       "name": "You'll Never Walk Alone",
-      "description": "Được chấp nhận từ bài hit của Gerry and the Pacemakers năm 1963, YNWA được hát trước mỗi trận đấu sân nhà tại Anfield. Bài hát đã trở thành quốc ca của câu lạc bộ và được công nhận trên toàn thế giới như biểu tượng của sự đoàn kết và tinh thần Liverpool FC.",
+      "description": "Bắt nguồn từ bản thu âm dẫn đầu bảng xếp hạng năm 1963 của nhóm Gerry and the Pacemakers, YNWA vang lên từ khán đài The Kop trước mỗi trận sân nhà tại Anfield — biểu tượng bất diệt cho tinh thần đoàn kết và kiên cường của Liverpool FC.",
       "songUrl": "https://www.youtube.com/watch?v=Go-jJlGd1so"
     },
     {
       "name": "The Kop",
-      "description": "Được đặt theo tên Spion Kop, một ngọn đồi trong Chiến tranh Boer nơi các binh sĩ Liverpool hy sinh. The Kop là trái tim của Anfield từ năm 1906, nơi tập trung những cổ động viên cuồng nhiệt nhất, tạo nên bầu không khí đã truyền cảm hứng cho vô số cuộc ngược dòng."
+      "description": "Đặt tên từ năm 1906 theo ngọn đồi Spion Kop ở Nam Phi, nơi nhiều binh sĩ thuộc các trung đoàn vùng Merseyside ngã xuống trong Chiến tranh Boer. Hơn một thế kỷ qua, The Kop luôn là trái tim rực lửa tiếp sức cho những màn ngược dòng kinh điển tại Anfield."
     },
     {
       "name": "The Boot Room",
-      "description": "Một căn phòng nhỏ tại Anfield nơi ban huấn luyện tập trung để thảo luận chiến thuật bên tách trà. Được Bill Shankly thành lập, Boot Room trở nên huyền thoại như cái nôi của triết lý chiến thuật Liverpool và đã sản sinh ra nhiều huấn luyện viên kế tiếp: Paisley, Fagan và Dalglish."
+      "description": "Căn phòng nhỏ chứa giày dưới khán đài Anfield, nơi Bill Shankly cùng các cộng sự quây quần bên tách trà để mổ xẻ chiến thuật sau mỗi trận đấu. Boot Room đã hun đúc bản sắc bóng đá Liverpool và sản sinh chuỗi nhà cầm quân huyền thoại kế cận: Paisley, Fagan và Dalglish."
     },
     {
       "name": "This Is Anfield",
-      "description": "Tấm biển biểu tượng treo trong đường hầm mà cầu thủ chạm vào trước khi bước ra sân. Được Bill Shankly đưa vào nhằm gây áp lực cho đội khách, nó đã trở thành một nghi thức thiêng liêng. Dưới thời Jürgen Klopp, chỉ những cầu thủ đã giành danh hiệu mới được phép chạm vào."
+      "description": "Được Bill Shankly treo trong đường hầm từ thập niên 1970, cái chạm tay lên tấm biển 'This Is Anfield' trước giờ ra sân đã trở thành nghi thức thiêng liêng. Dưới thời Jürgen Klopp, cầu thủ chỉ được phép chạm tay vào tấm biển sau khi đã cùng câu lạc bộ giành danh hiệu lớn."
     }
   ],
   "managers": [
@@ -161,12 +161,12 @@
     {
       "name": "Gérard Houllier",
       "years": "1998–2004",
-      "trophies": "1 Cúp FA, 1 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA, 1 Community Shield"
+      "trophies": "1 Cúp FA, 1 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA, 1 Siêu cúp Anh"
     },
     {
       "name": "Rafael Benítez",
       "years": "2004–2010",
-      "trophies": "1 Champions League, 1 Cúp FA, 1 Siêu cúp UEFA, 1 Community Shield"
+      "trophies": "1 Champions League, 1 Cúp FA, 1 Siêu cúp UEFA, 1 Siêu cúp Anh"
     },
     {
       "name": "Brendan Rodgers",
@@ -176,7 +176,7 @@
     {
       "name": "Jürgen Klopp",
       "years": "2015–2024",
-      "trophies": "1 Vô địch QG, 1 Champions League, 1 Cúp FA, 2 Cúp Liên đoàn, 1 Club World Cup, 1 Siêu cúp UEFA, 1 Community Shield",
+      "trophies": "1 Vô địch QG, 1 Champions League, 1 Cúp FA, 2 Cúp Liên đoàn, 1 Club World Cup, 1 Siêu cúp UEFA, 1 Siêu cúp Anh",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/J%C3%BCrgen_Klopp%2C_Liverpool_vs._Chelsea%2C_UEFA_Super_Cup_2019-08-14_04.jpg/330px-J%C3%BCrgen_Klopp%2C_Liverpool_vs._Chelsea%2C_UEFA_Super_Cup_2019-08-14_04.jpg"
     },
     {

@@ -6,7 +6,7 @@
     "caps": null,
     "goals": null,
     "image": "/assets/lfc/legends/bill-shankly.jpg",
-    "bio": "The man who built modern Liverpool. Shankly transformed a struggling Second Division club into a formidable First Division force, winning three league titles, two FA Cups and the UEFA Cup. His philosophy — 'football is not just a matter of life and death, it is much more important than that' — lives on at Anfield."
+    "bio": "The architect of modern Liverpool. Shankly turned a struggling Second Division side into a relentless First Division powerhouse, winning three league titles, two FA Cups and the UEFA Cup. His bond with the supporters and belief in collective spirit still define Anfield today."
   },
   {
     "name": "Bob Paisley",
@@ -15,7 +15,7 @@
     "caps": null,
     "goals": null,
     "image": "/assets/lfc/legends/bob-paisley.jpg",
-    "bio": "The most decorated manager in Liverpool's history. Paisley won six league titles, three European Cups, three League Cups and one UEFA Cup in nine seasons — a record that may never be surpassed. Quiet, modest and tactically brilliant."
+    "bio": "The most decorated manager in Liverpool's history. Across just nine seasons, Paisley collected six league championships, three European Cups, three League Cups, a UEFA Cup and a UEFA Super Cup — a haul unmatched in English football, achieved with quiet humility and tactical clarity."
   },
   {
     "name": "Kenny Dalglish",
@@ -24,7 +24,7 @@
     "caps": 515,
     "goals": 172,
     "image": "/assets/lfc/legends/kenny-dalglish.jpg",
-    "bio": "Widely regarded as Liverpool's greatest ever player. Dalglish scored the winning goal in the 1978 European Cup final and later led the club as player-manager to a legendary league and FA Cup double in 1986. A true legend of Anfield."
+    "bio": "Widely revered as Liverpool's greatest ever figure. 'King Kenny' scored the winner in the 1978 European Cup final, orchestrated one of Europe's finest attacks, and later guided the club as player-manager to the historic 1986 League and FA Cup double while standing alongside the city in the aftermath of Hillsborough."
   },
   {
     "name": "Steven Gerrard",
@@ -33,7 +33,7 @@
     "caps": 710,
     "goals": 186,
     "image": "/assets/lfc/legends/steven-gerrard.jpg",
-    "bio": "The heartbeat of Liverpool for 17 years. Gerrard inspired the Miracle of Istanbul with a second-half header and played with passion and leadership in every game he wore the red shirt. One of the finest midfielders of his generation."
+    "bio": "The driving heartbeat of Liverpool for 17 seasons. Gerrard dragged his boyhood club back from the brink in the 2005 Champions League final in Istanbul and the 2006 FA Cup final in Cardiff, setting the standard for complete midfield leadership."
   },
   {
     "name": "Ian Rush",
@@ -42,7 +42,7 @@
     "caps": 660,
     "goals": 346,
     "image": "/assets/lfc/legends/ian-rush.jpg",
-    "bio": "Liverpool's all-time leading goal scorer. Rush was a relentless predator in the penalty area, winning five league titles and three FA Cups. His partnership with Kenny Dalglish was one of the most lethal in English football history."
+    "bio": "Liverpool's all-time record goalscorer with 346 strikes. Equally lethal finishing first time and pressing from the front, Rush won five league titles, three FA Cups and two European Cups, forming an unforgettable partnership with Kenny Dalglish."
   },
   {
     "name": "Robbie Fowler",
@@ -51,7 +51,7 @@
     "caps": 369,
     "goals": 183,
     "image": "/assets/lfc/legends/robbie-fowler.jpg",
-    "bio": "Known as 'God' on the Kop, Fowler's natural finishing ability made him one of the deadliest strikers of his era. He scored 25 league goals in his first full season and went on to become a Liverpool icon."
+    "bio": "Christened 'God' by the Kop, Academy graduate Fowler possessed one of the purest natural finishing instincts English football has seen, passing 30 goals in each of his first three full seasons and playing a central part in the 2001 cup treble."
   },
   {
     "name": "Jamie Carragher",
@@ -60,7 +60,7 @@
     "caps": 737,
     "goals": 4,
     "image": "/assets/lfc/legends/jamie-carragher.jpg",
-    "bio": "Carra was a warrior at the heart of Liverpool's defence for 17 years. His performances in Istanbul in 2005 were heroic. A born leader and one of the best defenders of his generation who dedicated his career entirely to Liverpool."
+    "bio": "Second only to Ian Callaghan on Liverpool's all-time appearance list, Carragher devoted his entire 17-year senior career to Anfield. His defiance in extra time in Istanbul epitomised a defender built on reading of the game, grit and organisational authority."
   },
   {
     "name": "Graeme Souness",
@@ -69,16 +69,16 @@
     "caps": 359,
     "goals": 56,
     "image": "/assets/lfc/legends/graeme-souness.jpg",
-    "bio": "One of the most complete midfielders in English football history. Souness was the engine of the all-conquering Liverpool teams of the late 1970s and early 1980s, winning five league titles and three European Cups."
+    "bio": "The commanding midfield general of Liverpool's most dominant era. Combining fierce competitiveness with effortless passing range, Souness won five league championships and three European Cups, captaining the side to the 1984 treble."
   },
   {
     "name": "Mohamed Salah",
     "role": "Forward",
-    "years": "2017–present",
+    "years": "2017–2026",
     "caps": 432,
     "goals": 254,
     "image": "/assets/lfc/legends/mohamed-salah.jpg",
-    "bio": "The Egyptian King. Salah broke the Premier League single-season record with 32 goals in 2017/18 and has been Liverpool's most consistent match-winner ever since. A Champions League winner in 2019, Premier League champion in 2020 and 2025. Liverpool's third all-time top scorer."
+    "bio": "The Egyptian King. Salah shattered the 38-game Premier League scoring record with 32 goals in his debut 2017/18 season and remained Liverpool's defining match-winner across nine glittering years. A Champions League winner in 2019 and Premier League champion in 2020 and 2025, he departed in 2026 third on the club's all-time scoring chart."
   },
   {
     "name": "Virgil van Dijk",
@@ -87,7 +87,7 @@
     "caps": 357,
     "goals": 32,
     "image": "/assets/lfc/legends/virgil-van-dijk.jpg",
-    "bio": "The best centre-back in the world at his peak. Van Dijk's arrival transformed Liverpool's defensive record and was central to winning the Champions League and Premier League. A commanding presence and superb leader."
+    "bio": "A transformative presence at the heart of Liverpool's defence since January 2018 and now club captain. Combining composure, aerial dominance and authority, Van Dijk helped deliver the 2019 Champions League and the 2020 and 2025 Premier League titles — becoming the first Dutchman to captain a Premier League-winning side."
   },
   {
     "name": "Jürgen Klopp",
@@ -96,7 +96,7 @@
     "caps": null,
     "goals": null,
     "image": "/assets/lfc/legends/jurgen-klopp.jpg",
-    "bio": "The 'Normal One'. Klopp arrived in 2015 and built a team capable of conquering Europe and England. He delivered Liverpool's first Champions League in 14 years, the FIFA Club World Cup and ended the 30-year wait for a league title. Left with eight trophies and eternal love from the Kop."
+    "bio": "The 'Normal One' who reawakened Anfield. Arriving in October 2015, Klopp forged a relentless side that conquered Europe in 2019, lifted Liverpool's first FIFA Club World Cup, and ended a 30-year wait for the league title in 2020, departing in 2024 with every major honour won."
   },
   {
     "name": "Luis Suárez",
@@ -105,7 +105,7 @@
     "caps": 133,
     "goals": 82,
     "image": "/assets/lfc/legends/luis-suarez.jpg",
-    "bio": "One of the most electrifying players ever to wear the red shirt. Suárez terrorised Premier League defences with his relentless movement, invention and ruthless finishing. His 2013/14 season — 31 league goals in 33 games — almost single-handedly delivered the title before a heartbreaking final-day collapse. Left for Barcelona having become a Liverpool legend in just three seasons."
+    "bio": "Few forwards have lit up Anfield with the sheer audacity and intensity of Luis Suárez. His 2013/14 Premier League campaign — 31 goals in 33 appearances without taking penalties — earned the European Golden Shoe and remains one of the finest individual seasons English football has witnessed."
   },
   {
     "name": "Alisson Becker",
@@ -114,7 +114,7 @@
     "caps": 300,
     "goals": 1,
     "image": "/assets/lfc/legends/alisson-becker.jpg",
-    "bio": "The world's best goalkeeper and the final piece of Klopp's jigsaw. Alisson's £65m arrival from Roma transformed Liverpool's defensive record. He famously scored a headed goal against West Brom in 2021 to help clinch a Champions League spot. A Champions League winner in 2019 and Premier League champion in 2020 and 2025, he is widely regarded as the finest goalkeeper in the club's history."
+    "bio": "Signed from AS Roma in 2018, Alisson brought world-class shot-stopping and calm distribution to Liverpool's back line. Winner of the Champions League in 2019 and the Premier League in 2020 and 2025 — and scorer of an unforgettable 95th-minute headed winner at West Brom in 2021 — he stands among the greatest goalkeepers in the club's history."
   },
   {
     "name": "Kevin Keegan",
@@ -123,7 +123,7 @@
     "caps": 323,
     "goals": 100,
     "image": "/assets/lfc/legends/kevin-keegan.jpg",
-    "bio": "Two-time Ballon d'Or winner and one of the most exciting forwards in Liverpool's history. Keegan arrived from Scunthorpe United for £33,000 in 1971 and formed a devastating partnership with John Toshack, helping Liverpool win three league titles, the FA Cup, two UEFA Cups and the European Cup. Left for Hamburg in 1977 and won back-to-back European Footballer of the Year awards."
+    "bio": "Signed from Scunthorpe United by Bill Shankly in 1971, Keegan became Liverpool's first modern superstar. His telepathic partnership with John Toshack propelled the Reds to three league titles, an FA Cup, two UEFA Cups and a maiden European Cup triumph in Rome in 1977."
   },
   {
     "name": "Jordan Henderson",
@@ -132,7 +132,7 @@
     "caps": 492,
     "goals": 33,
     "image": "/assets/lfc/legends/jordan-henderson.jpg",
-    "bio": "Liverpool's captain during their most glorious modern era. Henderson lifted the Champions League, Premier League, FA Cup, League Cup and FIFA Club World Cup as skipper, becoming the first Liverpool captain to raise the league title in 30 years. His infectious leadership and relentless dedication over 12 years made him one of the most important players in the club's history."
+    "bio": "Succeeding Steven Gerrard as captain was an immense task; Henderson answered it by lifting six different trophies as skipper — the Champions League, UEFA Super Cup, FIFA Club World Cup, Premier League, FA Cup and League Cup — across 12 selfless years at Anfield."
   },
   {
     "name": "John Barnes",
@@ -141,6 +141,6 @@
     "caps": 407,
     "goals": 108,
     "image": "/assets/lfc/legends/john-barnes.jpg",
-    "bio": "One of the most talented players ever to grace Anfield. Barnes arrived from Watford in 1987 and lit up English football with his extraordinary pace, skill and creativity. He won two league titles and two FA Cups, and was named FWA Footballer of the Year twice. His mesmerising dribbling and devastating finishing made him one of the greatest wingers in English football history."
+    "bio": "Arriving from Watford in 1987, Barnes dazzled Anfield with balance, power and mesmeric dribbling down the left wing. A two-time league champion, two-time FA Cup winner and two-time FWA Footballer of the Year, he remains one of the most gifted players ever to wear the red shirt."
   }
 ]

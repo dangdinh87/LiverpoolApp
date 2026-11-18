@@ -29,45 +29,45 @@
     "opened": 1884,
     "address": "Anfield Road, Liverpool, L4 0TH",
     "pitch": "105m × 68m",
-    "recordAttendance": "61905 (February 2, 1952 vs Wolves)",
+    "recordAttendance": "61,905 (2 February 1952 vs Wolves)",
     "stands": [
       {
         "name": "The Kop",
         "capacity": 12982,
-        "description": "The famous end behind the goal. Home to Liverpool's most vocal supporters, known as 'Kopites'. Originally a terraced stand, it was rebuilt as an all-seater in 1994. Now features 12,850 rail seats."
+        "description": "The famous end behind the goal and home to Liverpool's most vocal supporters, known as 'Kopites'. Originally a vast terraced stand, it was rebuilt as an all-seater in 1994 and now features 12,850 rail seats."
       },
       {
         "name": "Main Stand",
         "capacity": 20500,
-        "description": "Expanded in 2016 with a new upper tier, making it one of the largest single-tier stands in European football. Houses the press box, executive areas and corporate facilities."
+        "description": "Expanded in 2016 with a towering third tier, making it one of the largest stands in European football. Houses the dressing rooms, press box, executive lounges and matchday hospitality."
       },
       {
         "name": "Anfield Road End",
         "capacity": 15967,
-        "description": "Completed its expansion in 2024, adding over 7,000 seats. The redevelopment included a new upper tier and premium hospitality areas."
+        "description": "Completed its major redevelopment in 2024, adding more than 7,000 seats across a new upper tier alongside modern concourse and hospitality spaces."
       },
       {
         "name": "Kenny Dalglish Stand",
         "capacity": 11762,
-        "description": "Named after Liverpool's greatest ever player. Formerly the Centenary Stand, it was renamed in 2017 in honour of Sir Kenny Dalglish."
+        "description": "Named after Liverpool's greatest ever player. Opened in 1992 as the Centenary Stand, it was officially renamed in 2017 in honour of Sir Kenny Dalglish."
       }
     ],
     "landmarks": [
       {
         "name": "This Is Anfield",
-        "description": "The iconic sign in the tunnel that players touch before walking onto the pitch. A tradition that Bill Shankly started to intimidate visiting teams."
+        "description": "The iconic sign above the players' tunnel steps, installed by Bill Shankly to remind Liverpool players who they play for — and visiting teams who they are playing against."
       },
       {
         "name": "Shankly Gates",
-        "description": "The ornate iron gates at the entrance to Anfield, dedicated to Bill Shankly with the words 'You'll Never Walk Alone'."
+        "description": "The wrought-iron gates at Anfield Road, unveiled in 1982 in tribute to Bill Shankly and crowned with the words 'You'll Never Walk Alone'."
       },
       {
         "name": "The Hillsborough Memorial",
-        "description": "A permanent memorial dedicated to the 97 Liverpool supporters who lost their lives at Hillsborough on 15 April 1989."
+        "description": "A permanent memorial honouring the 97 children, women and men who unlawfully lost their lives as a result of the Hillsborough disaster on 15 April 1989."
       },
       {
         "name": "The Paisley Gateway",
-        "description": "The gateway at the Anfield Road End entrance, honouring the legacy of Bob Paisley."
+        "description": "Erected in 1999 near the Kop entrance to celebrate the legacy of Bob Paisley, including the three European Cups won under his leadership."
       }
     ]
   },
@@ -81,7 +81,7 @@
       "appearances": 857
     },
     "biggestWin": "11–0 vs Strømsgodset (1974, Cup Winners' Cup)",
-    "biggestLeagueWin": "10–1 vs Rotherham United (1896)",
+    "biggestLeagueWin": "10–1 vs Rotherham Town (1896)",
     "recordTransferIn": {
       "name": "Alexander Isak",
       "fee": "£125m (2025)",
@@ -103,24 +103,24 @@
     "clubWorldCup": 1,
     "communityShield": 16
   },
-  "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world.",
+  "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with stadium owner John Houlding. Left with an empty ground and no team, Houlding founded Liverpool Football Club on 15 March 1892. Admitted to the Football League the following year, Liverpool won their first league championship in 1901. What began with one man's resolve to keep football alive at Anfield grew into one of the most decorated and storied clubs in world sport.",
   "traditions": [
     {
       "name": "You'll Never Walk Alone",
-      "description": "Adopted from the Gerry and the Pacemakers hit in 1963, YNWA is sung before every home game at Anfield. The song has become the club's anthem and is recognised worldwide as a symbol of Liverpool FC's unity and spirit.",
+      "description": "Adopted by the Kop after Gerry and the Pacemakers took their cover to No. 1 in 1963, 'You'll Never Walk Alone' is sung before every home match at Anfield — an unmistakable symbol of the club's unity and resilience.",
       "songUrl": "https://www.youtube.com/watch?v=Go-jJlGd1so"
     },
     {
       "name": "The Kop",
-      "description": "Named after Spion Kop, a hill in the Boer War where Liverpool soldiers died in battle. The Kop has been the beating heart of Anfield since 1906, home to the most passionate supporters who create an atmosphere that has inspired countless comebacks."
+      "description": "Named in 1906 after Spion Kop, the South African hill where many soldiers from Merseyside regiments fell during the Boer War. For more than a century, the Kop has been the vocal heartbeat of Anfield."
     },
     {
       "name": "The Boot Room",
-      "description": "A small room at Anfield where coaching staff would gather to discuss tactics over tea. Established by Bill Shankly, the Boot Room became legendary as the birthplace of Liverpool's tactical philosophy and produced a succession of managers: Paisley, Fagan, and Dalglish."
+      "description": "Originally a small storage room beneath Anfield where Bill Shankly and his coaches gathered over tea to dissect matches. The Boot Room shaped Liverpool's footballing culture and produced an unmatched managerial dynasty: Paisley, Fagan and Dalglish."
     },
     {
       "name": "This Is Anfield",
-      "description": "The iconic sign hanging in the tunnel that players touch before walking onto the pitch. Introduced by Bill Shankly to intimidate visiting teams, it has become a sacred ritual. Under Jürgen Klopp, only players who had won a trophy were allowed to touch it."
+      "description": "First hung in the tunnel by Bill Shankly in the 1970s, touching the 'This Is Anfield' frame on the walk to the pitch became a matchday ritual. Under Jürgen Klopp, players earned the right to touch it only after winning a major honour with the club."
     }
   ],
   "managers": [
@@ -161,7 +161,7 @@
     {
       "name": "Gérard Houllier",
       "years": "1998–2004",
-      "trophies": "1 FA Cup, 1 League Cup, 1 UEFA Cup, 1 UEFA Super Cup, 1 Community Shield"
+      "trophies": "1 FA Cup, 1 League Cup, 1 UEFA Cup, 1 UEFA Super Cup, 1 Charity Shield"
     },
     {
       "name": "Rafael Benítez",
