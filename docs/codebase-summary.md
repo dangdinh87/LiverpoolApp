@@ -96,7 +96,7 @@ All LLM workloads call **VietAPI** (`VIETAPI_KEY`) lazily per request via `@ai-s
 ## Testing & Deployment
 
 - **Unit Tests (`npm test`):** Vitest 4 (`vitest.config.mts`) — `76` test suites, `774` tests covering news sync/dedup/text cleaning, draft validation, SEO/ICS builders, API hardening, Supabase circuit breaker, EN/VI message & data parity (`1,156` keys, 31 squad bios), and client namespace AST coverage.
-- **E2E Tests (`npm run test:e2e`):** Playwright (`playwright.config.ts`, `e2e/*.spec.ts`) — `125` passed desktop + mobile tests (`142` total definitions) against `next build && next start` with strict zero-console-error / zero-5xx assertions (`page-diagnostics.ts`).
+- **E2E Tests (`npm run test:e2e`):** Playwright (`playwright.config.ts`, `e2e/*.spec.ts`) — `126` passed desktop + mobile tests (`142` total definitions) against `next build && next start` with strict zero-console-error / zero-5xx assertions (`page-diagnostics.ts`).
 - **Cloudflare Workers Deployment:** Built with `@opennextjs/cloudflare` (`npm run cf:build`), backed by R2 (`liverpool-app-next-cache`), D1 (`liverpool-app-tag-cache`), and Durable Objects (`DOQueueHandler`), deployed automatically from `master` via `.github/workflows/deploy-cloudflare.yml`.
 
 ---

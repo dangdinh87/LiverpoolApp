@@ -33,7 +33,7 @@ Unofficial Liverpool FC news and match hub — fast, de-duplicated coverage from
 | **Football Data** | Football-Data.org v4 (`fdo-client` dedup + 429 backoff), ESPN API, Fantasy Premier League API |
 | **Media** | Cloudinary (gallery transforms), `hls.js` (embedded article video streams) |
 | **Deployment** | Cloudflare Workers (`@opennextjs/cloudflare`), R2 incremental cache, D1 tag cache, Durable Objects |
-| **Testing** | Vitest (`npm test` — 774 unit tests across 76 files) & Playwright (`npm run test:e2e` — 125 desktop + mobile E2E tests) |
+| **Testing** | Vitest (`npm test` — 774 unit tests across 76 files) & Playwright (`npm run test:e2e` — 126 desktop + mobile E2E tests) |
 
 ---
 

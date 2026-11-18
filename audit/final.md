@@ -17,7 +17,7 @@
 | **Đợt 5 — Mượt & Animation có chủ đích** | `377402a` | Chỉ animate `transform` và `opacity` (gỡ bỏ toàn bộ `transition-[width] duration-700` & `transition-all` gây tính toán lại layout trên thanh tiến trình trực tiếp/thống kê); chuẩn hóa nhịp thời gian (`140–200ms` nút/hover với `active:scale-[0.97]`, `<= 260ms` modal/sheet/chuyển trang, vào `ease-out` / ra nhanh hơn); tôn trọng đầy đủ `prefers-reduced-motion: reduce` qua CSS, `<MotionConfig reducedMotion="user">` và `matchMedia` trước `window.scrollTo`. |
 | **Đợt 6–8 — Kiểm chứng & Báo cáo** | `17f2430` | Chụp đủ `104` ảnh đối ứng tại `audit/after/*.png`, đo lại Lighthouse Mobile 7 trang, kiểm tra Performance trace tương tác, chạy toàn bộ unit tests + bài kiểm thử E2E Playwright (desktop + mobile) xanh 100% và xuất bản gốc `audit/final.md`. |
 | **Swarm Wave 1 — Chuẩn hóa Wording, RSC Payload, Backend & Stale-Fetch** | `da38902` · `e6bdecc` · `d6d9cb3` · `b15033e` | Đại tu song ngữ toàn bộ `1,156` khóa dịch & tiểu sử `31` cầu thủ mùa 2026/27; cắt giảm **~52%** payload i18n client (`pickClientMessages`) kèm xóa chuỗi UI cứng; gia cố API/Server Actions, lịch `.ics`, JSON-LD/OG, lọc rác xuất bản & `validate-draft.ts`; sửa lỗi treo stale `fetch-cache` của Next.js 16 khi Supabase gián đoạn (`Promise.race` + `502/503/504` breaker + `unstable_cache`). Nâng tổng kiểm thử lên **`764+` unit tests** & **`113+` E2E tests**. |
-| **Swarm Wave 2 — Đồng bộ Tài liệu, Hậu kiểm Ngôn ngữ & Mở rộng E2E** | `431b69c` · `5994ca5` · `swarm/docs` | Nâng chuẩn văn phong báo chí quốc tế (British English, ICU pluralisation, xóa sạch trợ từ khẩu ngữ, kiểm tra đối xứng dữ liệu CLB/cầu thủ); gỡ `framer-motion` khỏi các trang công khai (`LiveScore` CSS `@keyframes score-pop`), bổ sung `aria-live`/`aria-busy` & xử lý ảnh gãy trước hydration; viết lại & đồng bộ 100% hệ thống tài liệu (`README.md`, `CLAUDE.md`, `docs/**`) theo chuẩn **Anfield Daily**; nâng kiểm thử lên **`76` files / `774` unit tests** & **`125` E2E tests passed (`142` total)**. |
+| **Swarm Wave 2 — Đồng bộ Tài liệu, Hậu kiểm Ngôn ngữ & Mở rộng E2E** | `431b69c` · `5994ca5` · `99baae0` · `c387fd8` | Nâng chuẩn văn phong báo chí quốc tế (British English, ICU pluralisation, xóa sạch trợ từ khẩu ngữ, kiểm tra đối xứng dữ liệu CLB/cầu thủ); gỡ `framer-motion` khỏi các trang công khai (`LiveScore` CSS `@keyframes score-pop`), bổ sung `aria-live`/`aria-busy`, xử lý ảnh gãy trước hydration & chống tràn `ChipBar` 320px trên `/standings`; gia cố retry/backoff `fdo-client.ts` lúc `next build`; viết lại & đồng bộ 100% hệ thống tài liệu (`README.md`, `CLAUDE.md`, `docs/**`) theo chuẩn **Anfield Daily**; nâng kiểm thử lên **`76` files / `774` unit tests** & **`126` E2E tests passed (`142` total)**. |
 
 ---
 
@@ -104,7 +104,7 @@ $ npm run build
 ▲ Next.js 16.4.6 (Turbopack)
 ✓ Compiled successfully
 ✓ Finished TypeScript
-✓ Generating static pages using 7 workers (116/116) in ~5.7s
+✓ Generating static pages using 7 workers (124/124) in 6.7s
 (Exit code: 0 — 0 cảnh báo metadataBase, không còn SecurityFatalError, không còn HTTP 429, không bị treo khi Supabase chập chờn)
 ```
 
@@ -112,7 +112,7 @@ $ npm run build
 ```text
 $ npx playwright test
 Running 142 tests using 3 workers
-  125 passed, 17 skipped (project-scoped desktop/mobile skips), 0 failed
+  126 passed, 16 skipped (project-scoped desktop/mobile skips), 0 failed
 (Exit code: 0 — bao gồm 12 bài kiểm thử mới trong e2e/upgraded-flows.spec.ts cho /vi/news, Spoiler-free, /analysis & /predictions; tràn ngang 320px & 390px ở cả EN/VI, bàn phím, focus trap, reduced-motion, lightbox, 0 lỗi Console)
 ```
 
@@ -142,7 +142,7 @@ Running 142 tests using 3 workers
 | **Client CSS (`.next/static`, gzip)** | `31,131 B` (30.4 KB) | **`30,708 B` (30.0 KB)** | **-423 B (-1.36%)** |
 | **RSC `NextIntlClientProvider` Payload (EN / VI)** | `45.1 KB` / `52.5 KB` | **`21.9 KB` / `25.2 KB`** | **Giảm ~52% mỗi trang** |
 | **Unit Tests (`vitest`)** | 70 files / 718 tests | **`76` files / `774` tests** | **+56 tests (100% pass)** |
-| **Playwright E2E Tests** | Chưa chạy kiểm chứng | **`125` passed / `0` failed (`142` total)** | **100% pass (Desktop & Mobile)** |
+| **Playwright E2E Tests** | Chưa chạy kiểm chứng | **`126` passed / `0` failed (`142` total)** | **100% pass (Desktop & Mobile)** |
 | **Đồng bộ Khóa Dịch & Tiểu sử Cầu thủ** | Rải rác chuỗi cứng & thiếu bio | **`1,156/1,156` khóa · `31/31` bio EN+VI** | **Chuẩn hóa 100%** |
 | **Lỗi ứng dụng trên Console (26 route)** | Hàng loạt `ERR_BLOCKED_BY_RESPONSE` | **`0` lỗi ứng dụng** | **Sạch 100%** |
 | **Tràn ngang ở `390px` & `320px`** | `+72px` trên `/fixtures/560645` | **`0px` trên mọi route** | **Sạch 100%** |
