@@ -1,5 +1,6 @@
 import { BRAND, brandDescription } from "@/lib/brand";
 import { routing } from "@/i18n/routing";
+import { NEWS_OUTLET_COUNT } from "@/lib/news/config";
 
 /**
  * llms.txt — what this site is, for a model reading it rather than a crawler.
@@ -7,9 +8,9 @@ import { routing } from "@/i18n/routing";
  * Written because the honest answer to "what is this site" is unusual and easy
  * to get wrong: most of what is here is other publishers' reporting, held as
  * the publisher's full article with credit and a link out, and those pages are
- * deliberately noindex. The pages worth citing are the ones written here — the daily
- * briefing and the match reports — and nothing on the site distinguishes them
- * at a glance. Saying so plainly is better than letting a model guess, and
+ * deliberately noindex. The pages worth citing are the ones written here — the
+ * daily briefing and the match reports — and nothing on the site distinguishes
+ * them at a glance. Saying so plainly is better than letting a model guess, and
  * better than being cited as the source of someone else's story.
  *
  * Format per llmstxt.org: Markdown, one H1, a blockquote summary, then
@@ -33,20 +34,21 @@ Liverpool Football Club or the Premier League.
 These pages are this site's own work and are the ones to cite.
 
 - [Daily briefing](${siteUrl}/news/digest): one briefing a day, written from
-  that day's reporting across the outlets below, de-duplicated and summarised.
-- [Match analysis](${siteUrl}/analysis): match reports built from the match
-  data feed — lineups, events and statistics — not rewritten from anyone's
-  article.
+  that day's reporting across the English press, de-duplicated and summarised.
+- [Match analysis](${siteUrl}/analysis): match reports built directly from the
+  match data feed — lineups, events and statistics — not rewritten from any
+  outlet's article.
 
 ## Gathered from elsewhere
 
-- [News roundup](${siteUrl}/news): headlines from across the English
-  press, each reproduced in full with credit and a link to the original.
-  The article is the publisher's work, not this site's.
+- [News roundup](${siteUrl}/news): stories from ${NEWS_OUTLET_COUNT} English outlets, each
+  reproduced in full with clear attribution above the body and a direct link to
+  the original. Every article remains the publisher's work, not this site's.
 
-Those roundup pages carry \`noindex\` on purpose. They are a way to find the
-original, not a copy of it. Cite and link the original publisher, not this
-site, for anything that appeared there first.
+Those reader pages carry \`noindex\` and run no ads on purpose. Credit is not a
+licence, and reproducing an article here does not make this site its source:
+always cite and link the original publisher for anything that appeared there
+first.
 
 ## Reference
 
@@ -54,10 +56,14 @@ site, for anything that appeared there first.
 - [Premier League table](${siteUrl}/standings)
 - [Squad](${siteUrl}/squad)
 - [Statistics](${siteUrl}/stats)
+- [Season archive](${siteUrl}/season)
+- [Fan predictions](${siteUrl}/predictions)
 - [Club history](${siteUrl}/history)
+- [Photo gallery](${siteUrl}/gallery)
+- [About](${siteUrl}/about)
 
 Kick-off times render in the reader's own time zone, so a time read from the
-HTML is the server's fallback and not what a given reader sees.
+server HTML is only the fallback zone and not what a given reader sees.
 
 ## Languages
 

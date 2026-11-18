@@ -3,15 +3,15 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "errorTitle": "Error",
-    "errorMessage": "Unable to load data. Please try again later.",
+    "errorMessage": "Unable to load data. Please try again shortly.",
     "tryAgain": "Try Again",
     "notFoundTitle": "Offside!",
-    "notFoundMessage": "The page you're looking for doesn't exist or has been moved.",
+    "notFoundMessage": "The page you are looking for doesn't exist or has moved.",
     "backHome": "Back to Home",
     "scrollToTop": "Scroll to top",
     "skipToContent": "Skip to content",
     "dismiss": "Dismiss",
-    "notFoundHint": "Try one of these instead",
+    "notFoundHint": "Try one of these sections instead",
     "errorRef": "Reference: {digest}",
     "nav": {
       "home": "Home",
@@ -21,12 +21,12 @@
       "history": "History",
       "about": "About",
       "stats": "Stats",
-      "login": "Login",
+      "login": "Sign In",
       "logout": "Sign Out",
       "profile": "Profile",
       "members": "Members",
       "memberArea": "Member Area",
-      "auth": "Login / Register",
+      "auth": "Sign In / Register",
       "menu": "Open menu",
       "primary": "Main navigation",
       "closeMenu": "Close menu",
@@ -35,7 +35,7 @@
       "streak": "Streak",
       "day": "day",
       "days": "days",
-      "memberLogin": "Member Login",
+      "memberLogin": "Member Sign In",
       "standings": "Standings",
       "fixtures": "Fixtures",
       "gallery": "Gallery",
@@ -96,7 +96,7 @@
       "hours": "h",
       "minutes": "m",
       "seconds": "s",
-      "noMatchHint": "As soon as the next match is confirmed, its kick-off time will show here.",
+      "noMatchHint": "As soon as the next fixture is confirmed, its kick-off time will appear here.",
       "started": "Match under way",
       "viewerTime": "Your time"
     },
@@ -106,12 +106,12 @@
       "win": "Win",
       "draw": "Draw",
       "loss": "Loss",
-      "empty": "No finished matches yet this season.",
+      "empty": "No completed matches yet this season.",
       "aria": "{result} against {opponent}, {venue}"
     },
     "news": {
       "emptyTitle": "News is taking a breather",
-      "emptyDescription": "We could not load the latest headlines. Try again in a few minutes.",
+      "emptyDescription": "We couldn't load the latest headlines right now. Try again in a few minutes.",
       "emptyAction": "Open news",
       "byCategory": "More by topic",
       "title": "Quick news",
@@ -119,16 +119,16 @@
     },
     "standings": {
       "emptyTitle": "Table unavailable",
-      "emptyDescription": "The table could not be loaded. It will refresh on its own.",
+      "emptyDescription": "The league table couldn't be loaded right now. It will refresh automatically.",
       "emptyAction": "Open the table",
       "viewAll": "Full table"
     },
     "metadata": {
-      "title": "Liverpool kick-off times in your time zone, results, quick news",
-      "description": "Liverpool news from across the English press, de-duplicated and summed up daily. Plus fixtures, results and the table."
+      "title": "Latest Liverpool news, daily briefing, fixtures & results",
+      "description": "Liverpool news from across the English press, de-duplicated and summed up every day. Plus fixtures, results and the Premier League table."
     },
     "digest": {
-      "kicker": "Today’s briefing",
+      "kicker": "Today's briefing",
       "inside": "{count, plural, one {# story inside} other {# stories inside}}"
     },
     "predict": {
@@ -146,28 +146,28 @@
     "premierLeague": "Premier League",
     "fullTable": "Full Table",
     "points": "Points",
-    "goalDiff": "Goal diff",
+    "goalDiff": "Goal Diff",
     "record": "Record",
-    "leading": "Leading the table",
+    "leading": "Top of the table",
     "winStreak": "{count} wins in a row",
-    "goalsFor": "Goals for",
-    "goalsAgainst": "Goals against"
+    "goalsFor": "Goals For",
+    "goalsAgainst": "Goals Against"
   },
   "News": {
     "metadata": {
       "title": "Liverpool news roundup",
-      "description": "Liverpool headlines every day, each with the full article and a link to the original, plus the daily briefing that sums the day up."
+      "description": "Liverpool FC stories from across the English press, reproduced in full with clear credit and a link to the original, plus a concise daily briefing."
     },
     "tagline": "Quick Liverpool headlines",
     "title": "News roundup",
-    "heroDesc": "Headlines with the full article and a link to the original. A new briefing every day.",
-    "description": "Liverpool FC news from 10 sources including LiverpoolFC.com, BBC Sport, The Guardian, This Is Anfield & more",
+    "heroDesc": "Full articles from across the English press, credited and linked to the original, plus a daily briefing.",
+    "description": "Liverpool FC news gathered from major English outlets including LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, This Is Anfield and more.",
     "search": "Search news...",
     "filter": "Filter",
     "langAll": "All",
     "langGlobal": "International",
     "viewAll": "All News →",
-    "attribution": "Articles are shown in full, credited and linked to the original. They belong to the outlets named on each item. This is a fan site, not affiliated with Liverpool FC or those outlets.",
+    "attribution": "Articles are reproduced in full with credit and a direct link to the original. Copyright belongs to each named outlet. Unofficial fan site, not affiliated with Liverpool FC or those publishers.",
     "categories": {
       "all": "All",
       "official": "Official",
@@ -184,10 +184,10 @@
       "count": "({count})",
       "placeholder": "Write a comment...",
       "send": "Send",
-      "login": "Log in to comment",
-      "loginBtn": "Login",
-      "empty": "No comments yet. Be the first!",
-      "deleteConfirm": "Are you sure you want to delete this comment?",
+      "login": "Sign in to comment",
+      "loginBtn": "Sign In",
+      "empty": "No comments yet. Start the conversation!",
+      "deleteConfirm": "Delete this comment?",
       "justNow": "just now",
       "minutesAgo": "{n} min ago",
       "hoursAgo": "{n}h ago",
@@ -198,25 +198,25 @@
       "replyingTo": "Replying to {name}",
       "replyPlaceholder": "Write a reply...",
       "tooShort": "Comment must be at least 2 characters",
-      "tooLong": "Comment must be under 1000 characters",
+      "tooLong": "Comment must be under 1,000 characters",
       "duplicate": "You just posted the same comment",
-      "submitError": "Failed to post comment. Please try again.",
+      "submitError": "Couldn't post your comment. Please try again.",
       "cancel": "Cancel reply",
       "delete": "Delete comment",
       "deleteCancel": "Cancel",
       "deleteAction": "Delete",
-      "deleteError": "Couldn't delete comment. Please try again."
+      "deleteError": "Couldn't delete this comment. Please try again."
     },
     "article": {
       "backToNews": "Back to news roundup",
       "contentUnavailable": "Couldn't open this story",
-      "contentUnavailableDesc": "We couldn't load this story's text. You can still read it on the original site.",
+      "contentUnavailableDesc": "We couldn't load this story's text right now. You can read it directly on the publisher's site.",
       "readOriginal": "Read Original",
       "readFullOn": "Read Full Article on {source}",
-      "thinContentMsg": "This one is best read on the original site.",
-      "sourcedFrom": "This article was written and published by <source>{sourceName}</source>. All rights belong to them; it is reproduced here in full with credit.",
-      "videoUnavailable": "This video cannot be played here. Tap to watch on the original site.",
-      "linkOutMsg": "The full story is only on {source}. Open the original to keep reading.",
+      "thinContentMsg": "This story is best read directly on the publisher's site.",
+      "sourcedFrom": "Published by <source>{sourceName}</source>. All rights belong to the original outlet; reproduced here in full with credit.",
+      "videoUnavailable": "This video can't be played here. Open the original article to watch.",
+      "linkOutMsg": "The full story is only available on {source}. Open the original to continue reading.",
       "moreFrom": "More from {source}",
       "viewAll": "View all",
       "readOriginalOn": "Read the original on {source}",
@@ -232,7 +232,7 @@
       "refreshing": "Syncing...",
       "loading": "Loading...",
       "noArticles": "No matching stories",
-      "noArticlesDesc": "Try removing a filter or searching for something else.",
+      "noArticlesDesc": "Try clearing a filter or searching for a different term.",
       "translateBadge": "AI Translation",
       "read": "Read",
       "filterBtn": "Filter",
@@ -241,7 +241,7 @@
       "sourceLabel": "Source",
       "categoryLabel": "Topic",
       "resetFilters": "Clear filters",
-      "searchPlaceholder": "Search a player or team...",
+      "searchPlaceholder": "Search a player, club or topic...",
       "resultsFor": "results for",
       "sortTrending": "Trending",
       "sortLatest": "Latest",
@@ -265,9 +265,9 @@
       "latest": "Latest news",
       "resultsCount": "{count} stories",
       "unavailableTitle": "Couldn't load the news",
-      "unavailableDesc": "We couldn't load new stories. Try again in a few minutes.",
+      "unavailableDesc": "We couldn't fetch the latest stories right now. Try again in a few minutes.",
       "retry": "Reload",
-      "loadMoreError": "Couldn't load more stories. Try again.",
+      "loadMoreError": "Couldn't load more stories. Please try again.",
       "langGroupLabel": "Language of the news",
       "langVi": "Vietnamese",
       "langEn": "English",
@@ -287,11 +287,11 @@
       "title": "Related news"
     },
     "translate": {
-      "aiDisclaimer": "Automatic translation into Vietnamese; phrasing may be imperfect.",
+      "aiDisclaimer": "Automated Vietnamese translation — phrasing or nuance may occasionally vary.",
       "translating": "Translating...",
       "showOriginal": "Show original",
       "showTranslated": "Translate to Vietnamese",
-      "error": "Couldn't translate right now. Try again later."
+      "error": "Couldn't translate right now. Please try again shortly."
     },
     "actions": {
       "like": "Like",
@@ -304,40 +304,40 @@
       "confirmUnsave": "Remove saved article?",
       "confirmUnsaveDesc": "This article will be removed from your saved list.",
       "articleSaved": "Article saved",
-      "articleUnsaved": "Article removed from saved",
-      "loginRequired": "Log in to continue",
-      "loginRequiredDesc": "You need to log in to like and save articles.",
+      "articleUnsaved": "Removed from saved articles",
+      "loginRequired": "Sign in to continue",
+      "loginRequiredDesc": "Sign in to like and bookmark articles.",
       "actionsLabel": "Article actions"
     },
     "digest": {
       "badge": "Briefing",
       "proBadge": "By {brand}",
       "by": "By {author}",
-      "sourceFromSite": "References: {source}",
-      "sourceDigestTitle": "References",
+      "sourceFromSite": "Sources: {source}",
+      "sourceDigestTitle": "Sources",
       "dismiss": "Dismiss",
       "expand": "Read article",
       "collapse": "Collapse",
-      "readFull": "Read the digest",
+      "readFull": "Read the briefing",
       "articleCount": "From {count} articles",
       "backToNews": "Back to news roundup",
-      "sourceArticle": "Original {n}",
-      "generatedAt": "Posted at <t></t>",
+      "sourceArticle": "Source {n}",
+      "generatedAt": "Published <t></t>",
       "refresh": "Sync",
       "syncing": "Syncing...",
-      "navLabel": "Go to another day's digest",
+      "navLabel": "Browse daily briefings",
       "prevDay": "Previous day",
       "nextDay": "Next day",
-      "notGeneratedTitle": "No briefing yet",
-      "notGeneratedDesc": "There is no digest for this day. Open the latest one or go back to the news roundup.",
-      "openLatest": "Open the latest briefing",
-      "unavailableTitle": "Briefings are unavailable",
-      "unavailableDesc": "We couldn't load the digest. Try again in a few minutes.",
+      "notGeneratedTitle": "No briefing for this date",
+      "notGeneratedDesc": "There is no briefing recorded for this date. Open the latest edition or head back to the news roundup.",
+      "openLatest": "Open latest briefing",
+      "unavailableTitle": "Briefing unavailable",
+      "unavailableDesc": "We couldn't load the daily briefing right now. Try again in a few minutes.",
       "sourcesLabel": "Read the originals",
       "opensNewTab": "(opens in a new tab)",
-      "latestHint": "This is the latest digest",
-      "oldestHint": "This is the first digest",
-      "aiNote": "This digest is written by AI from the linked articles, so it can miss or get details wrong. To be sure, open the original.",
+      "latestHint": "You're viewing the latest briefing",
+      "oldestHint": "You're viewing the earliest briefing",
+      "aiNote": "This briefing is drafted with AI from the linked articles, so occasional details can slip. Check the original outlet when accuracy matters.",
       "inThisBriefing": "In this briefing",
       "storyCount": "{count, plural, one {# story} other {# stories}}",
       "sourcesShort": "Sources",
@@ -355,12 +355,12 @@
   "NextMatch": {
     "title": "Next Match",
     "live": "Live",
-    "noMatch": "No match scheduled yet",
+    "noMatch": "Next fixture to be confirmed",
     "today": "Today",
     "home": "Home",
     "away": "Away",
     "round": "Round",
-    "viewMatch": "View match details",
+    "viewMatch": "Match details",
     "viewAllFixtures": "All Fixtures"
   },
   "LiveBanner": {
@@ -370,14 +370,14 @@
   "Squad": {
     "metadata": {
       "title": "Liverpool squad",
-      "description": "Liverpool FC first-team squad and player profiles for the {season} season."
+      "description": "Liverpool FC first-team squad, shirt numbers and player profiles for the {season} season."
     },
     "title": "The Squad",
     "season": "{season} Season",
     "players": "Players",
     "club": "Liverpool Football Club",
     "search": "Search players...",
-    "noPlayers": "No player matches \"{search}\". Try another name or a shirt number.",
+    "noPlayers": "No player matches \"{search}\". Try another name or shirt number.",
     "noPlayersFilter": "No players found for this filter.",
     "count": "{count} {n, plural, one {player} other {players}}",
     "tabs": {
@@ -402,7 +402,7 @@
       "unavailable": "Unavailable",
       "injured": "Injured"
     },
-    "searchLabel": "Search players by name or number",
+    "searchLabel": "Search players by name or shirt number",
     "positionsLabel": "Jump to position",
     "noPlayersTitle": "No players found",
     "groups": {
@@ -481,8 +481,8 @@
       "ownGoals": "Own Goals",
       "penMissed": "Pens Missed",
       "penSaved": "Pens Saved",
-      "subIn": "Sub In",
-      "bench": "Benched",
+      "subIn": "Sub On",
+      "bench": "Unused Sub",
       "competition": "Competition",
       "attack": "Attack",
       "defence": "Defence",
@@ -490,7 +490,7 @@
       "passing": "Passing",
       "general": "Overview",
       "noStatsTitle": "No stats yet",
-      "noStatsDescription": "Season statistics appear here once the player has played at least 90 minutes."
+      "noStatsDescription": "Season statistics appear here once the player has featured in competitive action."
     },
     "positions": {
       "goalkeeper": "Goalkeeper",
@@ -531,14 +531,14 @@
       "less": "Show less"
     },
     "fanRating": {
-      "title": "Fans’ rating this season",
-      "detail": "Average over {matches, plural, one {# match} other {# matches}}, {votes} ratings from fans on the match pages."
+      "title": "Supporters' rating this season",
+      "detail": "Average across {matches, plural, one {# match} other {# matches}} ({votes} fan ratings on match pages)."
     }
   },
   "Season": {
     "metadata": {
       "title": "Fixtures & table by season",
-      "description": "Look back at Liverpool's fixtures, results and Premier League table season by season, latest {season}."
+      "description": "Look back at Liverpool's fixtures, results and Premier League standings season by season through {season}."
     },
     "title": "Fixtures & table by season",
     "stats": {
@@ -560,7 +560,7 @@
     },
     "noData": {
       "title": "No Data Available",
-      "description": "Statistics for this season are not available on the free API tier."
+      "description": "Detailed statistics are not available for this archived season."
     },
     "chips": {
       "pos": "Pos",
@@ -577,25 +577,25 @@
     },
     "hero": {
       "eyebrow": "Premier League · {season}",
-      "description": "Fixtures, results and the table, season by season."
+      "description": "Fixtures, results and the Premier League table, season by season."
     },
     "tabsLabel": "Fixtures or table",
     "outage": {
-      "title": "Season data is unavailable",
-      "description": "We could not load fixtures and the table. Please try again in a few minutes.",
+      "title": "Season data unavailable",
+      "description": "We couldn't load fixtures and standings right now. Please try again in a few minutes.",
       "action": "Read quick news"
     }
   },
   "Stats": {
     "metadata": {
       "title": "Statistics",
-      "description": "Liverpool stats for {season}: wins, draws, losses, goals, top scorers, form and records."
+      "description": "Liverpool FC statistics for {season}: wins, draws, losses, goals, top scorers, form and club records."
     },
     "hero": {
       "season": "Season {season} · All Competitions",
       "seasonLabel": "Season",
       "title": "Statistics",
-      "description": "Wins, draws, losses, goals, top scorers, form and records for Liverpool this season."
+      "description": "Wins, draws, losses, goals, top scorers, form and records across every competition this season."
     },
     "overview": {
       "title": "Season Overview",
@@ -630,7 +630,7 @@
       "scored": "Scored",
       "conceded": "Conceded",
       "homeAway": "Home vs Away",
-      "homeAwaySub": "Performance comparison",
+      "homeAwaySub": "Performance split",
       "home": "Home",
       "away": "Away",
       "formTimeline": "Form Timeline",
@@ -669,11 +669,11 @@
       "subtitle": "Season so far",
       "biggestWin": "Biggest Win",
       "biggestLoss": "Biggest Loss",
-      "highestScoring": "Highest Scoring",
+      "highestScoring": "Highest-Scoring Match",
       "winStreak": "Win Streak",
       "unbeatenStreak": "Unbeaten Streak",
       "comebacks": "Comeback Wins",
-      "scoringFirst": "Scoring First Win %",
+      "scoringFirst": "Win Rate Scoring First",
       "matches": "matches",
       "times": "times"
     },
@@ -690,7 +690,7 @@
     },
     "noData": {
       "title": "No data for this season yet",
-      "description": "There is no match data for this season yet. Check back soon.",
+      "description": "Match data will appear here once the campaign gets under way.",
       "action": "See fixtures"
     },
     "seasonPicker": "Select season",
@@ -703,14 +703,14 @@
   },
   "History": {
     "metadata": {
-      "title": "The Club",
-      "description": "Liverpool FC — 20 league titles, 6 European Cups. Explore the history, stadium, legends, traditions and more."
+      "title": "Club history",
+      "description": "Liverpool FC — 20 league titles, 6 European Cups. Explore the club's timeline, trophy cabinet, legends, traditions and Anfield."
     },
     "hero": {
       "est": "Established 1892",
       "trophies": "Major Trophies",
-      "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with their landlord John Houlding. Left with a stadium but no team, Houlding founded Liverpool Football Club on 15 March 1892. The club was admitted to the Football League the following year and won their first league title in 1901. What began as one man's determination to fill an empty stadium has grown into one of the most successful and beloved football clubs in the world.",
-      "tagline": "Since 1892 — 20 league titles, 6 European Cups and one Anfield."
+      "foundingStory": "Liverpool FC was born from a bitter dispute. In 1892, Everton FC left Anfield over a rent disagreement with stadium owner John Houlding. Left with an empty ground and no team, Houlding founded Liverpool Football Club on 15 March 1892. Admitted to the Football League the following year, Liverpool won their first league championship in 1901. What began with one man's resolve to keep football alive at Anfield grew into one of the most decorated and storied clubs in world sport.",
+      "tagline": "Since 1892 — 20 league titles, 6 European Cups and Anfield."
     },
     "sections": {
       "profile": "Club Profile",
@@ -731,7 +731,7 @@
       "timeline": "Club Timeline",
       "masterminds": "Masterminds",
       "managers": "Great Managers",
-      "immortals": "The Immortals",
+      "immortals": "Anfield Icons",
       "legends": "Legends",
       "stadiumImages": "Stadium Images"
     },
@@ -739,13 +739,13 @@
       "fullName": "Full Name",
       "founded": "Founded",
       "founder": "Founder",
-      "nickname": "Nickname",
+      "nickname": "Nicknames",
       "captain": "Captain",
-      "manager": "Manager",
+      "manager": "Head Coach",
       "owner": "Owner",
       "chairman": "Chairman",
       "league": "League",
-      "kitManufacturer": "Kit Manufacturer",
+      "kitManufacturer": "Kit Partner",
       "website": "Website",
       "colours": "Colours",
       "white": "White"
@@ -754,7 +754,7 @@
       "listen": "Listen"
     },
     "records": {
-      "topScorer": "Top Scorer",
+      "topScorer": "All-Time Top Scorer",
       "goalsCount": "{count} goals",
       "appearances": "Most Appearances",
       "appsCount": "{count} apps",
@@ -793,101 +793,101 @@
       "years": "Winning years"
     },
     "eras": {
-      "events": "{count, plural, one {# event} other {# events}}",
-      "now": "now",
+      "events": "{count, plural, one {# milestone} other {# milestones}}",
+      "now": "present",
       "beginnings": {
         "name": "Beginnings",
-        "summary": "Founded after Everton left Anfield, Liverpool won their first league titles within a decade and became a First Division fixture."
+        "summary": "Founded after Everton left Anfield, Liverpool claimed two league championships within 15 years and became an established First Division force."
       },
       "shankly": {
         "name": "The Shankly years",
-        "summary": "Bill Shankly arrived with the club in the Second Division and built the modern Liverpool: promotion, titles, the first FA Cup and the Boot Room."
+        "summary": "Bill Shankly took over a Second Division side and built modern Liverpool: promotion, league titles, a maiden FA Cup and the Boot Room."
       },
       "paisley": {
         "name": "The glory years",
-        "summary": "Under Paisley, Fagan and Dalglish, Liverpool dominated England and Europe, through triumph and the tragedies of Heysel and Hillsborough."
+        "summary": "Under Paisley, Fagan and Dalglish, Liverpool dominated England and Europe across two decades marked by both silverware and the tragedies of Heysel and Hillsborough."
       },
       "rebuild": {
-        "name": "Rebuilding",
-        "summary": "The Premier League era brought cup runs rather than titles, and two nights that live forever: the 2001 treble of cups and Istanbul in 2005."
+        "name": "Cup glory & Istanbul",
+        "summary": "The Premier League era brought unforgettable cup nights, none bigger than the 2001 cup treble in Dortmund and Cardiff and the Miracle of Istanbul in 2005."
       },
       "klopp": {
         "name": "The Klopp years",
-        "summary": "Jürgen Klopp turned doubters into believers: a sixth European Cup in 2019 and, in 2020, the league title the club had waited thirty years for."
+        "summary": "Jürgen Klopp turned doubters into believers, delivering a sixth European Cup in 2019, a first Club World Cup, and the 2020 Premier League crown after a 30-year wait."
       },
       "today": {
-        "name": "Today",
-        "summary": "A new head coach, a new team and the same expectations at Anfield."
+        "name": "New era",
+        "summary": "Arne Slot delivered a record-equalling 20th league title in 2025 before Andoni Iraola arrived in 2026 to lead a refreshed Anfield squad."
       }
     }
   },
   "About": {
     "metadata": {
       "title": "About",
-      "description": "Anfield Daily is an unofficial Liverpool fan site that gathers the news from across the English press and sums it up daily. Where the data comes from, and what the site is not."
+      "description": "About Anfield Daily — an independent, unofficial Liverpool FC news site with daily briefings, fixtures, standings and squad profiles."
     },
     "label": "About",
     "eyebrow": {
       "story": "The site",
       "features": "Features",
-      "news": "News",
+      "news": "Editorial",
       "ai": "AI",
       "data": "Sources",
       "support": "Chip in"
     },
     "title": "Liverpool news, gathered and summed up",
-    "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, logos and trademarks belong to their owners.",
+    "disclaimer": "{brand} is an <status>independent, unofficial</status> fan site. It is not affiliated with, sponsored by or endorsed by Liverpool FC, Fenway Sports Group, the Premier League or the news outlets it links to. All names, crests and trademarks belong to their respective owners.",
     "whatIs": {
       "title": "What is {brand}?",
-      "description": "Anfield Daily is a Liverpool fan’s site for reading the news fast. It gathers stories from across the English press, drops the duplicates and sums up the day in one short briefing, so you don’t have to open twenty tabs. Fixtures, results and the table sit alongside.",
+      "description": "Anfield Daily is an independent Liverpool FC news site built for fast daily reading. It gathers coverage from major English outlets, filters out duplicate reporting on the same story, and distils the day into one concise briefing — alongside fixtures, results, league tables and squad data.",
       "featuresTitle": "What's on the site",
       "features": {
         "gathered": {
           "title": "Gathered news",
-          "body": "Stories from across the English press in one feed, each with a link to the original."
+          "body": "Coverage from across the English press in one feed, credited at the top with a direct link to the original."
         },
         "dedupe": {
-          "title": "No duplicates",
-          "body": "The same story from five outlets shows up once, not five times."
+          "title": "De-duplicated feed",
+          "body": "When five outlets cover the same story, it appears once with the related coverage grouped neatly underneath."
         },
         "digest": {
           "title": "Daily briefing",
-          "body": "The day’s stories in one short briefing, drafted by AI, so you can catch up fast."
+          "body": "One concise daily briefing drafted with AI from the day's reporting, with links back to every source."
         },
         "fixtures": {
           "title": "Fixtures & results",
-          "body": "Kick-off times in your time zone and results: Premier League, Champions League, FA Cup, EFL Cup."
+          "body": "Kick-off times in your local time zone and full results across the Premier League, Champions League, FA Cup and EFL Cup."
         },
         "spoiler": {
-          "title": "Spoiler-free",
-          "body": "Hide scores and results across the site until you choose to see them. Handy for replays."
+          "title": "Spoiler-free mode",
+          "body": "Hide scores, match events and statistics across the site until you choose to reveal them."
         },
         "calendar": {
           "title": "Calendar sync",
-          "body": "Every Liverpool match in your phone’s calendar at your local time, with a reminder before kick-off."
+          "body": "Subscribe once to add every Liverpool fixture to your phone or desktop calendar, automatically updated if kick-offs move."
         },
         "predictions": {
           "title": "Predictions & ratings",
-          "body": "Predict the score, rate the players and see how you rank against other fans. Sign-in required."
+          "body": "Predict match scores before kick-off, rate players after the final whistle, and track your place on the season leaderboard."
         },
         "club": {
-          "title": "Squad & club",
-          "body": "The squad with a profile for each player, league tables, club history and Anfield. An optional account saves your favourites."
+          "title": "Squad & club history",
+          "body": "First-team profiles, season statistics, the trophy cabinet and Anfield history — plus optional bookmarks with a free account."
         }
       },
       "dataTitle": "Data sources",
-      "dataSources": "Fixtures, results, tables: football-data.org and ESPN. Player stats: Fantasy Premier League (public API). Squad and player profiles: liverpoolfc.com. Headlines: public RSS feeds from English outlets, always with a link to the original story.",
+      "dataSources": "Fixtures, results and league tables come from Football-Data.org and ESPN. Player statistics come from the public Fantasy Premier League API, and squad profiles from liverpoolfc.com. News is gathered from English football outlets, always credited with a direct link to the original publisher.",
       "techTitle": "Tech Stack",
-      "techStack": "Next.js 16 (App Router, ISR) · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Framer Motion · Recharts · Supabase (Auth + PostgreSQL + Storage) · next-intl (EN/VI)"
+      "techStack": "Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Framer Motion · Recharts · Supabase · Cloudflare Workers · next-intl (EN/VI)"
     },
     "creator": {
       "title": "Who makes this",
-      "role": "Developer, Liverpool fan",
-      "bio": "I'm a developer and a Liverpool fan. Anfield Daily is a spare-time project for reading the day's Liverpool news fast, without hunting through every outlet."
+      "role": "Developer & Liverpool supporter",
+      "bio": "I'm a software developer and Liverpool supporter. Anfield Daily started as a personal tool to read the day's Liverpool coverage in one clean place without opening a dozen tabs."
     },
     "contact": {
       "title": "Contact",
-      "description": "Feedback, a bug, or a content correction? Just message me.",
+      "description": "Spotted a bug, a broken feed or a factual error? Send me a note.",
       "email": "Email",
       "github": "GitHub",
       "githubUrl": "https://github.com/dangdinh87",
@@ -895,26 +895,26 @@
     },
     "support": {
       "title": "Support the site",
-      "description": "{brand} is free. If it's useful to you, a coffee helps me cover hosting and API costs.",
+      "description": "{brand} is free to read. If you find it useful, buying a coffee helps cover hosting, worker and API costs.",
       "buyCoffee": "Buy me a coffee",
-      "momoAlt": "MoMo QR - Nguyen Dang Dinh",
+      "momoAlt": "MoMo QR — Nguyen Dang Dinh",
       "momoTitle": "MoMo QR code",
       "close": "Close"
     },
-    "tagline": "Quick news, a daily summary, fixtures and results for Liverpool fans.",
+    "tagline": "Fast Liverpool news, a daily briefing, fixtures, results and standings in one place.",
     "news": {
       "title": "How news is handled",
-      "body": "Quick news shows articles as published by each outlet, clearly credited at the top with a direct link to the original page on the publisher's site. Mirrored reader pages carry no ads and stay out of search indexing. If you are an author or publisher and want an item changed or removed, email me and I will act on it promptly."
+      "body": "Reader pages on {brand} display articles from each outlet with clear attribution and a direct link to the original publisher above the body. Mirrored reader pages carry no advertising and stay excluded from search indexing (noindex). If you are an author or publisher and want an item amended or removed, email me and I will act on it promptly."
     },
     "ai": {
       "title": "AI on {brand}",
-      "body": "On-demand Vietnamese article translation, match reports and the daily digest are AI-assisted. AI can be wrong or out of date. For anything important, such as kick-off times or tickets, check the club's official channels."
+      "body": "On-demand Vietnamese article translation, the daily briefing and data-driven match reports use AI assistance via VietAPI. Automated output can occasionally miss nuance or context — for critical details such as kick-off changes or ticketing, always check Liverpool FC's official channels."
     }
   },
   "Standings": {
     "metadata": {
       "title": "Standings",
-      "description": "Premier League table {season}: points, goal difference, form and where Liverpool stand."
+      "description": "Premier League and Champions League standings for {season}: points, goal difference, recent form and where Liverpool stand."
     },
     "hero": {
       "season": "Premier League · {season}",
@@ -948,14 +948,14 @@
       "ecl": "Conference League",
       "rel": "Relegation",
       "r16": "Round of 16",
-      "playoff": "Play-off round",
+      "playoff": "Knockout play-offs",
       "elim": "Eliminated"
     },
-    "description": "The latest Premier League table.",
+    "description": "Current Premier League and Champions League standings.",
     "compLabel": "Competition",
     "outage": {
-      "title": "The table is unavailable",
-      "description": "We could not load the table. Please try again in a few minutes.",
+      "title": "Standings unavailable",
+      "description": "We couldn't load the league table right now. Please try again in a few minutes.",
       "action": "Read quick news"
     },
     "summary": {
@@ -963,18 +963,18 @@
       "position": "Position in the table",
       "leading": "Top of the table",
       "behindLeader": "{count, plural, one {point} other {points}} behind the leader",
-      "topFourClear": "{count, plural, one {point} other {points}} clear in the top four",
+      "topFourClear": "{count, plural, one {point} other {points}} clear inside the top four",
       "topFourBehind": "{count, plural, one {point} other {points}} off the top four",
-      "aboveDrop": "{count, plural, one {point} other {points}} above the drop",
+      "aboveDrop": "{count, plural, one {point} other {points}} above the relegation zone",
       "next": "Next league match: <b>{team}</b>, {rank, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} on {points} pts.",
-      "matchLink": "Match page"
+      "matchLink": "Match details"
     },
     "nextBadge": "Next"
   },
   "Fixtures": {
     "metadata": {
       "title": "Liverpool fixtures & results",
-      "description": "Liverpool kick-off times in your local time, results and rounds for the {season} season."
+      "description": "Liverpool FC kick-off times in your local time zone, match results and competition rounds for the {season} season."
     },
     "hero": {
       "season": "{season} Season",
@@ -995,14 +995,14 @@
         "recent": "Recently Played",
         "results": "Results"
       },
-      "noFixtures": "No upcoming matches in this competition.",
+      "noFixtures": "No upcoming fixtures in this competition.",
       "viewLabel": "Fixtures view",
       "filterLabel": "Filter by competition",
       "gmtHint": "Kick-off times are shown in your local time ({zone}).",
       "emptyTitle": "No matches yet",
-      "noResults": "No finished matches for this competition yet.",
+      "noResults": "No completed matches in this competition yet.",
       "archive": "Past seasons",
-      "plWatch": "Where to watch depends on your country; match pages show the broadcaster where one is known.",
+      "plWatch": "Broadcast details depend on your country; individual match pages list the broadcaster where available.",
       "zoneChip": "Your time · {zone}",
       "later": "Later fixtures",
       "matchCount": "{count, plural, one {# match} other {# matches}}"
@@ -1015,37 +1015,37 @@
       "lineupsConfirmed": "Confirmed",
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
-      "coach": "Coach",
-      "noData": "The timeline and statistics appear once the match starts.",
+      "coach": "Head Coach",
+      "noData": "Match timeline and statistics appear once kick-off is under way.",
       "empty": {
-        "afterKickoff": "Available once the match starts.",
+        "afterKickoff": "Available once the match kicks off.",
         "events": {
-          "title": "No match events yet",
-          "description": "Goals, cards and substitutions are not available for this match."
+          "title": "No match events recorded",
+          "description": "Goal, card and substitution events are not available for this fixture."
         },
         "stats": {
-          "title": "No statistics yet",
-          "description": "The data provider has no statistics for this match."
+          "title": "No statistics available",
+          "description": "Match statistics have not been published by the data provider."
         },
         "lineups": {
-          "title": "Lineups not announced",
-          "description": "Team sheets usually appear about an hour before kick-off."
+          "title": "Lineups not announced yet",
+          "description": "Official team sheets are typically confirmed around 60 minutes before kick-off."
         },
         "h2h": {
-          "title": "No head-to-head data",
-          "description": "We have no recent meetings with this opponent."
+          "title": "No head-to-head record",
+          "description": "No recent competitive meetings are recorded against this opponent."
         }
       },
       "kickoffVn": "Kick-off",
       "sectionsLabel": "Match sections",
-      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Where to watch, lineups and head to head.",
-      "metaFinished": "{home} {homeGoals}-{awayGoals} {away}. {competition}: match timeline, statistics and lineups.",
-      "attendance": "{count} in attendance",
+      "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Broadcast info, lineups and head-to-head.",
+      "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and lineups.",
+      "attendance": "Attendance: {count}",
       "referee": "Referee: {name}"
     },
     "outage": {
-      "title": "Fixtures are taking a break",
-      "description": "We could not load the match schedule right now. Please try again in a few minutes.",
+      "title": "Fixtures temporarily unavailable",
+      "description": "We couldn't load the match schedule right now. Please try again in a few minutes.",
       "action": "Read quick news"
     },
     "nav": {
@@ -1057,7 +1057,7 @@
     },
     "calendar": {
       "button": "Add to calendar",
-      "hint": "Every Liverpool match in your phone’s calendar, at your local time, with a reminder 30 minutes before. It updates itself when a kick-off moves.",
+      "hint": "Every Liverpool match in your calendar at your local time, with a 30-minute reminder before kick-off. Updates automatically when fixtures move.",
       "google": "Google Calendar",
       "apple": "Apple Calendar (iPhone, Mac)",
       "outlook": "Outlook",
@@ -1069,11 +1069,11 @@
   "Legal": {
     "metadata": {
       "title": "Legal",
-      "description": "{brand}'s privacy policy, terms of use and data sources. An unofficial Liverpool fan site."
+      "description": "{brand} privacy policy, terms of use and data attributions. An independent, unofficial Liverpool FC news site."
     },
     "title": "Legal Information",
     "lastUpdated": "Last updated: {date}",
-    "contact": "For questions or concerns, contact <email>nguyendangdinh47@gmail.com</email>",
+    "contact": "For legal, copyright or privacy enquiries, contact <email>nguyendangdinh47@gmail.com</email>",
     "labels": {
       "privacy": "Privacy Policy",
       "terms": "Terms of Use"
@@ -1081,15 +1081,15 @@
     "sections": {
       "privacy": {
         "title": "Privacy Policy",
-        "content": "{brand} is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We do not collect personal data beyond what is necessary for account functionality (email, username, avatar, saved items and match predictions). Authentication is handled securely via Supabase. Gallery images are hosted on Cloudinary. We do not sell or share your data with third parties. The site shows Google AdSense ads; Google and its partners may use cookies to serve ads, and you can turn off personalised ads in your Google ad settings."
+        "content": "{brand} is an independent project and is not affiliated with Liverpool Football Club or Fenway Sports Group. We collect only the personal data needed for optional account features (email address, display name, avatar, saved items, player ratings and score predictions). Authentication and database storage are handled via Supabase, and gallery images are hosted on Cloudinary. We never sell or rent your personal information to third parties. Non-mirrored pages on the site may display Google AdSense advertisements, while mirrored news reader pages carry no ads. Google and its partners may use cookies to serve and measure ads, and you can manage personalised advertising at any time in your Google Ad Settings."
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This site is provided as-is for informational and entertainment purposes only. {brand} is an unofficial fan site and is not affiliated with Liverpool FC or the Premier League. All Liverpool FC trademarks, logos, and brand elements are the property of Liverpool Football Club and Athletic Grounds Limited. Match data is sourced from Football-Data.org and ESPN. News pages display stories from the outlets named below, each credited and linked directly to the original publisher. All rights in an article belong to the original publisher or author; {brand} claims none and will remove any article on request from its publisher. AI features (article translation, daily digest and editorial match reviews) are powered by VietAPI. Use of this site constitutes acceptance of these terms."
+        "content": "This website is provided as-is for informational and editorial purposes only. {brand} is an unofficial fan-run site and is not endorsed by or affiliated with Liverpool FC or the Premier League. All club names, crests and trademarks remain the property of Liverpool Football Club and Athletic Grounds Limited or their respective owners. Match schedules, scores and standings are supplied by Football-Data.org and ESPN. News reader pages reproduce stories from the outlets listed below with prominent attribution and a direct link to the original publisher. Copyright in every external article belongs to its publisher or author; {brand} claims no ownership and acts promptly on any takedown or amendment request. Automated article translations, daily briefings and data-driven match reports use AI via VietAPI and may contain occasional errors. Continued use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures and results are provided by Football-Data.org. Cup fixtures and match events are supplemented by ESPN. Player stats come from the Fantasy Premier League (public API); the squad and player profiles come from liverpoolfc.com. News aggregates stories from public feeds with credit and a direct link to the original publisher — including LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, The Mirror, The Independent, Anfield Index, Liverpool.com and ESPN. Article translation, the daily digest and match reviews are drafted with AI via VietAPI and may contain occasional inaccuracies. Gallery images are hosted on Cloudinary. Historical data and trophy information are maintained by the site administrators based on publicly available records."
+        "content": "League standings, fixtures and match results are provided by Football-Data.org. Domestic cup ties and live match events are supplemented by ESPN. Season player statistics come from the public Fantasy Premier League API, and first-team squad profiles come from liverpoolfc.com. News headlines and articles are gathered from 13 English outlets — LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, Mirror, The Independent, Anfield Index, Liverpool.com and ESPN — always credited with a direct link to the original story. Vietnamese translations, daily briefings and match reports are generated with AI assistance via VietAPI. Club history, records and honours are curated from publicly verifiable archives."
       }
     },
     "toc": "On this page"
@@ -1097,14 +1097,14 @@
   "Auth": {
     "login": {
       "title": "Welcome Back",
-      "subtitle": "Sign in to save favourite players and articles.",
-      "email": "Email Address",
+      "subtitle": "Sign in to bookmark articles, save favourite players and predict match scores.",
+      "email": "Email address",
       "password": "Password",
       "button": "Sign In",
       "loading": "Signing in...",
       "noAccount": "Don't have an account?",
-      "register": "Register here",
-      "error": "Invalid login credentials",
+      "register": "Create one here",
+      "error": "Invalid email or password",
       "google": "Continue with Google",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
@@ -1113,29 +1113,29 @@
     },
     "register": {
       "title": "Join the Reds",
-      "subtitle": "A free account to save favourite players and articles.",
-      "username": "Username",
-      "email": "Email Address",
+      "subtitle": "Create a free account to save articles, follow players and join match predictions.",
+      "username": "Display name",
+      "email": "Email address",
       "password": "Password",
       "button": "Create Account",
       "loading": "Creating account...",
       "hasAccount": "Already have an account?",
       "login": "Sign in here",
-      "error": "Failed to create account",
-      "confirm": "Confirm Password",
+      "error": "Couldn't create your account",
+      "confirm": "Confirm password",
       "confirmMismatch": "Passwords do not match",
       "passwordShort": "Password must be at least 6 characters",
-      "checkEmail": "Confirmation email sent. Open it (check spam too) and tap the link to finish signing up.",
+      "checkEmail": "Confirmation email sent. Open your inbox (check spam if needed) and follow the link to finish signing up.",
       "passwordHint": "At least 6 characters."
     },
     "errors": {
       "unavailable": "Sign-in is temporarily unavailable. Please try again in a few minutes.",
       "invalidCredentials": "Incorrect email or password.",
       "emailNotConfirmed": "Please confirm your email first — check your inbox.",
-      "userExists": "An account with this email already exists. Try signing in.",
-      "weakPassword": "That password is too weak. Use a longer, less common one.",
-      "rateLimited": "Too many attempts. Please wait a moment and try again.",
-      "emailRequired": "Please enter your email.",
+      "userExists": "An account with this email already exists. Try signing in instead.",
+      "weakPassword": "That password is too weak. Choose a longer, less predictable one.",
+      "rateLimited": "Too many attempts. Please wait a moment before trying again.",
+      "emailRequired": "Please enter your email address.",
       "emailInvalid": "Enter a valid email address.",
       "passwordRequired": "Please enter your password.",
       "passwordShort": "Password must be at least 6 characters.",
@@ -1143,29 +1143,29 @@
     },
     "metadata": {
       "loginTitle": "Sign in",
-      "loginDescription": "Sign in to {brand} to save favourite players and articles.",
+      "loginDescription": "Sign in to {brand} to bookmark articles, save favourite players and predict scores.",
       "registerTitle": "Create account",
-      "registerDescription": "Create a free {brand} account to save favourite players and articles."
+      "registerDescription": "Create a free {brand} account to bookmark articles, save favourite players and predict scores."
     }
   },
   "Profile": {
     "title": "Profile Settings",
-    "username": "Username",
+    "username": "Display name",
     "username_placeholder": "Your display name",
     "bio": "Bio",
-    "bio_placeholder": "Tell us about yourself as a Liverpool fan...",
-    "email": "Email Address",
+    "bio_placeholder": "A short note for your supporter profile...",
+    "email": "Email address",
     "update": "Save Changes",
     "saving": "Saving...",
-    "success": "Profile updated successfully!",
+    "success": "Profile updated.",
     "memberSince": "Member since {date}",
     "signOut": "Sign Out",
     "favouritePlayers": "Favourite Players",
-    "favouritePlayersEmpty": "No favourite players yet. Visit a player's page to add them.",
+    "favouritePlayersEmpty": "No favourite players saved yet. Open any player profile to add one.",
     "removeFav": "Remove",
     "browseSquad": "Browse squad →",
     "confirmRemoveFav": "Remove {name} from favourites?",
-    "confirmRemoveFavDesc": "You can always add them back later.",
+    "confirmRemoveFavDesc": "You can add them back at any time.",
     "cancelAction": "Cancel",
     "confirmAction": "Remove",
     "favAdded": "{name} added to favourites",
@@ -1179,8 +1179,8 @@
       "upload": "Upload",
       "change": "Change",
       "removing": "Removing...",
-      "error": "Failed to upload avatar",
-      "clickToChange": "Click to change avatar (max 2MB)",
+      "error": "Couldn't upload avatar",
+      "clickToChange": "Click to change avatar (max 2 MB)",
       "uploading": "Uploading...",
       "errorType": "Use a JPEG, PNG, WebP or GIF image.",
       "errorSize": "Image must be under 2 MB.",
@@ -1188,30 +1188,30 @@
       "errorUpload": "Upload failed. Please try again."
     },
     "savedArticles": "Saved Articles",
-    "savedArticlesEmpty": "No saved articles yet. Bookmark articles from the News page and they'll appear here.",
+    "savedArticlesEmpty": "No saved articles yet. Bookmark any story on the News page to read later.",
     "unsave": "Remove",
     "confirmUnsave": "Remove saved article?",
     "confirmUnsaveDesc": "This article will be removed from your saved list.",
-    "unsaveSuccess": "Article removed from saved.",
-    "loginAction": "Log in",
+    "unsaveSuccess": "Removed from saved articles.",
+    "loginAction": "Sign in",
     "coverTitle": "Homepage Background",
-    "coverUpdated": "Homepage background updated!",
+    "coverUpdated": "Homepage background updated.",
     "coverReset": "Reset to default",
     "coverResetDone": "Homepage background reset to default.",
-    "coverError": "Failed to update background.",
+    "coverError": "Couldn't update homepage background.",
     "coverDefault": "Default",
-    "streakCount": "{count} day streak",
-    "streakLabel": "Daily visit streak",
+    "streakCount": "{count}-day streak",
+    "streakLabel": "Daily reading streak",
     "signedOut": {
-      "title": "Sign in to see your profile",
-      "description": "Your avatar, favourite players and saved articles live here once you are signed in.",
+      "title": "Sign in to view your profile",
+      "description": "Your avatar, favourite players and saved articles appear here once you sign in.",
       "action": "Sign in",
       "home": "Back to home"
     },
-    "usernameTooShort": "Username needs at least {min} characters.",
+    "usernameTooShort": "Display name must be at least {min} characters.",
     "metadata": {
       "title": "My profile",
-      "description": "Manage your profile, favourite players and saved articles."
+      "description": "Manage your display name, favourite players and saved articles."
     },
     "defaultName": "Member"
   },
@@ -1238,10 +1238,10 @@
     "h2h": {
       "title": "Head to Head",
       "subtitle": "{count} matches",
-      "dataRange": "Data from {from} to {to}",
+      "dataRange": "Meetings from {from} to {to}",
       "goalsFor": "Goals For",
       "goalsAgainst": "Goals Against",
-      "avgGoals": "Avg Goals/Match",
+      "avgGoals": "Goals / Match",
       "cleanSheets": "Clean Sheets",
       "winRate": "Win Rate",
       "lastMeetings": "Recent Meetings",
@@ -1262,7 +1262,7 @@
       "Shots off Target": "Shots off Target",
       "Blocked Shots": "Blocked Shots",
       "Saves": "Saves",
-      "Corner Kicks": "Corner Kicks",
+      "Corner Kicks": "Corners",
       "Offsides": "Offsides",
       "Fouls": "Fouls",
       "Yellow Cards": "Yellow Cards",
@@ -1273,7 +1273,7 @@
       "Tackles Won": "Tackles Won",
       "Interceptions": "Interceptions",
       "Clearances": "Clearances",
-      "Expected Goals": "Expected Goals"
+      "Expected Goals": "Expected Goals (xG)"
     },
     "nextMatch": "Next",
     "penShort": "Pens {score}",
@@ -1290,7 +1290,7 @@
       "qf": "Quarter-final",
       "sf": "Semi-final",
       "final": "Final",
-      "third": "Third place",
+      "third": "Third-place play-off",
       "playoff": "Play-offs",
       "leaguePhase": "League phase",
       "group": "Group stage"
@@ -1302,7 +1302,7 @@
       "halfTime": "Half-time",
       "extraTime": "Extra time",
       "penalties": "Penalties",
-      "fullTime": "Full time",
+      "fullTime": "Full-time",
       "ftShort": "FT",
       "htShort": "HT",
       "possession": "Possession",
@@ -1325,12 +1325,12 @@
     "formAria": "{count, plural, one {Last match} other {Last # matches}}: {results}"
   },
   "Footer": {
-    "about": "{brand} — your all-in-one Liverpool FC hub. Results, stats, squad, news, and more.",
+    "about": "{brand} — Liverpool FC news gathered from the English press, de-duplicated and summed up daily, alongside fixtures, results, standings and squad profiles.",
     "quickLinks": "Explore",
     "legal": "Legal",
     "contact": "Contact",
     "rights": "All rights reserved.",
-    "disclaimer": "Unofficial fan site, not affiliated with Liverpool FC or the Premier League. Names, badges and images belong to their owners.",
+    "disclaimer": "Unofficial fan site, not affiliated with Liverpool FC or the Premier League. Club names, crests and images belong to their respective owners.",
     "newsSources": "News sources",
     "ynwa": "You'll Never Walk Alone",
     "legalLinks": {
@@ -1340,18 +1340,11 @@
     },
     "info": "Info",
     "club": "The club",
-    "socialLabel": "The club's own channels (external links)"
+    "socialLabel": "Official Liverpool FC channels (external links)"
   },
   "Language": {
     "aria": {
       "toggle": "Language: {code}"
-    }
-  },
-  "history": {
-    "dateRange": {
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "last7Days": "Last 7 Days"
     }
   },
   "common": {
@@ -1365,47 +1358,44 @@
   "errors": {
     "notFound": "No results found"
   },
-  "nav": {
-    "history": "Chat History"
-  },
   "auth": {
-    "pleaseLogin": "Please log in to continue"
+    "pleaseLogin": "Please sign in to continue"
   },
   "Gallery": {
     "metadata": {
-      "title": "Gallery — Liverpool FC",
-      "description": "Anfield, current squad, club legends and historic moments — the best of Liverpool FC in pictures."
+      "title": "Photo gallery",
+      "description": "Anfield, the first-team squad, club legends and defining nights in Liverpool FC history."
     },
     "hero": {
       "label": "Photo Gallery",
       "title": "Gallery",
-      "subtitle": "Anfield, the squad, club legends and historic moments."
+      "subtitle": "Anfield, the squad, club legends and defining moments."
     },
     "categories": {
       "all": "All",
       "anfield": "Anfield",
       "squad": "Squad",
       "matches": "Matches",
-      "fans": "Fans",
+      "fans": "Supporters",
       "legends": "Legends",
       "trophies": "Trophies",
       "history": "History"
     },
-    "attribution": "Liverpool FC Gallery",
+    "attribution": "Photo archive",
     "upload": {
       "button": "Upload Photo",
       "title": "Upload New Photo",
       "dropzone": "Click to select an image",
-      "altLabel": "Description",
-      "altPlaceholder": "e.g. Salah celebrating at Anfield",
+      "altLabel": "Caption",
+      "altPlaceholder": "e.g. Virgil van Dijk lifting the trophy at Anfield",
       "categoryLabel": "Category",
       "uploading": "Uploading...",
-      "success": "Uploaded!",
+      "success": "Photo uploaded.",
       "submit": "Upload"
     },
     "admin": {
       "delete": "Delete Image",
-      "deleteConfirm": "Delete this image? This cannot be undone.",
+      "deleteConfirm": "Delete this image? This action cannot be undone.",
       "deleteSuccess": "Image deleted",
       "setHomepage": "Set as Homepage Background",
       "setHomepageConfirm": "Use this image as the homepage background?",
@@ -1429,8 +1419,8 @@
     },
     "empty": {
       "title": "No photos found",
-      "description": "There are no photos in this category yet. Try another one.",
-      "searchHint": "Nothing matches your search. Try a different word or pick another category."
+      "description": "There are no photos in this category yet. Try selecting another.",
+      "searchHint": "No photos match your search. Try a different keyword or category."
     },
     "lightbox": {
       "previous": "Previous photo",
@@ -1443,42 +1433,42 @@
   "Analysis": {
     "metadata": {
       "title": "Analysis",
-      "description": "Match reports and analysis written from the numbers: goals, shots, possession and where each result leaves Liverpool."
+      "description": "Data-driven Liverpool match reports and tactical numbers: goals, shots, possession and what each result means in the table."
     },
     "hero": {
       "eyebrow": "Written here",
       "title": "Analysis",
-      "description": "Match reports built from the data, not from someone else's story. Every figure comes from the match feed."
+      "description": "Match reports built directly from the match data feed — lineups, events and statistics — never rewritten from another outlet."
     },
     "kinds": {
       "review": "Match report",
       "preview": "Preview",
-      "weekly": "The week",
-      "digest": "Daily digest",
+      "weekly": "Weekly review",
+      "digest": "Daily briefing",
       "history": "History"
     },
     "empty": {
-      "title": "Nothing written yet",
-      "description": "Reports appear here after a match finishes and the data lands."
+      "title": "No reports published yet",
+      "description": "Match reports are published here once full-time data has been verified."
     },
     "disclosure": {
-      "body": "Written automatically by {brand} from the match data. Every number and name is checked against that data before it publishes.",
+      "body": "Drafted automatically by {brand} from structured match data. Every score, minute, stat and player name is verified against the feed before publication.",
       "link": "How this works"
     },
-    "viewMatch": "View match details",
-    "related": "More like this"
+    "viewMatch": "Match details",
+    "related": "More analysis"
   },
   "Calendar": {
     "name": "Liverpool fixtures · Anfield Daily",
-    "description": "Every Liverpool match, shown in your own time zone. Updates itself when a kick-off moves.",
+    "description": "Every Liverpool FC match in your local time zone, updated automatically whenever kick-off times change.",
     "matchPage": "Match page",
     "reminder": "Kick-off in 30 minutes"
   },
   "Spoiler": {
     "toggle": "Spoiler-free",
-    "hint": "Hide scores and results across the site until you choose to see them. Handy when you watch the replay later.",
+    "hint": "Hide scores, match events and stats across the site until you choose to reveal them — ideal when catching up on a replay.",
     "hiddenTitle": "Result hidden",
-    "hiddenDesc": "Spoiler-free mode is on, so this match’s score, events and stats are hidden.",
+    "hiddenDesc": "Spoiler-free mode is active, so this match's scoreline, timeline and statistics are hidden.",
     "reveal": "Show this result",
     "turnOff": "Turn off spoiler-free"
   },
@@ -1489,54 +1479,54 @@
     "update": "Update prediction",
     "saved": "Saved",
     "signIn": "Sign in to predict",
-    "rule": "3 points for the exact score, 1 for the right result. You can change it until kick-off.",
+    "rule": "3 points for the exact scoreline, 1 point for the right outcome. Open until kick-off.",
     "yourPick": "Your pick: {home}–{away}",
     "closedNoPick": "Predictions closed at kick-off.",
     "points": "{count, plural, one {# point} other {# points}}",
     "win": "{team} win",
     "draw": "Draw",
     "mostPicked": "Most picked:",
-    "leaderboardLink": "See the prediction scores",
+    "leaderboardLink": "View prediction leaderboard",
     "error": {
-      "signIn": "Sign in first.",
-      "closed": "Predictions for this match are closed.",
-      "invalid": "That score is not valid.",
-      "unavailable": "Could not save right now. Try again in a minute."
+      "signIn": "Please sign in first.",
+      "closed": "Predictions for this match have closed.",
+      "invalid": "Enter a valid scoreline.",
+      "unavailable": "Couldn't save your prediction right now. Try again shortly."
     },
     "ratings": {
       "title": "Rate the players",
       "votes": "{count, plural, =0 {No ratings yet} one {# fan rated} other {# fans rated}}",
-      "hint": "Slide 1–10 for anyone you watched. Fans’ averages are on the right.",
-      "closed": "Ratings closed a week after the match. Fans’ averages:",
+      "hint": "Slide 1–10 for each player you watched. Community averages appear on the right.",
+      "closed": "Player ratings closed seven days after full-time. Community averages:",
       "rate": "Rate {player}",
-      "average": "Average of {count} fans",
+      "average": "Average from {count} fans",
       "save": "Save ratings",
       "saved": "Saved",
       "signIn": "Sign in to rate",
       "error": {
-        "signIn": "Sign in first.",
-        "closed": "Ratings for this match are closed.",
-        "invalid": "One of those ratings is not valid.",
-        "unavailable": "Could not save right now. Try again in a minute."
+        "signIn": "Please sign in first.",
+        "closed": "Player ratings for this match have closed.",
+        "invalid": "One or more ratings are out of range.",
+        "unavailable": "Couldn't save your ratings right now. Try again shortly."
       }
     },
     "page": {
       "eyebrow": "Fan predictions",
-      "title": "Prediction scores",
-      "description": "Predict every Liverpool score and see how you rank against other fans this season.",
-      "rule": "{exact} points for the exact score, {result} for the right result. Predictions close at kick-off.",
+      "title": "Prediction leaderboard",
+      "description": "Predict every Liverpool scoreline before kick-off and see how you rank across the season.",
+      "rule": "{exact} points for the exact scoreline, {result} point for the correct outcome. Predictions lock at kick-off.",
       "nextLabel": "Next match to predict",
       "predictNow": "Predict",
-      "tableTitle": "This season",
-      "fan": "Fan",
+      "tableTitle": "Season standings",
+      "fan": "Supporter",
       "exact": "Exact",
       "played": "Played",
       "points": "Pts",
-      "emptyTitle": "No points yet",
-      "emptyDesc": "The table fills up once a predicted match has been played.",
+      "emptyTitle": "No points on the board yet",
+      "emptyDesc": "Standings populate as soon as the first predicted fixture finishes.",
       "emptyAction": "Predict the next match",
-      "unavailableTitle": "The table is unavailable",
-      "unavailableDesc": "We could not load it. Try again in a few minutes."
+      "unavailableTitle": "Leaderboard unavailable",
+      "unavailableDesc": "We couldn't load the prediction standings right now. Try again in a few minutes."
     }
   }
 }
