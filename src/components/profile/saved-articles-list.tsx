@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
-import { Bookmark, Newspaper } from "lucide-react";
-import { useTransition } from "react";
+import { Bookmark } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { unsaveArticle } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
@@ -19,7 +17,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { getArticleUrl, SOURCE_CONFIG } from "@/lib/news-config";
-import { isEmbeddableImageUrl } from "@/components/news/news-text";
+import { NewsThumb } from "@/components/news/news-thumb";
 import { canonicalizeArticleUrl } from "@/lib/news/url";
 import type { SavedArticle } from "@/lib/supabase";
 import type { NewsSource } from "@/lib/news/types";
@@ -106,7 +104,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-3">
+      <div aria-busy={isPending} className="space-y-3">
         {articles.map((article) => {
           const sourceCfg = SOURCE_CONFIG[article.article_source as NewsSource];
           return (
@@ -117,24 +115,15 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
               {/* Thumbnail */}
               <Link
                 href={getArticleUrl(article.article_url)}
+                tabIndex={-1}
+                aria-hidden
                 className="relative w-28 sm:w-36 h-24 shrink-0 overflow-hidden"
               >
-                {isEmbeddableImageUrl(article.article_thumbnail) ? (
-                  <Image
-                    src={article.article_thumbnail!}
-                    alt={article.article_title}
-                    fill
-                    className="object-cover"
-                    sizes="144px"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-linear-to-br from-lfc-red/15 to-stadium-surface flex items-center justify-center">
-                    <Newspaper aria-hidden className="w-5 h-5 text-stadium-muted" />
-                  </div>
-                )}
+                <NewsThumb
+                  src={article.article_thumbnail ?? undefined}
+                  source={article.article_source as NewsSource}
+                  sizes="144px"
+                />
               </Link>
 
               {/* Content */}

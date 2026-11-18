@@ -1,9 +1,9 @@
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { getMatchResult, type Fixture, type MatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 import { RESULT_BADGE } from "@/lib/result-style";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { WidgetHeader } from "./overview-card-shared";
 
@@ -63,7 +63,7 @@ export async function FormWidget({ results }: { results: Fixture[] }) {
                   <span className="flex h-6 w-6 items-center justify-center bg-white/10 font-bebas text-base leading-none text-white/50">?</span>
                 </span>
                 <span className="relative size-7">
-                  <Image src={opponent.logo} alt="" fill sizes="28px" className="object-contain" />
+                  <TeamCrest src={opponent.logo} name={opponent.name} sizes="28px" />
                 </span>
                 <span className="spoiler-hide font-bebas text-xl leading-none text-white tabular-nums">{score}</span>
                 <span aria-hidden className="spoiler-show font-bebas text-xl leading-none text-white/40">?–?</span>

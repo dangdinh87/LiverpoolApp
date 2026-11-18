@@ -250,6 +250,8 @@ export function ArticleActions({
         <button
           type="button"
           onClick={handleLike}
+          disabled={likeLoading}
+          aria-busy={likeLoading}
           aria-pressed={liked}
           aria-label={t("like")}
           className={`${ACTION_CLASS} ${liked ? "border-rose-500/60 text-rose-400" : ""}`}
@@ -262,12 +264,13 @@ export function ArticleActions({
           type="button"
           onClick={handleSave}
           disabled={saveLoading}
+          aria-busy={saveLoading}
           aria-pressed={saved}
           aria-label={saved ? t("unsave") : t("save")}
           className={`${ACTION_CLASS} ${saved ? "border-amber-400/60 text-amber-300" : ""}`}
         >
           <Bookmark className={`size-4 shrink-0 ${saved ? "fill-amber-400 text-amber-400" : ""}`} aria-hidden />
-          <span className="truncate">{saved ? t("saved") : t("save")}</span>
+          <span className="truncate" aria-live="polite">{saved ? t("saved") : t("save")}</span>
         </button>
 
         <button type="button" onClick={handleShare} aria-label={t("share")} className={ACTION_CLASS}>

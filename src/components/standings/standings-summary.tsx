@@ -25,7 +25,7 @@ export async function StandingsSummary({ context, nextFixtureId }: { context: St
   ];
 
   return (
-    <section aria-label={t("label")} className="mb-5 border border-[var(--line)] bg-[var(--surface-2)] sm:mb-6">
+    <section aria-label={t("label")} className="spoiler-hide mb-5 border border-[var(--line)] bg-[var(--surface-2)] sm:mb-6">
       {/* 1px gaps over the line colour draw the dividers in both the 2x2 and the 1x4 layout.
           Each item is a term then its figure (valid <dl> order); the figure is drawn first:
           beside the label on a phone, above it from `sm`. */}

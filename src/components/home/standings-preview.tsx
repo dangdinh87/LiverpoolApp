@@ -1,7 +1,7 @@
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/components/ui/empty-state";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { compactTeamName } from "@/components/fixtures/team-name";
 import type { Standing } from "@/lib/types/football";
 import { pickStandingsWindow } from "./standings-window";
@@ -57,7 +57,7 @@ export async function StandingsPreview({ standings }: { standings: Standing[] })
                 </span>
                 <span className="flex min-w-0 flex-1 items-center gap-2.5">
                   <span className="relative size-6 shrink-0">
-                    <Image src={s.team.logo} alt="" fill sizes="24px" className="object-contain" />
+                    <TeamCrest src={me ? "/assets/lfc/crest.webp" : s.team.logo} name={s.team.name} sizes="24px" />
                   </span>
                   <span className={cn("truncate text-sm", me ? "font-semibold text-white" : "text-white/90")}>
                     {compactTeamName(s.team)}
@@ -65,9 +65,13 @@ export async function StandingsPreview({ standings }: { standings: Standing[] })
                 </span>
                 <span className="w-7 text-center text-sm tabular-nums text-stadium-muted">{s.all.played}</span>
                 <span className="w-8 text-center text-sm tabular-nums text-stadium-muted">
-                  {s.goalsDiff > 0 ? `+${s.goalsDiff}` : s.goalsDiff}
+                  <span className="spoiler-hide">{s.goalsDiff > 0 ? `+${s.goalsDiff}` : s.goalsDiff}</span>
+                  <span aria-hidden className="spoiler-show text-white/35">–</span>
                 </span>
-                <span className="w-8 text-center font-bebas text-xl leading-none tabular-nums text-white">{s.points}</span>
+                <span className="w-8 text-center font-bebas text-xl leading-none tabular-nums text-white">
+                  <span className="spoiler-hide">{s.points}</span>
+                  <span aria-hidden className="spoiler-show text-white/35">–</span>
+                </span>
               </Link>
             </li>
           );

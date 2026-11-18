@@ -453,7 +453,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
         ) : (
           <div className="space-y-4">
             {/* Headlines first: rows of text with a small picture, two columns from lg. Only the top story gets a big picture. */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
+            <div aria-busy={pending} className="grid grid-cols-1 lg:grid-cols-2 lg:gap-x-8">
               {shown.map((story, i) => (
                 <Fragment key={story.lead.link}>
                   {lastVisit !== null && i > 0 && isNewSince(shown[i - 1], lastVisit) && !isNewSince(story, lastVisit) && (
@@ -489,7 +489,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                   className="inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 border border-[var(--line-strong)] px-8 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-white/50 disabled:opacity-60 sm:w-auto"
                 >
                   {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                  {pending ? t("loading") : t("loadMore")}
+                  <span aria-live="polite">{pending ? t("loading") : t("loadMore")}</span>
                 </button>
               </div>
             )}

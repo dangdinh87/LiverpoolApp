@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { CalendarDays, CircleDot, MapPin, Users } from "lucide-react";
 import { MatchCountdown } from "@/components/fixtures/match-countdown";
 import { displayTeamName } from "@/components/fixtures/team-name";
@@ -6,6 +5,7 @@ import { WhereToWatch } from "@/components/fixtures/where-to-watch";
 import { LFC_ID, ScorerList, teamLogo } from "@/components/fixtures/match-detail-parts";
 import { LiveDetailBadge, LiveDetailScore } from "@/components/fixtures/live-match-detail";
 import { LocalMatchDay, LocalMatchTime, LocalZoneOffset } from "@/components/ui/local-time";
+import { TeamCrest } from "@/components/ui/team-crest";
 import type { Fixture, FixtureEvent, FixtureLineup, MatchResult } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
@@ -160,12 +160,10 @@ export function MatchScoreHeader({
         {/* Home */}
         <div className="flex min-w-0 flex-col items-center text-center sm:items-end sm:text-right">
           <div className="relative size-12 sm:size-16">
-            <Image
+            <TeamCrest
               src={teamLogo(teams.home.id, teams.home.logo)}
-              alt=""
-              fill
+              name={teams.home.name}
               sizes="64px"
-              className="object-contain"
               priority
             />
           </div>
@@ -231,12 +229,10 @@ export function MatchScoreHeader({
         {/* Away */}
         <div className="flex min-w-0 flex-col items-center text-center sm:items-start sm:text-left">
           <div className="relative size-12 sm:size-16">
-            <Image
+            <TeamCrest
               src={teamLogo(teams.away.id, teams.away.logo)}
-              alt=""
-              fill
+              name={teams.away.name}
               sizes="64px"
-              className="object-contain"
               priority
             />
           </div>

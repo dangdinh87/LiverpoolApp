@@ -26,7 +26,7 @@ export function FormTimeline({ entries, legendLabels }: Props) {
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-stadium-border">
+      <div className="spoiler-hide flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-stadium-border">
         {entries.map((entry, i) => {
           const opponent = displayTeamName(entry.opponent);
           const venue = entry.venue === "H" ? tMatch("home") : tMatch("away");
@@ -52,6 +52,20 @@ export function FormTimeline({ entries, legendLabels }: Props) {
             </Tooltip>
           );
         })}
+      </div>
+      <div aria-hidden className="spoiler-show">
+        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-stadium-border">
+          {entries.map((entry, i) => (
+            <span
+              key={`${entry.date}-${i}`}
+              className="inline-flex size-11 shrink-0 items-center justify-center"
+            >
+              <span className="inline-flex size-9 items-center justify-center bg-white/10 font-bebas text-xl leading-none text-white/45">
+                ?
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Legend: the letter and the word, so the colour is never the only cue */}

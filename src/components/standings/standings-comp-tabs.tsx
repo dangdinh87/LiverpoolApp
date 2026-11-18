@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ChipBar } from "@/components/fixtures/chip-bar";
+import { SpoilerToggle } from "@/components/fixtures/spoiler-controls";
 import { StandingsTable } from "./standings-table";
 import type { Standing } from "@/lib/types/football";
 import { competitionName } from "@/lib/competition-labels";
@@ -22,19 +23,25 @@ export function StandingsCompTabs({ plStandings, uclStandings, nextOpponentId }:
 
   return (
     <div>
-      {hasUcl && (
-        <ChipBar
-          className="mb-4"
-          ariaLabel={t("compLabel")}
-          active={comp}
-          onSelect={(k) => setComp(k as "pl" | "ucl")}
-          items={[
-            { key: "pl", label: competitionName("pl", locale) },
-            { key: "ucl", label: competitionName("ucl", locale) },
-          ]}
-        />
-      )}
-      <StandingsTable standings={comp === "pl" || !hasUcl ? plStandings : uclStandings} competition={comp === "pl" || !hasUcl ? "pl" : "ucl"}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {hasUcl ? (
+          <ChipBar
+            ariaLabel={t("compLabel")}
+            active={comp}
+            onSelect={(k) => setComp(k as "pl" | "ucl")}
+            items={[
+              { key: "pl", label: competitionName("pl", locale) },
+              { key: "ucl", label: competitionName("ucl", locale) },
+            ]}
+          />
+        ) : (
+          <span />
+        )}
+        <SpoilerToggle />
+      </div>
+      <StandingsTable
+        standings={comp === "pl" || !hasUcl ? plStandings : uclStandings}
+        competition={comp === "pl" || !hasUcl ? "pl" : "ucl"}
         nextOpponentId={comp === "pl" || !hasUcl ? nextOpponentId : undefined}
       />
     </div>

@@ -5,9 +5,11 @@ import { Link } from "@/i18n/navigation";
 import { CalendarDays } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { Fixture } from "@/lib/types/football";
+import { competitionLabel } from "@/lib/competition-labels";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime, formatZoneOffset } from "@/lib/format-match-date";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { useNowAfterMount } from "@/hooks/use-now-after-mount";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { roundLabel } from "@/components/fixtures/round-label";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { WhereToWatch } from "@/components/fixtures/where-to-watch";
@@ -100,12 +102,11 @@ function TeamBlock({ team }: { team: Fixture["teams"]["home"] }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
       <span className="relative size-10 sm:size-12">
-        <Image
+        <TeamCrest
           src={crest(team)}
-          alt=""
-          fill
+          name={team.name}
           sizes="48px"
-          className="object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
+          className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]"
         />
       </span>
       <span className="text-sm font-semibold leading-tight text-white text-balance line-clamp-2">{displayTeamName(team.name)}</span>
@@ -146,7 +147,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
             </span>
           )}
           <span className="truncate">
-            {league.name}
+            {competitionLabel(league.name, locale)}
             {round && ` · ${round}`}
           </span>
         </p>

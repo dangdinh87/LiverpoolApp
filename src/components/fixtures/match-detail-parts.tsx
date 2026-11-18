@@ -1,6 +1,6 @@
-import Image from "next/image";
 import { ArrowDownToLine, ArrowUpFromLine, Goal } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { TeamCrest } from "@/components/ui/team-crest";
 import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
@@ -179,7 +179,7 @@ export function LineupSection({
     <div>
       <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--line)] pb-2">
         <div className="relative size-6 shrink-0">
-          <Image src={teamLogo(lineup.team.id, lineup.team.logo)} alt="" fill sizes="24px" className="object-contain" />
+          <TeamCrest src={teamLogo(lineup.team.id, lineup.team.logo)} name={lineup.team.name} sizes="24px" />
         </div>
         <span className="text-sm font-bold text-white">{lineup.team.name}</span>
         <span className="ml-auto font-bebas text-lg tracking-wider text-lfc-gold tabular-nums">{lineup.formation}</span>

@@ -64,9 +64,16 @@ export default async function StandingsPage({ params }: LocaleParams) {
         eyebrow={t("hero.season", { season: getCurrentSeasonLabel() })}
         title={t("hero.title")}
         description={
-          lfcStanding
-            ? `${t("hero.lfcPosition", { rank: lfcStanding.rank, suffix })} · ${t("hero.points", { count: lfcStanding.points })}`
-            : t("description")
+          lfcStanding ? (
+            <>
+              <span className="spoiler-hide">
+                {`${t("hero.lfcPosition", { rank: lfcStanding.rank, suffix })} · ${t("hero.points", { count: lfcStanding.points })}`}
+              </span>
+              <span className="spoiler-show">{t("description")}</span>
+            </>
+          ) : (
+            t("description")
+          )
         }
         image="/assets/lfc/stadium/anfield-corner-flag.webp"
       />

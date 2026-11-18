@@ -237,7 +237,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             refereeLabel={referee ? tDetail("referee", { name: referee }) : null}
           />
 
-          {isFinished && <SpoilerRevealPanel />}
+          {hasStarted && <SpoilerRevealPanel />}
 
           {isFinished ? (
             <div className="spoiler-hide">
@@ -270,7 +270,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           {!hasStarted && <p className="mt-6 text-sm text-stadium-muted">{tDetail("noData")}</p>}
 
           {hasStarted && (
-            <section id="timeline" className={cn(sectionClass, isFinished && "spoiler-hide")}>
+            <section id="timeline" className={cn(sectionClass, "spoiler-hide")}>
               <SectionHeader title={tDetail("matchTimeline")} />
               {isLive ? (
                 <LiveDetailTimeline initial={match} />
@@ -292,7 +292,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           )}
 
           {hasStarted && (
-            <section id="stats" className={cn(sectionClass, isFinished && "spoiler-hide")}>
+            <section id="stats" className={cn(sectionClass, "spoiler-hide")}>
               <SectionHeader title={tDetail("statistics")} />
               {isLive ? (
                 <LiveDetailStats initial={match} homeName={homeName} awayName={awayName} />
@@ -345,7 +345,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             )}
           </section>
 
-          <section id="h2h" className={cn(sectionClass, isFinished && "spoiler-hide")}>
+          <section id="h2h" className={cn(sectionClass, hasStarted && "spoiler-hide")}>
             <SectionHeader title={tMatch("h2h.title")} />
             {h2h ? (
               <H2HSection h2h={h2h} opponentName={displayTeamName(opponentName)} />

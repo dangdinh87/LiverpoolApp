@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { TeamCrest } from "@/components/ui/team-crest";
 import { cn } from "@/lib/utils";
 import type { FixtureLineup } from "@/lib/types/football";
 
@@ -113,17 +113,13 @@ function HalfPitch({
     <div className="flex flex-col gap-3 sm:gap-4 py-3 sm:py-4">
       {/* Team name + formation + coach */}
       <div className={cn("flex items-center gap-2 px-3 flex-wrap", isHome ? "justify-start" : "justify-end")}>
-        {(isLfc || lineup.team.logo) && (
-          <div className="relative w-4 h-4 shrink-0">
-            <Image
-              src={isLfc ? "/assets/lfc/crest.webp" : lineup.team.logo}
-              alt=""
-              fill
-              sizes="16px"
-              className="object-contain"
-            />
-          </div>
-        )}
+        <div className="relative w-4 h-4 shrink-0">
+          <TeamCrest
+            src={isLfc ? "/assets/lfc/crest.webp" : lineup.team.logo}
+            name={lineup.team.name}
+            sizes="16px"
+          />
+        </div>
         <span className="font-barlow text-xs text-white font-semibold uppercase tracking-wider">
           {lineup.team.name}
         </span>

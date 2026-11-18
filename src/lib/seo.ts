@@ -16,22 +16,6 @@ export function getSiteUrl(): string {
 }
 
 /**
- * Host of the site's own canonical URL, e.g. `anfielddaily.com`.
- *
- * Lets a link be classified as internal without naming a domain in the code.
- */
-export function getSiteHost(): string {
-  try {
-    return new URL(getSiteUrl()).host;
-  } catch {
-    return "";
-  }
-}
-
-export const SITE_HOST = getSiteHost();
-
-
-/**
  * Site-wide share image: the generated 1200×630 card at app/opengraph-image.tsx.
  * Pages without their own image must still name it — a page's `openGraph`
  * object replaces the root layout's, so leaving `images` out removed the

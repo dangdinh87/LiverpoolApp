@@ -10,12 +10,14 @@ interface TeamCrestProps {
   name: string;
   /** Pixel size hint for `next/image` (the box itself is sized by the parent). */
   sizes?: string;
+  priority?: boolean;
   className?: string;
 }
 
 const initials = (name: string) =>
   name
     .replace(/\b(FC|AFC|CF|SC)\b/gi, "")
+    .replace(/[^a-zA-ZÀ-ỹ\s]/g, " ")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -28,8 +30,9 @@ const initials = (name: string) =>
  * club's initials on a neutral disc instead. Fills its parent, which must be
  * `relative` and sized.
  */
-export function TeamCrest({ src, name, sizes = "48px", className }: TeamCrestProps) {
-  const [failed, setFailed] = useState(false);
+export function TeamCrest({ src, name, sizes = "48px", priority, className }: TeamCrestProps) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
 
   if (!src || failed) {
     return (
@@ -47,12 +50,16 @@ export function TeamCrest({ src, name, sizes = "48px", className }: TeamCrestPro
 
   return (
     <Image
+      ref={(img) => {
+        if (img && img.complete && img.naturalWidth === 0) setFailedSrc(src);
+      }}
       src={src}
       alt=""
       fill
       sizes={sizes}
+      priority={priority}
       className={cn("object-contain", className)}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
     />
   );
 }

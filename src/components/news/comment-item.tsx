@@ -1,6 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 import Image from "next/image";
 import { Loader2, Send, Trash2, User, X } from "lucide-react";
 import type { useTranslations } from "next-intl";
@@ -42,7 +42,7 @@ export function InlineReplyForm({
   t,
 }: InlineReplyFormProps) {
   return (
-    <form onSubmit={onSubmit} className="mt-1 pl-[42px] pr-3">
+    <form onSubmit={onSubmit} aria-busy={submitting} className="mt-1 pl-[42px] pr-3">
       <div className="flex items-center gap-1.5 mb-1">
         <span className="text-xs text-stadium-muted">
           {t("replyingTo", { name: targetUsername })}
@@ -82,9 +82,9 @@ export function InlineReplyForm({
           aria-label={t("send")}
         >
           {submitting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden />
           ) : (
-            <Send className="w-3.5 h-3.5" />
+            <Send className="w-3.5 h-3.5" aria-hidden />
           )}
         </button>
       </div>
@@ -112,22 +112,26 @@ export function CommentItem({
   t: CommentTranslations;
 }) {
   const isDeleting = deletingId === comment.id;
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   return (
     <div
+      aria-busy={isDeleting}
       className={`flex gap-2.5 py-3 px-1 sm:px-3 hover:bg-white/[0.03] transition-colors group ${
         isDeleting ? "opacity-50" : ""
       }`}
     >
       {/* Avatar — neutral User icon fallback (never the club crest) */}
       <div className={`relative rounded-full overflow-hidden shrink-0 bg-stadium-surface2 ring-1 ring-stadium-border/60 ${isReply ? "w-6 h-6" : "w-8 h-8"}`}>
-        {comment.avatarUrl ? (
+        {comment.avatarUrl && !avatarFailed ? (
           <Image
             src={comment.avatarUrl}
             alt=""
             fill
             className="object-cover"
             sizes={isReply ? "24px" : "32px"}
+            referrerPolicy="no-referrer"
+            onError={() => setAvatarFailed(true)}
             unoptimized
           />
         ) : (

@@ -119,7 +119,7 @@ export function FanPrediction({ fixture }: { fixture: Fixture }) {
   };
 
   return (
-    <section aria-labelledby="predict-title" className="surface mt-6 p-4 sm:p-6">
+    <section aria-labelledby="predict-title" aria-busy={pending} className="surface mt-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="predict-title" className="font-bebas text-3xl leading-none text-white">
           {t("title")}
@@ -173,7 +173,7 @@ export function FanPrediction({ fixture }: { fixture: Fixture }) {
               className="inline-flex min-h-11 cursor-pointer items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark active:scale-[0.97] disabled:opacity-60"
             >
               {saved && <Check className="size-4" aria-hidden />}
-              {saved ? t("saved") : state.mine ? t("update") : t("save")}
+              <span aria-live="polite">{saved ? t("saved") : state.mine ? t("update") : t("save")}</span>
             </button>
           ) : (
             <Link
@@ -183,7 +183,9 @@ export function FanPrediction({ fixture }: { fixture: Fixture }) {
               {t("signIn")}
             </Link>
           )}
-          <p className="text-[13px] text-stadium-muted">{error ? t(`error.${error}`) : t("rule")}</p>
+          <p role={error ? "alert" : undefined} className="text-[13px] text-stadium-muted">
+            {error ? t(`error.${error}`) : t("rule")}
+          </p>
         </div>
       )}
 

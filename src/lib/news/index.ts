@@ -1,10 +1,4 @@
 import "server-only";
-import { cache } from "react";
-import { fetchAllNews } from "./pipeline";
-import { RssAdapter } from "./adapters/rss-adapter";
-import { LfcAdapter } from "./adapters/lfc-adapter";
-import { RSS_FEEDS } from "./config";
-import type { NewsArticle } from "./types";
 
 // Re-export types for server consumers
 export type { NewsArticle, ArticleContent, NewsSource, NewsLanguage, ArticleCategory } from "./types";
@@ -28,20 +22,3 @@ export {
 // Re-export engagement helpers
 export { getArticleEngagement, ARTICLE_ENGAGEMENT_TAG } from "./engagement";
 export type { ArticleEngagement } from "./engagement";
-
-// Build adapter list
-const adapters = [
-  new LfcAdapter(),
-  ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
-];
-
-/** Fetch news directly from adapters (used by sync API). */
-export const getNews = cache(async (limit = 50): Promise<NewsArticle[]> => {
-  try {
-    const { articles } = await fetchAllNews(adapters, limit);
-    return articles;
-  } catch (err) {
-    console.error("[news] Fatal error:", err);
-    return [];
-  }
-});

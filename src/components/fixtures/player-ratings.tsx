@@ -86,7 +86,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
     });
 
   return (
-    <section aria-labelledby="ratings-title" className="surface mt-6 p-4 sm:p-6">
+    <section aria-labelledby="ratings-title" aria-busy={pending} className="surface mt-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="ratings-title" className="font-bebas text-3xl leading-none text-white">
           {t("title")}
@@ -123,7 +123,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
                     thumbLabel={t("rate", { player: p.name })}
                     className={cn("h-11 flex-1", value === undefined && "opacity-50")}
                   />
-                  <output className="w-6 text-center font-bebas text-2xl leading-none tabular-nums text-white">{value ?? "–"}</output>
+                  <output aria-live="polite" className="w-6 text-center font-bebas text-2xl leading-none tabular-nums text-white">{value ?? "–"}</output>
                 </div>
               )}
               <span className="hidden w-14 shrink-0 text-right sm:block">
@@ -150,7 +150,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
               className="inline-flex min-h-11 cursor-pointer items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saved && <Check className="size-4" aria-hidden />}
-              {saved ? t("saved") : t("save")}
+              <span aria-live="polite">{saved ? t("saved") : t("save")}</span>
             </button>
           ) : (
             <Link
@@ -160,7 +160,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
               {t("signIn")}
             </Link>
           )}
-          {error && <p className="text-[13px] text-stadium-muted">{t(`error.${error}`)}</p>}
+          {error && <p role="alert" className="text-[13px] text-stadium-muted">{t(`error.${error}`)}</p>}
         </div>
       )}
     </section>

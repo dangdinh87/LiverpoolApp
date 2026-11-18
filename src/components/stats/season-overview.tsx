@@ -77,7 +77,7 @@ export function SeasonOverview({ stats, streak, form, labels }: Props) {
             </div>
           )}
           {streak.count > 0 && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-white/85">
+            <span className="spoiler-hide inline-flex items-center gap-1.5 text-xs font-semibold tracking-wide text-white/85">
               {streak.type === "W" ? <Flame size={13} aria-hidden /> : <Shield size={13} aria-hidden />}
               {streak.type === "W" ? labels.winStreak : labels.unbeaten}
             </span>

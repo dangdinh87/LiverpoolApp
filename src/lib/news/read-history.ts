@@ -25,32 +25,6 @@ export function markAsRead(articleUrl: string): void {
   }
 }
 
-export function isRead(articleUrl: string): boolean {
-  return getReadArticles().has(articleUrl);
-}
-
-// --- Like tracking ---
-const LIKES_KEY = "lfc-news-likes";
-
-export function getLikedArticles(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(LIKES_KEY);
-    return new Set(raw ? JSON.parse(raw) : []);
-  } catch { return new Set(); }
-}
-
-export function toggleLike(articleUrl: string): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    const liked = getLikedArticles();
-    const isNowLiked = !liked.has(articleUrl);
-    if (isNowLiked) liked.add(articleUrl); else liked.delete(articleUrl);
-    localStorage.setItem(LIKES_KEY, JSON.stringify([...liked].slice(-MAX_ENTRIES)));
-    return isNowLiked;
-  } catch { return false; }
-}
-
 // --- Save/bookmark tracking ---
 const SAVES_KEY = "lfc-news-saves";
 

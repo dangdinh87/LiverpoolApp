@@ -55,7 +55,15 @@ export function LiveDetailScore({ initial }: { initial: Fixture }) {
   const { goals, fixture: f } = fixture;
   return (
     <div ref={ref}>
-      <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-5xl text-white sm:text-6xl" />
+      <div className="spoiler-hide">
+        <LiveScore home={goals.home ?? 0} away={goals.away ?? 0} className="text-5xl text-white sm:text-6xl" />
+      </div>
+      <p
+        aria-hidden
+        className="spoiler-show font-bebas text-5xl leading-none tracking-wide text-white/40 sm:text-6xl"
+      >
+        ? - ?
+      </p>
       <LiveClock
         live={live}
         updatedAt={updatedAt}

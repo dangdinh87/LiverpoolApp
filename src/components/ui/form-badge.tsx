@@ -71,14 +71,31 @@ export function FormBadge({
   if (results.length === 0) return null;
   const spoken = results.map((r) => t(`resultShort.${r}`)).join(" ");
   return (
-    <span
-      role="img"
-      aria-label={t("formAria", { count: results.length, results: spoken })}
-      className={cn("inline-flex items-center gap-px sm:gap-0.5", className)}
-    >
-      {results.map((r, i) => (
-        <FormSquare key={i} result={r} size={size} />
-      ))}
-    </span>
+    <>
+      <span
+        role="img"
+        aria-label={t("formAria", { count: results.length, results: spoken })}
+        className={cn("spoiler-hide inline-flex items-center gap-px sm:gap-0.5", className)}
+      >
+        {results.map((r, i) => (
+          <FormSquare key={i} result={r} size={size} />
+        ))}
+      </span>
+      <span aria-hidden className="spoiler-show">
+        <span className={cn("inline-flex items-center gap-px sm:gap-0.5", className)}>
+          {results.map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                "inline-flex shrink-0 items-center justify-center bg-white/10 font-bebas leading-none text-white/45",
+                SIZE[size],
+              )}
+            >
+              ?
+            </span>
+          ))}
+        </span>
+      </span>
+    </>
   );
 }

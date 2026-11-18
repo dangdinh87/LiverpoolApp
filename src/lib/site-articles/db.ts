@@ -104,25 +104,6 @@ export const getSiteArticleBySlug = cache(
   },
 );
 
-/** Slugs and dates for the sitemap. */
-export const getSiteArticleSitemapData = cache(
-  async (): Promise<{ slug: string; published_at: string }[]> => {
-    try {
-      const { data } = await getServiceClient()
-        .from("site_articles")
-        .select("slug, published_at")
-        .eq("status", "published")
-        .order("published_at", { ascending: false })
-        .limit(500);
-      return (data ?? []).filter(
-        (r): r is { slug: string; published_at: string } => Boolean(r.slug && r.published_at),
-      );
-    } catch {
-      return [];
-    }
-  },
-);
-
 /** Whether a fixture already has an article of this kind. */
 export async function hasArticleForFixture(
   fixtureId: number,

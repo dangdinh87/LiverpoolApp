@@ -66,41 +66,44 @@ export default async function PredictionsPage({ params }: LocaleParams) {
             </Link>
           )}
 
-          <h2 className="mb-3 font-bebas text-3xl text-white">{t("tableTitle")}</h2>
-          {rows === null ? (
-            <EmptyState tone="error" icon={<Trophy className="size-9" aria-hidden />} title={t("unavailableTitle")} description={t("unavailableDesc")} />
-          ) : rows.length === 0 ? (
-            <EmptyState
-              icon={<Trophy className="size-9" aria-hidden />}
-              title={t("emptyTitle")}
-              description={t("emptyDesc")}
-              actionHref={next ? `/fixtures/${next.fixture.id}#predict-title` : undefined}
-              actionLabel={t("emptyAction")}
-            />
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--line)] text-left font-barlow text-xs uppercase tracking-wider text-stadium-muted">
-                  <th scope="col" className="w-12 py-2 font-semibold">#</th>
-                  <th scope="col" className="py-2 font-semibold">{t("fan")}</th>
-                  <th scope="col" className="w-16 py-2 text-right font-semibold">{t("exact")}</th>
-                  <th scope="col" className="w-16 py-2 text-right font-semibold">{t("played")}</th>
-                  <th scope="col" className="w-16 py-2 text-right font-semibold">{t("points")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.rank} className="border-b border-[var(--line)]">
-                    <td className={cn("py-3 font-bebas text-xl tabular-nums", r.rank === 1 ? "text-lfc-gold" : "text-white/50")}>{r.rank}</td>
-                    <td className="py-3 font-semibold text-white">{r.name}</td>
-                    <td className="py-3 text-right tabular-nums text-white/80">{r.exact}</td>
-                    <td className="py-3 text-right tabular-nums text-white/80">{r.played}</td>
-                    <td className="py-3 text-right font-bebas text-2xl tabular-nums text-white">{r.points}</td>
+          <section aria-labelledby="leaderboard-title">
+            <h2 id="leaderboard-title" className="mb-3 font-bebas text-3xl text-white">{t("tableTitle")}</h2>
+            {rows === null ? (
+              <EmptyState tone="error" icon={<Trophy className="size-9" aria-hidden />} title={t("unavailableTitle")} description={t("unavailableDesc")} />
+            ) : rows.length === 0 ? (
+              <EmptyState
+                icon={<Trophy className="size-9" aria-hidden />}
+                title={t("emptyTitle")}
+                description={t("emptyDesc")}
+                actionHref={next ? `/fixtures/${next.fixture.id}#predict-title` : undefined}
+                actionLabel={t("emptyAction")}
+              />
+            ) : (
+              <table className="w-full text-sm">
+                <caption className="sr-only">{t("tableTitle")}</caption>
+                <thead>
+                  <tr className="border-b border-[var(--line)] text-left font-barlow text-xs uppercase tracking-wider text-stadium-muted">
+                    <th scope="col" className="w-12 py-2 font-semibold">#</th>
+                    <th scope="col" className="py-2 font-semibold">{t("fan")}</th>
+                    <th scope="col" className="w-16 py-2 text-right font-semibold">{t("exact")}</th>
+                    <th scope="col" className="w-16 py-2 text-right font-semibold">{t("played")}</th>
+                    <th scope="col" className="w-16 py-2 text-right font-semibold">{t("points")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.rank} className="border-b border-[var(--line)]">
+                      <td className={cn("py-3 font-bebas text-xl tabular-nums", r.rank === 1 ? "text-lfc-gold" : "text-white/50")}>{r.rank}</td>
+                      <td className="py-3 font-semibold text-white">{r.name}</td>
+                      <td className="py-3 text-right tabular-nums text-white/80">{r.exact}</td>
+                      <td className="py-3 text-right tabular-nums text-white/80">{r.played}</td>
+                      <td className="py-3 text-right font-bebas text-2xl tabular-nums text-white">{r.points}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
         </div>
       </div>
     </div>

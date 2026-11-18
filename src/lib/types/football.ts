@@ -52,14 +52,6 @@ export interface PlayerStatistic {
   penalty: { won: number | null; commited: number | null; scored: number | null; missed: number | null; saved: number | null };
 }
 
-// Position display label map
-export const POSITION_LABELS: Record<Player["position"], string> = {
-  Goalkeeper: "GK",
-  Defender: "DEF",
-  Midfielder: "MID",
-  Attacker: "FWD",
-};
-
 // ─── Fixture / Match ──────────────────────────────────────────────────────────
 
 export type FixtureStatus =
