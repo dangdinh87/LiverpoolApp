@@ -45,7 +45,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: TrendingUp,
       label: labels.winStreak,
       value: String(records.longestWinStreak),
-      context: `${records.longestWinStreak} ${labels.matches ?? "matches"}`,
+      context: `${records.longestWinStreak} ${labels.matches}`,
       color: "text-lfc-gold",
       iconBg: "bg-lfc-gold/10",
     });
@@ -56,7 +56,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: Shield,
       label: labels.unbeatenStreak,
       value: String(records.longestUnbeatenStreak),
-      context: `${records.longestUnbeatenStreak} ${labels.matches ?? "matches"}`,
+      context: `${records.longestUnbeatenStreak} ${labels.matches}`,
       color: "text-green-400",
       iconBg: "bg-green-500/10",
     });
@@ -79,7 +79,7 @@ export function RecordsMilestones({ records, labels }: Props) {
       icon: RotateCcw,
       label: labels.comebacks,
       value: String(records.comebackWins),
-      context: `${records.comebackWins} ${labels.times ?? "times"}`,
+      context: `${records.comebackWins} ${labels.times}`,
       color: "text-lfc-gold",
       iconBg: "bg-lfc-gold/10",
     });
@@ -120,11 +120,11 @@ export function RecordsMilestones({ records, labels }: Props) {
         >
           {/* Icon with colored background */}
           <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-3", rec.iconBg)}>
-            <rec.icon className={cn("w-4 h-4", rec.color)} />
+            <rec.icon className={cn("w-4 h-4", rec.color)} aria-hidden />
           </div>
           <div className="font-barlow text-xs text-stadium-muted uppercase tracking-[0.15em] mb-1">{rec.label}</div>
-          <div className={cn("font-bebas text-3xl sm:text-4xl leading-none", rec.color)}>{rec.value}</div>
-          <div className="font-inter text-xs text-stadium-muted mt-1.5">{rec.context}</div>
+          <div className={cn("font-bebas text-3xl sm:text-4xl leading-none tabular-nums", rec.color)}>{rec.value}</div>
+          <div className="font-inter text-xs text-stadium-muted mt-1.5 tabular-nums">{rec.context}</div>
         </div>
       ))}
     </div>

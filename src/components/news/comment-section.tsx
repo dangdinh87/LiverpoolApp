@@ -37,8 +37,15 @@ interface CommentSectionProps {
 
 export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentSectionProps) {
   const t = useTranslations("News.comments");
+  const tAuthErrors = useTranslations("Auth.errors");
   const locale = useLocale();
   const toast = useToast();
+
+  function commentErrorMessage(status: number): string {
+    if (status === 429) return tAuthErrors("rateLimited");
+    if (status === 401) return t("login");
+    return t("submitError");
+  }
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(initialCommentCount > 0);
   const [submitting, setSubmitting] = useState(false);
@@ -132,8 +139,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
         setComments((prev) => [...prev, data.comment]);
         setNewComment("");
       } else {
-        const err = await res.json().catch(() => null);
-        toast.show({ type: "error", message: err?.error || t("submitError") });
+        toast.show({ type: "error", message: commentErrorMessage(res.status) });
       }
     } catch {
       toast.show({ type: "error", message: t("submitError") });
@@ -171,8 +177,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
         setComments((prev) => [...prev, data.comment]);
         closeReply();
       } else {
-        const err = await res.json().catch(() => null);
-        toast.show({ type: "error", message: err?.error || t("submitError") });
+        toast.show({ type: "error", message: commentErrorMessage(res.status) });
       }
     } catch {
       toast.show({ type: "error", message: t("submitError") });
@@ -301,7 +306,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
               maxLength={1000}
               rows={2}
               disabled={submitting}
-              className="flex-1 min-w-0 border border-[var(--line-strong)] bg-[var(--surface-1)] px-4 py-3 text-base text-white placeholder:text-stadium-muted resize-none focus:outline-none focus:border-white/50 transition-colors disabled:opacity-50"
+              className="flex-1 min-w-0 border border-[var(--line-strong)] bg-[var(--surface-1)] px-4 py-3 text-base text-white placeholder:text-stadium-muted resize-none focus-visible:outline-none focus-visible:border-lfc-red transition-colors disabled:opacity-50"
             />
             <button
               type="submit"
@@ -310,13 +315,13 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
               aria-label={t("send")}
             >
               {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin" aria-hidden />
               ) : (
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4" aria-hidden />
               )}
             </button>
           </div>
-          <p className="mt-1.5 text-xs text-stadium-muted">
+          <p className="mt-1.5 text-xs text-stadium-muted tabular-nums">
             {t("charCount", { n: newComment.length })}
           </p>
         </form>
@@ -329,7 +334,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
             href="/auth/login"
             className="inline-flex min-h-11 items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:bg-lfc-red-dark"
           >
-            <LogIn className="w-3.5 h-3.5" />
+            <LogIn className="w-3.5 h-3.5" aria-hidden />
             {t("loginBtn")}
           </Link>
         </div>

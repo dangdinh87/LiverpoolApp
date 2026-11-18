@@ -49,21 +49,21 @@ export function SeasonComparison({ seasons, labels, letters }: SeasonComparisonP
             key={s.label}
             className="bg-stadium-surface border border-stadium-border p-4 text-center"
           >
-            <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider mb-2">
+            <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider mb-2 tabular-nums">
               {s.label}
             </p>
-            <p className="font-bebas text-3xl text-white leading-none mb-1">
+            <p className="font-bebas text-3xl text-white leading-none mb-1 tabular-nums">
               {s.overview.played}
             </p>
             <p className="font-barlow text-xs text-stadium-muted uppercase">
               {labels.played}
             </p>
-            <div className="flex justify-center gap-3 mt-2">
+            <div className="flex justify-center gap-3 mt-2 tabular-nums">
               <span className="font-bebas text-sm text-green-400">{s.overview.wins}{letters.W}</span>
               <span className="font-bebas text-sm text-amber-400">{s.overview.draws}{letters.D}</span>
               <span className="font-bebas text-sm text-red-400">{s.overview.losses}{letters.L}</span>
             </div>
-            <p className="font-bebas text-lg text-lfc-red-text mt-1">
+            <p className="font-bebas text-lg text-lfc-red-text mt-1 tabular-nums">
               {s.overview.winRate.toFixed(0)}%
             </p>
             <p className="font-barlow text-xs text-stadium-muted uppercase">

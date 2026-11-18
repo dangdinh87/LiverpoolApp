@@ -243,7 +243,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
                   onPointerDown={(e) => {
                     if (e.pointerType === "mouse" && clubMenuOpen) e.preventDefault();
                   }}
-                  className={cn(DESKTOP_LINK, "gap-1 cursor-pointer outline-none", clubActive ? "text-white" : "text-white/80 hover:text-white")}
+                  className={cn(DESKTOP_LINK, "gap-1 cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text", clubActive ? "text-white" : "text-white/80 hover:text-white")}
                 >
                   {t("history")}
                   <ChevronDown size={12} aria-hidden className={cn("transition-transform duration-200", clubMenuOpen && "rotate-180")} />
@@ -307,7 +307,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="group flex min-h-11 max-w-full items-center gap-2 px-2 hover:bg-white/10 transition-colors cursor-pointer outline-none"
+                    className="group flex min-h-11 max-w-full items-center gap-2 px-2 hover:bg-white/10 transition-colors cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text"
                     aria-label={`${t("profile")}: ${displayName}`}
                   >
                     <span className="relative size-7 shrink-0 overflow-hidden rounded-full ring-1 ring-white/20 group-hover:ring-lfc-red/60 transition-shadow">

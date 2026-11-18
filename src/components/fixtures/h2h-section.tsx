@@ -1,6 +1,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { H2HRecord } from "@/lib/football";
+import { competitionLabel } from "@/lib/competition-labels";
 import { formatDayMonthYear } from "@/lib/format-match-date";
 import { RESULT_BADGE } from "@/lib/result-style";
 import { displayTeamName } from "./team-name";
@@ -28,11 +29,11 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
       {/* Header */}
       <div className="px-5 sm:px-6 py-4 border-b border-stadium-border/50">
         <div className="flex items-center gap-3">
-          <span className="font-barlow text-xs text-stadium-muted uppercase tracking-wider">
+          <span className="font-barlow text-xs text-stadium-muted uppercase tracking-wider tabular-nums">
             {t("subtitle", { count: h2h.totalMatches })}
           </span>
           <span className="w-1 h-1 rounded-full bg-stadium-border" />
-          <span className="font-inter text-xs text-stadium-muted">
+          <span className="font-inter text-xs text-stadium-muted tabular-nums">
             {h2h.fromYear === h2h.toYear
               ? h2h.fromYear.toString()
               : t("dataRange", { from: h2h.fromYear, to: h2h.toYear })}
@@ -72,7 +73,7 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
         {/* Clean sheets — inline highlight */}
         {h2h.cleanSheets > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/20">
-            <span className="font-bebas text-xl text-green-400 leading-none">{h2h.cleanSheets}</span>
+            <span className="font-bebas text-xl text-green-400 leading-none tabular-nums">{h2h.cleanSheets}</span>
             <span className="font-barlow text-xs text-green-400/80 uppercase tracking-wider">{t("cleanSheets")}</span>
           </div>
         )}
@@ -102,10 +103,10 @@ export function H2HSection({ h2h, opponentName }: H2HSectionProps) {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="font-inter text-sm text-white font-medium truncate">
-                        {displayTeamName(m.homeTeam)} <span className="text-lfc-gold font-bebas text-base mx-1">{m.score}</span> {displayTeamName(m.awayTeam)}
+                        {displayTeamName(m.homeTeam)} <span className="text-lfc-gold font-bebas text-base mx-1 tabular-nums">{m.score}</span> {displayTeamName(m.awayTeam)}
                       </p>
-                      <p className="font-inter text-xs text-stadium-muted mt-0.5">
-                        {dateStr} · {m.competition}
+                      <p className="font-inter text-xs text-stadium-muted mt-0.5 tabular-nums">
+                        {dateStr} · {competitionLabel(m.competition, locale)}
                       </p>
                     </div>
                   </div>
@@ -132,7 +133,7 @@ function ResultTally({
 }) {
   return (
     <div className={cn("flex flex-col gap-1", align === "center" && "items-center", align === "right" && "items-end")}>
-      <span className={cn("font-bebas text-3xl leading-none sm:text-4xl", tone)}>{value}</span>
+      <span className={cn("font-bebas text-3xl leading-none tabular-nums sm:text-4xl", tone)}>{value}</span>
       <span className="font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">{label}</span>
     </div>
   );
@@ -144,7 +145,7 @@ function StatCard({ label, value, accent }: { label: string; value: string | num
       <p className="font-barlow text-xs text-stadium-muted uppercase tracking-wider mb-1.5">
         {label}
       </p>
-      <p className={cn("font-bebas text-3xl leading-none", accent)}>{value}</p>
+      <p className={cn("font-bebas text-3xl leading-none tabular-nums", accent)}>{value}</p>
     </div>
   );
 }

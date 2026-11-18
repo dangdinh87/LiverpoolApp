@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Heart } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toggleFavouritePlayer } from "@/app/actions/profile";

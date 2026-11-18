@@ -85,7 +85,7 @@ export function AvatarUpload({ currentUrl, username }: AvatarUploadProps) {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={isPending}
-        className="group relative size-24 cursor-pointer overflow-hidden rounded-full border-2 border-[var(--line-strong)] transition-colors hover:border-lfc-red"
+        className="group relative size-24 cursor-pointer overflow-hidden rounded-full border-2 border-[var(--line-strong)] transition-colors hover:border-lfc-red disabled:cursor-not-allowed disabled:opacity-60"
         aria-label={t("upload")}
       >
         {preview ? (

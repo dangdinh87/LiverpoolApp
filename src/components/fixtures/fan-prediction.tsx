@@ -215,7 +215,7 @@ export function FanPrediction({ fixture }: { fixture: Fixture }) {
       )}
 
       <p className="mt-4 text-[13px]">
-        <Link href="/predictions" className="text-brand underline underline-offset-4 hover:text-white">
+        <Link href="/predictions" className="tap-target text-brand underline underline-offset-4 hover:text-white">
           {t("leaderboardLink")}
         </Link>
       </p>

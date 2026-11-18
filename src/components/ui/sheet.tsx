@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Dialog as SheetPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
@@ -50,18 +51,23 @@ function SheetContent({
   side = "right",
   showCloseButton = true,
   overlayClassName,
-  title = "Menu",
-  closeLabel = "Close",
+  title,
+  closeLabel,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
   overlayClassName?: string
-  /** Screen-reader title (Radix requires one). Pass a translated string. */
+  /** Screen-reader title (Radix requires one). Defaults to localized navigation label. */
   title?: string
-  /** Accessible name of the built-in close button. Pass a translated string. */
+  /** Accessible name of the built-in close button. Defaults to localized dismiss label. */
   closeLabel?: string
 }) {
+  const tCommon = useTranslations("Common")
+  const tNav = useTranslations("Common.nav")
+  const resolvedTitle = title ?? tNav("primary")
+  const resolvedCloseLabel = closeLabel ?? tCommon("dismiss")
+
   return (
     <SheetPortal>
       <SheetOverlay className={overlayClassName} />
@@ -82,12 +88,12 @@ function SheetContent({
         {...props}
       >
         {/* Accessible title for screen readers (required by Radix Dialog) */}
-        <SheetPrimitive.Title className="sr-only">{title}</SheetPrimitive.Title>
+        <SheetPrimitive.Title className="sr-only">{resolvedTitle}</SheetPrimitive.Title>
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close className="tap-target absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
             <XIcon className="size-4" />
-            <span className="sr-only">{closeLabel}</span>
+            <span className="sr-only">{resolvedCloseLabel}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Content>

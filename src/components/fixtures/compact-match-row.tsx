@@ -38,13 +38,11 @@ export function CompactMatchRow({ fixture }: { fixture: Fixture }) {
   const date = new Date(f.date);
   const dateStr = formatMatchDayMonth(date, locale, false, zone);
   const timeStr = formatMatchTime(date, zone);
-  const home = displayTeamName(teams.home.name);
-  const away = displayTeamName(teams.away.name);
+  const href = f.id > 0 ? `/fixtures/${f.id}` : "/fixtures";
 
   return (
     <Link
-      href={`/fixtures/${f.id}`}
-      aria-label={`${home} – ${away}, ${dateStr} ${timeStr}`}
+      href={href}
       className="surface-interactive block min-h-14 px-3 py-2 sm:grid sm:grid-cols-[8.5rem_minmax(0,1fr)_8.5rem] sm:items-center sm:gap-4 sm:px-4 sm:py-0 lg:grid-cols-[12rem_minmax(0,1fr)_12rem]"
     >
       <p className="flex min-w-0 items-center gap-1.5 font-barlow text-[11px] font-semibold uppercase tracking-[0.1em] text-stadium-muted sm:flex-col sm:items-start sm:gap-0.5 sm:text-xs">

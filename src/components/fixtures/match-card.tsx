@@ -178,7 +178,7 @@ export function MatchCard({ fixture: initial, isNext = false }: MatchCardProps) 
                     {goals.away ?? 0}
                   </p>
                   {pens && (
-                    <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
+                    <p className="mt-1 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted tabular-nums">
                       {t("penShort", { score: pens })}
                     </p>
                   )}

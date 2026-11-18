@@ -49,7 +49,7 @@ export async function StandingsSummary({ context, nextFixtureId }: { context: St
             b: (chunks) => <b className="font-semibold text-white">{chunks}</b>,
           })}
           {nextFixtureId && (
-            <Link href={`/fixtures/${nextFixtureId}`} className="ml-2 text-brand underline underline-offset-4 hover:text-white">
+            <Link href={`/fixtures/${nextFixtureId}`} className="tap-target ml-2 text-brand underline underline-offset-4 hover:text-white">
               {t("matchLink")}
             </Link>
           )}

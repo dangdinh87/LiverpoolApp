@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ArrowDownToLine, ArrowUpFromLine, Goal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ const minuteLabel = (e: { time: { elapsed: number | null; extra?: number | null 
 
 /** Scorer list under a team in the score header. */
 export function ScorerList({ goals, align }: { goals: FixtureEvent[]; align: "home" | "away" }) {
+  const t = useTranslations("Match.liveCard");
   if (goals.length === 0) return null;
   return (
     <ul className={cn("mt-2 space-y-0.5 text-xs text-stadium-muted", align === "home" ? "sm:text-right" : "sm:text-left")}>
@@ -23,8 +25,8 @@ export function ScorerList({ goals, align }: { goals: FixtureEvent[]; align: "ho
         <li key={i} className="break-words">
           <span className="text-white/90">{g.player.name}</span>
           {minuteLabel(g) && <span className="ml-1 text-lfc-gold tabular-nums">{minuteLabel(g)}</span>}
-          {g.detail.includes("Penalty") && <span className="ml-1">(P)</span>}
-          {g.detail.includes("Own") && <span className="ml-1 text-red-400">(OG)</span>}
+          {g.detail.includes("Penalty") && <span className="ml-1">({t("penShort")})</span>}
+          {g.detail.includes("Own") && <span className="ml-1 text-red-400">({t("ogShort")})</span>}
         </li>
       ))}
     </ul>
@@ -63,15 +65,18 @@ export function TimelineRow({ event, homeTeamId }: { event: FixtureEvent; homeTe
 }
 
 function EventIcon({ type, detail }: { type: string; detail: string }) {
+  const t = useTranslations("Match.liveCard");
+  const tStats = useTranslations("PlayerDetail.stats");
+
   if (type === "Goal") {
     const isOwn = detail.includes("Own");
     const isPen = detail.includes("Penalty");
     return (
       <span className={cn("inline-flex items-center gap-1", isOwn ? "text-red-400" : "text-white")}>
         <Goal size={14} strokeWidth={2.25} aria-hidden />
-        <span className="sr-only">{isOwn ? "Own goal" : isPen ? "Penalty goal" : "Goal"}</span>
+        <span className="sr-only">{isOwn ? t("event.own-goal") : isPen ? t("event.penalty") : t("event.goal")}</span>
         {(isPen || isOwn) && (
-          <span aria-hidden className="font-barlow text-xs font-bold uppercase tracking-wider">{isPen ? "PEN" : "OG"}</span>
+          <span aria-hidden className="font-barlow text-xs font-bold uppercase tracking-wider">{isPen ? t("penShort") : t("ogShort")}</span>
         )}
       </span>
     );
@@ -81,7 +86,7 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
     return (
       <>
         <span aria-hidden className={cn("inline-block h-4 w-3 rounded-[1px]", isRed ? "bg-red-500" : "bg-yellow-400")} />
-        <span className="sr-only">{isRed ? "Red card" : "Yellow card"}</span>
+        <span className="sr-only">{isRed ? t("event.red") : t("event.yellow")}</span>
       </>
     );
   }
@@ -92,7 +97,7 @@ function EventIcon({ type, detail }: { type: string; detail: string }) {
           <ArrowUpFromLine size={12} className="text-green-400" />
           <ArrowDownToLine size={12} className="text-red-400" />
         </span>
-        <span className="sr-only">Substitution</span>
+        <span className="sr-only">{tStats("subIn")}</span>
       </>
     );
   }
@@ -152,7 +157,12 @@ export function StatsComparison({
 
 // ─── Lineups ────────────────────────────────────────────────────────────────
 
-const POS_LABEL: Record<string, string> = { G: "GK", D: "DEF", M: "MID", F: "FWD" };
+const POS_CODE_KEY: Record<string, "GK" | "DEF" | "MID" | "FWD"> = {
+  G: "GK",
+  D: "DEF",
+  M: "MID",
+  F: "FWD",
+};
 
 export function LineupSection({
   lineup,
@@ -163,6 +173,8 @@ export function LineupSection({
   subsLabel: string;
   coachLabel: string;
 }) {
+  const tPos = useTranslations("Squad.positions");
+
   return (
     <div>
       <div className="mb-3 flex items-center gap-2.5 border-b border-[var(--line)] pb-2">
@@ -170,21 +182,24 @@ export function LineupSection({
           <Image src={teamLogo(lineup.team.id, lineup.team.logo)} alt="" fill sizes="24px" className="object-contain" />
         </div>
         <span className="text-sm font-bold text-white">{lineup.team.name}</span>
-        <span className="ml-auto font-bebas text-lg tracking-wider text-lfc-gold">{lineup.formation}</span>
+        <span className="ml-auto font-bebas text-lg tracking-wider text-lfc-gold tabular-nums">{lineup.formation}</span>
       </div>
 
       <ul className="mb-4 space-y-0.5">
-        {lineup.startXI.map(({ player: p }) => (
-          <li key={p.id} className="flex min-h-10 items-center gap-3">
-            <span className="flex size-8 shrink-0 items-center justify-center border border-[var(--line)] bg-[var(--surface-3)] font-bebas text-base text-white">
-              {p.number}
-            </span>
-            <span className="min-w-0 truncate text-sm font-medium text-white">{p.name}</span>
-            <span className="ml-auto shrink-0 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
-              {POS_LABEL[p.pos] ?? p.pos}
-            </span>
-          </li>
-        ))}
+        {lineup.startXI.map(({ player: p }) => {
+          const posKey = POS_CODE_KEY[p.pos];
+          return (
+            <li key={p.id} className="flex min-h-10 items-center gap-3">
+              <span className="flex size-8 shrink-0 items-center justify-center border border-[var(--line)] bg-[var(--surface-3)] font-bebas text-base text-white tabular-nums">
+                {p.number}
+              </span>
+              <span className="min-w-0 truncate text-sm font-medium text-white">{p.name}</span>
+              <span className="ml-auto shrink-0 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
+                {posKey ? tPos(posKey) : p.pos}
+              </span>
+            </li>
+          );
+        })}
       </ul>
 
       {lineup.substitutes.length > 0 && (
@@ -193,7 +208,7 @@ export function LineupSection({
           <ul className="space-y-0.5">
             {lineup.substitutes.map(({ player: p }) => (
               <li key={p.id} className="flex min-h-9 items-center gap-3">
-                <span className="flex size-7 shrink-0 items-center justify-center border border-[var(--line)] font-bebas text-sm text-stadium-muted">
+                <span className="flex size-7 shrink-0 items-center justify-center border border-[var(--line)] font-bebas text-sm text-stadium-muted tabular-nums">
                   {p.number}
                 </span>
                 <span className="truncate text-sm text-stadium-muted">{p.name}</span>

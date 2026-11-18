@@ -69,7 +69,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
   if (articles.length === 0) {
     return (
       <div className="text-center py-10">
-        <Bookmark className="w-10 h-10 text-stadium-muted mx-auto mb-3" />
+        <Bookmark aria-hidden className="w-10 h-10 text-stadium-muted mx-auto mb-3" />
         <p className="font-inter text-stadium-muted text-sm">
           {t("savedArticlesEmpty")}
         </p>
@@ -132,7 +132,7 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                   />
                 ) : (
                   <div className="absolute inset-0 bg-linear-to-br from-lfc-red/15 to-stadium-surface flex items-center justify-center">
-                    <Newspaper className="w-5 h-5 text-stadium-muted" />
+                    <Newspaper aria-hidden className="w-5 h-5 text-stadium-muted" />
                   </div>
                 )}
               </Link>
@@ -158,17 +158,18 @@ export function SavedArticlesList({ articles: initialArticles }: SavedArticlesLi
                 {/* Actions row */}
                 <div className="flex items-center gap-3 mt-0.5">
                   {article.article_published_at && (
-                    <span className="font-inter text-xs text-stadium-muted">
+                    <span className="font-inter text-xs tabular-nums text-stadium-muted">
                       {formatDayMonth(new Date(article.article_published_at), dateLoc === "vi-VN" ? "vi" : "en")}
                     </span>
                   )}
                   <button
+                    type="button"
                     onClick={() => setConfirmTarget(article)}
                     disabled={isPending}
-                    className="inline-flex min-h-11 items-center gap-1 text-amber-400 font-inter text-xs hover:text-white transition-colors cursor-pointer"
+                    className="inline-flex min-h-11 cursor-pointer items-center gap-1 font-inter text-xs text-amber-400 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                     aria-label={t("unsave")}
                   >
-                    <Bookmark size={12} className="fill-amber-400" />
+                    <Bookmark size={12} aria-hidden className="fill-amber-400" />
                     {t("unsave")}
                   </button>
                 </div>

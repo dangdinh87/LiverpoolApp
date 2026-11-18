@@ -257,7 +257,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                   {sheetFilters > 0 && (
                     <span
                       aria-hidden
-                      className="inline-flex size-[18px] items-center justify-center bg-lfc-red text-[11px] font-bold text-white"
+                      className="inline-flex size-[18px] items-center justify-center bg-lfc-red text-[11px] font-bold text-white tabular-nums"
                     >
                       {sheetFilters}
                     </span>
@@ -315,7 +315,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                           setSource(e.target.value as "all" | NewsSource);
                           resetPaging();
                         }}
-                        className="h-12 w-full border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 text-base text-white focus:border-white/50 focus:outline-none"
+                        className="h-12 w-full border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 text-base text-white focus-visible:border-lfc-red focus-visible:outline-none"
                       >
                         <option value="all">{t("newsSourceAll")}</option>
                         {availableSources.map((s) => (
@@ -339,7 +339,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                   <SheetClose asChild>
                     <button
                       type="button"
-                      className="inline-flex min-h-12 flex-1 cursor-pointer items-center justify-center bg-lfc-red px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
+                      className="inline-flex min-h-12 flex-1 cursor-pointer items-center justify-center bg-lfc-red px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white tabular-nums transition-colors hover:bg-lfc-red-dark"
                     >
                       {t("showResults", { count: articles.length })}
                     </button>
@@ -379,7 +379,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
                     resetPaging();
                   }}
                   placeholder={t("searchPlaceholder")}
-                  className="h-12 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-3 pr-12 text-base text-white placeholder:text-stadium-muted focus:border-white/50 focus:outline-none"
+                  className="h-12 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-3 pr-12 text-base text-white placeholder:text-stadium-muted focus-visible:border-lfc-red focus-visible:outline-none"
                 />
                 {search && (
                   <button
@@ -410,7 +410,7 @@ export function NewsFeed({ localArticles, globalArticles, locale, nowMs }: NewsF
         >
           {filtersActive ? (
             <>
-              <span className="min-w-0 truncate">
+              <span className="min-w-0 truncate tabular-nums">
                 {t("resultsCount", { count: articles.length })}
                 {activeNames.length > 0 ? ` · ${activeNames.join(" · ")}` : ""}
               </span>

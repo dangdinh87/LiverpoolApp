@@ -288,7 +288,7 @@ export function LiveTicker({ live, updatedAt, ended, className }: { live: LiveMa
         <span />
       )}
       {ago !== null && !ended && (
-        <p className="shrink-0 text-xs text-stadium-muted">{ago < 5 ? t("updatedNow") : t("updatedAgo", { s: ago })}</p>
+        <p className="shrink-0 text-xs text-stadium-muted tabular-nums">{ago < 5 ? t("updatedNow") : t("updatedAgo", { s: ago })}</p>
       )}
     </div>
   );

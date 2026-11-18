@@ -15,6 +15,7 @@ import { Footer } from "@/components/layout/footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
+import { pickClientMessages } from "@/components/providers/client-messages";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
 import { CloudflareWebAnalytics } from "@/components/analytics/cloudflare-web-analytics";
@@ -22,6 +23,7 @@ import { AdsenseGate } from "@/components/analytics/adsense-gate";
 import { StructuredData } from "@/components/analytics/structured-data";
 import { DEFAULT_OG_IMAGE, keywordsFor } from "@/lib/seo";
 import { BRAND, brandDescription, brandLocale, brandTitle } from "@/lib/brand";
+import { getEnv } from "@/lib/env";
 import "../globals.css";
 
 // League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
@@ -55,8 +57,6 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 // Both locales are prerendered; pages then follow their own `revalidate`.
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -69,23 +69,28 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const locale = brandLocale(rawLocale);
   const title = brandTitle(locale);
   const description = brandDescription(locale);
+  const siteUrl = (
+    getEnv("NEXT_PUBLIC_SITE_URL") ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "http://localhost:3000"
+  ).replace(/\/+$/, "");
 
   return {
-    metadataBase: new URL(SITE_URL),
+    metadataBase: new URL(siteUrl),
     title: {
       template: `%s | ${BRAND.name}`,
       default: title,
     },
     description,
     applicationName: BRAND.name,
-    authors: [{ name: BRAND.name, url: SITE_URL }],
+    authors: [{ name: BRAND.name, url: siteUrl }],
     creator: BRAND.name,
     publisher: BRAND.name,
     category: "sports",
     keywords: [BRAND.name, ...keywordsFor(locale)],
     openGraph: {
       type: "website",
-      url: SITE_URL,
+      url: siteUrl,
       locale: OG_LOCALE[locale],
       alternateLocale: locale === "vi" ? OG_LOCALE.en : OG_LOCALE.vi,
       siteName: BRAND.name,
@@ -137,7 +142,7 @@ export default async function RootLayout({
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const clientMessages = pickClientMessages(await getMessages());
 
   return (
     <html
@@ -158,7 +163,7 @@ export default async function RootLayout({
           enableSystem={false}
         >
           <QueryProvider>
-            <NextIntlClientProvider messages={messages}>
+            <NextIntlClientProvider messages={clientMessages}>
               <SkipLink />
               <Suspense><NavProgress /></Suspense>
               <Suspense><NavbarAuth /></Suspense>

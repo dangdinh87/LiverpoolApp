@@ -145,16 +145,17 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug, locale } = await params;
   const url = decodeArticleSlug(slug);
+  const t = await getTranslations({ locale, namespace: "News.article" });
   // Unresolvable article pages still answer 200 (the status is sent before the
   // page body streams), so keep them out of the index explicitly.
-  if (!url || !isKnownNewsSourceUrl(url)) return { title: "Article Not Found", robots: { index: false } };
+  if (!url || !isKnownNewsSourceUrl(url)) return { title: t("contentUnavailable"), robots: { index: false } };
 
   const content = await getArticleContentFromDB(url) ?? await scrapeIfStored(url);
   if (!content) {
     // Source blocked us, or the row expired: the page shows a headline with a "read original" link.
     const listing = await getArticleByUrl(url);
     const title = listing ? cleanTitle(listing.title) : (await getExpiredArticleMeta(url))?.title;
-    return { title: title || "Article Not Found", robots: { index: false } };
+    return { title: title || t("contentUnavailable"), robots: { index: false } };
   }
 
   const listing = await getArticleByUrl(url);
@@ -337,7 +338,7 @@ export default async function ArticlePage({
               {t.rich("sourcedFrom", {
                 sourceName,
                 source: (chunks) => (
-                  <a href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand underline underline-offset-2 hover:text-white">
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="tap-target font-semibold text-brand underline underline-offset-2 hover:text-white">
                     {chunks}
                   </a>
                 ),
