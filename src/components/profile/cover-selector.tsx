@@ -118,22 +118,23 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
   }
 
   return (
-    <div>
+    <div aria-busy={isPending}>
       {/* Header + reset */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bebas text-lg text-white tracking-wider flex items-center gap-2">
-          <ImageIcon size={16} className="text-lfc-red" />
+          <ImageIcon size={16} aria-hidden className="text-lfc-red" />
           {t("coverTitle")}
         </h3>
         {selected && (
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => handleSelect(null)}
             disabled={isPending}
             className="text-stadium-muted hover:text-white text-xs font-barlow uppercase tracking-wider"
           >
-            <RotateCcw size={12} className="mr-1.5" />
+            <RotateCcw size={12} aria-hidden className="mr-1.5" />
             {t("coverReset")}
           </Button>
         )}
@@ -149,6 +150,8 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
           return (
             <motion.button
               key={preset.id}
+              type="button"
+              aria-pressed={isActive}
               whileTap={{ scale: 0.97 }}
               transition={{ duration: 0.14, ease: "easeOut" }}
               onClick={() => handleSelect(optimizedPresetUrl)}
@@ -181,7 +184,7 @@ export function CoverSelector({ currentCoverUrl }: CoverSelectorProps) {
               {isActive && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                   <div className="bg-lfc-red p-1">
-                    <Check size={16} className="text-white" />
+                    <Check size={16} aria-hidden className="text-white" />
                   </div>
                 </div>
               )}

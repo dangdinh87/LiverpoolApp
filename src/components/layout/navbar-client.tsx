@@ -72,6 +72,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
   const [isPending, startTransition] = useTransition();
   const [user, setUser] = useState(initialUser);
   const [profile, setProfile] = useState(initialProfile);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const pathname = usePathname();
 
   const setAuthUser = useAuthStore((s) => s.setUser);
@@ -172,8 +173,17 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
   ];
 
   const avatar = (size: number) =>
-    profile?.avatar_url ? (
-      <Image src={profile.avatar_url} alt="" fill className="object-cover" sizes={`${size}px`} unoptimized />
+    profile?.avatar_url && failedAvatarUrl !== profile.avatar_url ? (
+      <Image
+        src={profile.avatar_url}
+        alt=""
+        fill
+        className="object-cover"
+        sizes={`${size}px`}
+        referrerPolicy="no-referrer"
+        onError={() => setFailedAvatarUrl(profile.avatar_url)}
+        unoptimized
+      />
     ) : (
       <div className="flex h-full w-full items-center justify-center bg-stadium-surface2">
         <User size={Math.round(size / 2)} className="text-stadium-muted" aria-hidden />

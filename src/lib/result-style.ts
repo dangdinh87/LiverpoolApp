@@ -9,10 +9,3 @@ export const RESULT_BADGE = {
   D: "bg-amber-400 text-black",
   L: "bg-red-600 text-white",
 } as const;
-
-/** Dot/legend swatches (no text on top), same hues as {@link RESULT_BADGE}. */
-export const RESULT_SWATCH = {
-  W: "bg-emerald-600",
-  D: "bg-amber-400",
-  L: "bg-red-600",
-} as const;

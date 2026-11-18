@@ -4,6 +4,7 @@ import { getFixtures } from "@/lib/football";
 import { CloudOff } from "lucide-react";
 import { FixtureTimeline } from "@/components/fixtures/fixture-timeline";
 import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
+import { SpoilerToggle } from "@/components/fixtures/spoiler-controls";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
 import { makePageMeta } from "@/lib/seo";
@@ -48,6 +49,9 @@ export default async function FixturesPage({ params }: LocaleParams) {
         ) : (
           <>
             <MatchCentreNav active="fixtures" />
+            <div className="mt-3 flex justify-end">
+              <SpoilerToggle />
+            </div>
             <EmptyState
               className="mt-6"
               tone="error"

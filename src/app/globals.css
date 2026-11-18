@@ -423,6 +423,11 @@ html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
   .reveal-delay-2 { animation-delay: 120ms; }
   .reveal-delay-3 { animation-delay: 180ms; }
 
+  /* Brief pop when a live score updates after mount (replaces framer-motion on public pages). */
+  .score-pop {
+    animation: score-pop 220ms var(--ease-out) both;
+  }
+
   /* Horizontal scroller that hides its scrollbar but stays scrollable. */
   .scroll-x {
     overflow-x: auto;
@@ -494,5 +499,16 @@ html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+@keyframes score-pop {
+  from {
+    opacity: 0.7;
+    transform: scale(1.12);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

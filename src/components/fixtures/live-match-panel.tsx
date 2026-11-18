@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { Goal } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { LiveMatchEvent, LiveMatchSnapshot, LiveSide } from "@/lib/types/football";
@@ -41,24 +40,24 @@ export function LiveStatusBadge({ status, ended }: { status: string; ended: bool
   );
 }
 
-/** Score that pops gold for a moment when it changes (not on first paint). */
+/** Score that pops for a moment when it changes (not on first paint). */
 export function LiveScore({ home, away, className }: { home: number; away: number; className?: string }) {
   const key = `${home}-${away}`;
   const [firstKey] = useState(key);
-  const reduce = useReducedMotion();
   return (
-    <motion.p
+    <p
       key={key}
-      initial={key === firstKey || reduce ? false : { scale: 1.12, opacity: 0.7 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className={cn("font-bebas leading-none tracking-wide text-white tabular-nums", className)}
+      className={cn(
+        "font-bebas leading-none tracking-wide text-white tabular-nums",
+        key !== firstKey && "score-pop",
+        className,
+      )}
       aria-live="polite"
     >
       {home}
       <span className="px-1 text-stadium-muted">-</span>
       {away}
-    </motion.p>
+    </p>
   );
 }
 
@@ -199,7 +198,7 @@ export function LiveEdgeTrack({ live, ended }: { live: LiveMatchSnapshot; ended:
           key={`${e.minute}-${i}`}
           aria-hidden
           className={cn(
-            "absolute bottom-0 w-1 -translate-x-1/2",
+            "spoiler-hide absolute bottom-0 w-1 -translate-x-1/2",
             e.kind === "yellow" ? "h-2.5 bg-lfc-gold" : e.kind === "red" ? "h-2.5 bg-red-500" : "h-3 bg-white",
           )}
           style={{ left: at(e.at) }}

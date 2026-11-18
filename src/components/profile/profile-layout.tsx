@@ -31,6 +31,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
   const locale = useLocale();
   const [activeTab, setActiveTab] = useState<TabId>("profile");
   const [streak, setStreak] = useState(0);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/streak")
@@ -66,8 +67,17 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
         {/* Identity */}
         <header className="surface flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:p-6">
           <div className="relative size-16 shrink-0 overflow-hidden rounded-full ring-2 ring-lfc-red/40 sm:size-20">
-            {profile?.avatar_url ? (
-              <Image src={profile.avatar_url} alt="" fill className="object-cover" sizes="80px" unoptimized />
+            {profile?.avatar_url && failedAvatarUrl !== profile.avatar_url ? (
+              <Image
+                src={profile.avatar_url}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="80px"
+                referrerPolicy="no-referrer"
+                onError={() => setFailedAvatarUrl(profile.avatar_url)}
+                unoptimized
+              />
             ) : (
               <div className="flex size-full items-center justify-center bg-[var(--surface-3)]">
                 <User size={28} aria-hidden className="text-stadium-muted" />

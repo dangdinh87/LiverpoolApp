@@ -21,8 +21,3 @@ export function getVietapiModel(modelId: string) {
 export function vietapi(modelId: string) {
   return getVietapiModel(modelId);
 }
-
-/** Whether the provider is configured; callers degrade instead of throwing. */
-export function hasVietapiKey(): boolean {
-  return Boolean(getEnv("VIETAPI_KEY"));
-}

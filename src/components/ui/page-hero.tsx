@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface PageHeroProps {
   title: string;
   eyebrow?: string;
-  description?: string;
+  description?: ReactNode;
   /** Optional background photo (keep ≤200KB). Decorative: gets alt="". */
   image?: string;
   /** Right-aligned extras (filters, season picker). Stacks under the title on mobile. */

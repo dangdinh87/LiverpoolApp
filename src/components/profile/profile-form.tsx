@@ -52,7 +52,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
   }
 
   return (
-    <form action={handleSubmit} noValidate className="flex flex-col gap-5">
+    <form action={handleSubmit} noValidate aria-busy={isPending} className="flex flex-col gap-5">
       <div>
         <label htmlFor="profile-username" className="mb-1.5 block font-barlow text-xs font-bold uppercase tracking-[0.14em] text-stadium-muted">
           {t("username")}
@@ -71,7 +71,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           className={cn(FIELD, showError ? "border-red-400" : "border-[var(--line-strong)] focus-visible:border-lfc-red")}
           placeholder={t("username_placeholder")}
         />
-        <p id="profile-username-help" className={cn("mt-1.5 text-xs", showError ? "text-red-300" : "tabular-nums text-stadium-muted")}>
+        <p id="profile-username-help" role={showError ? "alert" : undefined} className={cn("mt-1.5 text-xs", showError ? "text-red-300" : "tabular-nums text-stadium-muted")}>
           {showError ? usernameError : `${trimmed.length}/${USERNAME_MAX}`}
         </p>
       </div>
@@ -101,7 +101,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
         disabled={isPending}
         className="h-11 self-start bg-lfc-red px-6 font-barlow font-bold uppercase tracking-[0.12em] text-white hover:bg-lfc-red-dark"
       >
-        {isPending ? t("saving") : t("update")}
+        <span aria-live="polite">{isPending ? t("saving") : t("update")}</span>
       </Button>
     </form>
   );

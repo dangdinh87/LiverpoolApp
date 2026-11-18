@@ -63,7 +63,7 @@ export default async function AnalysisPage({ params }: LocaleParams) {
         description={t("hero.description")}
       />
 
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <section aria-label={t("hero.title")} className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
         {articles.length === 0 ? (
           <EmptyState title={t("empty.title")} description={t("empty.description")} />
         ) : (
@@ -84,7 +84,7 @@ export default async function AnalysisPage({ params }: LocaleParams) {
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }

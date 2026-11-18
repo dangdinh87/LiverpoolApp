@@ -290,7 +290,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
       </h2>
 
       {userId ? (
-        <form onSubmit={handleSubmitTop} className="mb-8">
+        <form onSubmit={handleSubmitTop} aria-busy={submitting} className="mb-8">
           <div className="flex gap-3">
             <textarea
               value={newComment}
@@ -341,7 +341,7 @@ export function CommentSection({ articleUrl, initialCommentCount = 0 }: CommentS
       )}
 
       {loading ? (
-        <div className="space-y-4">
+        <div aria-busy="true" className="space-y-4">
           {[1, 2, 3].map((i) => (
             <div key={i} aria-hidden className="flex gap-3">
               <div className="skeleton size-8 rounded-full shrink-0" />

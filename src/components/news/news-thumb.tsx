@@ -34,7 +34,8 @@ export function NewsThumb({
   className,
   showFallbackLabel = true,
 }: NewsThumbProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = Boolean(src && failedSrc === src);
   const cfg = SOURCE_CONFIG[source];
 
   if (!isEmbeddableImageUrl(src) || failed) {
@@ -52,6 +53,9 @@ export function NewsThumb({
 
   return (
     <Image
+      ref={(img) => {
+        if (img && img.complete && img.naturalWidth === 0) setFailedSrc(src);
+      }}
       src={src}
       alt={alt}
       fill
@@ -60,7 +64,7 @@ export function NewsThumb({
       loading={priority ? undefined : "lazy"}
       unoptimized
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
       className={`object-cover ${className ?? ""}`}
     />
   );

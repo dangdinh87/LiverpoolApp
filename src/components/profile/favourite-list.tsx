@@ -32,6 +32,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
   const { show: showToast } = useToast();
   const t = useTranslations("Profile");
   const [confirmTarget, setConfirmTarget] = useState<FavouritePlayer | null>(null);
+  const [failedPhotos, setFailedPhotos] = useState<Set<number>>(() => new Set());
 
   function handleRemove(fav: FavouritePlayer) {
     setConfirmTarget(null);
@@ -105,11 +106,12 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
       </AlertDialog>
 
       <MotionConfig reducedMotion="user">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <div aria-busy={isPending} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         <AnimatePresence>
           {favourites.map((fav) => {
             const squadPlayer = getPlayerById(fav.player_id);
             const href = squadPlayer ? `/player/${squadPlayer.slug}` : "/squad";
+            const showPhoto = Boolean(fav.player_photo && !failedPhotos.has(fav.player_id));
             return (
             <motion.div
               key={fav.player_id}
@@ -121,16 +123,17 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
             >
               <Link href={href} className="block">
                 <div className="relative h-28 bg-stadium-surface2">
-                  {fav.player_photo ? (
+                  {showPhoto ? (
                     <Image
-                      src={fav.player_photo}
-                      alt={fav.player_name}
+                      src={fav.player_photo!}
+                      alt=""
                       fill
                       sizes="(max-width: 640px) 50vw, 25vw"
                       className="object-contain object-bottom"
+                      onError={() => setFailedPhotos((prev) => new Set(prev).add(fav.player_id))}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-stadium-muted text-3xl font-bebas">
+                    <div aria-hidden className="w-full h-full flex items-center justify-center text-stadium-muted text-3xl font-bebas">
                       {fav.player_name[0]}
                     </div>
                   )}

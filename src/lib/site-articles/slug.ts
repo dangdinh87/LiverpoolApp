@@ -23,8 +23,3 @@ export function matchArticleSlug(kind: SiteArticleKind, fixture: Fixture): strin
   const away = slugify(fixture.teams.away.name);
   return `${home}-vs-${away}-${kind}-${date}`;
 }
-
-/** The URL for an article that belongs to a date rather than a match. */
-export function datedArticleSlug(kind: SiteArticleKind, date: string): string {
-  return `${kind}-${date.slice(0, 10)}`;
-}

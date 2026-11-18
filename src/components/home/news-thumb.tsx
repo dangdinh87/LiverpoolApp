@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { BrandMark } from "@/components/layout/brand-mark";
 import { isEmbeddableImageUrl } from "@/components/news/news-text";
@@ -21,22 +21,17 @@ interface NewsThumbProps {
  * tile takes its place (never the club crest, per brand guidelines).
  */
 export function NewsThumb({ src, sizes, priority, className, crestClassName }: NewsThumbProps) {
-  const [failed, setFailed] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const canEmbed = isEmbeddableImageUrl(src);
-
-  // An image can fail before hydration attaches onError; catch that case too.
-  useEffect(() => {
-    const img = wrapRef.current?.querySelector("img");
-    if (img && img.complete && img.naturalWidth === 0) {
-      setFailed(true);
-    }
-  }, [src]);
+  const failed = Boolean(src && failedSrc === src);
 
   return (
-    <div ref={wrapRef} className="absolute inset-0 bg-[var(--surface-3)]">
+    <div className="absolute inset-0 bg-[var(--surface-3)]">
       {canEmbed && !failed ? (
         <Image
+          ref={(img) => {
+            if (img && img.complete && img.naturalWidth === 0) setFailedSrc(src);
+          }}
           src={src}
           alt=""
           fill
@@ -45,7 +40,7 @@ export function NewsThumb({ src, sizes, priority, className, crestClassName }: N
           priority={priority}
           loading={priority ? undefined : "lazy"}
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSrc(src)}
           className={cn("object-cover", className)}
         />
       ) : (

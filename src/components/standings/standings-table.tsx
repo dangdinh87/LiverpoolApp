@@ -149,14 +149,33 @@ export function StandingsTable({ standings, competition = "pl", nextOpponentId }
                     </div>
                   </td>
                   <td className={td}>{s.all.played}</td>
-                  <td className={cn(td, wide)}>{s.all.win}</td>
-                  <td className={cn(td, wide)}>{s.all.draw}</td>
-                  <td className={cn(td, wide)}>{s.all.lose}</td>
-                  <td className={cn(td, wide)}>{s.all.goals.for}</td>
-                  <td className={cn(td, wide)}>{s.all.goals.against}</td>
-                  <td className={cn(td, "font-semibold", s.goalsDiff > 0 && "text-white/85")}>{gd}</td>
+                  <td className={cn(td, wide)}>
+                    <span className="spoiler-hide">{s.all.win}</span>
+                    <span aria-hidden className="spoiler-show text-white/35">–</span>
+                  </td>
+                  <td className={cn(td, wide)}>
+                    <span className="spoiler-hide">{s.all.draw}</span>
+                    <span aria-hidden className="spoiler-show text-white/35">–</span>
+                  </td>
+                  <td className={cn(td, wide)}>
+                    <span className="spoiler-hide">{s.all.lose}</span>
+                    <span aria-hidden className="spoiler-show text-white/35">–</span>
+                  </td>
+                  <td className={cn(td, wide)}>
+                    <span className="spoiler-hide">{s.all.goals.for}</span>
+                    <span aria-hidden className="spoiler-show text-white/35">–</span>
+                  </td>
+                  <td className={cn(td, wide)}>
+                    <span className="spoiler-hide">{s.all.goals.against}</span>
+                    <span aria-hidden className="spoiler-show text-white/35">–</span>
+                  </td>
+                  <td className={cn(td, "font-semibold", s.goalsDiff > 0 && "text-white/85")}>
+                    <span className="spoiler-hide">{gd}</span>
+                    <span aria-hidden className="spoiler-show font-normal text-white/35">–</span>
+                  </td>
                   <td className="px-1 py-2 text-center sm:px-1.5">
-                    <span className="font-bebas text-xl leading-none tabular-nums text-white">{s.points}</span>
+                    <span className="spoiler-hide font-bebas text-xl leading-none tabular-nums text-white">{s.points}</span>
+                    <span aria-hidden className="spoiler-show font-bebas text-xl leading-none text-white/35">–</span>
                   </td>
                   <td className="px-1 py-2 sm:px-1.5">
                     <div className="flex justify-center">

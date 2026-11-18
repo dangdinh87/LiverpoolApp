@@ -6,8 +6,8 @@ import "./globals.css";
 import { routing } from "@/i18n/routing";
 
 const COPY = {
-  vi: { title: "Có lỗi xảy ra", body: "Trang gặp sự cố ngoài ý muốn. Bạn thử tải lại nhé.", retry: "Thử lại", home: "Về trang chủ" },
-  en: { title: "Something went wrong", body: "The page hit an unexpected problem. Please try again.", retry: "Try again", home: "Back to home" },
+  vi: { title: "Đã xảy ra lỗi", body: "Trang gặp sự cố ngoài ý muốn. Vui lòng tải lại trang.", retry: "Thử lại", home: "Về trang chủ" },
+  en: { title: "Something went wrong", body: "An unexpected error occurred. Please reload the page.", retry: "Try again", home: "Back to home" },
 } as const;
 
 function isSupported(value: string | undefined): value is keyof typeof COPY {
