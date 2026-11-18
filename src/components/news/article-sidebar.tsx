@@ -23,13 +23,13 @@ export async function ArticleSidebar({ sourceName, sourceUrl, nextMatch }: Artic
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-10 items-center gap-2 font-barlow text-base font-bold uppercase tracking-wider text-white transition-colors hover:text-brand"
+            className="inline-flex min-h-11 items-center gap-2 font-barlow text-base font-bold uppercase tracking-wider text-white transition-colors hover:text-brand"
           >
             {sourceName}
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
         ) : (
-          <span className="inline-flex min-h-10 items-center font-barlow text-base font-bold uppercase tracking-wider text-white">{sourceName}</span>
+          <span className="inline-flex min-h-11 items-center font-barlow text-base font-bold uppercase tracking-wider text-white">{sourceName}</span>
         )}
       </div>
       {nextMatch && <ArticleNextMatch fixture={nextMatch} />}

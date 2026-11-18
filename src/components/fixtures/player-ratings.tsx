@@ -12,12 +12,20 @@ import { Slider } from "@/components/ui/slider";
 /** Colour of a fan average: the usual football-ratings bands. */
 const band = (r: number) => (r >= 7.5 ? "text-green-400" : r >= 6 ? "text-lfc-gold" : "text-red-400");
 
+const POS_CODE_KEY: Record<string, "GK" | "DEF" | "MID" | "FWD"> = {
+  G: "GK",
+  D: "DEF",
+  M: "MID",
+  F: "FWD",
+};
+
 /**
  * Fans rate Liverpool's players 1-10 after the match (for a week), and everyone
  * sees the average. Starters plus the substitutes who came on.
  */
 export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
   const t = useTranslations("Predict.ratings");
+  const tPos = useTranslations("Squad.positions");
   const locale = useLocale();
   const [state, setState] = useState<RatingsState | null>(null);
   const [draft, setDraft] = useState<Record<string, number>>({});
@@ -73,7 +81,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
       const res = await saveRatings(fixtureId, draft);
       if (res.ok) {
         setSaved(true);
-        getRatingsState(fixtureId).then(setState);
+        getRatingsState(fixtureId).then(setState).catch(() => {});
       } else setError(res.error);
     });
 
@@ -83,21 +91,22 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
         <h2 id="ratings-title" className="font-bebas text-3xl leading-none text-white">
           {t("title")}
         </h2>
-        <p className="text-sm text-stadium-muted">{t("votes", { count: totalVotes })}</p>
+        <p className="text-sm text-stadium-muted tabular-nums">{t("votes", { count: totalVotes })}</p>
       </div>
       <p className="mt-1 text-[13px] text-stadium-muted">{state.open ? t("hint") : t("closed")}</p>
 
       <ul className="mt-4 divide-y divide-[var(--line)]">
         {state.players.map((p) => {
           const value = draft[p.name];
+          const posKey = POS_CODE_KEY[p.pos];
           return (
             <li key={p.name} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <span className="w-6 shrink-0 text-right font-bebas text-xl leading-none text-white/40 tabular-nums">{p.number || ""}</span>
                 <span className="min-w-0 truncate text-sm font-semibold text-white">{p.name}</span>
-                <span className="shrink-0 font-barlow text-xs uppercase tracking-wider text-stadium-muted">{p.pos}</span>
+                <span className="shrink-0 font-barlow text-xs uppercase tracking-wider text-stadium-muted">{posKey ? tPos(posKey) : p.pos}</span>
                 <span className="ml-auto shrink-0 text-right sm:hidden">
-                  {p.average !== null && <b className={cn("font-bebas text-xl", band(p.average))}>{p.average.toFixed(1)}</b>}
+                  {p.average !== null && <b className={cn("font-bebas text-xl tabular-nums", band(p.average))}>{p.average.toFixed(1)}</b>}
                 </span>
               </div>
               {editable && (
@@ -119,7 +128,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
               )}
               <span className="hidden w-14 shrink-0 text-right sm:block">
                 {p.average !== null ? (
-                  <b className={cn("font-bebas text-2xl leading-none", band(p.average))} title={t("average", { count: p.votes })}>
+                  <b className={cn("font-bebas text-2xl leading-none tabular-nums", band(p.average))} title={t("average", { count: p.votes })}>
                     {p.average.toFixed(1)}
                   </b>
                 ) : (
@@ -138,7 +147,7 @@ export function PlayerRatings({ fixtureId }: { fixtureId: number }) {
               type="button"
               onClick={save}
               disabled={pending || Object.keys(draft).length === 0}
-              className="inline-flex min-h-11 items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex min-h-11 cursor-pointer items-center gap-2 bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saved && <Check className="size-4" aria-hidden />}
               {saved ? t("saved") : t("save")}

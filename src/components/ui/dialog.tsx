@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
@@ -51,13 +52,16 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  closeLabel = "Close",
+  closeLabel,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
-  /** Accessible name of the built-in close button. Pass a translated string. */
+  /** Accessible name of the built-in close button. Defaults to localized dismiss label. */
   closeLabel?: string
 }) {
+  const t = useTranslations("Common")
+  const resolvedCloseLabel = closeLabel ?? t("dismiss")
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -73,10 +77,10 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            className="tap-target absolute top-4 right-4 inline-flex items-center justify-center rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">{closeLabel}</span>
+            <span className="sr-only">{resolvedCloseLabel}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -102,6 +106,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const t = useTranslations("Common")
   return (
     <div
       data-slot="dialog-footer"
@@ -114,7 +119,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{t("dismiss")}</Button>
         </DialogPrimitive.Close>
       )}
     </div>

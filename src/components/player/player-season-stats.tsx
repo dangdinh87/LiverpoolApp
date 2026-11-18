@@ -3,7 +3,7 @@
 // Player Premier League season stats — shows summary cards + detailed breakdown.
 // Data from FPL API (free, no key needed).
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { PlayerStatistic } from "@/lib/types/football";
 import type { FplPlayerStats } from "@/lib/football/fpl-stats";
@@ -11,6 +11,7 @@ import {
   Trophy, Clock, Target, Shield, Shirt, BarChart3,
   Crosshair, ArrowRightLeft, Star,
 } from "lucide-react";
+import { competitionName } from "@/lib/competition-labels";
 import { getCurrentSeasonLabel } from "@/lib/football/current-season";
 import { SectionHeader } from "@/components/ui/section-header";
 
@@ -40,6 +41,8 @@ function formatDecimal(n: number): string {
 
 export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
   const t = useTranslations("PlayerDetail.stats");
+  const locale = useLocale();
+  const numLocale = locale === "vi" ? "vi-VN" : "en-GB";
 
   // No stats available or insufficient game time
   if (statistics.length === 0 || !fplStats || fplStats.minutes < 90) {
@@ -67,7 +70,7 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
     <section className="space-y-4">
       <SectionHeader
         title={t("seasonStats", { season: getCurrentSeasonLabel() })}
-        eyebrow={`Premier League ${getCurrentSeasonLabel()}`}
+        eyebrow={`${competitionName("pl", locale)} · ${getCurrentSeasonLabel()}`}
       />
 
       {/* ─── Hero summary cards ─── */}
@@ -153,8 +156,8 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
         </DetailCard>
 
         {/* Discipline & General */}
-        <DetailCard title={t("general")} icon={<Trophy size={14} className="text-lfc-gold" />}>
-          <StatRow label={t("minutes")} value={fplStats.minutes.toLocaleString()} />
+        <DetailCard title={t("general")} icon={<Trophy size={14} className="text-lfc-gold" aria-hidden />}>
+          <StatRow label={t("minutes")} value={fplStats.minutes.toLocaleString(numLocale)} />
           <StatRow label={t("starts")} value={fplStats.starts} />
           {subIn > 0 && <StatRow label={t("subIn")} value={subIn} />}
           <StatRow label="xGI" value={formatDecimal(fplStats.expectedGoalInvolvements)} />
@@ -177,14 +180,14 @@ export function PlayerSeasonStats({ statistics, fplStats, position }: Props) {
             {fplStats.yellowCards > 0 && (
               <span className="flex items-center gap-1.5">
                 <span aria-hidden className="w-3 h-4 rounded-[1px] bg-yellow-400 inline-block" />
-                <span className="sr-only">Yellow cards: </span>
+                <span className="sr-only">{t("yellowCards")}: </span>
                 <span className="font-bebas text-lg text-white tabular-nums">{fplStats.yellowCards}</span>
               </span>
             )}
             {fplStats.redCards > 0 && (
               <span className="flex items-center gap-1.5">
                 <span aria-hidden className="w-3 h-4 rounded-[1px] bg-red-500 inline-block" />
-                <span className="sr-only">Red cards: </span>
+                <span className="sr-only">{t("redCards")}: </span>
                 <span className="font-bebas text-lg text-white tabular-nums">{fplStats.redCards}</span>
               </span>
             )}

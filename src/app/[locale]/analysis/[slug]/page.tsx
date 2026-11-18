@@ -59,7 +59,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const { slug, locale } = await params;
   const row = await getSiteArticleBySlug(slug);
   const content = row ? pick(row, locale)?.content : null;
-  if (!row || !content) return { title: "Not found", robots: { index: false } };
+  if (!row || !content) {
+    const tCommon = await getTranslations({ locale, namespace: "Common" });
+    return { title: tCommon("notFoundTitle"), robots: { index: false } };
+  }
   const alternates = getHreflangAlternates(`/analysis/${slug}`, locale, writtenIn(row));
 
   const title = content.metaTitle || content.title;
@@ -164,7 +167,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
         {/* Said plainly, at the top, before anyone reads a word of it. */}
         <p className="mt-5 border-l-2 border-lfc-gold/50 pl-3 text-[13px] leading-relaxed text-stadium-muted">
           {t("disclosure.body", { brand: BRAND.name })}{" "}
-          <Link href="/about" className="text-brand underline underline-offset-2">
+          <Link href="/about" className="tap-target text-brand underline underline-offset-2">
             {t("disclosure.link")}
           </Link>
         </p>

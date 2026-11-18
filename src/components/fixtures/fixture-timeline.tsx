@@ -189,7 +189,7 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
             <section aria-label={t("later")}>
               <h2 className="mb-1 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white">
                 {t("later")}
-                <span className="ml-2 text-stadium-muted">{laterCount}</span>
+                <span className="ml-2 text-stadium-muted tabular-nums">{laterCount}</span>
               </h2>
               <Accordion type="multiple" className="border-t border-[var(--line)]">
                 {laterGroups.map((group) => (
@@ -197,7 +197,7 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
                     <AccordionTrigger className="min-h-12 items-center rounded-none py-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white hover:no-underline [&>svg]:translate-y-0">
                       <span className="flex flex-1 items-baseline justify-between gap-3">
                         {group.label}
-                        <span className="text-xs font-medium tracking-[0.1em] text-stadium-muted">{t("matchCount", { count: group.items.length })}</span>
+                        <span className="text-xs font-medium tracking-[0.1em] text-stadium-muted tabular-nums">{t("matchCount", { count: group.items.length })}</span>
                       </span>
                     </AccordionTrigger>
                     <AccordionContent className="pb-3">

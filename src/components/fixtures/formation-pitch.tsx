@@ -44,7 +44,7 @@ function PlayerDot({
     <div className="flex flex-col items-center gap-0.5 w-14 sm:w-16">
       <div
         className={cn(
-          "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bebas text-sm sm:text-base leading-none shadow-lg",
+          "w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bebas text-sm sm:text-base leading-none shadow-lg tabular-nums",
           isLfc
             ? "bg-lfc-red text-white"
             : "bg-sky-600 text-white",

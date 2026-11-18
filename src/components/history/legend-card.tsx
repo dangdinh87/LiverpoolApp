@@ -48,13 +48,13 @@ function Stats({ legend, className }: { legend: Legend; className?: string }) {
     <span className={`flex flex-wrap gap-x-5 gap-y-2 ${className ?? ""}`}>
       {legend.caps !== null && (
         <span className="block">
-          <b className="block font-bebas text-2xl font-normal leading-none text-white">{legend.caps}</b>
+          <b className="block font-bebas text-2xl font-normal leading-none text-white tabular-nums">{legend.caps}</b>
           <span className="mt-0.5 block font-barlow text-[11px] font-bold uppercase tracking-[0.08em] text-stadium-muted">{t("appearances")}</span>
         </span>
       )}
       {legend.goals !== null && (
         <span className="block">
-          <b className="block font-bebas text-2xl font-normal leading-none text-brand">{legend.goals}</b>
+          <b className="block font-bebas text-2xl font-normal leading-none text-brand tabular-nums">{legend.goals}</b>
           <span className="mt-0.5 block font-barlow text-[11px] font-bold uppercase tracking-[0.08em] text-stadium-muted">{t("goals")}</span>
         </span>
       )}

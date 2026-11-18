@@ -39,9 +39,10 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { date, locale } = await params;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: "Digest Not Found", robots: { index: false } };
+  const t = await getTranslations({ locale, namespace: "News.digest" });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: t("notGeneratedTitle"), robots: { index: false } };
   const digest = await getDigestByDate(date);
-  if (!digest) return { title: "Digest Not Found", robots: { index: false } };
+  if (!digest) return { title: t("notGeneratedTitle"), robots: { index: false } };
   const description =
     digest.seo_description ||
     getSeoArticleFromDigest(digest)?.metaDescription ||

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { getDigestByDate, getSeoArticleFromDigest } from "@/lib/news/digest";
 import { BRAND } from "@/lib/brand";
 import { OG_CONTENT_TYPE, OG_SIZE, renderStoryCard } from "@/lib/og/story-card";
@@ -16,19 +17,24 @@ export const alt = `${BRAND.name} — daily briefing`;
 export default async function DigestOgImage({
   params,
 }: {
-  params: Promise<{ date: string }>;
+  params: Promise<{ date: string; locale: string }>;
 }) {
-  const { date } = await params;
-  const digest = /^\d{4}-\d{2}-\d{2}$/.test(date) ? await getDigestByDate(date) : null;
+  const { date, locale } = await params;
+  const [digest, tDigest, tHero] = await Promise.all([
+    /^\d{4}-\d{2}-\d{2}$/.test(date) ? getDigestByDate(date) : Promise.resolve(null),
+    getTranslations({ locale, namespace: "Home.digest" }),
+    getTranslations({ locale, namespace: "Hero" }),
+  ]);
   const headline =
     digest?.seo_title || (digest ? getSeoArticleFromDigest(digest)?.title : null) || digest?.title;
+  const dateLocale = locale === "vi" ? "vi-VN" : "en-GB";
 
   return renderStoryCard({
-    kicker: "Today's briefing",
-    headline: headline ?? "Liverpool news, gathered daily",
-    // The date the briefing covers, in a form that reads the same everywhere.
+    kicker: tDigest("kicker"),
+    headline: headline ?? tHero("badge"),
+    // The date the briefing covers, localized to the route's language.
     footer: /^\d{4}-\d{2}-\d{2}$/.test(date)
-      ? new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
+      ? new Date(`${date}T00:00:00Z`).toLocaleDateString(dateLocale, {
           day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
         })
       : BRAND.name,

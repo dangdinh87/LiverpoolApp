@@ -90,14 +90,21 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id, locale } = await params;
   const player = getPlayerBySlug(id);
-  if (!player) return { title: "Player" };
+  if (!player) {
+    const tLabels = await getTranslations({ locale, namespace: "Common.labels" });
+    return { title: tLabels("player"), robots: { index: false } };
+  }
+  const tPos = await getTranslations({ locale, namespace: "PlayerDetail.positions" });
   // metaDescription is English-only; the Vietnamese page gets the opening of
   // the Vietnamese bio instead.
   const viSummary = locale === "vi" ? summarize(getPlayerBio(player.slug, "vi")) : "";
+  const fallbackDesc =
+    locale === "vi"
+      ? `${player.name} — ${tPos(player.position)}, Liverpool FC.`
+      : `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
   const description =
     viSummary ||
-    player.metaDescription ||
-    `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
+    (locale === "vi" ? fallbackDesc : player.metaDescription || fallbackDesc);
   const images = player.photoLg ? [{ url: player.photoLg, width: 400, height: 400 }] : [];
   const alternates = getHreflangAlternates(`/player/${id}`, locale);
   return {
@@ -214,7 +221,7 @@ export default async function PlayerPage({ params }: PageProps) {
               {/* The shirt number sits behind the player, centred, so nothing clips it */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-[6%] select-none text-center font-bebas text-[min(62vw,15rem)] leading-[0.8] text-white/[0.07] sm:text-[min(30vw,11rem)] md:text-[14rem] lg:text-[16rem]"
+                className="pointer-events-none absolute inset-x-0 bottom-[6%] select-none text-center font-bebas text-[min(62vw,15rem)] leading-[0.8] text-white/[0.07] tabular-nums sm:text-[min(30vw,11rem)] md:text-[14rem] lg:text-[16rem]"
               >
                 {player.shirtNumber}
               </span>
@@ -234,9 +241,9 @@ export default async function PlayerPage({ params }: PageProps) {
                 {player.onLoan && <span className="bg-amber-500 px-2.5 py-1 text-black">{t("status.onLoan")}</span>}
                 {player.forever && <span className="bg-lfc-gold px-2.5 py-1 text-black">{t("status.forever")}</span>}
               </div>
-              <p className="font-bebas text-5xl leading-none text-brand sm:text-7xl">{player.shirtNumber}</p>
+              <p className="font-bebas text-5xl leading-none text-brand tabular-nums sm:text-7xl">{player.shirtNumber}</p>
               <h1 className="mt-1 font-bebas text-4xl leading-[0.95] text-white text-balance sm:text-6xl lg:text-7xl">{player.name}</h1>
-              <p className="mt-3 text-[15px] text-stadium-muted">
+              <p className="mt-3 text-[15px] text-stadium-muted tabular-nums">
                 <span aria-hidden>{flag} </span>
                 {nationality} · {t("info.ageYears", { age })}
               </p>
@@ -275,7 +282,7 @@ export default async function PlayerPage({ params }: PageProps) {
             <p className="font-bebas text-6xl leading-none text-lfc-gold tabular-nums">{fanRating.average.toFixed(1)}</p>
             <div className="min-w-0">
               <h2 className="text-base font-semibold text-white">{t("fanRating.title")}</h2>
-              <p className="text-sm text-stadium-muted">{t("fanRating.detail", { matches: fanRating.matches, votes: fanRating.votes })}</p>
+              <p className="text-sm text-stadium-muted tabular-nums">{t("fanRating.detail", { matches: fanRating.matches, votes: fanRating.votes })}</p>
             </div>
           </section>
         )}
@@ -345,7 +352,7 @@ export default async function PlayerPage({ params }: PageProps) {
                 return (
                   <li key={honor} className="surface relative flex min-h-16 items-center gap-3 p-4">
                     {yearCount > 1 && (
-                      <span className="absolute right-3 top-2 font-bebas text-2xl leading-none text-lfc-gold">×{yearCount}</span>
+                      <span className="absolute right-3 top-2 font-bebas text-2xl leading-none text-lfc-gold tabular-nums">×{yearCount}</span>
                     )}
                     <span className="relative size-9 shrink-0">
                       {trophyImage ? (
@@ -358,7 +365,7 @@ export default async function PlayerPage({ params }: PageProps) {
                     </span>
                     <span className="min-w-0 pr-8">
                       <span className="block text-sm font-semibold leading-tight text-white">{trophy}</span>
-                      {years && <span className="mt-1 block text-xs text-stadium-muted">{years}</span>}
+                      {years && <span className="mt-1 block text-xs text-stadium-muted tabular-nums">{years}</span>}
                     </span>
                   </li>
                 );

@@ -56,9 +56,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id, locale } = await params;
   const fixtureId = parsePositiveFixtureId(id);
-  if (!fixtureId) return { title: "Match", robots: { index: false } };
+  const tMeta = await getTranslations({ locale, namespace: "Fixtures.metadata" });
+  if (!fixtureId) return { title: tMeta("title"), robots: { index: false } };
   const match = await getFixtureById(fixtureId);
-  if (!match) return { title: "Match", robots: { index: false } };
+  if (!match) return { title: tMeta("title"), robots: { index: false } };
   const t = await getTranslations({ locale, namespace: "Fixtures.detail" });
   const tRound = await getTranslations({ locale, namespace: "Match.round" });
   const home = displayTeamName(match.teams.home.name);

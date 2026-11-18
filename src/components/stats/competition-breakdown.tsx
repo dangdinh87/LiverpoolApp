@@ -49,7 +49,7 @@ export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
             </div>
 
             {/* W/D/L */}
-            <div className="mb-2 flex gap-2 font-bebas text-sm tracking-wider">
+            <div className="mb-2 flex gap-2 font-bebas text-sm tracking-wider tabular-nums">
               <span className="text-green-400">{comp.wins}{letters.W}</span>
               <span className="text-amber-400">{comp.draws}{letters.D}</span>
               <span className="text-red-400">{comp.losses}{letters.L}</span>
@@ -62,7 +62,7 @@ export function CompetitionBreakdown({ competitions, labels, letters }: Props) {
             </div>
 
             {/* Goals */}
-            <div className="font-inter text-[13px] text-stadium-muted">
+            <div className="font-inter text-[13px] text-stadium-muted tabular-nums">
               {comp.goalsFor} {labels.gf} · {comp.goalsAgainst} {labels.ga}
             </div>
           </div>

@@ -47,6 +47,19 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
     { id: "players", label: t("favouritePlayers"), icon: <Heart size={16} aria-hidden />, count: favourites.length },
   ];
 
+  function handleTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, index: number) {
+    let nextIndex: number | null = null;
+    if (e.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+    else if (e.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+    else if (e.key === "Home") nextIndex = 0;
+    else if (e.key === "End") nextIndex = tabs.length - 1;
+    if (nextIndex === null) return;
+    e.preventDefault();
+    const nextTab = tabs[nextIndex];
+    setActiveTab(nextTab.id);
+    document.getElementById(`profile-tab-${nextTab.id}`)?.focus();
+  }
+
   return (
     <div className="pt-[calc(var(--header-h)+1.5rem)] pb-20 sm:pt-[calc(var(--header-h)+2.5rem)]">
       <div className="page-container max-w-4xl">
@@ -68,14 +81,14 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
               {memberSince && <span>{t("memberSince", { date: memberSince })}</span>}
               <span className="inline-flex items-center gap-1.5" title={t("streakLabel")}>
                 <Flame size={14} aria-hidden className={streak > 0 ? "text-orange-400" : "text-stadium-muted"} />
-                <span className={streak > 0 ? "text-orange-400" : undefined}>{t("streakCount", { count: streak })}</span>
+                <span className={cn("tabular-nums", streak > 0 && "text-orange-400")}>{t("streakCount", { count: streak })}</span>
               </span>
             </div>
           </div>
           <form action={logout}>
             <button
               type="submit"
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white sm:w-auto"
+              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white sm:w-auto"
             >
               <LogOut size={16} aria-hidden />
               {t("signOut")}
@@ -85,23 +98,25 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
 
         {/* Tabs */}
         <div role="tablist" aria-label={t("title")} className="scroll-x scroll-x-fade mt-4 flex gap-1 border-b border-[var(--line)]">
-          {tabs.map((tab) => (
+          {tabs.map((tab, index) => (
             <button
               key={tab.id}
               id={`profile-tab-${tab.id}`}
               role="tab"
               type="button"
+              tabIndex={activeTab === tab.id ? 0 : -1}
               aria-selected={activeTab === tab.id}
               aria-controls={`profile-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
+              onKeyDown={(e) => handleTabKeyDown(e, index)}
               className={cn(
-                "inline-flex min-h-12 shrink-0 items-center gap-2 border-b-2 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors",
+                "inline-flex min-h-12 shrink-0 cursor-pointer items-center gap-2 border-b-2 px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors",
                 activeTab === tab.id ? "border-lfc-red text-white" : "border-transparent text-stadium-muted hover:text-white",
               )}
             >
               {tab.icon}
               {tab.label}
-              {tab.count !== undefined && tab.count > 0 && <span className="font-inter text-xs text-stadium-muted">{tab.count}</span>}
+              {tab.count !== undefined && tab.count > 0 && <span className="font-inter text-xs tabular-nums text-stadium-muted">{tab.count}</span>}
             </button>
           ))}
         </div>
@@ -131,7 +146,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
             <section className="surface p-4 sm:p-6">
               <h2 className="mb-4 font-bebas text-2xl text-white">
                 {t("savedArticles")}
-                {savedArticles.length > 0 && <span className="ml-2 font-inter text-sm font-normal text-stadium-muted">({savedArticles.length})</span>}
+                {savedArticles.length > 0 && <span className="ml-2 font-inter text-sm font-normal tabular-nums text-stadium-muted">({savedArticles.length})</span>}
               </h2>
               <SavedArticlesList articles={savedArticles} />
             </section>
@@ -141,7 +156,7 @@ export function ProfileLayout({ user, profile, favourites, savedArticles, isAdmi
             <section className="surface p-4 sm:p-6">
               <h2 className="mb-4 font-bebas text-2xl text-white">
                 {t("favouritePlayers")}
-                {favourites.length > 0 && <span className="ml-2 font-inter text-sm font-normal text-stadium-muted">({favourites.length})</span>}
+                {favourites.length > 0 && <span className="ml-2 font-inter text-sm font-normal tabular-nums text-stadium-muted">({favourites.length})</span>}
               </h2>
               <FavouriteList favourites={favourites} />
             </section>

@@ -20,7 +20,7 @@ export function NewStoriesCount({ storyTimes }: { storyTimes: number[] }) {
   const capped = count === storyTimes.length;
 
   return (
-    <p className="inline-flex shrink-0 items-center gap-2 pb-1 text-sm font-semibold text-lfc-gold">
+    <p className="inline-flex shrink-0 items-center gap-2 pb-1 text-sm font-semibold text-lfc-gold tabular-nums">
       <span aria-hidden className="size-2 rounded-full bg-lfc-red" />
       {capped ? t("newCountCapped", { count }) : t("newCount", { count })}
     </p>
@@ -47,7 +47,7 @@ export function NewSinceDivider({ baseline, locale }: { baseline: number; locale
   return (
     <div className="flex items-center gap-3 py-2 text-[13px] font-semibold text-lfc-gold col-span-full">
       <span aria-hidden className="h-px flex-1 bg-lfc-gold/30" />
-      <p className="inline-flex items-center gap-1">
+      <p className="inline-flex items-center gap-1 tabular-nums">
         <ArrowUp className="size-3.5" aria-hidden />
         {t("newSince", { time: label })}
       </p>

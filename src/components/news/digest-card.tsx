@@ -35,7 +35,7 @@ export function DigestCard({ date, title, articleCount, as: Heading = "h3" }: Di
       <div className="min-w-0 flex-1">
         <p className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
           <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} compact />
-          <span className="text-xs text-stadium-muted">
+          <span className="text-xs text-stadium-muted tabular-nums">
             {dateText}
             {articleCount > 0 && <span className="max-sm:hidden"> · {t("articleCount", { count: articleCount })}</span>}
           </span>

@@ -71,7 +71,7 @@ export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, o
             )}
           />
           {player.shirtNumber > 0 && (
-            <span className="absolute left-2 top-2 hidden bg-black/60 px-1.5 py-1 font-bebas text-lg leading-none text-white sm:block">
+            <span className="absolute left-2 top-2 hidden bg-black/60 px-1.5 py-1 font-bebas text-lg leading-none text-white tabular-nums sm:block">
               {player.shirtNumber}
             </span>
           )}
@@ -80,7 +80,7 @@ export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, o
         <div className="min-w-0 flex-1 sm:px-4 sm:pb-4 sm:pt-3">
           <div className="flex items-baseline gap-2">
             {player.shirtNumber > 0 && (
-              <span aria-hidden className="w-7 shrink-0 font-bebas text-2xl leading-none text-brand sm:hidden">
+              <span aria-hidden className="w-7 shrink-0 font-bebas text-2xl leading-none text-brand tabular-nums sm:hidden">
                 {player.shirtNumber}
               </span>
             )}
@@ -99,7 +99,7 @@ export function PlayerCard({ player, isFavourited = false, isLoggedIn = false, o
               {t(`groups.${player.position}`)}
             </span>
             <span aria-hidden>·</span>
-            <span>{t("card.age", { age: player.age })}</span>
+            <span className="tabular-nums">{t("card.age", { age: player.age })}</span>
             {player.onLoan && <span className="text-lfc-gold">{t("status.onLoan")}</span>}
             {player.forever && <span className="text-lfc-gold">{t("status.forever")}</span>}
           </p>

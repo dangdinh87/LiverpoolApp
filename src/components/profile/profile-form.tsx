@@ -37,8 +37,17 @@ export function ProfileForm({ profile }: ProfileFormProps) {
     if (usernameError) return;
     startTransition(async () => {
       const result = await updateProfile(formData);
-      if (result?.error) showToast({ type: "error", message: result.error });
-      else showToast({ type: "success", message: t("success") });
+      if (result?.error) {
+        const message =
+          result.error === "Not authenticated" || result.error === "signIn"
+            ? t("avatar.errorAuth")
+            : result.error.includes("at least")
+              ? t("usernameTooShort", { min: USERNAME_MIN })
+              : t("favError");
+        showToast({ type: "error", message });
+      } else {
+        showToast({ type: "success", message: t("success") });
+      }
     });
   }
 
@@ -62,7 +71,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           className={cn(FIELD, showError ? "border-red-400" : "border-[var(--line-strong)] focus-visible:border-lfc-red")}
           placeholder={t("username_placeholder")}
         />
-        <p id="profile-username-help" className={cn("mt-1.5 text-xs", showError ? "text-red-300" : "text-stadium-muted")}>
+        <p id="profile-username-help" className={cn("mt-1.5 text-xs", showError ? "text-red-300" : "tabular-nums text-stadium-muted")}>
           {showError ? usernameError : `${trimmed.length}/${USERNAME_MAX}`}
         </p>
       </div>
@@ -82,7 +91,7 @@ export function ProfileForm({ profile }: ProfileFormProps) {
           className={cn(FIELD, "resize-none border-[var(--line-strong)] focus-visible:border-lfc-red")}
           placeholder={t("bio_placeholder")}
         />
-        <p id="profile-bio-help" className="mt-1.5 text-xs text-stadium-muted">
+        <p id="profile-bio-help" className="mt-1.5 text-xs tabular-nums text-stadium-muted">
           {bio.length}/{BIO_MAX}
         </p>
       </div>

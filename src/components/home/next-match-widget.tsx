@@ -170,10 +170,10 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
               />
             </>
           ) : (
-            <span className="font-bebas text-3xl leading-none text-white sm:text-4xl">{formatMatchTime(date, zone)}</span>
+            <span className="font-bebas text-3xl leading-none text-white tabular-nums sm:text-4xl">{formatMatchTime(date, zone)}</span>
           )}
-          {!isLive && <span className="text-xs text-white/80">{formatMatchDayMonth(date, locale, false, zone)}</span>}
-          {!isLive && <span className="text-xs text-stadium-muted">{h("viewerTime")} · {formatZoneOffset(date, zone)}</span>}
+          {!isLive && <span className="text-xs text-white/80 tabular-nums">{formatMatchDayMonth(date, locale, false, zone)}</span>}
+          {!isLive && <span className="text-xs text-stadium-muted tabular-nums">{h("viewerTime")} · {formatZoneOffset(date, zone)}</span>}
         </div>
         <TeamBlock team={teams.away} />
       </div>
@@ -197,7 +197,7 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
       {/* One action: the full fixture list is a nav item away, so the hero card stays short. */}
       <Link
         href={detailHref}
-        className="mt-3 flex min-h-10 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
+        className="mt-3 flex min-h-11 items-center justify-center bg-lfc-red px-4 text-center font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
       >
         {t("viewMatch")}
       </Link>

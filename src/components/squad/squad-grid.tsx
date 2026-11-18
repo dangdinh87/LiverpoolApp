@@ -89,7 +89,7 @@ export function SquadGrid({ players }: SquadGridProps) {
           placeholder={t("search")}
           autoComplete="off"
           enterKeyHint="search"
-          className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-9 pr-3 text-base text-white placeholder:text-stadium-muted focus:border-lfc-red focus:outline-none sm:max-w-sm sm:text-sm"
+          className="h-11 w-full border border-[var(--line-strong)] bg-[var(--surface-1)] pl-9 pr-3 text-base text-white placeholder:text-stadium-muted focus-visible:border-lfc-red focus-visible:outline-none sm:max-w-sm sm:text-sm"
         />
       </label>
 
@@ -136,7 +136,7 @@ export function SquadGrid({ players }: SquadGridProps) {
             <section key={pos} id={`pos-${pos}`} aria-labelledby={`pos-${pos}-title`} className="scroll-mt-[3.75rem]">
               <h2 id={`pos-${pos}-title`} className="mb-3 flex items-baseline gap-3 font-bebas text-3xl leading-none text-white sm:mb-4">
                 {t(`groups.${pos}`)}
-                <span className="font-barlow text-sm font-semibold tracking-wider text-stadium-muted">{items.length}</span>
+                <span className="font-barlow text-sm font-semibold tracking-wider text-stadium-muted tabular-nums">{items.length}</span>
               </h2>
               <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
                 {items.map((player) => (

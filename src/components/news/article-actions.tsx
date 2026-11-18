@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Heart, Bookmark, Share2, Check, LogIn } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { toggleSavedArticle } from "@/app/actions/profile";
 import { useToast } from "@/stores/toast-store";
 import { useAuthStore } from "@/stores/auth-store";
@@ -149,7 +149,7 @@ export function ArticleActions({
 
       if (result.error) {
         // If not authenticated, localStorage save is enough
-        if (result.error === "Not authenticated") return;
+        if (result.error === "Not authenticated" || result.error === "signIn") return;
         // Revert on real error
         setSaved(wasSaved);
         toggleLocalSave(articleUrl);
@@ -225,7 +225,7 @@ export function ArticleActions({
         <AlertDialogContent className="bg-stadium-surface border-stadium-border">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white font-bebas text-2xl tracking-wider flex items-center gap-2">
-              <LogIn size={20} className="text-brand" />
+              <LogIn size={20} aria-hidden className="text-brand" />
               {t("loginRequired")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-stadium-muted font-inter">
@@ -240,7 +240,7 @@ export function ArticleActions({
               onClick={() => { setShowLoginPrompt(false); router.push("/auth/login"); }}
               className="bg-lfc-red hover:bg-lfc-red/80 text-white cursor-pointer"
             >
-              {tp("loginAction") || "Log in"}
+              {tp("loginAction")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -255,7 +255,7 @@ export function ArticleActions({
           className={`${ACTION_CLASS} ${liked ? "border-rose-500/60 text-rose-400" : ""}`}
         >
           <Heart className={`size-4 shrink-0 ${liked ? "fill-rose-500 text-rose-500" : ""}`} aria-hidden />
-          <span className="truncate">{likeCount > 0 ? likeCount : t("like")}</span>
+          <span className="truncate tabular-nums">{likeCount > 0 ? likeCount : t("like")}</span>
         </button>
 
         <button

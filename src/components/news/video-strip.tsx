@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { NewsArticle } from "@/lib/news/types";
+import { cleanTitle } from "@/components/news/news-text";
 import { NewsThumb } from "@/components/home/news-thumb";
 import { LocalMatchDay } from "@/components/ui/local-time";
 
@@ -43,7 +44,7 @@ export async function VideoStrip({
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-gold"
+              className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text"
             >
               <div className="relative aspect-video overflow-hidden border border-stadium-border">
                 <NewsThumb src={item.thumbnail} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
@@ -52,14 +53,14 @@ export async function VideoStrip({
                   className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10"
                 >
                   <span className="flex size-12 items-center justify-center rounded-full bg-lfc-red/90 text-white">
-                    <Play className="size-5 translate-x-[1px]" fill="currentColor" />
+                    <Play className="size-5 translate-x-[1px]" fill="currentColor" aria-hidden />
                   </span>
                 </span>
               </div>
               <h3 className="mt-2 font-inter text-sm font-semibold leading-snug text-white transition-colors group-hover:text-lfc-red-text">
-                {item.title}
+                {cleanTitle(item.title)}
               </h3>
-              <p className="mt-1 font-barlow text-xs uppercase tracking-[0.1em] text-stadium-muted">
+              <p className="mt-1 font-barlow text-xs uppercase tracking-[0.1em] text-stadium-muted tabular-nums">
                 <LocalMatchDay iso={item.pubDate} locale={locale} />
               </p>
             </a>

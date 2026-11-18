@@ -60,7 +60,7 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
   if (favourites.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-12">
-        <Heart size={32} className="text-stadium-muted/40" />
+        <Heart size={32} aria-hidden className="text-stadium-muted/40" />
         <p className="font-inter text-stadium-muted text-sm text-center">
           {t("favouritePlayersEmpty")}
         </p>
@@ -139,15 +139,16 @@ export function FavouriteList({ favourites: initialFavourites }: FavouriteListPr
                   <p className="font-inter text-xs text-white font-semibold truncate group-hover:text-white transition-colors">
                     {fav.player_name}
                   </p>
-                  <Heart size={12} className="text-lfc-red fill-lfc-red shrink-0" />
+                  <Heart size={12} aria-hidden className="text-lfc-red fill-lfc-red shrink-0" />
                 </div>
               </Link>
 
               {/* Remove button — visible on hover */}
               <button
+                type="button"
                 onClick={() => setConfirmTarget(fav)}
                 disabled={isPending}
-                className="absolute top-1 right-1 inline-flex size-11 items-center justify-center bg-black/70 text-stadium-muted transition-colors hover:text-white focus-visible:text-white cursor-pointer"
+                className="absolute top-1 right-1 inline-flex size-11 cursor-pointer items-center justify-center bg-black/70 text-stadium-muted transition-colors hover:text-white focus-visible:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={t("removeFav")}
               >
                 <X size={14} aria-hidden />

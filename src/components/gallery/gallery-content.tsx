@@ -335,7 +335,7 @@ export function GalleryContent({
                 )}
               >
                 {categoryLabels[cat]}
-                {count !== null && <span className={cn("font-inter text-xs", isActive ? "text-white" : "text-stadium-muted")}>{count}</span>}
+                {count !== null && <span className={cn("font-inter text-xs tabular-nums", isActive ? "text-white" : "text-stadium-muted")}>{count}</span>}
               </button>
             );
           })}
@@ -439,7 +439,7 @@ export function GalleryContent({
             ) : (
               <>
                 {t("loadMore.button")}
-                <span className="font-inter text-xs text-stadium-muted">
+                <span className="font-inter text-xs text-stadium-muted tabular-nums">
                   {filtered.length} / {totalImages}
                 </span>
               </>

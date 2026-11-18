@@ -60,7 +60,7 @@ const ROW_ITEM = "w-72 shrink-0 snap-start sm:w-auto";
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="min-w-0">
-      <dd className="font-bebas text-3xl leading-none text-white sm:text-4xl">{value}</dd>
+      <dd className="font-bebas text-3xl leading-none text-white tabular-nums sm:text-4xl">{value}</dd>
       <dt className="mt-1 font-barlow text-xs font-semibold uppercase leading-tight tracking-[0.1em] text-stadium-muted">{label}</dt>
     </div>
   );
@@ -161,7 +161,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
               <li key={label} className="surface flex flex-col gap-1 p-4 sm:p-5">
                 <p className="font-barlow text-xs font-bold uppercase tracking-[0.16em] text-stadium-muted">{label}</p>
                 <p className="font-bebas text-2xl leading-tight text-white">{name}</p>
-                <p className="text-xs font-bold uppercase tracking-widest text-lfc-gold">{detail}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-lfc-gold tabular-nums">{detail}</p>
               </li>
             ))}
           </ul>
@@ -235,7 +235,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="font-bebas text-2xl text-white">{stand.name}</h3>
                   <p className="shrink-0 text-right">
-                    <span className="font-bebas text-xl leading-none text-lfc-gold">{numberFmt.format(stand.capacity)}</span>{" "}
+                    <span className="font-bebas text-xl leading-none text-lfc-gold tabular-nums">{numberFmt.format(stand.capacity)}</span>{" "}
                     <span className="font-barlow text-xs font-bold uppercase tracking-widest text-stadium-muted">{t("stadium.seats")}</span>
                   </p>
                 </div>

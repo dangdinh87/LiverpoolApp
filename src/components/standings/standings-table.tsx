@@ -124,7 +124,7 @@ export function StandingsTable({ standings, competition = "pl", nextOpponentId }
                   <td className={cn("sticky left-0 z-10 w-9 px-1 py-2 text-center sm:w-10", rowBg)}>
                     {/* Red is Liverpool's alone: a bar on the row, not another coloured number. */}
                     {isLfc && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-lfc-red" />}
-                    <span className={cn("font-bebas text-lg leading-none", isLfc ? "text-white" : "text-stadium-muted")}>{s.rank}</span>
+                    <span className={cn("font-bebas text-lg leading-none tabular-nums", isLfc ? "text-white" : "text-stadium-muted")}>{s.rank}</span>
                     {zone && <span className="sr-only"> ({t(`zones.${zone.key}`)})</span>}
                   </td>
                   <td className={cn("sticky left-9 z-10 max-w-0 pl-1.5 pr-1 sm:left-10 sm:pl-2 py-2", rowBg)}>
