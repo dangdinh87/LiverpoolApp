@@ -70,7 +70,7 @@ export const getPredictionLeaderboard = unstable_cache(
     return top.map(([id, t], i) => ({ rank: i + 1, name: names.get(id)?.trim() || `Fan ${id.slice(0, 4).toUpperCase()}`, ...t }));
   },
   ["prediction-leaderboard-v1"],
-  { revalidate: 600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
+  { revalidate: 3600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
 );
 
 export interface PlayerFanRating {
@@ -101,7 +101,7 @@ export const getPlayerFanRating = unstable_cache(
     return { average, matches: means.length, votes: data.length };
   },
   ["player-fan-rating-v1"],
-  // The player page's ISR window. A shorter TTL here would cap that page at the
-  // same 10 minutes; saving a rating busts the tag and the page anyway.
-  { revalidate: 3600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
+  // Matches the player page's 6h ISR window so it never clamps that page;
+  // saving a rating busts the tag and the page anyway.
+  { revalidate: 21600, tags: [FAN_PREDICTIONS_CACHE_TAG] },
 );

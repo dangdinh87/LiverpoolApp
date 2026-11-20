@@ -231,8 +231,10 @@ export async function derivePLFormMap(season?: number): Promise<Map<number, stri
 export async function getFdoLfcFixtures(season?: number): Promise<Fixture[]> {
   const archivedSeason = season && season !== getCurrentSeasonYear() ? season : undefined;
   const seasonParam = archivedSeason ? `?season=${archivedSeason}` : "";
-  // Use shorter cache (5min) for current season to pick up live status faster
-  const revalidate = archivedSeason ? seasonRevalidate(archivedSeason, 3600) : 300;
+  // Live scores and in-play clocks come from /api/live-fixture (30s ESPN cache +
+  // immutable kick-off polling), so 30m here keeps ISR pages from re-rendering
+  // every 5 minutes when traffic is low.
+  const revalidate = archivedSeason ? seasonRevalidate(archivedSeason, 3600) : 1800;
   const data = await fdoFetch<FdoMatchesResponse>(
     `/teams/${FDO_LFC_ID}/matches${seasonParam}`,
     revalidate,

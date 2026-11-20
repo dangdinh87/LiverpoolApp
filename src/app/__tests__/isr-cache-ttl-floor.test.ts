@@ -85,6 +85,62 @@ describe("cache TTLs read by ISR pages are not shorter than the page", () => {
     expect(read("src/app/[locale]/analysis/page.tsx")).toContain("setRequestLocale(locale)");
     expect(read("src/app/[locale]/analysis/[slug]/page.tsx")).toContain("setRequestLocale(locale)");
   });
+
+  it("fdo-matches current-season fixtures and espn scoreboard cache >= 1800s (never 300s)", () => {
+    const fdoMatches = read("src/lib/football/fdo-matches.ts");
+    const matchBlock = fdoMatches.slice(fdoMatches.indexOf("getFdoLfcFixtures"));
+    const fdoTtl = num(matchBlock, /seasonRevalidate\(archivedSeason,\s*\d+\)\s*:\s*([\d_]+)/);
+    expect(fdoTtl).toBeGreaterThanOrEqual(1800);
+
+    const espn = read("src/lib/football/espn-events.ts");
+    const scoreboardBlock = espn.slice(espn.indexOf("findLfcOnScoreboard"), espn.indexOf("resolveEspnRef"));
+    const espnTtl = num(scoreboardBlock, /scoreboard\?dates=\$\{yyyymmdd\}`[\s\S]*?,\s*([\d_]+),/);
+    expect(espnTtl).toBeGreaterThanOrEqual(1800);
+  });
+
+  it("/stats uses getCachedFixtures for current season and scorers TTL covers /stats page window", () => {
+    const statsPageTtl = num(read("src/app/[locale]/stats/page.tsx"), /export const revalidate = ([\d_]+);/);
+    const statsView = read("src/components/stats/stats-season-view.tsx");
+    expect(statsView).toContain("isCurrentSeason ? getCachedFixtures() : getFixtures(selectedSeason)");
+
+    const fdoProvider = read("src/lib/football/fdo-provider.ts");
+    const scorersBlock = fdoProvider.slice(fdoProvider.indexOf("getScorersData"));
+    const scorersTtl = num(scorersBlock, /scorers\?limit=50"[\s\S]*?,\s*([\d_]+),/);
+    expect(scorersTtl).toBeGreaterThanOrEqual(statsPageTtl);
+  });
+
+  it("/predictions uses getCachedFixtures and leaderboard TTL covers /predictions page window", () => {
+    const predPage = read("src/app/[locale]/predictions/page.tsx");
+    const predTtl = num(predPage, /export const revalidate = ([\d_]+);/);
+    expect(predPage).toContain("getCachedFixtures()");
+    expect(predPage).not.toContain("getFixtures()");
+
+    const lb = read("src/lib/fan-predictions/leaderboard.ts");
+    const lbBlock = lb.slice(lb.indexOf('["prediction-leaderboard-v1"]'));
+    const lbTtl = num(lbBlock, /revalidate: ([\d_]+)/);
+    expect(lbTtl).toBeGreaterThanOrEqual(predTtl);
+  });
+
+  it("/analysis/[slug] caches cover the page window", () => {
+    const slugPage = read("src/app/[locale]/analysis/[slug]/page.tsx");
+    const pageTtl = num(slugPage, /export const revalidate = ([\d_]+);/);
+    const bySlugTtl = num(slugPage.slice(slugPage.indexOf('["site-article-by-slug-v1"]')), /revalidate: ([\d_]+)/);
+    const relatedTtl = num(slugPage.slice(slugPage.indexOf('["site-articles-related-v1"]')), /revalidate: ([\d_]+)/);
+    expect(bySlugTtl).toBeGreaterThanOrEqual(pageTtl);
+    expect(relatedTtl).toBeGreaterThanOrEqual(pageTtl);
+  });
+
+  it("/fixtures/[id] caches >= 1800s and live islands watch kick-off on the client", () => {
+    const detailPageTtl = num(read("src/app/[locale]/fixtures/[id]/page.tsx"), /export const revalidate = ([\d_]+);/);
+    expect(detailPageTtl).toBeGreaterThanOrEqual(1800);
+
+    const liveDetail = read("src/components/fixtures/live-match-detail.tsx");
+    const calls = liveDetail.match(/useLiveMatch\([^)]*\)/g) ?? [];
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    for (const call of calls) {
+      expect(call).toBe("useLiveMatch(initial, true)");
+    }
+  });
 });
 
 describe("article bodies are not scraped again needlessly", () => {

@@ -28,9 +28,9 @@ import { NewsCard } from "@/components/news/news-card";
 const getCachedPlayerMentions = unstable_cache(
   async (surname: string) => requireNonEmptyNews(getArticlesMentioning(surname)),
   ["player-mentions-v1"],
-  // Matches the page's 1h ISR window so it never lowers `revalidate`; not tagged
+  // Matches the page's 6h ISR window so it never lowers `revalidate`; not tagged
   // "news" so 15-minute feed syncs do not mark all player pages stale.
-  { revalidate: 3600 },
+  { revalidate: 21600 },
 );
 
 // ─── Types & constants ───────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ function toParagraphs(text: string): string[] {
   return paragraphs;
 }
 
-export const revalidate = 3600; // live stats come from cached API fetches
+export const revalidate = 21600; // 6h — matches FPL stats & fan rating cache TTLs
 // Every player is prerendered below; an unknown slug must 404 here. Rendering it
 // on demand returned 200 (soft 404) because loading.tsx starts streaming first.
 export const dynamicParams = false;

@@ -170,6 +170,16 @@ describe("robots.txt", () => {
     expect(robots).not.toMatch(/User-agent: (Googlebot|Bingbot|Applebot|OAI-SearchBot)/i);
   });
 
+  it("shuts out non-search AI training crawlers without touching search engines", () => {
+    const groups = robots.split(/\n\s*\n/);
+    const ai = groups.find((g) => /User-agent: GPTBot/.test(g)) ?? "";
+    for (const bot of ["GPTBot", "Amazonbot", "Reflectionbot", "GoogleOther", "Bytespider", "ClaudeBot"]) {
+      expect(ai).toContain(`User-agent: ${bot}`);
+    }
+    expect(ai).toMatch(/^Disallow: \/$/m);
+    expect(robots).not.toMatch(/User-agent: (Googlebot|Bingbot|Applebot|OAI-SearchBot)/i);
+  });
+
   it("advertises the sitemap on an absolute URL", () => {
     const line = /^Sitemap: (\S+)$/m.exec(robots);
     expect(line).not.toBeNull();

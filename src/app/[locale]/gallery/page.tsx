@@ -28,7 +28,7 @@ const getCachedGalleryFirstPage = unstable_cache(
     return res;
   },
   ["gallery-first-page-v1"],
-  { revalidate: 1800, tags: [GALLERY_CACHE_TAG] },
+  { revalidate: 21600, tags: [GALLERY_CACHE_TAG] },
 );
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   return { title, description, ...makePageMeta(title, description, { locale, path: "/gallery" }) };
 }
 
-export const revalidate = 1800;
+export const revalidate = 21600;
 
 interface ClientGalleryImage {
   id: string;

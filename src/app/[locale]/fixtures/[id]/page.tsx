@@ -43,7 +43,7 @@ import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
-export const revalidate = 300; // 5 minutes
+export const revalidate = 1800; // 30 minutes (live scores poll via useLiveMatch)
 
 export async function generateStaticParams() {
   return [];

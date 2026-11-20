@@ -19,7 +19,7 @@ import { getNewsFromDB } from "./db";
 import type { NewsArticle } from "./types";
 
 /** Matches the article page's ISR window (inner TTL ≥ outer ISR, see revalidate there). */
-const FEED_TTL_SEC = 3600;
+const FEED_TTL_SEC = 21600;
 
 /**
  * Cached feed read. `limit` and `preferLang` are function arguments, so each

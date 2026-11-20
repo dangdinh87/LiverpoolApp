@@ -229,7 +229,7 @@ export class FdoProvider implements FootballDataProvider {
   private async getScorersData(): Promise<FdoScorersResponse> {
     return fdoFetch<FdoScorersResponse>(
       "/competitions/PL/scorers?limit=50",
-      3600, // 1h in Next Data Cache; no stale-forever singleton field
+      21600, // 6h in Next Data Cache, matching standings/FPL so /stats is not clamped to 1h
       FETCH_TIMEOUT_MS,
     );
   }

@@ -10,7 +10,7 @@ import { StatsSeasonView } from "@/components/stats/stats-season-view";
 
 type Params = Promise<{ season: string; locale: string }>;
 
-export const revalidate = 3600;
+export const revalidate = 86400; // 24 hours — archived past seasons never change
 
 /**
  * Generated on first request, then cached — the convention this app already

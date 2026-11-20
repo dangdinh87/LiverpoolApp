@@ -22,6 +22,23 @@ const SEO_TOOL_BOTS = [
   "PetalBot",
 ];
 
+/**
+ * Non-search AI training and scraping crawlers. They burn Worker CPU on
+ * frequent re-renders without sending search readers back to the site.
+ * Search engines and AI search/answer crawlers (Googlebot, Bingbot, Applebot,
+ * OAI-SearchBot) remain on the open `*` group so visibility is unaffected.
+ */
+const AI_TRAINING_BOTS = [
+  "GPTBot",
+  "Amazonbot",
+  "Reflectionbot",
+  "meta-externalagent",
+  "Bytespider",
+  "CCBot",
+  "ClaudeBot",
+  "GoogleOther",
+];
+
 export function GET() {
   const siteUrl = getSiteUrl();
   // `Disallow: /*?*` used to sit here and blocked every URL carrying a query
@@ -45,6 +62,9 @@ Allow: /
 ${disallow.map((p) => `Disallow: ${p}`).join("\n")}
 
 ${SEO_TOOL_BOTS.map((bot) => `User-agent: ${bot}`).join("\n")}
+Disallow: /
+
+${AI_TRAINING_BOTS.map((bot) => `User-agent: ${bot}`).join("\n")}
 Disallow: /
 
 Sitemap: ${siteUrl}/sitemap.xml

@@ -11,7 +11,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import type { LocaleParams } from "@/i18n/routing";
 import type { SiteArticleContent } from "@/lib/site-articles/types";
 
-export const revalidate = 900;
+export const revalidate = 21600;
 
 const getCachedAnalysisArticles = unstable_cache(
   async () => {
@@ -22,7 +22,7 @@ const getCachedAnalysisArticles = unstable_cache(
     return rows;
   },
   ["analysis-list-v1"],
-  { revalidate: 900, tags: ["site-articles"] },
+  { revalidate: 21600, tags: ["site-articles"] },
 );
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {

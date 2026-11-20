@@ -12,7 +12,7 @@ import { ArticleCard } from "@/components/site-articles/article-card";
 import { BRAND } from "@/lib/brand";
 import type { SiteArticleContent, SiteArticleKind } from "@/lib/site-articles/types";
 
-export const revalidate = 3600;
+export const revalidate = 21600;
 
 const getCachedSiteArticleBySlug = unstable_cache(
   async (slug: string) => {
@@ -21,7 +21,7 @@ const getCachedSiteArticleBySlug = unstable_cache(
     return row;
   },
   ["site-article-by-slug-v1"],
-  { revalidate: 3600, tags: ["site-articles"] },
+  { revalidate: 21600, tags: ["site-articles"] },
 );
 
 const getCachedRelatedSiteArticles = unstable_cache(
@@ -31,7 +31,7 @@ const getCachedRelatedSiteArticles = unstable_cache(
     return rows;
   },
   ["site-articles-related-v1"],
-  { revalidate: 3600, tags: ["site-articles"] },
+  { revalidate: 21600, tags: ["site-articles"] },
 );
 
 /**

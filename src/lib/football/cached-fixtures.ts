@@ -5,7 +5,7 @@ import { requireNonEmptyArray } from "./fdo-client";
 import type { Fixture } from "@/lib/types/football";
 import { FOOTBALL_CACHE_TAG } from "./cache-tags";
 
-const FIXTURES_TTL_SEC = 3600;
+const FIXTURES_TTL_SEC = 21600;
 
 const getCachedFixturesInner = unstable_cache(
   async (): Promise<Fixture[]> => requireNonEmptyArray(getFixtures()),

@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   return { title, description, ...makePageMeta(title, description, { locale, path: "/stats" }) };
 }
 
-export const revalidate = 3600; // 1 hour
+export const revalidate = 21600; // 6 hours — matches standings, FPL, and scorers cache TTLs
 
 /**
  * The current season's stats, prerendered.

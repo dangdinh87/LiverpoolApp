@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getTopScorers, getTopAssists, getAllFplStats, getFixtures, getStandings, computeSeasonStats } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { SeasonOverview } from "@/components/stats/season-overview";
 import { LazyGoalsByMonthChart, LazySeasonComparison } from "@/components/stats/lazy-charts";
 import { FormTimeline } from "@/components/stats/form-timeline";
@@ -46,7 +47,7 @@ export async function StatsSeasonView({
     isCurrentSeason ? getTopScorers() : Promise.resolve([]),
     isCurrentSeason ? getTopAssists() : Promise.resolve([]),
     isCurrentSeason ? getAllFplStats() : Promise.resolve([]),
-    getFixtures(selectedSeason),
+    isCurrentSeason ? getCachedFixtures() : getFixtures(selectedSeason),
     isCurrentSeason ? getStandings() : getStandings(selectedSeason).catch(() => []),
     Promise.all(
       comparisonSeasons.map(async (s) => {

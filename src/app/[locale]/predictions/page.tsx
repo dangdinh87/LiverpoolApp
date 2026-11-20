@@ -2,7 +2,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Trophy } from "lucide-react";
 import type { LocaleParams } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
-import { getFixtures } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { getPredictionLeaderboard, type LeaderboardRow } from "@/lib/fan-predictions/leaderboard";
 import { EXACT_POINTS, RESULT_POINTS } from "@/lib/fan-predictions/scoring";
 import { PageHero } from "@/components/ui/page-hero";
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: LocaleParams) {
   return { title: t("title"), description: t("description"), ...makePageMeta(t("title"), t("description"), { locale, path: "/predictions" }) };
 }
 
-export const revalidate = 600;
+export const revalidate = 3600;
 
 export default async function PredictionsPage({ params }: LocaleParams) {
   const { locale } = await params;
@@ -30,7 +30,7 @@ export default async function PredictionsPage({ params }: LocaleParams) {
 
   const [rows, fixtures] = await Promise.all([
     getPredictionLeaderboard().catch((): LeaderboardRow[] | null => null),
-    getFixtures(),
+    getCachedFixtures(),
   ]);
   // The next match still open for predictions: where the call to action points.
   const now = new Date().getTime();

@@ -176,7 +176,7 @@ async function findLfcOnScoreboard(dateKey: string): Promise<EspnEventRef | null
     try {
       const data = await espnFetch<{ events: EspnScheduleEvent[] }>(
         `${ESPN_BASE}/${slug}/scoreboard?dates=${yyyymmdd}`,
-        300, // 5min cache — scoreboard updates frequently
+        1800, // 30min cache — only resolves ESPN event IDs; live scores use getEspnLiveSnapshot
       );
       for (const ev of data.events) {
         const comp = ev.competitions[0];

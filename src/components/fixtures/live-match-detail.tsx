@@ -2,9 +2,9 @@
 
 /**
  * Live pieces of the match page (/fixtures/[id]). The page itself is cached
- * for five minutes, so while a match is in play these islands take over the
- * score, the timeline and the statistics. They all share the one live query
- * (see useLiveMatch), so the page still asks once a minute in total.
+ * for 30 minutes, so around kick-off and while a match is in play these islands
+ * take over the score, the timeline and the statistics. They all share the one
+ * live query (see useLiveMatch), so the page still asks once a minute in total.
  */
 
 import { BarChart3, ListOrdered } from "lucide-react";
@@ -41,7 +41,7 @@ function toFixtureEvent(e: LiveMatchEvent, fixture: Fixture): FixtureEvent {
 
 /** "Live  2nd half" chip in the score header. */
 export function LiveDetailBadge({ initial }: { initial: Fixture }) {
-  const { fixture, ended, ref } = useLiveMatch(initial);
+  const { fixture, ended, ref } = useLiveMatch(initial, true);
   return (
     <span ref={ref} className="shrink-0">
       <LiveStatusBadge status={fixture.fixture.status.short} ended={ended} />
@@ -51,7 +51,7 @@ export function LiveDetailBadge({ initial }: { initial: Fixture }) {
 
 /** Score plus the running clock tab; the header's bottom edge fills with the match minute. */
 export function LiveDetailScore({ initial }: { initial: Fixture }) {
-  const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial);
+  const { fixture, live, ended, updatedAt, ref } = useLiveMatch(initial, true);
   const { goals, fixture: f } = fixture;
   return (
     <div ref={ref}>
@@ -79,7 +79,7 @@ export function LiveDetailScore({ initial }: { initial: Fixture }) {
 /** Goals and cards so far, newest last, in the same rows as a finished match. */
 export function LiveDetailTimeline({ initial }: { initial: Fixture }) {
   const t = useTranslations("Fixtures.detail.empty");
-  const { fixture, live, ref } = useLiveMatch(initial);
+  const { fixture, live, ref } = useLiveMatch(initial, true);
   const events = live?.events ?? [];
   return (
     <div ref={ref}>
@@ -104,7 +104,7 @@ export function LiveDetailTimeline({ initial }: { initial: Fixture }) {
 /** Possession, shots, on target and corners as the match goes. */
 export function LiveDetailStats({ initial, homeName, awayName }: { initial: Fixture; homeName: string; awayName: string }) {
   const t = useTranslations("Fixtures.detail.empty");
-  const { fixture, live, ref } = useLiveMatch(initial);
+  const { fixture, live, ref } = useLiveMatch(initial, true);
   const lfcSide = fixture.teams.home.id === LFC_ID ? "home" : fixture.teams.away.id === LFC_ID ? "away" : null;
   return (
     <div ref={ref}>

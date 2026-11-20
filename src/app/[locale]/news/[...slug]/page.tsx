@@ -37,11 +37,11 @@ import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
 import { assessReadability, cleanSnippet, cleanTitle, dropHeroDuplicate, filterJunk, imageKey, isEmbeddableImageUrl, pickTitle } from "@/components/news/news-text";
 
-// 1 hour. The excerpt itself never changes, so this could be far longer — but
-// the page now renders the like count, and revalidateTag refreshes the data
-// cache behind it, not this HTML. An hour caps how stale that number can look
-// to a signed-out reader (a signed-in one still fetches the live value).
-export const revalidate = 3600;
+// 6 hours. The excerpt itself never changes, and revalidateTag refreshes the
+// engagement data cache behind it; a 6-hour cap limits how long a signed-out
+// reader can see an older counter while cutting ISR re-renders 6x across all
+// article URLs (signed-in readers fetch live engagement on the client).
+export const revalidate = 21600;
 
 // The page scrapes the source with a no-store fetch (so the scraped HTML stays out of
 // the R2 incremental cache). Without force-static, Next turns that fetch into "this
