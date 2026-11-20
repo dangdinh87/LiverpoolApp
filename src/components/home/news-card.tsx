@@ -22,6 +22,7 @@ export function NewsHeadline({ article, locale }: NewsHeadlineProps) {
   return (
     <Link
       href={getArticleUrl(article.link)}
+      rel="nofollow"
       className="group flex min-h-[5.25rem] items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-3)]"
     >
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -51,7 +52,7 @@ export function NewsLeadStory({ article, locale }: NewsHeadlineProps) {
   const source = SOURCE_CONFIG[article.source]?.label;
 
   return (
-    <Link href={getArticleUrl(article.link)} className="group flex h-full flex-col bg-[var(--surface-2)] transition-colors hover:bg-[var(--surface-3)]">
+    <Link href={getArticleUrl(article.link)} rel="nofollow" className="group flex h-full flex-col bg-[var(--surface-2)] transition-colors hover:bg-[var(--surface-3)]">
       {/* Beside the headline list the picture grows to the list's height instead of leaving a gap. */}
       <div className="relative aspect-video overflow-hidden md:aspect-auto md:min-h-56 md:flex-1">
         <NewsThumb src={article.thumbnail} sizes="(max-width: 1024px) 100vw, 480px" crestClassName="w-14" />

@@ -104,6 +104,39 @@ export const getSiteArticleBySlug = cache(
   },
 );
 
+/** Published articles linked to a fixture, newest first. */
+export const getArticlesForFixture = cache(
+  async (fixtureId: number): Promise<SiteArticleRow[]> => {
+    try {
+      const { data, error } = await getServiceClient()
+        .from("site_articles")
+        .select(COLUMNS)
+        .eq("status", "published")
+        .eq("fixture_id", fixtureId)
+        .order("published_at", { ascending: false })
+        .limit(4);
+      if (error) {
+        console.error("[site-articles] forFixture:", error.message);
+        return [];
+      }
+      return (data ?? [])
+        .map((r) => toRow(r as Record<string, unknown>))
+        .sort((a, b) => displayDate(b).localeCompare(displayDate(a)));
+    } catch (err) {
+      console.error("[site-articles] forFixture failed:", err);
+      return [];
+    }
+  },
+);
+
+/** Pick the localized content for `locale`, falling back to whichever language exists. */
+export function pickSiteArticleContent(
+  row: Pick<SiteArticleRow, "content_en" | "content_vi">,
+  locale: string,
+): SiteArticleContent | null {
+  return (locale === "vi" ? row.content_vi : row.content_en) ?? row.content_en ?? row.content_vi;
+}
+
 /** Whether a fixture already has an article of this kind. */
 export async function hasArticleForFixture(
   fixtureId: number,

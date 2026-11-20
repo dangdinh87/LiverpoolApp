@@ -60,6 +60,7 @@ export function StoryCard({ lead, related, nowMs, isRead, priority, variant = "r
             <li key={a.link}>
               <Link
                 href={getArticleUrl(a.link)}
+                rel="nofollow"
                 className="group/item block py-2 text-sm leading-snug text-white/85 transition-colors hover:text-white"
               >
                 <span className="line-clamp-2 decoration-lfc-red decoration-2 underline-offset-4 group-hover/item:underline">

@@ -305,6 +305,12 @@ export function buildSportsEventJsonLd(event: {
 }) {
   const home = { "@type": "SportsTeam", name: event.homeTeam };
   const away = { "@type": "SportsTeam", name: event.awayTeam };
+  const homeIsLfc = /liverpool/i.test(event.homeTeam);
+  const venueName = event.venue?.trim() || (homeIsLfc ? "Anfield" : `${event.homeTeam} Stadium`);
+  const venueCity =
+    event.venueCity?.trim() ||
+    (homeIsLfc || venueName === "Anfield" ? "Liverpool" : event.homeTeam);
+
   return {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
@@ -312,22 +318,20 @@ export function buildSportsEventJsonLd(event: {
     ...(event.url && { url: event.url }),
     startDate: event.startDate,
     eventStatus: `https://schema.org/${EVENT_STATUS[event.status ?? ""] ?? "EventScheduled"}`,
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     sport: "Football",
-    ...(event.venue && {
-      location: {
-        "@type": "StadiumOrArena",
-        name: event.venue,
-        ...(event.venueCity && {
-          address: {
-            "@type": "PostalAddress",
-            addressLocality: event.venueCity,
-          },
-        }),
+    location: {
+      "@type": "StadiumOrArena",
+      name: venueName,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: venueCity,
       },
-    }),
+    },
     ...(event.competition && {
-      superEvent: {
-        "@type": "SportsEvent",
+      description: `${event.name} — ${event.competition}`,
+      organizer: {
+        "@type": "SportsOrganization",
         name: event.competition,
       },
     }),

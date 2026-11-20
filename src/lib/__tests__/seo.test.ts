@@ -182,7 +182,7 @@ describe("buildNewsArticleJsonLd", () => {
 });
 
 describe("buildSportsEventJsonLd", () => {
-  it("builds valid SportsEvent with teams", () => {
+  it("builds valid SportsEvent with teams, location, attendance mode, and organizer", () => {
     const result = buildSportsEventJsonLd({
       name: "Liverpool vs Man City",
       startDate: "2026-03-20T15:00:00Z",
@@ -194,8 +194,57 @@ describe("buildSportsEventJsonLd", () => {
     });
     expect(result["@type"]).toBe("SportsEvent");
     expect(result.sport).toBe("Football");
+    expect(result.eventAttendanceMode).toBe("https://schema.org/OfflineEventAttendanceMode");
     expect(result.competitor).toHaveLength(2);
-    expect(result.location?.name).toBe("Anfield");
+    expect(result.location).toEqual({
+      "@type": "StadiumOrArena",
+      name: "Anfield",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Liverpool",
+      },
+    });
+    expect(result.organizer).toEqual({
+      "@type": "SportsOrganization",
+      name: "Premier League",
+    });
+    expect("superEvent" in result).toBe(false);
+  });
+
+  it("populates fallback location when venue is omitted or null", () => {
+    const lfcHome = buildSportsEventJsonLd({
+      name: "Liverpool FC vs Everton FC",
+      startDate: "2026-03-20T15:00:00Z",
+      homeTeam: "Liverpool FC",
+      awayTeam: "Everton FC",
+      venue: null,
+      venueCity: null,
+    });
+    expect(lfcHome.location).toEqual({
+      "@type": "StadiumOrArena",
+      name: "Anfield",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Liverpool",
+      },
+    });
+
+    const awayMatch = buildSportsEventJsonLd({
+      name: "Arsenal vs Liverpool FC",
+      startDate: "2026-03-20T15:00:00Z",
+      homeTeam: "Arsenal",
+      awayTeam: "Liverpool FC",
+      venue: null,
+      venueCity: null,
+    });
+    expect(awayMatch.location).toEqual({
+      "@type": "StadiumOrArena",
+      name: "Arsenal Stadium",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Arsenal",
+      },
+    });
   });
 
   it("names home and away sides and the event status", () => {

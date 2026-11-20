@@ -135,6 +135,10 @@
       "title": "Dự đoán tỷ số",
       "cta": "Dự đoán",
       "table": "BXH"
+    },
+    "analysis": {
+      "title": "Phân tích trận đấu",
+      "viewAll": "Xem tất cả"
     }
   },
   "Bento": {
@@ -497,6 +501,10 @@
       "defender": "Hậu vệ",
       "midfielder": "Tiền vệ",
       "forward": "Tiền đạo"
+    },
+    "metadata": {
+      "title": "{name} — {position} Liverpool FC, Tiểu sử & Thống kê",
+      "titleWithNumber": "{name} (#{number}) — {position} Liverpool FC, Tiểu sử & Thống kê"
     },
     "nationalities": {
       "american": "Mỹ",
@@ -1041,7 +1049,8 @@
       "metaUpcoming": "{home} gặp {away}: bóng lăn lúc {time}, {date} (giờ Việt Nam, GMT+7). {competition}. Kênh phát sóng, đội hình và lịch sử đối đầu.",
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: diễn biến chính, thông số thống kê và đội hình xuất phát.",
       "attendance": "Khán giả: {count}",
-      "referee": "Trọng tài: {name}"
+      "referee": "Trọng tài: {name}",
+      "matchAnalysis": "Phân tích trận đấu"
     },
     "outage": {
       "title": "Lịch thi đấu tạm thời gián đoạn",

@@ -135,6 +135,10 @@
       "title": "Predict the score",
       "cta": "Predict",
       "table": "Table"
+    },
+    "analysis": {
+      "title": "Match analysis",
+      "viewAll": "All analysis"
     }
   },
   "Bento": {
@@ -497,6 +501,10 @@
       "defender": "Defender",
       "midfielder": "Midfielder",
       "forward": "Forward"
+    },
+    "metadata": {
+      "title": "{name} — Liverpool FC {position}, Stats & Bio",
+      "titleWithNumber": "{name} (#{number}) — Liverpool FC {position}, Stats & Bio"
     },
     "nationalities": {
       "american": "American",
@@ -1041,7 +1049,8 @@
       "metaUpcoming": "{home} vs {away}: kick-off {time}, {date} (UK time). {competition}. Broadcast info, line-ups and head-to-head.",
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and line-ups.",
       "attendance": "Attendance: {count}",
-      "referee": "Referee: {name}"
+      "referee": "Referee: {name}",
+      "matchAnalysis": "Match analysis"
     },
     "outage": {
       "title": "Fixtures temporarily unavailable",

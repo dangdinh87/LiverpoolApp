@@ -25,7 +25,7 @@ export async function RelatedArticles({ articles }: { articles: NewsArticle[] })
             .join(" · ");
           return (
             <li key={article.link}>
-              <Link href={getArticleUrl(article.link)} className="group flex min-h-16 flex-col justify-center gap-1 py-3">
+              <Link href={getArticleUrl(article.link)} rel="nofollow" className="group flex min-h-16 flex-col justify-center gap-1 py-3">
                 <span className="line-clamp-3 font-inter text-base font-semibold leading-snug text-white decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline">
                   {cleanTitle(article.title)}
                 </span>

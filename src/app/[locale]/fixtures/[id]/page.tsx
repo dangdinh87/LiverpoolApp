@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
@@ -41,9 +42,18 @@ import { cn } from "@/lib/utils";
 import { buildSportsEventJsonLd, getLocalizedUrl, makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
+import { ArticleCard } from "@/components/site-articles/article-card";
+import { getArticlesForFixture, pickSiteArticleContent } from "@/lib/site-articles/db";
+import type { SiteArticleContent } from "@/lib/site-articles/types";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 
 export const revalidate = 1800; // 30 minutes (live scores poll via useLiveMatch)
+
+const getCachedFixtureArticles = unstable_cache(
+  async (fixtureId: number) => getArticlesForFixture(fixtureId),
+  ["fixture-articles-v1"],
+  { revalidate: 21600, tags: ["site-articles"] },
+);
 
 export async function generateStaticParams() {
   return [];
@@ -106,7 +116,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
   const isLive = ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"].includes(f.status.short);
 
-  const [events, lineups, providerStats, espnDetail, prevFixtures, seasonFixtures] = await Promise.all([
+  const [events, lineups, providerStats, espnDetail, prevFixtures, seasonFixtures, fixtureArticlesRaw] = await Promise.all([
     isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
     getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
@@ -115,7 +125,14 @@ export default async function FixtureDetailPage({ params }: PageProps) {
       ? getFixtures(league.season - 1).catch(() => [] as Fixture[])
       : Promise.resolve([] as Fixture[]),
     league.season === getCurrentSeasonYear() ? getFixtures() : getFixtures(league.season),
+    getCachedFixtureArticles(fixtureId).catch(() => []),
   ]);
+  const fixtureArticles = fixtureArticlesRaw
+    .map((row) => {
+      const content = pickSiteArticleContent(row, locale);
+      return content ? { row, content } : null;
+    })
+    .filter((item): item is { row: (typeof fixtureArticlesRaw)[number]; content: SiteArticleContent } => item !== null);
 
   const opponentId = teams.home.id === LFC_ID ? teams.away.id : teams.home.id;
   const opponentName = teams.home.id === LFC_ID ? teams.away.name : teams.home.name;
@@ -195,8 +212,8 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           name: `${teams.home.name} vs ${teams.away.name}`,
           url: getLocalizedUrl(`/fixtures/${id}`, locale),
           startDate: f.date,
-          venue: f.venue?.name,
-          venueCity: f.venue?.city,
+          venue: espnDetail?.venue ?? f.venue?.name ?? (homeIsLfc ? "Anfield" : null),
+          venueCity: f.venue?.city ?? (homeIsLfc ? "Liverpool" : null),
           homeTeam: teams.home.name,
           awayTeam: teams.away.name,
           competition: league.name,
@@ -358,6 +375,27 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               />
             )}
           </section>
+
+          {fixtureArticles.length > 0 && (
+            <section id="analysis" className={sectionClass}>
+              <SectionHeader title={tDetail("matchAnalysis")} href="/analysis" />
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {fixtureArticles.map(({ row, content }) => (
+                  <li key={row.id}>
+                    <ArticleCard
+                      article={{
+                        slug: row.slug,
+                        kind: row.kind,
+                        title: content.title,
+                        excerpt: content.excerpt,
+                        publishedAt: row.match_date ?? row.published_at,
+                      }}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </div>
     </div>

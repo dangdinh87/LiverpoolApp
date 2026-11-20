@@ -19,6 +19,10 @@ import { selectHomeNews } from "@/components/home/news-utils";
 import { StandingsPreview } from "@/components/home/standings-preview";
 import { DigestFeature } from "@/components/home/digest-feature";
 import { PredictCta } from "@/components/home/predict-cta";
+import { SectionHeader } from "@/components/ui/section-header";
+import { ArticleCard } from "@/components/site-articles/article-card";
+import { listSiteArticles, pickSiteArticleContent, type SiteArticleRow } from "@/lib/site-articles/db";
+import type { SiteArticleContent } from "@/lib/site-articles/types";
 import { JsonLd } from "@/components/seo/json-ld";
 import { DEFAULT_OG_IMAGE, getCanonical, getLocalizedUrl, makePageMeta, SCHEMA_IDS } from "@/lib/seo";
 import type { Fixture } from "@/lib/types/football";
@@ -79,6 +83,18 @@ const getCachedHomeHeroSetting = unstable_cache(
     }),
   ["home-hero-setting-v2"],
   { revalidate: 1800, tags: [SITE_SETTINGS_CACHE_TAG] },
+);
+
+const getCachedHomeAnalysis = unstable_cache(
+  async () => {
+    const rows = await listSiteArticles(4);
+    if (rows.length === 0) {
+      throw new Error("[homepage] empty site_articles response — not caching");
+    }
+    return rows;
+  },
+  ["home-analysis-v1"],
+  { revalidate: 21600, tags: ["site-articles"] },
 );
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -143,14 +159,20 @@ function buildHomeJsonLd(locale: string) {
 export default async function HomePage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult] =
-    await Promise.allSettled([
+  const [
+    tAnalysis,
+    [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult, analysisResult],
+  ] = await Promise.all([
+    getTranslations({ locale, namespace: "Home.analysis" }),
+    Promise.allSettled([
       getCachedHomeFixtures(),
       getCachedHomeStandings(),
       getCachedHomeNews(),
       getCachedLatestDigest(),
       getCachedHomeHeroSetting(),
-    ]);
+      getCachedHomeAnalysis(),
+    ]),
+  ]);
 
   const fixtures = getSettledValue<Fixture[]>(fixturesResult, []);
   const standings = getSettledValue<Awaited<ReturnType<typeof getStandings>>>(
@@ -165,6 +187,14 @@ export default async function HomePage({ params }: LocaleParams) {
   const heroSetting = getSettledValue<
     { gallery_image_id: string; cloudinary_url: string } | null
   >(heroSettingResult, null);
+  const analysisRows = getSettledValue<SiteArticleRow[]>(analysisResult, []);
+  const homeAnalyses = analysisRows
+    .map((row) => {
+      const content = pickSiteArticleContent(row, locale);
+      return content ? { row, content } : null;
+    })
+    .filter((item): item is { row: SiteArticleRow; content: SiteArticleContent } => item !== null)
+    .slice(0, 2);
   const heroBackgroundUrl = heroSetting?.cloudinary_url
     ? getOptimizedHeroUrl(heroSetting.cloudinary_url)
     : undefined;
@@ -200,6 +230,30 @@ export default async function HomePage({ params }: LocaleParams) {
         <div className={`grid grid-cols-1 items-start gap-6 lg:grid-cols-12 lg:gap-8 ${digest ? "mt-8 sm:mt-12" : ""}`}>
           <div className="lg:col-span-8">
             <NewsSection articles={topNews} locale={uiLocale} />
+            {homeAnalyses.length > 0 && (
+              <section aria-label={tAnalysis("title")} className="mt-8 sm:mt-10">
+                <SectionHeader
+                  title={tAnalysis("title")}
+                  href="/analysis"
+                  linkLabel={tAnalysis("viewAll")}
+                />
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {homeAnalyses.map(({ row, content }) => (
+                    <li key={row.id}>
+                      <ArticleCard
+                        article={{
+                          slug: row.slug,
+                          kind: row.kind,
+                          title: content.title,
+                          excerpt: content.excerpt,
+                          publishedAt: row.match_date ?? row.published_at,
+                        }}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
           <div className="flex flex-col gap-6 lg:col-span-4">
             <FormWidget results={pickRecentResults(fixtures)} />

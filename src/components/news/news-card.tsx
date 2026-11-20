@@ -69,6 +69,7 @@ export function NewsCard({ article, nowMs, isRead = false, priority = false, var
   return (
     <Link
       href={getArticleUrl(article.link)}
+      rel="nofollow"
       className={cn(
         "group flex min-h-[104px] gap-3 border-b border-[var(--line)] py-3.5 transition-colors",
         s.link,

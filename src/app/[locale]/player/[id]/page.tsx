@@ -61,10 +61,14 @@ const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string }> = {
 
 // ─── Static generation ───────────────────────────────────────────────────────
 
-/** First ~155 characters of a bio, cut at a word boundary, for meta descriptions. */
-function summarize(text: string, max = 155): string {
+/** First ~150 characters of a bio, cut at a sentence or word boundary, for meta descriptions. */
+function summarize(text: string, max = 150): string {
   const clean = text.replace(/\s+/g, " ").trim();
   if (clean.length <= max) return clean;
+  const firstPeriod = clean.indexOf(". ");
+  if (firstPeriod >= 70 && firstPeriod + 1 <= max) {
+    return clean.slice(0, firstPeriod + 1);
+  }
   return `${clean.slice(0, clean.lastIndexOf(" ", max - 1))}…`;
 }
 
@@ -104,13 +108,26 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const tLabels = await getTranslations({ locale, namespace: "Common.labels" });
     return { title: tLabels("player"), robots: { index: false } };
   }
-  const tPos = await getTranslations({ locale, namespace: "PlayerDetail.positions" });
+  const [tPos, tMeta] = await Promise.all([
+    getTranslations({ locale, namespace: "PlayerDetail.positions" }),
+    getTranslations({ locale, namespace: "PlayerDetail.metadata" }),
+  ]);
+  const posLabel = tPos(player.position);
+  const pageTitle =
+    player.shirtNumber > 0
+      ? tMeta("titleWithNumber", {
+          name: player.name,
+          number: player.shirtNumber,
+          position: posLabel,
+        })
+      : tMeta("title", { name: player.name, position: posLabel });
+
   // metaDescription is English-only; the Vietnamese page gets the opening of
   // the Vietnamese bio instead.
   const viSummary = locale === "vi" ? summarize(getPlayerBio(player.slug, "vi")) : "";
   const fallbackDesc =
     locale === "vi"
-      ? `${player.name} — ${tPos(player.position)}, Liverpool FC.`
+      ? `${player.name} — ${posLabel}, Liverpool FC.`
       : `${player.name} — ${POSITION_DISPLAY[player.position]} at Liverpool FC.`;
   const description =
     viSummary ||
@@ -118,11 +135,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const images = player.photoLg ? [{ url: player.photoLg, width: 400, height: 400 }] : [];
   const alternates = getHreflangAlternates(`/player/${id}`, locale);
   return {
-    title: player.name,
+    title: pageTitle,
     description,
     alternates,
     openGraph: {
-      title: player.name,
+      title: pageTitle,
       url: alternates.canonical,
       locale: locale === "vi" ? "vi_VN" : "en_GB",
       description,
@@ -132,7 +149,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     },
     twitter: {
       card: "summary_large_image",
-      title: player.name,
+      title: pageTitle,
       description,
       ...(player.photoLg && { images: [player.photoLg] }),
     },
