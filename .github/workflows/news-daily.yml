@@ -7,12 +7,13 @@ on:
   schedule:
     - cron: "7 0 * * *" # digest, just after midnight UTC
     - cron: "17 3 * * *" # cleanup
+    - cron: "27 5 * * *" # site-articles (post-match reviews & 48h pre-match previews)
   workflow_dispatch:
     inputs:
       job:
         description: Which job to run
         type: choice
-        options: [cleanup, digest]
+        options: [cleanup, digest, site-articles]
         default: cleanup
 
 jobs:
@@ -26,10 +27,13 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then JOB="${{ inputs.job }}";
-          elif [ "${{ github.event.schedule }}" = "7 0 * * *" ]; then JOB=digest; else JOB=cleanup; fi
+          elif [ "${{ github.event.schedule }}" = "7 0 * * *" ]; then JOB=digest;
+          elif [ "${{ github.event.schedule }}" = "27 5 * * *" ]; then JOB=site-articles;
+          else JOB=cleanup; fi
           case "$JOB" in
             digest) ROUTE=/api/news/digest/generate ;;
             cleanup) ROUTE=/api/news/cleanup ;;
+            site-articles) ROUTE=/api/site-articles/generate ;;
           esac
           echo "Running $JOB → $ROUTE"
           HTTP_CODE="$(curl -sS -o response.json -w '%{http_code}' --max-time 120 --retry 2 --retry-delay 15 \

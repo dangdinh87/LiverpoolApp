@@ -82,6 +82,9 @@ export function Footer() {
     { href: "/fixtures", label: navT("season") },
     { href: "/squad", label: navT("squad") },
     { href: "/news", label: navT("news") },
+    { href: "/analysis", label: navT("analysis") },
+    { href: "/injuries", label: navT("injuries") },
+    { href: "/transfers", label: navT("transfers") },
     { href: "/history", label: t("club") },
     { href: "/gallery", label: navT("clubGallery") },
   ] as const;

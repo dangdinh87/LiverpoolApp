@@ -88,6 +88,7 @@ export interface MatchReviewFacts {
 export interface MatchPreviewFacts {
   kind: "preview";
   competition: string;
+  competitionAliases: string[];
   round: string | null;
   venue: string | null;
   kickOff: string;

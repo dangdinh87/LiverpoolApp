@@ -11,7 +11,9 @@ type NavKey =
   | "history"
   | "about"
   | "news"
-  | "analysis";
+  | "analysis"
+  | "injuries"
+  | "transfers";
 
 /** One step after Home: an unprefixed app path plus either its own name or a nav label. */
 export type Crumb = { path: string } & ({ name: string } | { nav: NavKey });

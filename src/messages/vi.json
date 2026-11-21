@@ -51,7 +51,9 @@
       },
       "quick": "Điều hướng nhanh",
       "legal": "Pháp lý",
-      "analysis": "Phân tích"
+      "analysis": "Phân tích",
+      "injuries": "Chấn thương",
+      "transfers": "Chuyển nhượng"
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -1537,5 +1539,59 @@
       "unavailableTitle": "Bảng điểm tạm thời gián đoạn",
       "unavailableDesc": "Không thể tải bảng xếp hạng dự đoán lúc này. Vui lòng thử lại sau ít phút."
     }
+  },
+  "Injuries": {
+    "metadata": {
+      "title": "Chấn thương Liverpool mới nhất & ngày trở lại",
+      "description": "Cập nhật danh sách chấn thương Liverpool FC, cầu thủ bỏ ngỏ khả năng ra sân, án treo giò và thời gian hồi phục mới nhất."
+    },
+    "hero": {
+      "eyebrow": "Tình hình lực lượng",
+      "title": "Chấn thương & thẻ phạt Liverpool",
+      "description": "Tổng hợp cầu thủ đang chấn thương, bỏ ngỏ khả năng ra sân, bị treo giò và dự kiến ngày trở lại của đội một Liverpool FC."
+    },
+    "summary": {
+      "sidelined": "{count} cầu thủ cần theo dõi",
+      "available": "{count} cầu thủ sẵn sàng",
+      "updated": "Dữ liệu thể trạng cập nhật mỗi 6 giờ"
+    },
+    "status": {
+      "injured": "Chấn thương",
+      "doubtful": "Bỏ ngỏ",
+      "suspended": "Treo giò",
+      "unavailable": "Vắng mặt"
+    },
+    "chanceOfPlaying": "{pct}% khả năng ra sân trận tới",
+    "sections": {
+      "sidelined": "Danh sách theo dõi",
+      "news": "Tin chấn thương mới nhất"
+    },
+    "empty": {
+      "title": "Đội hình đang sung sức",
+      "description": "Hiện không có cầu thủ Liverpool nào bị ghi nhận chấn thương, bỏ ngỏ hay treo giò từ dữ liệu giải đấu."
+    },
+    "viewSquad": "Xem toàn bộ đội hình"
+  },
+  "Transfers": {
+    "metadata": {
+      "title": "Tin chuyển nhượng Liverpool mới nhất & cho mượn",
+      "description": "Cập nhật tin chuyển nhượng Liverpool FC mới nhất, gia hạn hợp đồng, bản tin tổng hợp hằng ngày và danh sách cầu thủ đang cho mượn."
+    },
+    "hero": {
+      "eyebrow": "Trung tâm chuyển nhượng",
+      "title": "Tin chuyển nhượng Liverpool",
+      "description": "Tin tức chuyển nhượng chọn lọc từ báo chí Anh, bản tin tổng hợp mỗi ngày và danh sách các cầu thủ Liverpool đang thi đấu theo dạng cho mượn."
+    },
+    "sections": {
+      "news": "Tin chuyển nhượng mới nhất",
+      "onLoan": "Cầu thủ đang cho mượn",
+      "digest": "Bản tin tổng hợp hôm nay"
+    },
+    "digestCta": "Đọc bản tin",
+    "empty": {
+      "title": "Chưa có tin chuyển nhượng mới",
+      "description": "Các bài viết chuyển nhượng sẽ hiển thị tự động tại đây khi có diễn biến mới."
+    },
+    "viewSquad": "Xem đội hình"
   }
 }

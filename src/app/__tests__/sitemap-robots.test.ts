@@ -98,10 +98,14 @@ describe("sitemap.xml", () => {
     }
   });
 
-  it("lists the site's own articles, which it used to declare and never fetch", () => {
+  it("lists the site's own articles and evergreen injury/transfer hubs", () => {
     const locs = entries.map(locOf);
     expect(locs.some((l) => l.endsWith("/analysis/liverpool-v-man-city-review-2026-10-11"))).toBe(true);
     expect(locs.some((l) => l.includes("/vi/analysis/liverpool-v-man-city-review-2026-10-11"))).toBe(true);
+    expect(locs.some((l) => l.endsWith("/injuries"))).toBe(true);
+    expect(locs.some((l) => l.endsWith("/vi/injuries"))).toBe(true);
+    expect(locs.some((l) => l.endsWith("/transfers"))).toBe(true);
+    expect(locs.some((l) => l.endsWith("/vi/transfers"))).toBe(true);
     // Unpublished rows have no date and must not be submitted.
     expect(locs.some((l) => l.includes("unpublished"))).toBe(false);
   });

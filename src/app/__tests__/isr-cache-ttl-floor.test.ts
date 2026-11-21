@@ -141,6 +141,19 @@ describe("cache TTLs read by ISR pages are not shorter than the page", () => {
       expect(call).toBe("useLiveMatch(initial, true)");
     }
   });
+
+  it("/injuries and /transfers pages export revalidate=21600, call setRequestLocale, and keep inner caches >= 21600", () => {
+    const injuriesPage = read("src/app/[locale]/injuries/page.tsx");
+    expect(num(injuriesPage, /export const revalidate = (\d+);/)).toBe(21600);
+    expect(injuriesPage).toContain("setRequestLocale(locale)");
+
+    const transfersPage = read("src/app/[locale]/transfers/page.tsx");
+    const transfersTtl = num(transfersPage, /export const revalidate = (\d+);/);
+    expect(transfersTtl).toBe(21600);
+    expect(transfersPage).toContain("setRequestLocale(locale)");
+    const digestBlock = transfersPage.slice(transfersPage.indexOf('["transfers-digest-v1"]'));
+    expect(num(digestBlock, /revalidate: ([\d_]+)/)).toBeGreaterThanOrEqual(transfersTtl);
+  });
 });
 
 describe("article bodies are not scraped again needlessly", () => {

@@ -36,6 +36,8 @@ export async function GET() {
     { path: "/", changefreq: "daily", priority: "1.0" },
     { path: "/news", changefreq: "hourly", priority: "0.9" },
     { path: "/analysis", changefreq: "daily", priority: "0.9" },
+    { path: "/injuries", changefreq: "daily", priority: "0.8" },
+    { path: "/transfers", changefreq: "daily", priority: "0.8" },
     { path: "/squad", changefreq: "weekly", priority: "0.9" },
     { path: "/fixtures", changefreq: "daily", priority: "0.9" },
     { path: "/standings", changefreq: "daily", priority: "0.8" },

@@ -50,6 +50,10 @@ export interface FplPlayerStats {
   pointsPerGame: number;
   selectedByPercent: number;
   form: number;
+  status: string;
+  news: string;
+  newsAdded: string | null;
+  chanceOfPlayingNextRound: number | null;
 }
 
 // ─── Raw FPL element ────────────────────────────────────────────────────────
@@ -87,6 +91,10 @@ export interface FplElement {
   points_per_game: string;
   selected_by_percent: string;
   form: string;
+  status?: string;
+  news?: string;
+  news_added?: string | null;
+  chance_of_playing_next_round?: number | null;
 }
 
 interface FplTeam {
@@ -144,6 +152,10 @@ function mapFplElement(e: FplElement): FplPlayerStats {
     pointsPerGame: parseFloat(e.points_per_game) || 0,
     selectedByPercent: parseFloat(e.selected_by_percent) || 0,
     form: parseFloat(e.form) || 0,
+    status: e.status ?? "a",
+    news: e.news ?? "",
+    newsAdded: e.news_added ?? null,
+    chanceOfPlayingNextRound: e.chance_of_playing_next_round ?? null,
   };
 }
 

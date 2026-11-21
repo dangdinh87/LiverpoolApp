@@ -25,7 +25,7 @@ const LFC_ID = 40;
  * Mirrors the labels in src/messages/*.json; kept here as data because the
  * facts must be readable without an i18n runtime.
  */
-const COMPETITION_ALIASES: Record<string, string[]> = {
+export const COMPETITION_ALIASES: Record<string, string[]> = {
   "Premier League": ["Ngoại hạng Anh", "EPL"],
   "UEFA Champions League": ["Champions League", "UCL", "Cúp C1", "C1"],
   "Champions League": ["UEFA Champions League", "UCL", "Cúp C1", "C1"],

@@ -66,6 +66,10 @@ describe("phase 2 security & logic regressions", () => {
         pointsPerGame: 4.8,
         selectedByPercent: 18.2,
         form: 6.5,
+        status: "a",
+        news: "",
+        newsAdded: null,
+        chanceOfPlayingNextRound: 100,
       },
     ];
     expect(findFplMatch("Alisson Becker", fplList)?.fplId).toBe(1);

@@ -51,7 +51,9 @@
       },
       "quick": "Quick navigation",
       "legal": "Legal",
-      "analysis": "Analysis"
+      "analysis": "Analysis",
+      "injuries": "Injuries",
+      "transfers": "Transfers"
     },
     "labels": {
       "opponent": "Opponent",
@@ -1537,5 +1539,59 @@
       "unavailableTitle": "Leaderboard unavailable",
       "unavailableDesc": "Unable to load the prediction leaderboard right now. Please try again shortly."
     }
+  },
+  "Injuries": {
+    "metadata": {
+      "title": "Liverpool injury news & return dates",
+      "description": "Latest Liverpool FC injury list, doubtful players, suspensions, return timelines and fitness reports from the squad."
+    },
+    "hero": {
+      "eyebrow": "Squad availability",
+      "title": "Liverpool injury list & fitness news",
+      "description": "Current sidelined players, doubtful fitness notes, suspensions and expected return dates across the Liverpool first-team squad."
+    },
+    "summary": {
+      "sidelined": "{count} players flagged",
+      "available": "{count} players available",
+      "updated": "Availability synced every 6 hours"
+    },
+    "status": {
+      "injured": "Injured",
+      "doubtful": "Doubtful",
+      "suspended": "Suspended",
+      "unavailable": "Unavailable"
+    },
+    "chanceOfPlaying": "{pct}% chance for next match",
+    "sections": {
+      "sidelined": "Flagged players",
+      "news": "Latest injury news"
+    },
+    "empty": {
+      "title": "Full squad reported fit",
+      "description": "No Liverpool players are currently flagged as injured, doubtful or suspended in the availability feed."
+    },
+    "viewSquad": "View full squad"
+  },
+  "Transfers": {
+    "metadata": {
+      "title": "Liverpool transfer news, rumours & loans",
+      "description": "Latest Liverpool FC transfer news, confirmed moves, contract updates, daily briefings and players currently out on loan."
+    },
+    "hero": {
+      "eyebrow": "Transfer hub",
+      "title": "Liverpool transfer news & loans",
+      "description": "Transfer coverage gathered from English sports press, daily briefings and Liverpool players currently gaining experience on loan."
+    },
+    "sections": {
+      "news": "Latest transfer coverage",
+      "onLoan": "Players out on loan",
+      "digest": "Today's daily briefing"
+    },
+    "digestCta": "Read briefing",
+    "empty": {
+      "title": "No recent transfer stories",
+      "description": "Transfer headlines will appear here automatically as new reports arrive in the feed."
+    },
+    "viewSquad": "Browse squad"
   }
 }

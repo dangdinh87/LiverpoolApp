@@ -16,7 +16,7 @@ export type { EspnMatchDetail } from "./espn-events";
 export { computeSeasonStats } from "./season-stats";
 export { computeH2H } from "./fdo-h2h";
 export type { H2HRecord } from "./fdo-h2h";
-export { getFplPlayerStats, getAllFplStats } from "./fpl-stats";
+export { findFplMatch, getFplPlayerStats, getAllFplStats } from "./fpl-stats";
 export type { FplPlayerStats } from "./fpl-stats";
 export type { SeasonStats, SeasonOverview, MonthlyGoals, CompetitionStats, SeasonRecords, FormEntry, RecordDisplay, WDLRecord } from "./season-stats";
 

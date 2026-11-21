@@ -103,6 +103,7 @@ const SENTENCE_STARTERS = new Set(
     "booking bookings lineup line-up kick-off half-time full-time stoppage injury " +
     "winner equaliser equalizer opener header assist assists clean sheet possession " +
     "report summary numbers stats statistics takeaways verdict context " +
+    "preview previews head-to-head meetings comparison recent " +
     // Verbs a headline uses. This list is grown from recorded rejections, not
     // guessed: every draft turned away stores the exact word that did it, so
     // an ordinary word missing here shows up as a reject_reason and gets added.
