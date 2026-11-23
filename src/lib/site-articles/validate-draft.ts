@@ -105,6 +105,7 @@ const SENTENCE_STARTERS = new Set(
     "report summary numbers stats statistics takeaways verdict context " +
     "preview previews head-to-head meetings comparison recent " +
     "injuries injured doubt doubtful fitness available unavailable absent key attack attacking defence defense defensive midfield stakes title race threat threats history record margins margin battle clash host hosts hosting visit visits visiting unbeaten winless scoring conceded " +
+    "control dominance dominant clinical efficiency discipline resilience breakthrough decisive turning point response reaction pressure balance shape bench impact outlook details opening closing tactical shape composure " +
     // Verbs a headline uses. This list is grown from recorded rejections, not
     // guessed: every draft turned away stores the exact word that did it, so
     // an ordinary word missing here shows up as a reject_reason and gets added.
@@ -131,7 +132,8 @@ const SENTENCE_STARTERS = new Set(
     // The voice addresses the reader as "bạn"; "level" opens an English one.
     "bạn mình chúng ta level even ahead behind clear late early overall " +
     "nửa phần đoạn khúc quãng lúc thời điểm " +
-    "chấn thương lực lượng phong độ đối đầu điểm nhấn chìa khóa hàng công thủ hiệu số cuộc đua ngôi đầu sân nhà khách bất bại mạch chuỗi vắng mặt nguy cơ cách biệt bên cạnh khả năng nổi bật chân sút thống kê mục tiêu"
+    "chấn thương lực lượng phong độ đối đầu điểm nhấn chìa khóa hàng công thủ hiệu số cuộc đua ngôi đầu sân nhà khách bất bại mạch chuỗi vắng mặt nguy cơ cách biệt bên cạnh khả năng nổi bật chân sút thống kê mục tiêu " +
+    "kiểm soát bước ngoặt khoảnh khắc bản lĩnh tổng kết tổng quan chủ động phản ứng hiệu quả quyết định thử thách sức ép thay người cục diện cân bằng"
   ).split(" "),
 );
 
