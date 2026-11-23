@@ -104,6 +104,7 @@ const SENTENCE_STARTERS = new Set(
     "winner equaliser equalizer opener header assist assists clean sheet possession " +
     "report summary numbers stats statistics takeaways verdict context " +
     "preview previews head-to-head meetings comparison recent " +
+    "injuries injured doubt doubtful fitness available unavailable absent key attack attacking defence defense defensive midfield stakes title race threat threats history record margins margin battle clash host hosts hosting visit visits visiting unbeaten winless scoring conceded " +
     // Verbs a headline uses. This list is grown from recorded rejections, not
     // guessed: every draft turned away stores the exact word that did it, so
     // an ordinary word missing here shows up as a reject_reason and gets added.
@@ -129,7 +130,8 @@ const SENTENCE_STARTERS = new Set(
     "theo như về cùng giữa suốt qua tới sang lại thêm nữa hầu gần khoảng " +
     // The voice addresses the reader as "bạn"; "level" opens an English one.
     "bạn mình chúng ta level even ahead behind clear late early overall " +
-    "nửa phần đoạn khúc quãng lúc thời điểm"
+    "nửa phần đoạn khúc quãng lúc thời điểm " +
+    "chấn thương lực lượng phong độ đối đầu điểm nhấn chìa khóa hàng công thủ hiệu số cuộc đua ngôi đầu sân nhà khách bất bại mạch chuỗi vắng mặt nguy cơ cách biệt bên cạnh khả năng nổi bật chân sút thống kê mục tiêu"
   ).split(" "),
 );
 
@@ -148,6 +150,7 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
     if (value === null || value === undefined) return;
     if (typeof value === "number" && Number.isFinite(value)) {
       numbers.add(value);
+      if (value < 0) numbers.add(Math.abs(value));
       return;
     }
     if (typeof value === "string") {
@@ -198,6 +201,24 @@ function allowedFrom(facts: ArticleFacts): { numbers: Set<number>; names: Set<st
     for (const b of scores) {
       numbers.add(a + b);
       if (a >= b) numbers.add(a - b);
+    }
+  }
+
+  // Pairwise table points differences and combined G/A totals may exceed 20.
+  if (facts.kind === "preview") {
+    const pts = [
+      facts.table?.points,
+      facts.opponentTable?.points,
+      facts.tableContext.leader?.points,
+      facts.tableContext.fourthPlace?.points,
+    ].filter((p): p is number => typeof p === "number" && Number.isFinite(p));
+    for (const a of pts) {
+      for (const b of pts) {
+        numbers.add(Math.abs(a - b));
+      }
+    }
+    for (const kp of facts.keyPlayers) {
+      numbers.add(kp.goals + kp.assists);
     }
   }
   return { numbers, names };

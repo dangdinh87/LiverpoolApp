@@ -81,7 +81,40 @@ export interface MatchReviewFacts {
     corners: HomeAway | null;
   } | null;
   /** League position after the match, when the competition has a table. */
-  table: { position: number; points: number; played: number } | null;
+  table: {
+    position: number;
+    points: number;
+    played: number;
+    won?: number;
+    drawn?: number;
+    lost?: number;
+    goalsFor?: number;
+    goalsAgainst?: number;
+    goalDifference?: number;
+  } | null;
+}
+
+export interface PreviewSplitRecord {
+  played: number;
+  win: number;
+  draw: number;
+  lose: number;
+  goalsFor: number;
+  goalsAgainst: number;
+}
+
+export interface PreviewTableStats {
+  position: number;
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  homeRecord?: PreviewSplitRecord;
+  awayRecord?: PreviewSplitRecord;
 }
 
 /** Everything a match preview is allowed to say. */
@@ -98,10 +131,35 @@ export interface MatchPreviewFacts {
   /** Most recent first, e.g. ["W", "D", "L"]. */
   liverpoolForm: string[];
   opponentForm: string[];
+  /** Last five finished Liverpool matches in the current season, newest first. */
+  recentLiverpoolMatches: {
+    date: string;
+    opponent: string;
+    venue: "home" | "away";
+    score: HomeAway;
+    result: "W" | "D" | "L";
+    competition: string;
+  }[];
   /** Previous meetings, most recent first. */
   headToHead: { date: string; home: string; away: string; score: HomeAway }[];
-  table: { position: number; points: number; played: number } | null;
-  opponentTable: { position: number; points: number; played: number } | null;
+  table: PreviewTableStats | null;
+  opponentTable: PreviewTableStats | null;
+  tableContext: {
+    leader: { name: string; points: number } | null;
+    fourthPlace: { name: string; points: number } | null;
+  };
+  injuries: {
+    player: string;
+    status: string;
+    news: string;
+    chanceOfPlayingNextRound: number | null;
+  }[];
+  keyPlayers: {
+    name: string;
+    goals: number;
+    assists: number;
+    minutes: number;
+  }[];
 }
 
 export type ArticleFacts = MatchReviewFacts | MatchPreviewFacts;

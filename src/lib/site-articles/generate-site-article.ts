@@ -17,11 +17,11 @@ import type { ArticleFacts, SiteArticleContent, SiteArticleKind } from "./types"
  * output, because there is no editor downstream who would catch it.
  */
 
-/** Tried in order; the first that returns a usable draft wins. */
-const MODELS = ["deepseek-v4-flash", "deepseek-v4-pro"] as const;
+/** Tried in order; `pro` first for natural journalism prose, `flash` as fallback. */
+const MODELS = ["deepseek-v4-pro", "deepseek-v4-flash"] as const;
 
 /** One generation must not outlive the cron route's budget. */
-const ATTEMPT_TIMEOUT_MS = 40_000;
+const ATTEMPT_TIMEOUT_MS = 55_000;
 
 export interface GenerationOutcome {
   ok: boolean;
@@ -34,13 +34,13 @@ export interface GenerationOutcome {
 
 const SHAPE = `Reply with JSON only, in this exact shape:
 {
-  "title": "headline, under 70 characters",
-  "excerpt": "one or two sentences, under 200 characters",
+  "title": "compelling headline, under 70 characters",
+  "excerpt": "crisp two-sentence editorial summary, 160 to 240 characters",
   "metaTitle": "under 60 characters",
   "metaDescription": "under 155 characters",
-  "sections": [{ "heading": "short heading", "body": "two to four sentences" }]
+  "sections": [{ "heading": "short natural heading", "body": "three to five engaging sentences" }]
 }
-Write three or four sections.`;
+Write four or five well-developed sections (roughly 450 to 650 words total across the article). Weave the supplied numbers, form runs, injuries, key players, and head-to-head context into fluent analysis rather than repeating raw labels.`;
 
 function buildPrompt(facts: ArticleFacts, locale: "en" | "vi"): string {
   const voice = locale === "vi" ? `${SITE_ARTICLE_VOICE}\n\n${SITE_ARTICLE_VOICE_VI}` : SITE_ARTICLE_VOICE;

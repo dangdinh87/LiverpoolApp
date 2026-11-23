@@ -16,6 +16,16 @@ import type {
 } from "@/lib/types/football";
 import type { CardFact, GoalFact, HomeAway, MatchReviewFacts } from "./types";
 
+/** Strip redundant "FC" / "AFC" prefixes and suffixes so articles read naturally. */
+export function cleanClubName(name: string): string {
+  const cleaned = name
+    .replace(/^(?:AFC|FC)\s+/i, "")
+    .replace(/\s+(?:FC|AFC)$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned || name.trim();
+}
+
 /** Liverpool, in the normalised ids the football layer hands out. */
 const LFC_ID = 40;
 
@@ -101,7 +111,7 @@ function goalsFrom(events: FixtureEvent[]): GoalFact[] {
       minute: (e.time.elapsed ?? 0) + (e.time.extra ?? 0),
       scorer: e.player.name as string,
       assist: e.assist.name ?? null,
-      team: e.team.name,
+      team: cleanClubName(e.team.name),
       kind: /penalty/i.test(e.detail) ? "penalty" : /own/i.test(e.detail) ? "own goal" : "goal",
     }))
     .sort((a, b) => a.minute - b.minute);
@@ -113,7 +123,7 @@ function cardsFrom(events: FixtureEvent[]): CardFact[] {
     .map((e) => ({
       minute: (e.time.elapsed ?? 0) + (e.time.extra ?? 0),
       player: e.player.name as string,
-      team: e.team.name,
+      team: cleanClubName(e.team.name),
       colour: /red/i.test(e.detail) ? "red" : "yellow",
     }))
     .sort((a, b) => a.minute - b.minute);
@@ -159,8 +169,8 @@ export function buildMatchReviewFacts(
     round: league.round || null,
     venue: fixture.fixture.venue.name,
     kickOff: fixture.fixture.date,
-    home: { name: teams.home.name, score: goals.home ?? 0 },
-    away: { name: teams.away.name, score: goals.away ?? 0 },
+    home: { name: cleanClubName(teams.home.name), score: goals.home ?? 0 },
+    away: { name: cleanClubName(teams.away.name), score: goals.away ?? 0 },
     liverpoolSide,
     result: (lfcGoals ?? 0) > (oppGoals ?? 0) ? "win" : (lfcGoals ?? 0) === (oppGoals ?? 0) ? "draw" : "loss",
     halfTime:
@@ -174,7 +184,19 @@ export function buildMatchReviewFacts(
     coach: lfcLineup?.coach?.name ?? null,
     substitutes: lfcLineup?.substitutes.map((s) => s.player.name) ?? [],
     stats: hasAnyStat ? parsedStats : null,
-    table: row ? { position: row.rank, points: row.points, played: row.all.played } : null,
+    table: row
+      ? {
+          position: row.rank,
+          points: row.points,
+          played: row.all.played,
+          won: row.all.win,
+          drawn: row.all.draw,
+          lost: row.all.lose,
+          goalsFor: row.all.goals.for,
+          goalsAgainst: row.all.goals.against,
+          goalDifference: row.goalsDiff,
+        }
+      : null,
   };
 }
 
