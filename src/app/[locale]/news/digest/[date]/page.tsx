@@ -41,7 +41,7 @@ export async function generateMetadata({
   const { date, locale } = await params;
   const t = await getTranslations({ locale, namespace: "News.digest" });
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { title: t("notGeneratedTitle"), robots: { index: false } };
-  const digest = await getDigestByDate(date);
+  const digest = await getDigestByDate(date).catch(() => null);
   if (!digest) return { title: t("notGeneratedTitle"), robots: { index: false } };
   const description =
     digest.seo_description ||

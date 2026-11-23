@@ -19,6 +19,7 @@ HOW TO WRITE
 
 WHAT YOU MAY SAY
 - Only what the supplied data supports. Every statistic, scoreline, minutes figure, injury status, and proper name must trace directly to the JSON.
+- Use exact numbers from the JSON rather than rounded approximations (for example, write "from the eighth minute" rather than "for over 80 minutes").
 - You may calculate clear comparisons directly from present figures (goal margins, points gaps to the leaders or fourth place, combined goal contributions from goals and assists).
 - For injuries, refer to the player's availability status, chance percentage, and reason without inventing recovery dates.
 - If a dataset field is empty or null, omit that angle smoothly instead of padding.

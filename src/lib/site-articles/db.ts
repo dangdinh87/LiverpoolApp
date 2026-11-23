@@ -148,6 +148,7 @@ export async function hasArticleForFixture(
       .select("id")
       .eq("fixture_id", fixtureId)
       .eq("kind", kind)
+      .eq("status", "published")
       .limit(1);
     if (error) {
       console.error("[site-articles] hasArticleForFixture:", error.message);

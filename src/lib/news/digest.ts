@@ -591,22 +591,18 @@ export const getDigestByDate = cache(async function getDigestByDate(
   date: string
 ): Promise<DigestRecord | null> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
-  try {
-    const supabase = getServiceClient();
-    const { data, error } = await supabase
-      .from("news_digests")
-      .select("*")
-      .eq("digest_date", date)
-      .maybeSingle();
-    if (error) {
-      console.error("[digest] getDigestByDate error:", error.message);
-      return null;
-    }
-    return data && cleanDigestText(data);
-  } catch (err) {
-    console.error("[digest] getDigestByDate failed:", err);
-    return null;
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from("news_digests")
+    .select("*")
+    .eq("digest_date", date)
+    .maybeSingle();
+  // A thrown error is not cached — returning null on a bad read poisons 24h ISR.
+  if (error) {
+    console.error("[digest] getDigestByDate error:", error.message);
+    throw error;
   }
+  return data && cleanDigestText(data);
 });
 
 /** Lightweight query for sitemap: all digest dates + generated timestamps */

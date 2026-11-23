@@ -21,7 +21,7 @@ export default async function DigestOgImage({
 }) {
   const { date, locale } = await params;
   const [digest, tDigest, tHero] = await Promise.all([
-    /^\d{4}-\d{2}-\d{2}$/.test(date) ? getDigestByDate(date) : Promise.resolve(null),
+    /^\d{4}-\d{2}-\d{2}$/.test(date) ? getDigestByDate(date).catch(() => null) : Promise.resolve(null),
     getTranslations({ locale, namespace: "Home.digest" }),
     getTranslations({ locale, namespace: "Hero" }),
   ]);

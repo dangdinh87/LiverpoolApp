@@ -392,4 +392,11 @@ describe("validateDraft — brand rules, boilerplate & markup hygiene", () => {
       expect(validateDraft(draft, REVIEW_FACTS).ok, bad).toBe(false);
     }
   });
+
+  it("allows English number words (including hyphenated compounds) as sentence openers", () => {
+    const draft = goodDraft();
+    draft.sections[0].body =
+      "Eighteen minutes passed before Mohamed Salah scored on 23. Twenty-eight attempts would still be excessive, yet Cody Gakpo netted on 78.";
+    expect(validateDraft(draft, REVIEW_FACTS).problems).toEqual([]);
+  });
 });

@@ -99,6 +99,7 @@ const SENTENCE_STARTERS = new Set(
     "first next last previous final home away " +
     // Counting words open sentences too ("Three of the four goals came...").
     "one two three four five six seven eight nine ten eleven twelve " +
+    "thirteen fourteen fifteen sixteen seventeen eighteen nineteen twenty thirty forty fifty sixty seventy eighty ninety hundred " +
     "once twice half double single none nobody everyone " +
     "booking bookings lineup line-up kick-off half-time full-time stoppage injury " +
     "winner equaliser equalizer opener header assist assists clean sheet possession " +
@@ -267,6 +268,14 @@ function numbersIn(text: string): number[] {
  * Consecutive capitalised words are joined, so "Manchester City" is one name.
  */
 function namesIn(text: string, headingLike = false, ordinary: Set<string> = new Set()): string[] {
+  const isOrdinaryWord = (lower: string): boolean => {
+    if (SENTENCE_STARTERS.has(lower) || ordinary.has(lower)) return true;
+    if (lower.includes("-")) {
+      const parts = lower.split("-").filter(Boolean);
+      return parts.length > 0 && parts.every((p) => SENTENCE_STARTERS.has(p) || ordinary.has(p));
+    }
+    return false;
+  };
   const found: string[] = [];
   for (const sentence of text.split(/(?<=[.!?])\s+/)) {
     const words = sentence.trim().split(/\s+/);
@@ -274,17 +283,8 @@ function namesIn(text: string, headingLike = false, ordinary: Set<string> = new 
     words.forEach((raw, index) => {
       const word = raw.replace(/^[^\p{L}]+|[^\p{L}']+$/gu, "");
       const capitalised = /^\p{Lu}/u.test(word);
-      // A heading in Title Case capitalises every word, so position carries no
-      // information there; an invented name is still caught, because it is not
-      // an ordinary word in any position.
-      // A word the draft itself also writes in lower case is an ordinary word,
-      // whatever it looks like here. That generalises what a hand-kept list of
-      // vocabulary can only approximate: "Booked" in a heading is ordinary
-      // because the body says "was booked", while an invented surname appears
-      // capitalised everywhere or not at all.
       const lower = word.toLowerCase();
-      const ordinaryOpener =
-        (headingLike || index === 0) && (SENTENCE_STARTERS.has(lower) || ordinary.has(lower));
+      const ordinaryOpener = (headingLike || index === 0) && isOrdinaryWord(lower);
       if (capitalised && !ordinaryOpener) {
         run.push(word);
       } else {
