@@ -8,14 +8,14 @@ import { createSupabaseFetch } from '@/lib/supabase-fetch-with-timeout';
  * Server-side Supabase client with cookie-based session.
  * Use in Server Components, Route Handlers, Server Actions.
  */
-export async function createServerSupabaseClient() {
+export async function createServerSupabaseClient(options?: { timeoutMs?: number }) {
   const cookieStore = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       // Bounded fetch: a paused/unreachable database must fail fast, not hang.
-      global: { fetch: createSupabaseFetch() },
+      global: { fetch: createSupabaseFetch(options?.timeoutMs) },
       // No postgrest backoff retries: during an outage they add 7s per query.
       db: { retry: false },
       cookies: {

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
 import { getSiteUrl } from "@/lib/seo";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { SUPABASE_AUTH_TIMEOUT_MS } from "@/lib/supabase-fetch-with-timeout";
 import { getSafeRedirect } from "@/lib/safe-redirect";
 import { toAuthErrorCode, type AuthErrorCode } from "@/lib/auth-error-code";
 
@@ -23,7 +24,7 @@ export async function loginWithEmail(formData: FormData): Promise<AuthFormResult
   if (!password) return { error: "passwordRequired" };
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient({ timeoutMs: SUPABASE_AUTH_TIMEOUT_MS });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: toAuthErrorCode(error) };
   } catch (err) {
@@ -44,7 +45,7 @@ export async function registerWithEmail(formData: FormData): Promise<AuthFormRes
   if (password.length < 6) return { error: "passwordShort" };
 
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient({ timeoutMs: SUPABASE_AUTH_TIMEOUT_MS });
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -56,6 +57,10 @@ export async function registerWithEmail(formData: FormData): Promise<AuthFormRes
     if (error) return { error: toAuthErrorCode(error) };
 
     if (data.user) {
+      if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return { error: "userExists" };
+      }
+
       // Always create profile row (even for unconfirmed users). Insert-only, so a
       // repeat signup can never blank out a profile the user already filled in.
       await supabase.from("user_profiles").upsert(
@@ -79,7 +84,7 @@ export async function registerWithEmail(formData: FormData): Promise<AuthFormRes
 
 export async function logout() {
   try {
-    const supabase = await createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient({ timeoutMs: SUPABASE_AUTH_TIMEOUT_MS });
     await supabase.auth.signOut();
   } catch (err) {
     console.error("[auth] logout signOut failed:", err);

@@ -70,10 +70,20 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
   const [mounted, setMounted] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [authTick, setAuthTick] = useState(0);
   const [user, setUser] = useState(initialUser);
   const [profile, setProfile] = useState(initialProfile);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const onAuthChanged = () => {
+      setLoginOpen(false);
+      setAuthTick((n) => n + 1);
+    };
+    window.addEventListener("lfc:auth-changed", onAuthChanged);
+    return () => window.removeEventListener("lfc:auth-changed", onAuthChanged);
+  }, []);
 
   const setAuthUser = useAuthStore((s) => s.setUser);
   useEffect(() => {
@@ -91,6 +101,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
         const supabase = await loadSupabaseClient();
         const { data: sub } = supabase.auth.onAuthStateChange((event) => {
           if (event === "SIGNED_OUT") signOut();
+          else if (event === "SIGNED_IN") setAuthTick((n) => n + 1);
         });
         unsubscribe = () => sub.subscription.unsubscribe();
         const {
@@ -124,7 +135,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
       cancelled = true;
       cleanupSub?.();
     };
-  }, [pathname, setAuthUser]);
+  }, [pathname, authTick, setAuthUser]);
 
   useEffect(() => {
     if (!user) return;
@@ -146,6 +157,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
     setProfile(null);
     setStreak(0);
     setAuthUser(null);
+    void loadSupabaseClient().then((s) => s.auth.signOut()).catch(() => {});
     startTransition(() => logout());
   };
   const displayName = profile?.username ?? user?.email?.split("@")[0] ?? t("profile");
@@ -220,7 +232,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
       />
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
         <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
-          <BrandLogo markClassName="size-8 lg:size-9" wordmarkClassName="text-[26px] lg:text-[30px]" />
+          <BrandLogo markClassName="size-7 lg:size-8" wordmarkClassName="text-[19px] lg:text-[21px]" />
         </Link>
 
         {/* Desktop nav (from lg) */}

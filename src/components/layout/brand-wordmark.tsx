@@ -19,7 +19,7 @@ export function BrandWordmark({ className }: { className?: string }) {
       aria-hidden
     >
       <span
-        className="font-bebas uppercase leading-[0.82] whitespace-nowrap"
+        className="font-bebas font-extrabold uppercase leading-[0.86] whitespace-nowrap"
         style={{ letterSpacing: WORDMARK.letterSpacing }}
       >
         {BRAND.name}

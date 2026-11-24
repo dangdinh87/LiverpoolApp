@@ -107,7 +107,7 @@ export function Footer() {
             {/* Brand + the unofficial-site notice: full width on phones */}
             <div className="col-span-2 sm:col-span-1">
               <Link href="/" className="inline-flex min-h-11 items-center text-white" aria-label={BRAND.name}>
-                <BrandLogo markClassName="size-9" wordmarkClassName="text-[28px]" />
+                <BrandLogo markClassName="size-8" wordmarkClassName="text-[21px]" />
               </Link>
               <p className="mt-2 max-w-sm font-inter text-sm leading-relaxed text-stadium-muted">{brandTagline(locale)}</p>
               <p className="mt-4 max-w-sm border-l-2 border-lfc-red pl-3 font-inter text-sm leading-relaxed text-white/85">

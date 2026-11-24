@@ -1,10 +1,11 @@
 "use client";
 
-import { useId, useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useId, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, X } from "lucide-react";
-import { loginWithEmail, registerWithEmail } from "@/app/actions/auth";
 import { loadSupabaseClient } from "@/lib/supabase-lazy";
+import { getSafeRedirect } from "@/lib/safe-redirect";
+import { toAuthErrorCode } from "@/lib/auth-error-code";
 import { BrandLogo } from "@/components/layout/brand-mark";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,8 +26,10 @@ const INPUT =
   "placeholder:text-stadium-muted/60 transition-colors focus:outline-none focus:border-lfc-red";
 
 export function LoginForm({ defaultMode = "login", embedded = false, onClose }: LoginFormProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect") ?? "/";
+  const rawRedirect = searchParams.get("redirect");
+  const safeRedirect = getSafeRedirect(rawRedirect);
   const callbackFailed = searchParams.get("error");
   const [mode, setMode] = useState<Mode>(defaultMode);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,14 +38,14 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
   const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
   const [values, setValues] = useState({ email: "", password: "", confirm: "" });
   const [googleBusy, setGoogleBusy] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [submitting, setSubmitting] = useState(false);
   const uid = useId();
   const tLogin = useTranslations("Auth.login");
   const tRegister = useTranslations("Auth.register");
   const tErrors = useTranslations("Auth.errors");
   const t = mode === "login" ? tLogin : tRegister;
   const Heading = embedded ? "h2" : "h1";
-  const busy = isPending || googleBusy;
+  const busy = submitting || googleBusy;
   const effectiveError = error ?? (callbackFailed ? tErrors("unknown") : null);
 
   function computeErrors(vals: { email: string; password: string; confirm: string }): Partial<Record<Field, string>> {
@@ -76,22 +79,48 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
         provider: "google",
         options: {
           // Encode so a destination carrying its own `?a=1&b=2` survives the round trip.
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(redirectTo)}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(safeRedirect)}`,
         },
       });
       if (oauthErr) {
-        setError(tErrors("unknown"));
+        setError(tErrors(toAuthErrorCode(oauthErr)));
         setGoogleBusy(false);
       }
     } catch {
-      setError(tErrors("unknown"));
+      setError(tErrors("unavailable"));
       setGoogleBusy(false);
     }
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function ensureUserProfile(supabase: Awaited<ReturnType<typeof loadSupabaseClient>>, userId: string) {
+    try {
+      await supabase.from("user_profiles").upsert(
+        { user_id: userId, username: null, avatar_url: null, bio: null },
+        { onConflict: "user_id", ignoreDuplicates: true },
+      );
+    } catch {
+      // Non-fatal: profile creation can be retried later without blocking sign-in.
+    }
+  }
+
+  function finishSignIn(targetPath: string) {
+    window.dispatchEvent(new Event("lfc:auth-changed"));
+    if (embedded) {
+      onClose?.();
+      if (rawRedirect) {
+        window.location.assign(targetPath);
+      } else {
+        router.refresh();
+      }
+      return;
+    }
+    window.location.assign(targetPath);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     // Read from the DOM first so password-manager autofill (which may not fire React onChange)
     // is honoured before client validation runs.
@@ -112,23 +141,58 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
       return;
     }
 
-    formData.set("redirectTo", redirectTo);
-    startTransition(async () => {
-      try {
-        if (mode === "login") {
-          const result = await loginWithEmail(formData);
-          if (result?.error) setError(tErrors(result.error));
-        } else {
-          const result = await registerWithEmail(formData);
-          if (result?.error) setError(tErrors(result.error));
-          if (result?.success) setSuccess(tRegister(result.success));
+    const email = domValues.email.trim();
+    const password = domValues.password;
+    setSubmitting(true);
+
+    try {
+      const supabase = await loadSupabaseClient();
+
+      if (mode === "login") {
+        const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (authErr) {
+          console.warn("[auth] signInWithPassword rejected:", authErr.code, authErr.status, authErr.message);
+          setError(tErrors(toAuthErrorCode(authErr)));
+          return;
         }
-      } catch (err) {
-        // redirect() inside the action throws NEXT_REDIRECT: let the router handle it.
-        if (err && typeof err === "object" && "digest" in err) throw err;
-        setError(tErrors("unknown"));
+        if (data.user) {
+          await ensureUserProfile(supabase, data.user.id);
+        }
+        finishSignIn(safeRedirect);
+        return;
       }
-    });
+
+      const registerRedirect = rawRedirect ? safeRedirect : "/profile";
+      const { data, error: authErr } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(registerRedirect)}`,
+        },
+      });
+      if (authErr) {
+        console.warn("[auth] signUp rejected:", authErr.code, authErr.status, authErr.message);
+        setError(tErrors(toAuthErrorCode(authErr)));
+        return;
+      }
+      // When email confirmation is required, Supabase returns an empty identities array
+      // instead of an error for already-registered addresses.
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setError(tErrors("userExists"));
+        return;
+      }
+      if (data.session && data.user) {
+        await ensureUserProfile(supabase, data.user.id);
+        finishSignIn(registerRedirect);
+        return;
+      }
+      setSuccess(tRegister("checkEmail"));
+    } catch (err) {
+      console.error("[auth] submit threw:", err);
+      setError(tErrors("unavailable"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const eyeLabel = showPassword ? tLogin("hidePassword") : tLogin("showPassword");
@@ -142,7 +206,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
     value: values[f],
     onChange: set(f),
     onBlur: blur(f),
-    disabled: isPending,
+    disabled: busy,
     "aria-invalid": shown(f) ? true : undefined,
     "aria-describedby": shown(f) ? errId(f) : undefined,
     className: cn(INPUT, shown(f) ? "border-red-400" : "border-[var(--line-strong)]"),
@@ -169,7 +233,7 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
           </button>
         )}
         <div className="mb-7 text-center">
-          <BrandLogo className="mb-4 text-white" markClassName="size-9" wordmarkClassName="text-[26px]" />
+          <BrandLogo className="mb-4 text-white" markClassName="size-8" wordmarkClassName="text-[20px]" />
           <Heading className="font-bebas text-4xl text-white tracking-[0.04em] leading-none">{t("title")}</Heading>
           <p className="font-inter text-stadium-muted text-sm mt-2">{t("subtitle")}</p>
         </div>
@@ -293,8 +357,8 @@ export function LoginForm({ defaultMode = "login", embedded = false, onClose }: 
                 disabled={busy}
                 className="w-full min-h-11 bg-lfc-red hover:bg-lfc-red-dark text-white font-barlow font-bold uppercase tracking-[0.12em] text-sm -mt-2"
               >
-                {isPending && <Loader2 className="animate-spin" aria-hidden />}
-                {isPending ? t("loading") : t("button")}
+                {submitting && <Loader2 className="animate-spin" aria-hidden />}
+                {submitting ? t("loading") : t("button")}
               </Button>
             </form>
 

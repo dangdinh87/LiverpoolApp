@@ -83,15 +83,15 @@ export const brandTitle = (locale: string) => `${BRAND.name} — ${brandTagline(
 /**
  * Wordmark typography.
  *
- * The name is set in League Gothic as live text rather than baked into SVG
+ * The name is set in Barlow uppercase as live text rather than baked into SVG
  * paths. The paths were outlines of the literal letters "LFCVN", so the promise
  * at the top of this file — that a rename touches only this file — was not
  * true: renaming meant redrawing glyphs. Both places that draw the wordmark
  * (the header component and the share image) now render BRAND.name directly.
  */
 export const WORDMARK = {
-  /** Matches the League Gothic look in the header: tight, wide-tracked caps. */
-  letterSpacing: "0.18em",
+  /** Compact uppercase tracking balanced for Barlow Bold/Extrabold. */
+  letterSpacing: "0.03em",
   /** Short red rule under the first letters. Fractions of the drawn width. */
-  bar: { widthRatio: 0.19, thicknessEm: 0.075, gapEm: 0.1 },
+  bar: { widthRatio: 0.22, thicknessEm: 0.08, gapEm: 0.12 },
 } as const;

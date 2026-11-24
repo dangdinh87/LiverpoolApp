@@ -19,6 +19,8 @@ describe("toAuthErrorCode", () => {
   it("falls back on status and message when there is no code", () => {
     expect(toAuthErrorCode({ status: 429 })).toBe("rateLimited");
     expect(toAuthErrorCode({ status: 400, message: "Invalid login credentials" })).toBe("invalidCredentials");
+    expect(toAuthErrorCode({ status: 400, message: "Email not confirmed" })).toBe("emailNotConfirmed");
+    expect(toAuthErrorCode({ status: 422, message: "User already registered" })).toBe("userExists");
     expect(toAuthErrorCode({ status: 400, message: "something else" })).toBe("unknown");
   });
 });

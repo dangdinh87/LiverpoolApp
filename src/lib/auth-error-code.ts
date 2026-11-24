@@ -48,8 +48,15 @@ export function toAuthErrorCode(error: AuthErrorLike): AuthErrorCode {
       return "rateLimited";
   }
   if (error.status === 429) return "rateLimited";
-  if (error.status === 400 && /invalid login credentials/i.test(error.message ?? "")) {
+  const msg = error.message ?? "";
+  if (error.status === 400 && /invalid login credentials/i.test(msg)) {
     return "invalidCredentials";
+  }
+  if (/email not confirmed/i.test(msg)) {
+    return "emailNotConfirmed";
+  }
+  if (/user already registered/i.test(msg)) {
+    return "userExists";
   }
   return "unknown";
 }

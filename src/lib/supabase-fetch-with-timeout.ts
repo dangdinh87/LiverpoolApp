@@ -29,6 +29,12 @@
  */
 export const SUPABASE_FETCH_TIMEOUT_MS = 3_000;
 
+/**
+ * Ceiling for explicit user-initiated auth actions (sign-in, sign-up email
+ * dispatch, OAuth/OTP callback verification, sign-out) where 3s is too tight.
+ */
+export const SUPABASE_AUTH_TIMEOUT_MS = 12_000;
+
 /** How long to skip Supabase entirely after a connection-level failure. */
 export const SUPABASE_BREAKER_COOLDOWN_MS = 30_000;
 

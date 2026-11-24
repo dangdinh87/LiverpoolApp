@@ -43,7 +43,7 @@ interface BrandLogoProps {
 /** Mark + wordmark lockup: the logo as shown in the header, menu and footer. */
 export function BrandLogo({ wordmarkClassName, markClassName = "size-8", className }: BrandLogoProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2.5", className)} aria-hidden>
+    <span className={cn("inline-flex items-center gap-2", className)} aria-hidden>
       <BrandMark className={markClassName} />
       <BrandWordmark className={wordmarkClassName} />
     </span>

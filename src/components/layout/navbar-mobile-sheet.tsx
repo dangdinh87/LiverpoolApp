@@ -73,7 +73,7 @@ export function NavbarMobileSheet({
       >
         <div className="flex h-[var(--header-h)] shrink-0 items-center justify-between px-4 border-b border-[var(--line)]">
           <span className="flex items-center text-white">
-            <BrandLogo markClassName="size-8" wordmarkClassName="text-[26px]" />
+            <BrandLogo markClassName="size-7" wordmarkClassName="text-[19px]" />
             <span className="sr-only">{BRAND.name}</span>
           </span>
           <SheetClose asChild>

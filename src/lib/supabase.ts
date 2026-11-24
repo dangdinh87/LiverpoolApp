@@ -1,5 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { createSupabaseFetch } from "@/lib/supabase-fetch-with-timeout";
+import { createSupabaseFetch, SUPABASE_AUTH_TIMEOUT_MS } from "@/lib/supabase-fetch-with-timeout";
 
 // Database types for user-related tables
 export interface UserProfile {
@@ -44,6 +44,6 @@ export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { fetch: createSupabaseFetch() }, db: { retry: false } }
+    { global: { fetch: createSupabaseFetch(SUPABASE_AUTH_TIMEOUT_MS) }, db: { retry: false } }
   );
 }
