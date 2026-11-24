@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { ExternalLink, Music } from "lucide-react";
+import { ArrowRight, ExternalLink, Music } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import type { LocaleParams } from "@/i18n/routing";
+import { getSquadPlayers } from "@/lib/squad-data";
+import { PresetConnectedGrid } from "@/components/ui/hub-links";
 import trophiesEn from "@/data/trophies.json";
 import trophiesVi from "@/data/trophies.vi.json";
 import historyEventsEn from "@/data/history.json";
@@ -74,8 +77,13 @@ function Stat({ value, label }: { value: string; label: string }) {
 export default async function HistoryPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("History");
+  const [t, tHub, tGallery] = await Promise.all([
+    getTranslations("History"),
+    getTranslations("Hub"),
+    getTranslations("Gallery.categories"),
+  ]);
   const isVi = locale === "vi";
+  const squadCount = getSquadPlayers().length;
 
   const trophies = isVi ? trophiesVi : trophiesEn;
   const historyEvents = isVi ? historyEventsVi : historyEventsEn;
@@ -124,6 +132,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
       />
 
       <PageHero
+        clubCrest
         eyebrow={t("hero.est")}
         title="Liverpool FC"
         description={t("hero.tagline")}
@@ -141,6 +150,30 @@ export default async function HistoryPage({ params }: LocaleParams) {
       <HistoryNav items={navItems} ariaLabel={t("nav.label")} />
 
       <div className="page-container">
+        <div className="flex flex-wrap items-center gap-2 pt-5 sm:pt-6">
+          <Link
+            href="/gallery?category=legends"
+            className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+          >
+            <span>{tHub("nav.gallery")}: {tGallery("legends")}</span>
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+          <Link
+            href="/gallery?category=trophies"
+            className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+          >
+            <span>{tHub("nav.gallery")}: {tGallery("trophies")}</span>
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+          <Link
+            href="/gallery?category=anfield"
+            className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+          >
+            <span>{tHub("nav.gallery")}: {tGallery("anfield")}</span>
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        </div>
+
         {/* ── Timeline ── */}
         <Section id="timeline">
           <SectionHeader eyebrow={t("sections.history")} title={t("sections.timeline")} />
@@ -222,7 +255,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
               </dl>
               {recordRest.length > 0 && (
                 <p className="mt-3 text-xs text-stadium-muted">
-                  {t("stadium.record")}: {recordNumber} {recordRest.join(" ")}
+                  {t("stadium.record")}: {recordRest.join(" ").replace(/^\(|\)$/g, "")}
                 </p>
               )}
             </div>
@@ -245,7 +278,7 @@ export default async function HistoryPage({ params }: LocaleParams) {
           </ul>
 
           <SectionHeader className="mt-12" eyebrow={t("sections.gallery")} title={t("sections.stadiumImages")} />
-          <StadiumShowcase label={t("sections.stadiumImages")} />
+          <StadiumShowcase label={t("sections.stadiumImages")} locale={locale} />
 
           <SectionHeader className="mt-12" eyebrow={t("sections.iconic")} title={t("sections.anfield")} />
           <ul className={cn(ROW, "sm:grid-cols-2 lg:grid-cols-3")}>
@@ -306,6 +339,15 @@ export default async function HistoryPage({ params }: LocaleParams) {
             </div>
           </dl>
         </Section>
+
+        <PresetConnectedGrid
+          className="pb-12 pt-4"
+          preset="fromHistory"
+          metaOverrides={{
+            gallery: tGallery("legends"),
+            squad: `${squadCount}`,
+          }}
+        />
       </div>
       <div className="pb-16" />
     </div>

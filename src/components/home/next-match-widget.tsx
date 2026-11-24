@@ -142,8 +142,8 @@ function UpcomingMatch({ initial }: { initial: Fixture }) {
         )}
         <p className="flex min-w-0 items-center gap-2 text-xs text-stadium-muted">
           {league.logo && (
-            <span className="relative size-4 shrink-0">
-              <Image src={league.logo} alt="" fill sizes="16px" className="object-contain" />
+            <span className="relative size-5 shrink-0 rounded-full bg-white/95 p-0.5">
+              <Image src={league.logo} alt="" fill sizes="20px" className="object-contain" />
             </span>
           )}
           <span className="truncate">

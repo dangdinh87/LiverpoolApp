@@ -20,19 +20,30 @@
 import "server-only";
 
 import { getEnv } from "@/lib/env";
-import type { NewsArticle } from "./types";
+import type { NewsArticle, NewsSource } from "./types";
 import { NEWS_USER_AGENT } from "./http";
 import { cleanFeedText, cleanSnippet } from "./text";
 import { type FeedAdapter, type SourceFetchStatus, statusFromError } from "./adapters/base";
 
+export interface YouTubeChannelConfig {
+  channelId: string;
+  source: NewsSource;
+  name: string;
+}
+
 /**
- * Liverpool FC's channel id, from the canonical link on youtube.com/@LiverpoolFC.
- *
- * Every channel's uploads live in a playlist whose id is the channel id with
- * `UC` swapped for `UU`. Listing that playlist costs 1 quota unit, where
- * `search.list` costs 100 for the same thing.
+ * Liverpool FC YouTube channels, verified via handle/channel metadata.
+ * `lfctv` stays first as the official club channel.
  */
-const LFC_CHANNEL_ID = "UC9LQwHZoucFT94I2h6JOcjw";
+export const YOUTUBE_CHANNELS: YouTubeChannelConfig[] = [
+  { channelId: "UC9LQwHZoucFT94I2h6JOcjw", source: "lfctv", name: "Liverpool FC" },
+  { channelId: "UC30avO2n6knAFiH2c8e4qiw", source: "yt-redmentv", name: "The Redmen TV" },
+  { channelId: "UCc5C5dNupCMbyutNatfBujQ", source: "yt-taw", name: "The Anfield Wrap" },
+  { channelId: "UC4B_hCk3keopt4-eJc8neiA", source: "yt-anfieldagenda", name: "Anfield Agenda" },
+  { channelId: "UC-TbqyJWlhRPedk-if0rKtw", source: "yt-bloodred", name: "Blood Red: Liverpool FC" },
+];
+
+const LFC_CHANNEL_ID = YOUTUBE_CHANNELS[0].channelId;
 const uploadsPlaylistId = (channelId: string) => `UU${channelId.slice(2)}`;
 
 const API = "https://www.googleapis.com/youtube/v3/playlistItems";
@@ -75,6 +86,7 @@ export function pickThumbnail(
 export function mapPlaylistItems(
   data: PlaylistItemsResponse,
   now: number = Date.now(),
+  sourceId: NewsSource = "lfctv",
 ): NewsArticle[] {
   const oldest = now - MAX_AGE_DAYS * 86_400_000;
 
@@ -98,7 +110,7 @@ export function mapPlaylistItems(
         // The watch page, not the embed: these are link-out items and the club's
         // own page carries its own player, description and comments.
         link: `https://www.youtube.com/watch?v=${videoId}`,
-        source: "lfctv" as const,
+        source: sourceId,
         language: "en" as const,
         pubDate: new Date(published).toISOString(),
         // First line only. The full description is the club's copy, and these
@@ -111,19 +123,24 @@ export function mapPlaylistItems(
   });
 }
 
-/** The club's YouTube uploads as news items. */
+/** YouTube channel uploads as link-out video items. */
 export class YouTubeChannelAdapter implements FeedAdapter {
-  readonly name = "lfctv";
+  readonly name: string;
   status?: SourceFetchStatus;
 
-  constructor(private readonly channelId: string = LFC_CHANNEL_ID) {}
+  constructor(
+    private readonly channelId: string = LFC_CHANNEL_ID,
+    private readonly sourceId: NewsSource = "lfctv",
+  ) {
+    this.name = sourceId;
+  }
 
   async fetch(): Promise<NewsArticle[]> {
     const key = getEnv("YOUTUBE_API_KEY");
     if (!key) {
       // Not an error: the site is expected to run without the key. Saying so
       // beats an empty section nobody can explain.
-      console.warn("[youtube] YOUTUBE_API_KEY is not set — skipping the video source");
+      console.warn(`[youtube] YOUTUBE_API_KEY is not set — skipping ${this.sourceId}`);
       this.status = { state: "ok" };
       return [];
     }
@@ -145,7 +162,7 @@ export class YouTubeChannelAdapter implements FeedAdapter {
         // 403 here is nearly always quota exhausted or a key restricted to the
         // wrong referrer, both of which need a human; keep the status specific.
         this.status = { state: "http_error", httpStatus: res.status };
-        console.error(`[youtube] HTTP ${res.status} listing the uploads playlist`);
+        console.error(`[youtube] HTTP ${res.status} listing ${this.sourceId} uploads`);
         return [];
       }
 
@@ -157,12 +174,12 @@ export class YouTubeChannelAdapter implements FeedAdapter {
         return [];
       }
 
-      const items = mapPlaylistItems(data);
+      const items = mapPlaylistItems(data, undefined, this.sourceId);
       this.status = { state: "ok" };
       return items;
     } catch (err) {
       this.status = statusFromError(err);
-      console.error("[youtube] fetch failed:", err);
+      console.error(`[youtube] ${this.sourceId} fetch failed:`, err);
       return [];
     }
   }

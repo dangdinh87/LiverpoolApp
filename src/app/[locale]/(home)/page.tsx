@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { brandDescription, brandTitle } from "@/lib/brand";
 import type { LocaleParams } from "@/i18n/routing";
@@ -6,8 +7,9 @@ import { unstable_cache } from "next/cache";
 import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
 import { requireNonEmptyArray } from "@/lib/football/fdo-client";
 import { getFixtures, getStandings } from "@/lib/football";
-import { getNewsFromDB } from "@/lib/news";
+import { getNewsFromDB, getPodcastItemsFromDB, getSocialItemsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
+import type { NewsArticle } from "@/lib/news/types";
 import { getCachedLatestDigest } from "@/lib/news/latest-digest";
 import type { DigestRecord } from "@/lib/news/digest";
 import { getSiteSetting, SITE_SETTINGS_CACHE_TAG } from "@/lib/gallery/queries";
@@ -15,12 +17,16 @@ import { Hero } from "@/components/home/hero";
 import { NextMatchWidget } from "@/components/home/next-match-widget";
 import { FormWidget, pickRecentResults } from "@/components/home/form-widget";
 import { NewsSection } from "@/components/home/news-section";
+import { PodcastStrip } from "@/components/news/podcast-strip";
+import { SocialStrip } from "@/components/news/social-strip";
 import { selectHomeNews } from "@/components/home/news-utils";
 import { StandingsPreview } from "@/components/home/standings-preview";
 import { DigestFeature } from "@/components/home/digest-feature";
 import { PredictCta } from "@/components/home/predict-cta";
 import { SectionHeader } from "@/components/ui/section-header";
 import { ArticleCard } from "@/components/site-articles/article-card";
+import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
+import { getAllPlayers, getCoach, getSquadPlayers } from "@/lib/squad-data";
 import { listSiteArticles, pickSiteArticleContent, type SiteArticleRow } from "@/lib/site-articles/db";
 import type { SiteArticleContent } from "@/lib/site-articles/types";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -66,6 +72,18 @@ const getCachedHomeNews = unstable_cache(
   async () => requireNonEmptyNews(getNewsFromDB(HOME_NEWS_LIMIT, undefined, { skipSync: true })),
   ["home-news-v4"],
   // The "news" tag makes this fresh on sync; the window is the fallback.
+  { revalidate: 1800, tags: ["news"] },
+);
+
+const getCachedHomePodcasts = unstable_cache(
+  async () => getPodcastItemsFromDB(3),
+  ["home-podcasts-v1"],
+  { revalidate: 1800, tags: ["news"] },
+);
+
+const getCachedHomeSocial = unstable_cache(
+  async () => getSocialItemsFromDB(4),
+  ["home-social-v1"],
   { revalidate: 1800, tags: ["news"] },
 );
 
@@ -161,9 +179,11 @@ export default async function HomePage({ params }: LocaleParams) {
   setRequestLocale(locale);
   const [
     tAnalysis,
-    [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult, analysisResult],
+    tHub,
+    [fixturesResult, standingsResult, newsResult, digestResult, heroSettingResult, analysisResult, podcastResult, socialResult],
   ] = await Promise.all([
     getTranslations({ locale, namespace: "Home.analysis" }),
+    getTranslations({ locale, namespace: "Hub" }),
     Promise.allSettled([
       getCachedHomeFixtures(),
       getCachedHomeStandings(),
@@ -171,6 +191,8 @@ export default async function HomePage({ params }: LocaleParams) {
       getCachedLatestDigest(),
       getCachedHomeHeroSetting(),
       getCachedHomeAnalysis(),
+      getCachedHomePodcasts(),
+      getCachedHomeSocial(),
     ]),
   ]);
 
@@ -188,6 +210,8 @@ export default async function HomePage({ params }: LocaleParams) {
     { gallery_image_id: string; cloudinary_url: string } | null
   >(heroSettingResult, null);
   const analysisRows = getSettledValue<SiteArticleRow[]>(analysisResult, []);
+  const homePodcasts = getSettledValue<NewsArticle[]>(podcastResult, []);
+  const homeSocial = getSettledValue<NewsArticle[]>(socialResult, []);
   const homeAnalyses = analysisRows
     .map((row) => {
       const content = pickSiteArticleContent(row, locale);
@@ -215,6 +239,49 @@ export default async function HomePage({ params }: LocaleParams) {
   // The next match still open for predictions (not the live one).
   const upcoming = liveMatch ? null : nextMatch && nextMatch.fixture.id > 0 ? nextMatch : null;
   const topNews = selectHomeNews(allNews, uiLocale, HOME_NEWS_SHOWN);
+  const squadPlayers = getSquadPlayers();
+  const coach = getCoach();
+  const onLoanCount = getAllPlayers().filter((p) => p.onLoan).length;
+  const lfcStanding = standings.find((s) => s.team.id === 40);
+
+  const clubPulseItems = [
+    {
+      label: tHub("metrics.squadSize"),
+      value: squadPlayers.length,
+      sublabel: coach.name,
+      href: "/squad",
+      accent: "red" as const,
+    },
+    ...(lfcStanding
+      ? [
+          {
+            label: tHub("metrics.plRank"),
+            value: `#${lfcStanding.rank}`,
+            sublabel: `${lfcStanding.points} · ${lfcStanding.goalsDiff >= 0 ? "+" : ""}${lfcStanding.goalsDiff}`,
+            href: "/standings",
+            accent: "gold" as const,
+          },
+        ]
+      : []),
+    {
+      label: tHub("metrics.majorHonours"),
+      value: 68,
+      sublabel: "20 + 6",
+      href: "/history",
+      accent: "gold" as const,
+    },
+    ...(onLoanCount > 0
+      ? [
+          {
+            label: tHub("cards.transfers.title"),
+            value: onLoanCount,
+            sublabel: tHub("metrics.onLoan"),
+            href: "/transfers",
+            accent: "gold" as const,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <>
@@ -260,6 +327,32 @@ export default async function HomePage({ params }: LocaleParams) {
             {upcoming && <PredictCta fixture={upcoming} />}
             <StandingsPreview standings={standings} />
           </div>
+        </div>
+        <PodcastStrip items={homePodcasts} locale={uiLocale} moreHref="/news#podcasts" />
+        <SocialStrip items={homeSocial} locale={uiLocale} moreHref="/news#social" />
+
+        <div className="mt-10 space-y-8 sm:mt-12">
+          <div>
+            <div className="mb-2.5 flex items-center gap-2">
+              <Image
+                src="/assets/lfc/crest.webp"
+                alt=""
+                width={20}
+                height={24}
+                className="h-6 w-5 shrink-0 object-contain"
+              />
+              <p className="section-label text-white">{tHub("seasonPulse")}</p>
+            </div>
+            <DataPulseStrip items={clubPulseItems} />
+          </div>
+          <PresetConnectedGrid
+            preset="fromHome"
+            metaOverrides={{
+              squad: `${squadPlayers.length} ${tHub("cards.squad.badge")}`,
+              ...(onLoanCount > 0 && { transfers: `${onLoanCount} ${tHub("metrics.onLoan")}` }),
+              ...(analysisRows.length > 0 && { analysis: `${analysisRows.length} ${tHub("nav.analysis")}` }),
+            }}
+          />
         </div>
       </div>
     </>

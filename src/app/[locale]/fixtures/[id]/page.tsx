@@ -43,6 +43,10 @@ import { buildSportsEventJsonLd, getLocalizedUrl, makePageMeta } from "@/lib/seo
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ArticleCard } from "@/components/site-articles/article-card";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
+import { cleanTitle, formatNewsDate } from "@/components/news/news-text";
+import { getCachedNewsFeed } from "@/lib/news/cached-feed";
+import { SOURCE_CONFIG, getArticleUrl } from "@/lib/news-config";
 import { getArticlesForFixture, pickSiteArticleContent } from "@/lib/site-articles/db";
 import type { SiteArticleContent } from "@/lib/site-articles/types";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
@@ -101,12 +105,13 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const fixtureId = parsePositiveFixtureId(id);
   if (!fixtureId) notFound();
 
-  const [match, tDetail, tMatch, tCard, tRound] = await Promise.all([
+  const [match, tDetail, tMatch, tCard, tRound, tHub] = await Promise.all([
     getFixtureById(fixtureId),
     getTranslations("Fixtures.detail"),
     getTranslations("Match"),
     getTranslations("Fixtures.detail.empty"),
     getTranslations("Match.round"),
+    getTranslations("Hub"),
   ]);
   if (!match) notFound();
 
@@ -116,7 +121,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const isFinished = ["FT", "AET", "PEN"].includes(f.status.short);
   const isLive = ["1H", "2H", "HT", "ET", "P", "BT", "LIVE"].includes(f.status.short);
 
-  const [events, lineups, providerStats, espnDetail, prevFixtures, seasonFixtures, fixtureArticlesRaw] = await Promise.all([
+  const [events, lineups, providerStats, espnDetail, prevFixtures, seasonFixtures, fixtureArticlesRaw, newsFeed] = await Promise.all([
     isFinished ? getFixtureEvents(fixtureId, f.date) : Promise.resolve([]),
     getFixtureLineups(fixtureId, f.date),
     isFinished ? getFixtureStatistics(fixtureId) : Promise.resolve([]),
@@ -126,6 +131,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
       : Promise.resolve([] as Fixture[]),
     league.season === getCurrentSeasonYear() ? getFixtures() : getFixtures(league.season),
     getCachedFixtureArticles(fixtureId).catch(() => []),
+    getCachedNewsFeed(100).catch(() => []),
   ]);
   const fixtureArticles = fixtureArticlesRaw
     .map((row) => {
@@ -136,6 +142,20 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
   const opponentId = teams.home.id === LFC_ID ? teams.away.id : teams.home.id;
   const opponentName = teams.home.id === LFC_ID ? teams.away.name : teams.home.name;
+  const opponentShort = displayTeamName(opponentName);
+  const opponentTokens = Array.from(
+    new Set(
+      [opponentShort, opponentName]
+        .map((n) => n.toLowerCase().trim())
+        .filter((n) => n.length >= 3),
+    ),
+  );
+  const opponentNews = newsFeed
+    .filter((article) => {
+      const haystack = `${article.title} ${article.contentSnippet}`.toLowerCase();
+      return opponentTokens.some((tok) => haystack.includes(tok));
+    })
+    .slice(0, 4);
   const h2h = computeH2H([...seasonFixtures, ...prevFixtures], opponentId);
 
   const date = new Date(f.date);
@@ -224,6 +244,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
       ]} />
       <div className="page-container">
         <div className="mx-auto max-w-3xl">
+          <SectionSubNav group="match" current="fixtures" className="mb-4" />
           <Link
             href="/fixtures"
             className="group mb-4 inline-flex min-h-11 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
@@ -378,7 +399,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
 
           {fixtureArticles.length > 0 && (
             <section id="analysis" className={sectionClass}>
-              <SectionHeader title={tDetail("matchAnalysis")} href="/analysis" />
+              <SectionHeader title={tDetail("matchAnalysis")} href="/analysis" linkLabel={tDetail("allAnalysis")} />
               <ul className="grid gap-3 sm:grid-cols-2">
                 {fixtureArticles.map(({ row, content }) => (
                   <li key={row.id}>
@@ -396,6 +417,84 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               </ul>
             </section>
           )}
+
+          {opponentNews.length > 0 && (
+            <section className={sectionClass}>
+              <SectionHeader
+                title={`${tHub("nav.news")} · ${opponentShort}`}
+                href="/news"
+                linkLabel={tHub("cards.news.title")}
+              />
+              <ul className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
+                {opponentNews.map((article) => {
+                  const meta = [
+                    SOURCE_CONFIG[article.source]?.label,
+                    formatNewsDate(article.pubDate, uiLocale, now),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ");
+                  return (
+                    <li key={article.link}>
+                      <Link
+                        href={getArticleUrl(article.link)}
+                        rel="nofollow"
+                        className="group flex min-h-14 flex-col justify-center gap-1 py-3"
+                      >
+                        <span className="line-clamp-2 font-inter text-base font-semibold leading-snug text-white decoration-lfc-red decoration-2 underline-offset-4 group-hover:underline">
+                          {cleanTitle(article.title)}
+                        </span>
+                        {meta && <span className="text-xs text-stadium-muted">{meta}</span>}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          <DataPulseStrip
+            eyebrow={tHub("connectedHeading")}
+            className="mt-10"
+            items={[
+              {
+                label: tHub("cards.standings.badge"),
+                value: tHub("nav.standings"),
+                sublabel: league.name,
+                href: "/standings",
+                accent: "gold",
+              },
+              {
+                label: tHub("cards.injuries.badge"),
+                value: tHub("nav.injuries"),
+                sublabel: tHub("metrics.injuryWatch"),
+                href: "/injuries",
+                accent: "red",
+              },
+              {
+                label: tHub("cards.predictions.badge"),
+                value: tHub("nav.predictions"),
+                sublabel: tHub("metrics.predictionPoints"),
+                href: "/predictions",
+                accent: "red",
+              },
+              {
+                label: tHub("cards.analysis.badge"),
+                value: tHub("nav.analysis"),
+                sublabel: fixtureArticles.length > 0 ? `${fixtureArticles.length}` : tHub("metrics.totalArticles"),
+                href: "/analysis",
+                accent: "gold",
+              },
+            ]}
+          />
+
+          <PresetConnectedGrid
+            preset="fromFixtureDetail"
+            metaOverrides={{
+              analysis: fixtureArticles.length > 0 ? `${fixtureArticles.length} ${tHub("nav.analysis")}` : undefined,
+              standings: league.name,
+            }}
+            className="mt-10"
+          />
         </div>
       </div>
     </div>

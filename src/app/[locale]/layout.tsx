@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { League_Gothic, Inter, Barlow_Condensed, Newsreader } from "next/font/google";
+import { Be_Vietnam_Pro, Barlow } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from 'next-intl';
 import { hasLocale } from 'next-intl';
@@ -26,32 +26,17 @@ import { BRAND, brandDescription, brandLocale, brandTitle } from "@/lib/brand";
 import { getEnv } from "@/lib/env";
 import "../globals.css";
 
-// League Gothic — headlines, stats (closest to Liverpool FC brand typeface)
-const leagueGothic = League_Gothic({
-  variable: "--font-bebas",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-// Inter — body text, UI labels, forms (weights match wireframes)
-const inter = Inter({
-  weight: ["300", "400", "500", "600", "700"],
+// Be Vietnam Pro — crisp Vietnamese-native sans for editorial headlines & UI copy
+const beVietnamPro = Be_Vietnam_Pro({
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-inter",
   subsets: ["latin", "vietnamese"],
   display: "swap",
 });
 
-// Newsreader — story and page headlines (the "paper" half of the brand)
-const newsreader = Newsreader({
-  weight: ["500", "600"],
-  variable: "--font-newsreader",
-  subsets: ["latin", "vietnamese"],
-  display: "swap",
-});
-
-// Barlow Condensed — sub-headlines, stat labels
-const barlowCondensed = Barlow_Condensed({
-  weight: ["400", "600", "700"],
+// Barlow — athletic display headings, match scores, KPI numbers, sub-labels
+const barlow = Barlow({
+  weight: ["500", "600", "700", "800"],
   variable: "--font-barlow",
   subsets: ["latin", "vietnamese"],
   display: "swap",
@@ -147,10 +132,10 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={[leagueGothic.variable, inter.variable, newsreader.variable, barlowCondensed.variable].join(" ")}
+      className={[beVietnamPro.variable, barlow.variable].join(" ")}
       suppressHydrationWarning
     >
-      <body className="antialiased bg-stadium-bg text-white font-inter" suppressHydrationWarning>
+      <body className="antialiased bg-stadium-bg text-white font-sans" suppressHydrationWarning>
         {/* Before anything paints: spoiler-free readers must never see a score flash up. */}
         <script dangerouslySetInnerHTML={{ __html: SPOILER_BOOT_SCRIPT }} />
         <GoogleTagManager />

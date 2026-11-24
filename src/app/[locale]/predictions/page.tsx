@@ -3,16 +3,21 @@ import { Trophy } from "lucide-react";
 import type { LocaleParams } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getCachedFixtures } from "@/lib/football/cached-fixtures";
+import { getMatchResult } from "@/lib/types/football";
 import { getPredictionLeaderboard, type LeaderboardRow } from "@/lib/fan-predictions/leaderboard";
 import { EXACT_POINTS, RESULT_POINTS } from "@/lib/fan-predictions/scoring";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { LocalMatchDay, LocalMatchTime } from "@/components/ui/local-time";
+import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { cn } from "@/lib/utils";
+
+const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
 
 export async function generateMetadata({ params }: LocaleParams) {
   const { locale } = await params;
@@ -25,10 +30,11 @@ export const revalidate = 3600;
 export default async function PredictionsPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Predict.page");
   const uiLocale = locale === "vi" ? "vi" : "en";
 
-  const [rows, fixtures] = await Promise.all([
+  const [t, tHub, rows, fixtures] = await Promise.all([
+    getTranslations("Predict.page"),
+    getTranslations("Hub"),
     getPredictionLeaderboard().catch((): LeaderboardRow[] | null => null),
     getCachedFixtures(),
   ]);
@@ -37,14 +43,76 @@ export default async function PredictionsPage({ params }: LocaleParams) {
   const next = fixtures
     .filter((f) => f.fixture.status.short === "NS" && new Date(f.fixture.date).getTime() > now && f.fixture.id > 0)
     .sort((a, b) => a.fixture.date.localeCompare(b.fixture.date))[0];
+  const upcomingCount = fixtures.filter(
+    (f) => f.fixture.status.short === "NS" && new Date(f.fixture.date).getTime() > now,
+  ).length;
+  const finished = fixtures
+    .filter((f) => FINISHED_STATUSES.has(f.fixture.status.short))
+    .sort((a, b) => b.fixture.date.localeCompare(a.fixture.date));
+  const last5 = finished
+    .slice(0, 5)
+    .reverse()
+    .map((f) => getMatchResult(f))
+    .filter((r) => r !== "NS");
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  for (const f of finished) {
+    const res = getMatchResult(f);
+    if (res === "W") wins++;
+    else if (res === "D") draws++;
+    else if (res === "L") losses++;
+  }
+  const nextOpponent = next
+    ? displayTeamName(next.teams.home.id === 40 ? next.teams.away.name : next.teams.home.name)
+    : null;
+  const nextKickoff = next
+    ? `${formatMatchDayMonth(new Date(next.fixture.date), uiLocale, false, defaultTimeZoneForLocale(locale))} · ${formatMatchTime(new Date(next.fixture.date), defaultTimeZoneForLocale(locale))}`
+    : null;
 
   return (
     <div className="min-h-screen">
       <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/predictions" }])} />
-      <PageHero eyebrow={t("eyebrow")} title={t("title")} description={t("rule", { exact: EXACT_POINTS, result: RESULT_POINTS })} />
+      <PageHero clubCrest eyebrow={t("eyebrow")} title={t("title")} description={t("rule", { exact: EXACT_POINTS, result: RESULT_POINTS })} />
 
       {/* The width goes on an inner box: .page-container's own max-width outranks max-w-3xl. */}
-      <div className="page-container pb-16 pt-6">
+      <div className="page-container pb-16 pt-4">
+        <SectionSubNav group="match" current="predictions" className="mb-6" />
+
+        <DataPulseStrip
+          eyebrow={tHub("seasonPulse")}
+          className="mb-8"
+          items={[
+            {
+              label: tHub("metrics.recentForm"),
+              value: last5.length > 0 ? last5.join(" ") : "—",
+              sublabel: `${wins}-${draws}-${losses} · ${tHub("nav.standings")}`,
+              href: "/standings",
+              accent: "emerald",
+            },
+            {
+              label: tHub("metrics.upcoming"),
+              value: upcomingCount,
+              sublabel: tHub("nav.fixtures"),
+              href: "/fixtures",
+              accent: "red",
+            },
+            {
+              label: tHub("metrics.nextMatch"),
+              value: nextOpponent ?? "—",
+              sublabel: nextKickoff ?? tHub("nav.fixtures"),
+              href: next ? `/fixtures/${next.fixture.id}#predict-title` : "/fixtures",
+              accent: "gold",
+            },
+            {
+              label: tHub("metrics.predictionPoints"),
+              value: rows && rows.length > 0 ? rows[0].points : "—",
+              sublabel: rows && rows.length > 0 ? rows[0].name : t("tableTitle"),
+              accent: "gold",
+            },
+          ]}
+        />
+
         <div className="mx-auto max-w-3xl">
           {next && (
             <Link
@@ -54,7 +122,7 @@ export default async function PredictionsPage({ params }: LocaleParams) {
               <span className="min-w-0">
                 <span className="block text-sm text-stadium-muted">{t("nextLabel")}</span>
                 <span className="mt-0.5 block truncate font-semibold text-white">
-                  {displayTeamName(next.teams.home.name)} v {displayTeamName(next.teams.away.name)}
+                  {displayTeamName(next.teams.home.name)} vs {displayTeamName(next.teams.away.name)}
                 </span>
                 <span className="mt-0.5 block text-sm tabular-nums text-stadium-muted">
                   <LocalMatchDay iso={next.fixture.date} locale={uiLocale} /> · <LocalMatchTime iso={next.fixture.date} locale={uiLocale} />
@@ -105,6 +173,15 @@ export default async function PredictionsPage({ params }: LocaleParams) {
             )}
           </section>
         </div>
+
+        <PresetConnectedGrid
+          preset="fromPredictions"
+          metaOverrides={{
+            fixtures: `${upcomingCount} ${tHub("metrics.upcoming")}`,
+            standings: last5.length > 0 ? last5.join(" ") : undefined,
+          }}
+          className="mt-12"
+        />
       </div>
     </div>
   );

@@ -20,6 +20,8 @@ import {
 import { MomoModal } from "./momo-modal";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
+import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
+import { getSquadPlayers } from "@/lib/squad-data";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -54,8 +56,12 @@ export const revalidate = 86400;
 export default async function AboutPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("About");
-  const tLegal = await getTranslations("Legal");
+  const [t, tLegal, tHub] = await Promise.all([
+    getTranslations("About"),
+    getTranslations("Legal"),
+    getTranslations("Hub"),
+  ]);
+  const squadSize = getSquadPlayers().length;
 
   return (
     <div className="bg-stadium-bg text-white">
@@ -65,6 +71,40 @@ export default async function AboutPage({ params }: LocaleParams) {
       <PageHero eyebrow={t("label")} title={t("title")} description={t("tagline")} />
 
       <div className="page-container pb-20 pt-8 sm:pt-12">
+        <DataPulseStrip
+          eyebrow={tHub("seasonPulse")}
+          className="mb-10 sm:mb-12"
+          items={[
+            {
+              label: tHub("metrics.squadSize"),
+              value: squadSize,
+              sublabel: tHub("cards.squad.badge"),
+              href: "/squad",
+              accent: "red",
+            },
+            {
+              label: tHub("metrics.majorHonours"),
+              value: 68,
+              sublabel: "20 + 6",
+              href: "/history",
+              accent: "gold",
+            },
+            {
+              label: tHub("metrics.anfieldCapacity"),
+              value: "61,276",
+              sublabel: tHub("nav.history"),
+              href: "/history#stadium",
+              accent: "red",
+            },
+            {
+              label: tHub("metrics.founded"),
+              value: "1892",
+              sublabel: tHub("cards.history.badge"),
+              href: "/history#timeline",
+              accent: "gold",
+            },
+          ]}
+        />
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12 xl:grid-cols-[minmax(0,1fr)_22rem]">
           <div className="space-y-12 sm:space-y-16">
             {/* Story + disclaimer */}
@@ -156,6 +196,8 @@ export default async function AboutPage({ params }: LocaleParams) {
             </div>
           </aside>
         </div>
+
+        <PresetConnectedGrid preset="fromAbout" className="mt-14 sm:mt-16" />
       </div>
     </div>
   );

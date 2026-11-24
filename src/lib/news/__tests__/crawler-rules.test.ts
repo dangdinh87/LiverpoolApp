@@ -40,7 +40,8 @@ describe("relevance (Oct 2026 audit)", () => {
   it("lets unambiguous single-surname players clear the threshold", () => {
     expect(rel({ source: "bbc", title: "Gakpo joins injury list" })).toBe(true);
     expect(rel({ source: "sky", title: "Szoboszlai scores again" })).toBe(true);
-    expect(rel({ source: "sky", title: "Konaté returns to training" })).toBe(true);
+    expect(rel({ source: "sky", title: "Gravenberch returns to training" })).toBe(true);
+    expect(rel({ source: "sky", title: "Victor Munoz returns to training" })).toBe(true);
   });
 });
 

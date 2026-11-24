@@ -189,12 +189,11 @@ describe("RssAdapter hygiene", () => {
 });
 
 describe("feed config", () => {
-  it("uses redirect-free feed URLs and drops the ~empty MEN feed", () => {
+  it("uses redirect-free English feed URLs and drops the ~empty MEN feed", () => {
     const urls = RSS_FEEDS.map((f) => f.url);
     expect(urls).toContain("https://www.thisisanfield.com/feed/");
     expect(urls).toContain("https://www.mirror.co.uk/all-about/liverpool-fc/?service=rss");
     expect(urls.some((u) => u.includes("manchestereveningnews"))).toBe(false);
-    // The feed list is English-only now: no Vietnamese source to assert on.
     expect(RSS_FEEDS.every((f) => f.language === "en")).toBe(true);
   });
 });

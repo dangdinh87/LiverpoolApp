@@ -4,21 +4,21 @@ const S = "/assets/lfc/stadium";
 const G = "/assets/lfc/stadium/gallery";
 
 /** Local, locally-hosted photos only (no remote hosts that can fail or rate-limit). */
-const IMAGES: { src: string; alt: string }[] = [
-  { src: `${S}/anfield-aerial.webp`, alt: "Anfield — aerial view" },
-  { src: `${S}/anfield-champions-league.webp`, alt: "Anfield on a Champions League night" },
-  { src: `${S}/anfield-the-kop.jpg`, alt: "The Kop" },
-  { src: `${S}/anfield-pitch.webp`, alt: "The pitch at Anfield" },
-  { src: `${S}/anfield-main-stand.jpg`, alt: "The Main Stand" },
-  { src: `${S}/anfield-corner-flag.webp`, alt: "Corner flag at Anfield" },
-  { src: `${G}/shankly-gates-anfield-liverpool.jpg`, alt: "Shankly Gates" },
-  { src: `${G}/champions-wall-outside-anfield.jpg`, alt: "Champions wall outside Anfield" },
-  { src: `${G}/kop-sign-anfield.jpg`, alt: "The Kop sign" },
-  { src: `${G}/anfield-pre-match-fanzone.jpg`, alt: "Pre-match fanzone" },
+const IMAGES: { src: string; altEn: string; altVi: string }[] = [
+  { src: `${S}/anfield-aerial.webp`, altEn: "Anfield — aerial view", altVi: "Toàn cảnh sân Anfield từ trên cao" },
+  { src: `${S}/anfield-champions-league.webp`, altEn: "Anfield on a Champions League night", altVi: "Anfield trong một đêm Champions League" },
+  { src: `${S}/anfield-the-kop.jpg`, altEn: "The Kop", altVi: "Khán đài The Kop" },
+  { src: `${S}/anfield-pitch.webp`, altEn: "The pitch at Anfield", altVi: "Mặt cỏ sân Anfield" },
+  { src: `${S}/anfield-main-stand.jpg`, altEn: "The Main Stand", altVi: "Khán đài Main Stand" },
+  { src: `${S}/anfield-corner-flag.webp`, altEn: "Corner flag at Anfield", altVi: "Cột cờ góc trên sân Anfield" },
+  { src: `${G}/shankly-gates-anfield-liverpool.jpg`, altEn: "Shankly Gates", altVi: "Cổng Shankly tại Anfield" },
+  { src: `${G}/champions-wall-outside-anfield.jpg`, altEn: "Champions wall outside Anfield", altVi: "Bức tường vinh danh các nhà vô địch bên ngoài Anfield" },
+  { src: `${G}/kop-sign-anfield.jpg`, altEn: "The Kop sign", altVi: "Biển hiệu khán đài The Kop" },
+  { src: `${G}/anfield-pre-match-fanzone.jpg`, altEn: "Pre-match fanzone", altVi: "Khu vực cổ động viên trước giờ bóng lăn" },
 ];
 
 /** CSS scroll-snap strip: native swipe/trackpad scrolling, zero client JS. */
-export function StadiumShowcase({ label }: { label: string }) {
+export function StadiumShowcase({ label, locale }: { label: string; locale: string }) {
   return (
     <ul
       tabIndex={0}
@@ -31,7 +31,7 @@ export function StadiumShowcase({ label }: { label: string }) {
             <div className="relative aspect-[4/3] bg-[var(--surface-3)]">
               <Image
                 src={img.src}
-                alt={img.alt}
+                alt={locale === "vi" ? img.altVi : img.altEn}
                 fill
                 sizes="(max-width: 640px) 78vw, (max-width: 1024px) 44vw, 340px"
                 className="object-cover"

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  broadcasterCountryLabel,
   findBroadcaster,
   KNOWN_TIME_ZONES,
 } from "@/lib/football/premier-league-broadcasters";
@@ -90,5 +91,21 @@ describe("findBroadcaster", () => {
       expect(b?.country, zone).toBeTruthy();
       expect(b?.service, zone).toBeTruthy();
     }
+  });
+
+  it("localizes every market country name into Vietnamese without untranslated fallbacks", () => {
+    for (const zone of KNOWN_TIME_ZONES) {
+      const b = findBroadcaster("Premier League", zone);
+      expect(b).not.toBeNull();
+      const vi = broadcasterCountryLabel(b!.country, "vi");
+      expect(vi.trim().length, `${zone} (${b!.country})`).toBeGreaterThan(0);
+      expect(vi.startsWith("the "), `${zone} (${b!.country}) -> ${vi}`).toBe(false);
+    }
+    expect(broadcasterCountryLabel("the UK", "vi")).toBe("Vương quốc Anh");
+    expect(broadcasterCountryLabel("Vietnam", "vi")).toBe("Việt Nam");
+    expect(broadcasterCountryLabel("the US", "vi")).toBe("Mỹ");
+    expect(broadcasterCountryLabel("the Middle East", "vi")).toBe("Trung Đông");
+    expect(broadcasterCountryLabel("north Africa", "vi")).toBe("Bắc Phi");
+    expect(broadcasterCountryLabel("the UK", "en")).toBe("the UK");
   });
 });

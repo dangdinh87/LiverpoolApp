@@ -5,7 +5,13 @@ import { redirect } from "@/i18n/navigation";
 import type { LocaleParams } from "@/i18n/routing";
 import { unstable_cache } from "next/cache";
 import { getLatestDigest } from "@/lib/news/digest";
+import { getStandings } from "@/lib/football";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
+import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
+import { requireNonEmptyArray } from "@/lib/football/fdo-client";
+import { defaultTimeZoneForLocale, formatMatchDate } from "@/lib/format-match-date";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -25,7 +31,13 @@ export const metadata: Metadata = { robots: { index: false } };
 const getCachedLatestDigestDate = unstable_cache(
   async () => (await getLatestDigest())?.digest_date ?? null,
   ["news-digest-latest-date"],
-  { revalidate: 1800, tags: ["news-digest"] },
+  { revalidate: 21600, tags: ["news-digest"] },
+);
+
+const getCachedDigestStandings = unstable_cache(
+  async () => requireNonEmptyArray(getStandings()),
+  ["digest-index-standings-v1"],
+  { revalidate: 21600, tags: [FOOTBALL_CACHE_TAG] },
 );
 
 // 6 hours: the digest is generated once a day and /api/news/digest/generate
@@ -48,9 +60,28 @@ export default async function DigestIndexPage({ params }: LocaleParams) {
   // redirect() throws, so it stays outside the try block.
   if (date) redirect({ href: `/news/digest/${date}`, locale });
 
+  const uiLocale: "vi" | "en" = locale === "vi" ? "vi" : "en";
+  const [tHub, fixtures, standings] = await Promise.all([
+    getTranslations("Hub"),
+    getCachedFixtures().catch(() => []),
+    getCachedDigestStandings().catch(() => []),
+  ]);
+
+  const nextMatch =
+    [...fixtures]
+      .filter((f) => f.fixture.status.short === "NS")
+      .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ??
+    [...fixtures]
+      .filter((f) => ["FT", "AET", "PEN"].includes(f.fixture.status.short))
+      .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())[0] ??
+    null;
+  const opponent = nextMatch ? (nextMatch.teams.home.id === 40 ? nextMatch.teams.away : nextMatch.teams.home) : null;
+  const lfcStanding = standings.find((s) => s.team.id === 40) ?? null;
+
   return (
     <div className="min-h-screen">
-      <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1.5rem)]">
+      <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1.5rem)]">
+        <SectionSubNav group="editorial" current="digest" className="mb-6" />
         <EmptyState
           tone={failed ? "error" : "empty"}
           icon={<Newspaper className="size-10" aria-hidden />}
@@ -59,6 +90,40 @@ export default async function DigestIndexPage({ params }: LocaleParams) {
           actionHref="/news"
           actionLabel={t("backToNews")}
         />
+        <DataPulseStrip
+          eyebrow={tHub("seasonPulse")}
+          className="mt-10"
+          items={[
+            {
+              label: tHub("metrics.nextMatch"),
+              value: opponent
+                ? `${nextMatch?.teams.home.id === 40 ? "vs" : "@"} ${opponent.name}`
+                : tHub("nav.fixtures"),
+              sublabel: nextMatch
+                ? formatMatchDate(new Date(nextMatch.fixture.date), uiLocale, defaultTimeZoneForLocale(uiLocale))
+                : tHub("cards.fixtures.badge"),
+              href: nextMatch ? `/fixtures/${nextMatch.fixture.id}` : "/fixtures",
+              accent: "red",
+            },
+            {
+              label: tHub("metrics.plRank"),
+              value: lfcStanding ? `#${lfcStanding.rank}` : tHub("nav.standings"),
+              sublabel: lfcStanding
+                ? `${lfcStanding.points} · ${lfcStanding.goalsDiff >= 0 ? `+${lfcStanding.goalsDiff}` : lfcStanding.goalsDiff}`
+                : tHub("cards.standings.badge"),
+              href: "/standings",
+              accent: "gold",
+            },
+            {
+              label: tHub("nav.analysis"),
+              value: tHub("cards.analysis.badge"),
+              sublabel: tHub("cards.analysis.title"),
+              href: "/analysis",
+              accent: "red",
+            },
+          ]}
+        />
+        <PresetConnectedGrid preset="fromDigest" className="mt-10" />
       </div>
     </div>
   );

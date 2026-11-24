@@ -3,9 +3,10 @@ import Image from "next/image";
 import { unstable_cache } from "next/cache";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ChevronDown, Trophy } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronDown, Trophy } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { getAllPlayers, getPlayerBySlug, getPlayerBio, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
+import { getAllPlayers, getPlayerBySlug, getPlayerBio, getSquadPlayers, POSITION_DISPLAY, calculateAge } from "@/lib/squad-data";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import type { PlayerPosition } from "@/lib/squad-data";
 import { BRAND } from "@/lib/brand";
 import { getNationality } from "@/lib/nationality";
@@ -51,6 +52,19 @@ const HONOR_TROPHY_IMAGE: Record<string, string> = {
   "FA Community Shield": "/assets/lfc/trophies/community-shield.svg",
   "Community Shield": "/assets/lfc/trophies/community-shield.svg",
 };
+
+const HONOR_TROPHY_KEY = {
+  "Premier League": "premierLeague",
+  "Champions League": "championsLeague",
+  "FA Cup": "faCup",
+  "Carabao Cup": "carabaoCup",
+  "League Cup": "leagueCup",
+  "FIFA Club World Cup": "fifaClubWorldCup",
+  "UEFA Super Cup": "uefaSuperCup",
+  "UEFA Cup": "uefaCup",
+  "FA Community Shield": "faCommunityShield",
+  "Community Shield": "communityShield",
+} as const;
 
 const POS_ACCENT: Record<PlayerPosition, { bg: string; text: string }> = {
   goalkeeper: { bg: "bg-yellow-400", text: "text-black" },
@@ -164,7 +178,16 @@ export default async function PlayerPage({ params }: PageProps) {
   const player = getPlayerBySlug(id);
   if (!player) notFound();
 
-  const t = await getTranslations("PlayerDetail");
+  const [t, tHub] = await Promise.all([
+    getTranslations("PlayerDetail"),
+    getTranslations("Hub"),
+  ]);
+
+  const activeSquad = getSquadPlayers();
+  const positionPeers = getSquadPlayers({ includeLoans: true })
+    .filter((p) => p.position === player.position && p.slug !== player.slug)
+    .sort((a, b) => (a.shirtNumber || 99) - (b.shirtNumber || 99))
+    .slice(0, 4);
 
   const age = calculateAge(player.dateOfBirth);
   // dateOfBirth is a date-only string (UTC midnight): format in UTC so it never
@@ -199,7 +222,7 @@ export default async function PlayerPage({ params }: PageProps) {
   };
 
   const bio = getPlayerBio(player.slug, locale);
-  const bioParagraphs = toParagraphs(bio).slice(0, 6);
+  const bioParagraphs = toParagraphs(bio);
   const bioLead = bioParagraphs.slice(0, BIO_LEAD);
   const bioRest = bioParagraphs.slice(BIO_LEAD);
 
@@ -282,7 +305,9 @@ export default async function PlayerPage({ params }: PageProps) {
         </div>
       </header>
 
-      <div className="page-container space-y-10 pb-20 pt-8 sm:space-y-14 sm:pt-12">
+      <div className="page-container space-y-10 pb-20 pt-6 sm:space-y-14 sm:pt-8">
+        <SectionSubNav group="club" current="squad" />
+
         {/* ─── Key facts ─── */}
         <section>
           <SectionHeader title={t("sections.playerInfo")} />
@@ -294,6 +319,56 @@ export default async function PlayerPage({ params }: PageProps) {
               </div>
             ))}
           </dl>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Link
+              href="/transfers"
+              className={cn(
+                "group flex items-center justify-between gap-3 border px-4 py-3 transition-colors",
+                player.onLoan
+                  ? "border-lfc-gold/60 bg-lfc-gold/10 hover:border-lfc-gold"
+                  : "border-stadium-border bg-stadium-surface hover:border-white/25 hover:bg-stadium-surface2",
+              )}
+            >
+              <div className="min-w-0">
+                <p className="font-barlow text-[11px] font-bold uppercase tracking-[0.14em] text-lfc-gold">
+                  {player.onLoan ? t("status.onLoan") : tHub("cards.transfers.badge")}
+                </p>
+                <p className="mt-0.5 truncate font-bebas text-xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                  {tHub("cards.transfers.title")}
+                </p>
+              </div>
+              <ArrowRight className="size-4 shrink-0 text-stadium-muted transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden />
+            </Link>
+            <Link
+              href="/injuries"
+              className="group flex items-center justify-between gap-3 border border-stadium-border bg-stadium-surface px-4 py-3 transition-colors hover:border-white/25 hover:bg-stadium-surface2"
+            >
+              <div className="min-w-0">
+                <p className="font-barlow text-[11px] font-bold uppercase tracking-[0.14em] text-brand">
+                  {tHub("cards.injuries.badge")}
+                </p>
+                <p className="mt-0.5 truncate font-bebas text-xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                  {tHub("cards.injuries.title")}
+                </p>
+              </div>
+              <ArrowRight className="size-4 shrink-0 text-stadium-muted transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden />
+            </Link>
+            <Link
+              href="/stats"
+              className="group flex items-center justify-between gap-3 border border-stadium-border bg-stadium-surface px-4 py-3 transition-colors hover:border-white/25 hover:bg-stadium-surface2"
+            >
+              <div className="min-w-0">
+                <p className="font-barlow text-[11px] font-bold uppercase tracking-[0.14em] text-stadium-muted">
+                  {tHub("cards.stats.badge")}
+                </p>
+                <p className="mt-0.5 truncate font-bebas text-xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                  {tHub("metrics.viewSeasonStats")}
+                </p>
+              </div>
+              <ArrowRight className="size-4 shrink-0 text-stadium-muted transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden />
+            </Link>
+          </div>
         </section>
 
         {/* ─── Season statistics (has its own empty state) ─── */}
@@ -375,6 +450,8 @@ export default async function PlayerPage({ params }: PageProps) {
                 const years = match ? match[2] : "";
                 const yearCount = years ? years.split(",").length : 0;
                 const trophyImage = HONOR_TROPHY_IMAGE[trophy];
+                const trophyKey = HONOR_TROPHY_KEY[trophy as keyof typeof HONOR_TROPHY_KEY];
+                const trophyLabel = trophyKey ? t(`honourNames.${trophyKey}`) : trophy;
 
                 return (
                   <li key={honor} className="surface relative flex min-h-16 items-center gap-3 p-4">
@@ -391,7 +468,7 @@ export default async function PlayerPage({ params }: PageProps) {
                       )}
                     </span>
                     <span className="min-w-0 pr-8">
-                      <span className="block text-sm font-semibold leading-tight text-white">{trophy}</span>
+                      <span className="block text-sm font-semibold leading-tight text-white">{trophyLabel}</span>
                       {years && <span className="mt-1 block text-xs text-stadium-muted tabular-nums">{years}</span>}
                     </span>
                   </li>
@@ -400,6 +477,66 @@ export default async function PlayerPage({ params }: PageProps) {
             </ul>
           </section>
         )}
+
+        {/* ─── Position Peers ─── */}
+        {positionPeers.length > 0 && (
+          <section aria-label={tHub("metrics.positionPeers")}>
+            <SectionHeader
+              eyebrow={t(`positions.${player.position}`)}
+              title={tHub("metrics.positionPeers")}
+              href="/squad"
+              linkLabel={t("backSquad")}
+            />
+            <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {positionPeers.map((peer) => {
+                const peerNat = getNationality(peer.nationality);
+                const peerNatLabel = peerNat.key ? t(`nationalities.${peerNat.key}`) : peer.nationality;
+                return (
+                  <li key={peer.slug}>
+                    <Link
+                      href={`/player/${peer.slug}`}
+                      className="surface tap-target group flex items-center gap-3 p-3.5 transition-colors hover:border-white/25 hover:bg-stadium-surface2"
+                    >
+                      <div className="relative size-12 shrink-0 overflow-hidden bg-[var(--surface-3)]">
+                        <Image
+                          src={peer.localPhoto || peer.photo}
+                          alt={peer.name}
+                          fill
+                          sizes="48px"
+                          className="object-cover object-top"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-1.5">
+                          {peer.shirtNumber > 0 && (
+                            <span className="font-bebas text-lg leading-none text-brand tabular-nums">
+                              #{peer.shirtNumber}
+                            </span>
+                          )}
+                          <span className="truncate font-bebas text-xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                            {peer.name}
+                          </span>
+                        </div>
+                        <p className="mt-1 truncate text-xs text-stadium-muted">
+                          <span aria-hidden>{peerNat.flag} </span>
+                          {peerNatLabel}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
+
+        <PresetConnectedGrid
+          preset="fromPlayer"
+          metaOverrides={{
+            squad: `${activeSquad.length}`,
+            transfers: player.onLoan ? t("status.onLoan") : undefined,
+          }}
+        />
 
         <div className="flex flex-col items-center gap-1 sm:flex-row sm:justify-between">
           <Link

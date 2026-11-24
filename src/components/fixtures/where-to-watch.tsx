@@ -1,8 +1,11 @@
 "use client";
 
 import { Tv } from "lucide-react";
-import { useTranslations } from "next-intl";
-import { findBroadcaster } from "@/lib/football/premier-league-broadcasters";
+import { useLocale, useTranslations } from "next-intl";
+import {
+  broadcasterCountryLabel,
+  findBroadcaster,
+} from "@/lib/football/premier-league-broadcasters";
 import { useViewerTimeZone } from "@/hooks/use-viewer-time-zone";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +24,7 @@ export function WhereToWatch({
   competition: string | null | undefined;
   className?: string;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Match");
   // No fallback zone: guessing a country is worse than saying nothing.
   const timeZone = useViewerTimeZone("");
@@ -36,7 +40,10 @@ export function WhereToWatch({
     >
       <Tv className="size-4 shrink-0 text-lfc-gold" aria-hidden />
       <span>
-        {t("whereToWatch", { country: broadcaster.country, service: broadcaster.service })}
+        {t("whereToWatch", {
+          country: broadcasterCountryLabel(broadcaster.country, locale),
+          service: broadcaster.service,
+        })}
       </span>
     </p>
   );

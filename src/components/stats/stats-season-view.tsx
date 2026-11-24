@@ -1,12 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { getTopScorers, getTopAssists, getAllFplStats, getFixtures, getStandings, computeSeasonStats } from "@/lib/football";
 import { getCachedFixtures } from "@/lib/football/cached-fixtures";
+import type { FplPlayerStats } from "@/lib/football/fpl-stats";
+import { getAllPlayers, type LfcPlayer } from "@/lib/squad-data";
 import { SeasonOverview } from "@/components/stats/season-overview";
 import { LazyGoalsByMonthChart, LazySeasonComparison } from "@/components/stats/lazy-charts";
 import { FormTimeline } from "@/components/stats/form-timeline";
 import { HomeAwayTable } from "@/components/stats/home-away-table";
-import { Leaderboard, buildLeaders } from "@/components/stats/leaderboard";
-import { SquadScorersTable } from "@/components/stats/squad-scorers-table";
+import { buildLeaders, rankEntries, type LeaderEntry } from "@/components/stats/leaderboard";
 import { CompetitionBreakdown } from "@/components/stats/competition-breakdown";
 import { RecordsMilestones } from "@/components/stats/records-milestones";
 import { ChipBar } from "@/components/fixtures/chip-bar";
@@ -15,7 +17,11 @@ import { matchCentreHref } from "@/components/fixtures/match-centre-links";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import { BarChart3 } from "lucide-react";
+import { PresetConnectedGrid } from "@/components/ui/hub-links";
+import { TeamCrest } from "@/components/ui/team-crest";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowRight, BarChart3 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { competitionName } from "@/lib/competition-labels";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -24,6 +30,60 @@ import {
   getCurrentSeasonYear,
   getSelectableSeasons,
 } from "@/lib/football/current-season";
+
+// ─── Squad slug lookup ───────────────────────────────────────────────────────
+
+function normalizePlayerKey(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildSquadSlugMatcher(players: LfcPlayer[]) {
+  const fullMap = new Map<string, string>();
+  const surnameCounts = new Map<string, number>();
+  const surnameMap = new Map<string, string>();
+
+  for (const p of players) {
+    fullMap.set(normalizePlayerKey(p.name), p.slug);
+    if (p.shirtName) {
+      const shirtKey = normalizePlayerKey(p.shirtName);
+      surnameCounts.set(shirtKey, (surnameCounts.get(shirtKey) ?? 0) + 1);
+      surnameMap.set(shirtKey, p.slug);
+    }
+    const parts = normalizePlayerKey(p.name).split(" ");
+    const last = parts[parts.length - 1];
+    if (last && last.length >= 3) {
+      surnameCounts.set(last, (surnameCounts.get(last) ?? 0) + 1);
+      surnameMap.set(last, p.slug);
+    }
+  }
+
+  return (candidates: (string | null | undefined)[]): string | null => {
+    for (const raw of candidates) {
+      if (!raw) continue;
+      const key = normalizePlayerKey(raw);
+      const exact = fullMap.get(key);
+      if (exact) return exact;
+    }
+    for (const raw of candidates) {
+      if (!raw) continue;
+      const key = normalizePlayerKey(raw);
+      if (surnameCounts.get(key) === 1) {
+        return surnameMap.get(key) ?? null;
+      }
+      const parts = key.split(" ");
+      const last = parts[parts.length - 1];
+      if (last && surnameCounts.get(last) === 1) {
+        return surnameMap.get(last) ?? null;
+      }
+    }
+    return null;
+  };
+}
 
 export async function StatsSeasonView({
   locale,
@@ -34,8 +94,11 @@ export async function StatsSeasonView({
 }) {
   setRequestLocale(locale);
   const currentSeason = getCurrentSeasonYear();
-  const t = await getTranslations("Stats");
-  const tMatch = await getTranslations("Match");
+  const [t, tMatch, tHub] = await Promise.all([
+    getTranslations("Stats"),
+    getTranslations("Match"),
+    getTranslations("Hub"),
+  ]);
   const letters = { W: tMatch("resultShort.W"), D: tMatch("resultShort.D"), L: tMatch("resultShort.L") };
   const isCurrentSeason = selectedSeason === currentSeason;
   const seasonLabel = formatSeasonLabel(selectedSeason);
@@ -78,6 +141,18 @@ export async function StatsSeasonView({
       })),
   ];
 
+  const matchSquadSlug = buildSquadSlugMatcher(getAllPlayers());
+  const scorerSlugById = new Map<number, string>();
+  for (const s of [...scorers, ...assists]) {
+    if (s.statistics[0]?.team?.id !== 40) continue;
+    const slug = matchSquadSlug([
+      s.player.name,
+      `${s.player.firstname} ${s.player.lastname}`.trim(),
+      s.player.lastname,
+    ]);
+    if (slug) scorerSlugById.set(s.player.id, slug);
+  }
+
   const goalLeaders = buildLeaders(scorers, "goals");
   const assistLeaders = buildLeaders(assists, "assists");
   // The overview's strip: the last five results in all competitions, oldest first.
@@ -90,16 +165,29 @@ export async function StatsSeasonView({
   }));
   const hasData = seasonStats.overview.played > 0;
   const chartSubtitle = t("charts.legend", { season: seasonLabel });
+  const seasonOverviewHref = `/season?season=${selectedSeason}`;
 
   return (
     <div className="min-h-screen">
       <JsonLd data={breadcrumbJsonLd} />
       <PageHero
+        clubCrest
         eyebrow={`${t("hero.seasonLabel")} ${seasonLabel}`}
         title={t("hero.title")}
         description={t("hero.description")}
         image="/assets/lfc/fans/fans-anfield.webp"
-        actions={<ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonPicker")} />}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonPicker")} />
+            <Link
+              href={seasonOverviewHref}
+              className="inline-flex min-h-9 items-center gap-1.5 border border-stadium-border bg-stadium-surface/90 px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-lfc-gold transition-colors hover:border-lfc-gold/50 hover:text-white"
+            >
+              {tHub("nav.season")} · {seasonLabel}
+              <ArrowRight className="size-3.5" aria-hidden />
+            </Link>
+          </div>
+        }
       />
 
       <div className="page-container pb-16">
@@ -117,7 +205,12 @@ export async function StatsSeasonView({
 
           {hasData && (
             <section>
-              <SectionHeader title={t("overview.title")} eyebrow={seasonLabel} />
+              <SectionHeader
+                title={t("overview.title")}
+                eyebrow={seasonLabel}
+                href={seasonOverviewHref}
+                linkLabel={`${tHub("nav.season")} · ${seasonLabel}`}
+              />
               <SeasonOverview
                 stats={seasonStats.overview}
                 streak={seasonStats.records.currentStreak}
@@ -147,16 +240,32 @@ export async function StatsSeasonView({
             <section className="defer-render">
               <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
                 <ChartCard title={t("charts.scorers")} subtitle={chartSubtitle} flush>
-                  <Leaderboard entries={goalLeaders} unit={t("leaderboard.goals")} label={t("charts.scorers")} />
+                  <LinkedLeaderboard
+                    entries={goalLeaders}
+                    unit={t("leaderboard.goals")}
+                    label={t("charts.scorers")}
+                    slugById={scorerSlugById}
+                    tLeaderboard={t}
+                  />
                 </ChartCard>
                 {assistLeaders.length > 0 && (
                   <ChartCard title={t("charts.assists")} subtitle={chartSubtitle} flush>
-                    <Leaderboard entries={assistLeaders} unit={t("leaderboard.assists")} label={t("charts.assists")} />
+                    <LinkedLeaderboard
+                      entries={assistLeaders}
+                      unit={t("leaderboard.assists")}
+                      label={t("charts.assists")}
+                      slugById={scorerSlugById}
+                      tLeaderboard={t}
+                    />
                   </ChartCard>
                 )}
               </div>
 
-              <SquadScorersTable players={squad} />
+              <LinkedSquadScorersTable
+                players={squad}
+                matchSquadSlug={matchSquadSlug}
+                tStats={t}
+              />
             </section>
           )}
 
@@ -229,7 +338,10 @@ export async function StatsSeasonView({
 
           {hasData && (
             <section className="defer-render">
-              <SectionHeader title={t("records.title")} eyebrow={t("records.subtitle")} />
+              <SectionHeader
+                title={t("records.title")}
+                eyebrow={isCurrentSeason ? t("records.subtitle") : seasonLabel}
+              />
               <RecordsMilestones
                 records={seasonStats.records}
                 labels={{
@@ -267,13 +379,163 @@ export async function StatsSeasonView({
               />
             </section>
           )}
+
+          <PresetConnectedGrid
+            preset="fromStats"
+            metaOverrides={{
+              season: seasonLabel,
+              standings: seasonStats.overview.rank > 0 ? `#${seasonStats.overview.rank}` : undefined,
+              fixtures: hasData ? `${seasonStats.overview.played} ${tHub("metrics.played")}` : undefined,
+            }}
+            className="pt-2"
+          />
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Layout helper ───────────────────────────────────────────────────────────
+// ─── Layout helpers ──────────────────────────────────────────────────────────
+
+const TOP_LEADERS = 5;
+
+function LinkedLeaderboard({
+  entries,
+  unit,
+  label,
+  slugById,
+  tLeaderboard,
+}: {
+  entries: LeaderEntry[];
+  unit: string;
+  label: string;
+  slugById: Map<number, string>;
+  tLeaderboard: Awaited<ReturnType<typeof getTranslations<"Stats">>>;
+}) {
+  const ranked = rankEntries(entries);
+  const top = ranked.slice(0, TOP_LEADERS);
+  const rest = ranked.slice(TOP_LEADERS).filter((e) => e.isLiverpool);
+  const max = Math.max(1, ...ranked.map((e) => e.value));
+
+  const row = (e: (typeof ranked)[number]) => {
+    const slug = e.isLiverpool ? slugById.get(e.id) : undefined;
+    const nameEl = slug ? (
+      <Link
+        href={`/player/${slug}`}
+        className="font-semibold text-white underline-offset-4 decoration-lfc-red/70 hover:text-lfc-gold hover:underline"
+      >
+        {e.surname}
+      </Link>
+    ) : (
+      <span className={cn("font-semibold", e.isLiverpool ? "text-white" : "text-white/90")}>
+        {e.surname}
+      </span>
+    );
+
+    return (
+      <li
+        key={e.id}
+        className={cn(
+          "relative grid grid-cols-[2rem_1.25rem_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1.5 px-3 py-2.5 sm:px-4",
+          e.isLiverpool && "bg-lfc-red/10",
+        )}
+      >
+        {e.isLiverpool && <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-lfc-red" />}
+        <span className="font-bebas text-xl leading-none tabular-nums text-stadium-muted">
+          <span aria-hidden>{e.tied ? `=${e.rank}` : e.rank}</span>
+          <span className="sr-only">{tLeaderboard(e.tied ? "leaderboard.tiedRank" : "leaderboard.rank", { rank: e.rank })}</span>
+        </span>
+        <span className="relative size-5">
+          <TeamCrest src={e.crest} name={e.club} sizes="20px" />
+        </span>
+        <span className="min-w-0 truncate text-sm">
+          {nameEl}
+          {e.club && <span className="text-stadium-muted"> · {e.club}</span>}
+        </span>
+        <span className={cn("font-bebas text-2xl leading-none tabular-nums", e.isLiverpool ? "text-brand" : "text-white")}>
+          {e.value}
+          <span className="sr-only"> {unit}</span>
+        </span>
+        <span aria-hidden className="col-span-2 col-start-3 h-1.5 bg-white/10">
+          <span
+            className={cn("block h-full", e.isLiverpool ? "bg-lfc-red" : "bg-white/40")}
+            style={{ width: `${(e.value / max) * 100}%` }}
+          />
+        </span>
+      </li>
+    );
+  };
+
+  return (
+    <ol aria-label={label} className="divide-y divide-[var(--line)]">
+      {top.map(row)}
+      {rest.length > 0 && (
+        <li aria-hidden className="border-t border-dashed border-white/20 px-4 py-1 text-center text-xs leading-none text-stadium-muted">
+          ···
+        </li>
+      )}
+      {rest.map(row)}
+    </ol>
+  );
+}
+
+function LinkedSquadScorersTable({
+  players,
+  matchSquadSlug,
+  tStats,
+}: {
+  players: FplPlayerStats[];
+  matchSquadSlug: (candidates: (string | null | undefined)[]) => string | null;
+  tStats: Awaited<ReturnType<typeof getTranslations<"Stats">>>;
+}) {
+  const scorers = players
+    .filter((p) => p.goalsScored > 0)
+    .sort((a, b) => b.goalsScored - a.goalsScored || b.assists - a.assists || a.minutes - b.minutes);
+  if (scorers.length === 0) return null;
+
+  const head = "h-9 px-3 text-right font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted sm:px-4";
+  const num = "px-3 text-right font-bebas text-xl leading-none tabular-nums sm:px-4";
+
+  return (
+    <div className="surface mt-4 overflow-hidden sm:mt-6">
+      <h2 className="border-b border-[var(--line)] px-4 py-3 font-bebas text-2xl text-white sm:px-6">{tStats("table.title")}</h2>
+      <Table>
+        <TableHeader>
+          <TableRow className="border-[var(--line)] hover:bg-transparent">
+            <TableHead className={`${head} text-left`}>{tStats("table.player")}</TableHead>
+            <TableHead className={head}>{tStats("table.goalsShort")}</TableHead>
+            <TableHead className={head}>{tStats("table.assistsShort")}</TableHead>
+            <TableHead className={head}>{tStats("table.minutesShort")}</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {scorers.map((p) => {
+            const slug = matchSquadSlug([`${p.firstName} ${p.secondName}`.trim(), p.webName, p.secondName]);
+            return (
+              <TableRow key={p.fplId} className="h-12 border-[var(--line)] hover:bg-white/[0.03]">
+                <TableCell className="max-w-0 truncate px-3 text-sm font-medium text-white sm:px-4">
+                  {slug ? (
+                    <Link
+                      href={`/player/${slug}`}
+                      className="inline-flex items-center gap-1.5 text-white underline-offset-4 decoration-lfc-red/70 hover:text-lfc-gold hover:underline"
+                    >
+                      {p.webName}
+                    </Link>
+                  ) : (
+                    p.webName
+                  )}
+                </TableCell>
+                <TableCell className={`${num} text-brand`}>{p.goalsScored}</TableCell>
+                <TableCell className={`${num} text-white`}>{p.assists}</TableCell>
+                <TableCell className={`${num} text-stadium-muted`}>{p.minutes}</TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
 
 function ChartCard({ title, subtitle, flush, children }: { title?: string; subtitle?: string; flush?: boolean; children: React.ReactNode }) {
   return (

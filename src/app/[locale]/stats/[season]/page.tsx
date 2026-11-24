@@ -38,7 +38,10 @@ function parseSeason(raw: string): number | null {
 export async function generateMetadata({ params }: { params: Params }) {
   const { season, locale } = await params;
   const year = parseSeason(season);
-  if (year === null) return { title: "Not Found", robots: { index: false } };
+  if (year === null) {
+    const tCommon = await getTranslations({ locale, namespace: "Common" });
+    return { title: tCommon("notFoundTitle"), robots: { index: false } };
+  }
   const t = await getTranslations({ locale, namespace: "Stats.metadata" });
   const label = formatSeasonLabel(year);
   const title = `${t("title")} ${label}`;

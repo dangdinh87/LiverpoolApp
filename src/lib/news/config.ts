@@ -1,6 +1,8 @@
 // Server-side feed configuration — contains URLs, not safe for client
 import "server-only";
 import type { FeedConfig } from "./types";
+import type { PodcastFeedConfig } from "./adapters/podcast-adapter";
+import type { BlueskyFeedConfig } from "./adapters/bluesky-adapter";
 
 export const RSS_FEEDS: FeedConfig[] = [
   // English — LFC-specific feeds
@@ -18,21 +20,35 @@ export const RSS_FEEDS: FeedConfig[] = [
   // 300 items / ~650 KB: needs more than the default timeout.
   { url: "https://anfieldindex.com/feed", source: "anfieldindex", language: "en", timeoutMs: 8_000 },
   { url: "https://www.liverpool.com/?service=rss", source: "liverpoolcom", language: "en" },
-  // English — general feeds with keyword filter
   { url: "https://www.liverpoolecho.co.uk/all-about/liverpool-fc/?service=rss", source: "echo", language: "en" },
   { url: "https://www.espn.com/espn/rss/soccer/news", source: "espn", language: "en", filter: "lfc" },
+  // English — additional web outlets verified Nov 2026
+  { url: "https://www.dailymail.co.uk/sport/teampages/liverpool.rss", source: "dailymail", language: "en" },
+  { url: "https://www.telegraph.co.uk/football/rss.xml", source: "telegraph", language: "en", filter: "lfc" },
+  { url: "https://talksport.com/football/feed/", source: "talksport", language: "en", filter: "lfc", timeoutMs: 8_000 },
+  { url: "https://www.fourfourtwo.com/feeds.xml", source: "fourfourtwo", language: "en", filter: "lfc", timeoutMs: 8_000 },
+  { url: "https://www.rousingthekop.com/feed/", source: "rousingthekop", language: "en" },
+  { url: "https://www.daveockop.com/feed/", source: "daveockop", language: "en" },
+];
+
+export const PODCAST_FEEDS: PodcastFeedConfig[] = [
+  { url: "https://feeds.acast.com/public/shows/681ccc398b1f3232bc1e68ae", source: "pod-walkon", showName: "Walk On · The Athletic" },
+  { url: "https://feeds.megaphone.fm/COMG6516013185", source: "pod-taw", showName: "The Anfield Wrap" },
+  { url: "https://feeds.megaphone.fm/RPSL9422504008", source: "pod-bloodred", showName: "Blood Red Podcast" },
+  { url: "https://feeds.acast.com/public/shows/52fa29b2-4f7d-4d5c-8d36-d1cb2a782d0e", source: "pod-redmentv", showName: "The Redmen TV Podcast" },
+  { url: "https://feeds.megaphone.fm/COMG5209641071", source: "pod-anfieldindex", showName: "Anfield Index Podcast" },
+];
+
+export const BLUESKY_FEEDS: BlueskyFeedConfig[] = [
+  { handle: "ptgorst.bsky.social", source: "bsky-gorst", authorName: "Paul Gorst" },
+  { handle: "iandoylesport.bsky.social", source: "bsky-doyle", authorName: "Ian Doyle" },
+  { handle: "david-ornstein.bsky.social", source: "bsky-ornstein", authorName: "David Ornstein", filter: "lfc" },
+  { handle: "theanfieldwrap.bsky.social", source: "bsky-taw", authorName: "The Anfield Wrap" },
 ];
 
 /**
- * Distinct outlets the news pipeline reads: every RSS source plus the one that
- * has its own adapter (the LFC official site). The homepage quotes this number,
- * so it stays true when a feed is added or dropped.
- *
- * The eleven Vietnamese feeds and the Bongdaplus scraper were dropped in
- * October 2026: the site reads for a global audience, so the feed is English.
- * Their hosts stay in source-hosts.ts and their labels in news-config.ts —
- * articles already stored under those sources must keep rendering and their
- * URLs must keep resolving.
+ * Distinct written-news outlets in the pipeline: RSS feeds plus the club's own
+ * editorial adapter. Video, podcast and social channels live in separate strips.
  */
 export const NEWS_OUTLET_COUNT = new Set([...RSS_FEEDS.map((f) => f.source), "lfc"]).size;
 
@@ -69,8 +85,8 @@ export const LFC_KEYWORDS_WEIGHTED: { term: string; weight: number }[] = [
   { term: "mac allister", weight: 2.5 },
   { term: "gravenberch", weight: 2.5 },
   { term: "szoboszlai", weight: 2.5 },
-  { term: "konaté", weight: 2.5 },
-  { term: "konate", weight: 2.5 },
+  { term: "victor munoz", weight: 2.5 },
+  { term: "munoz", weight: 1.5 },
   { term: "elliott", weight: 1.5 },
   { term: "endo", weight: 1.5 },
   { term: "ngumoha", weight: 1.5 },

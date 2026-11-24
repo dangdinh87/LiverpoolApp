@@ -10,9 +10,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --font-mono: var(--font-bebas);
-  /* Story and page headlines (Newsreader). League Gothic stays for the wordmark, scores and big numbers. */
-  --font-serif: var(--font-newsreader);
+  --font-mono: var(--font-barlow);
+  /* Modern editorial headlines in Be Vietnam Pro alongside Barlow display titles and scores. */
+  --font-serif: var(--font-inter);
 
   /* Liverpool color tokens (available as Tailwind classes) */
   --color-lfc-red: #c8102e;
@@ -21,7 +21,7 @@
      This lighter red is 4.8:1 on surface, 5.4:1 on bg. It keeps the red hue: the
      earlier #ff5c75 passed too but read as pink. Keep #c8102e for fills/borders. */
   --color-lfc-red-text: #ff3347;
-  --color-lfc-gold: #f6eb61;
+  --color-lfc-gold: #e5c158;
   --color-stadium-bg: #0d0d0d;
   --color-stadium-surface: #1a1a1a;
   --color-stadium-surface2: #252525;
@@ -29,7 +29,7 @@
   --color-stadium-muted: #a0a0a0;
 
   /* Font families */
-  --font-bebas: var(--font-bebas);
+  --font-bebas: var(--font-barlow);
   --font-inter: var(--font-inter);
   --font-barlow: var(--font-barlow);
 
@@ -97,7 +97,7 @@
 
   /* Chart colors (liverpool palette) */
   --chart-1: #c8102e;
-  --chart-2: #f6eb61;
+  --chart-2: #e5c158;
   --chart-3: #00b2a9;
   --chart-4: #ffffff;
   --chart-5: #a0a0a0;
@@ -148,20 +148,23 @@
       'calt' 1;
   }
 
-  /* Headings use Bebas Neue by default */
+  /* Display headings use Barlow 700 by default */
   h1,
   h2,
   h3 {
     font-family: var(--font-bebas);
-    letter-spacing: 0.02em;
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
 }
 
 /* ─── Utility Classes ─────────────────────────────────────────── */
 @layer utilities {
-  /* Font utilities — match wireframes */
+  /* Font utilities — cohesive sports-editorial pairing */
   .font-bebas {
     font-family: var(--font-bebas);
+    font-weight: 700;
+    letter-spacing: -0.015em;
   }
   .font-inter {
     font-family: var(--font-inter);
@@ -170,12 +173,12 @@
     font-family: var(--font-barlow);
   }
 
-  /* Section label — Barlow 700, 0.75rem, 0.2em spacing (wireframe .section-label) */
+  /* Section label — Barlow 700, 0.75rem, 0.14em spacing */
   .section-label {
     font-family: var(--font-barlow);
     font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import {
   mapPlaylistItems,
   pickThumbnail,
+  YOUTUBE_CHANNELS,
   YouTubeChannelAdapter,
 } from "../youtube-data-api";
 
@@ -160,5 +161,40 @@ describe("YouTubeChannelAdapter", () => {
     expect(await adapter.fetch()).toEqual([]);
     expect(adapter.status?.state).toBe("timeout");
     error.mockRestore();
+  });
+
+  it("supports additional Liverpool YouTube channels with custom source IDs", async () => {
+    expect(YOUTUBE_CHANNELS.map((c) => c.source)).toEqual([
+      "lfctv",
+      "yt-redmentv",
+      "yt-taw",
+      "yt-anfieldagenda",
+      "yt-bloodred",
+    ]);
+    for (const c of YOUTUBE_CHANNELS) {
+      expect(c.channelId).toMatch(/^UC[a-zA-Z0-9_-]{22}$/);
+    }
+
+    process.env.YOUTUBE_API_KEY = "test-key";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [
+            snippet({
+              channelTitle: "The Redmen TV",
+              publishedAt: new Date().toISOString(),
+            }),
+          ],
+        }),
+      }),
+    );
+
+    const items = await new YouTubeChannelAdapter("UC30avO2n6knAFiH2c8e4qiw", "yt-redmentv").fetch();
+    expect(items).toHaveLength(1);
+    expect(items[0].source).toBe("yt-redmentv");
+    expect(items[0].author).toBe("The Redmen TV");
   });
 });

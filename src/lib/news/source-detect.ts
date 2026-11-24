@@ -27,7 +27,25 @@ export const VI_SOURCES: ReadonlySet<string> = VI_SOURCE_IDS;
  * client): never scraped, the reader shows headline + summary and links out.
  * Anfield Index joined This Is Anfield here in Oct 2026.
  */
-const LINK_OUT_ONLY: ReadonlySet<string> = new Set(["tia", "anfieldindex", "lfctv"]);
+const LINK_OUT_ONLY: ReadonlySet<string> = new Set([
+  "tia",
+  "anfieldindex",
+  "telegraph",
+  "lfctv",
+  "yt-redmentv",
+  "yt-taw",
+  "yt-anfieldagenda",
+  "yt-bloodred",
+  "pod-walkon",
+  "pod-taw",
+  "pod-bloodred",
+  "pod-redmentv",
+  "pod-anfieldindex",
+  "bsky-gorst",
+  "bsky-doyle",
+  "bsky-ornstein",
+  "bsky-taw",
+]);
 
 export function isLinkOutOnlyUrl(url: string): boolean {
   return LINK_OUT_ONLY.has(detectSource(url).id);

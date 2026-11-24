@@ -20,10 +20,10 @@ export default async function DigestOgImage({
   params: Promise<{ date: string; locale: string }>;
 }) {
   const { date, locale } = await params;
-  const [digest, tDigest, tHero] = await Promise.all([
+  const [digest, tDigest, tNewsDigest] = await Promise.all([
     /^\d{4}-\d{2}-\d{2}$/.test(date) ? getDigestByDate(date).catch(() => null) : Promise.resolve(null),
     getTranslations({ locale, namespace: "Home.digest" }),
-    getTranslations({ locale, namespace: "Hero" }),
+    getTranslations({ locale, namespace: "News.digest" }),
   ]);
   const headline =
     digest?.seo_title || (digest ? getSeoArticleFromDigest(digest)?.title : null) || digest?.title;
@@ -31,7 +31,7 @@ export default async function DigestOgImage({
 
   return renderStoryCard({
     kicker: tDigest("kicker"),
-    headline: headline ?? tHero("badge"),
+    headline: headline ?? tNewsDigest("dailyLabel"),
     // The date the briefing covers, localized to the route's language.
     footer: /^\d{4}-\d{2}-\d{2}$/.test(date)
       ? new Date(`${date}T00:00:00Z`).toLocaleDateString(dateLocale, {

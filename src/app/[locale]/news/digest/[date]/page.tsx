@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 import { Newspaper } from "lucide-react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getAllDigestDates, getDigestByDate, getSeoArticleFromDigest, getVisibleDigestSections } from "@/lib/news/digest";
 import { getArticleRefsByUrls } from "@/lib/news";
+import { getFixtures, getStandings } from "@/lib/football";
+import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
+import { requireNonEmptyArray } from "@/lib/football/fdo-client";
 import { CATEGORY_CONFIG } from "@/lib/news-config";
 import { makePageMeta, buildNewsArticleJsonLd, getHreflangAlternates, getLocalizedUrl } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
@@ -17,8 +21,9 @@ import { DigestToc } from "@/components/news/digest-toc";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
-import { formatMatchDayMonth } from "@/lib/format-match-date";
+import { defaultTimeZoneForLocale, formatMatchDate, formatMatchDayMonth } from "@/lib/format-match-date";
 import { LocalTimeOfDay } from "@/components/ui/local-time";
 import { BRAND } from "@/lib/brand";
 
@@ -26,6 +31,18 @@ type Params = Promise<{ date: string; locale: string }>;
 
 // A dated briefing never changes once written.
 export const revalidate = 86400;
+
+const getCachedDigestFixtures = unstable_cache(
+  async () => requireNonEmptyArray(getFixtures()),
+  ["digest-detail-fixtures-v1"],
+  { revalidate: 86400, tags: [FOOTBALL_CACHE_TAG] },
+);
+
+const getCachedDigestStandings = unstable_cache(
+  async () => requireNonEmptyArray(getStandings()),
+  ["digest-detail-standings-v1"],
+  { revalidate: 86400, tags: [FOOTBALL_CACHE_TAG] },
+);
 
 // Empty list = nothing prerendered at build, each path is rendered on first
 // request and then cached for `revalidate` (without it the route renders per request).
@@ -75,14 +92,70 @@ export default async function DigestPage({
   setRequestLocale(locale);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) notFound();
 
-  const [digest, dates, t, tNews, tCat] = await Promise.all([
+  const [digest, dates, t, tNews, tCat, tHub, fixtures, standings] = await Promise.all([
     getDigestByDate(date),
     getAllDigestDates(),
     getTranslations("News.digest"),
     getTranslations("News"),
     // Category labels come from the catalogue, not from the model.
     getTranslations("News.categories"),
+    getTranslations("Hub"),
+    getCachedDigestFixtures().catch(() => []),
+    getCachedDigestStandings().catch(() => []),
   ]);
+
+  const uiLocale: "vi" | "en" = locale === "vi" ? "vi" : "en";
+  const nextMatch =
+    [...fixtures]
+      .filter((f) => f.fixture.status.short === "NS")
+      .sort((a, b) => new Date(a.fixture.date).getTime() - new Date(b.fixture.date).getTime())[0] ??
+    [...fixtures]
+      .filter((f) => ["FT", "AET", "PEN"].includes(f.fixture.status.short))
+      .sort((a, b) => new Date(b.fixture.date).getTime() - new Date(a.fixture.date).getTime())[0] ??
+    null;
+  const matchOpponent = nextMatch
+    ? nextMatch.teams.home.id === 40
+      ? nextMatch.teams.away
+      : nextMatch.teams.home
+    : null;
+  const lfcStanding = standings.find((s) => s.team.id === 40) ?? null;
+
+  const matchPulseItems = [
+    {
+      label: tHub("metrics.nextMatch"),
+      value: matchOpponent
+        ? `${nextMatch?.teams.home.id === 40 ? "vs" : "@"} ${matchOpponent.name}`
+        : tHub("nav.fixtures"),
+      sublabel: nextMatch
+        ? formatMatchDate(new Date(nextMatch.fixture.date), uiLocale, defaultTimeZoneForLocale(uiLocale))
+        : tHub("cards.fixtures.badge"),
+      href: nextMatch ? `/fixtures/${nextMatch.fixture.id}` : "/fixtures",
+      accent: "red" as const,
+    },
+    {
+      label: tHub("nav.fixtures"),
+      value: tHub("cards.fixtures.badge"),
+      sublabel: tHub("metrics.viewMatchCentre"),
+      href: "/fixtures",
+      accent: "muted" as const,
+    },
+    {
+      label: tHub("metrics.plRank"),
+      value: lfcStanding ? `#${lfcStanding.rank}` : tHub("nav.standings"),
+      sublabel: lfcStanding
+        ? `${lfcStanding.points} · ${lfcStanding.goalsDiff >= 0 ? `+${lfcStanding.goalsDiff}` : lfcStanding.goalsDiff}`
+        : tHub("cards.standings.badge"),
+      href: "/standings",
+      accent: "gold" as const,
+    },
+    {
+      label: tHub("nav.analysis"),
+      value: tHub("cards.analysis.badge"),
+      sublabel: tHub("cards.analysis.title"),
+      href: "/analysis",
+      accent: "red" as const,
+    },
+  ];
 
   // Dates arrive newest first: the next index is the previous (older) briefing.
   const at = dates.findIndex((d) => d.digest_date === date);
@@ -93,8 +166,9 @@ export default async function DigestPage({
   if (!digest) {
     return (
       <div className="min-h-screen">
-        <div className="page-container max-w-3xl pb-16 pt-[calc(var(--header-h)+1rem)]">
+        <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
           <NewsBackLink label={t("backToNews")} />
+          <SectionSubNav group="editorial" current="digest" className="mt-4" />
           <div className="mt-4">
             <EmptyState
               icon={<Newspaper className="size-10" aria-hidden />}
@@ -105,12 +179,13 @@ export default async function DigestPage({
             />
           </div>
           <DigestNav prev={prev} next={next} />
+          <DataPulseStrip eyebrow={tHub("seasonPulse")} items={matchPulseItems} className="mt-12" />
+          <PresetConnectedGrid preset="fromDigest" className="mt-10" />
         </div>
       </div>
     );
   }
 
-  const uiLocale = locale === "vi" ? "vi" : "en";
   const sections = getVisibleDigestSections(digest.sections as {
     category: string;
     categoryVi: string;
@@ -222,6 +297,7 @@ export default async function DigestPage({
       </header>
 
       <div className="page-container pb-20">
+        <SectionSubNav group="editorial" current="digest" className="mt-6" />
         {sections.length > 0 ? (
           <div className="mt-6 lg:mt-10 lg:grid lg:grid-cols-[15rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
             <aside className="hidden lg:block">
@@ -276,6 +352,9 @@ export default async function DigestPage({
             <p className="mt-10 text-[13px] leading-relaxed text-stadium-muted">{t("aiNote")}</p>
           </div>
         )}
+
+        <DataPulseStrip eyebrow={tHub("seasonPulse")} items={matchPulseItems} className="mt-14" />
+        <PresetConnectedGrid preset="fromDigest" className="mt-10" />
       </div>
     </article>
   );

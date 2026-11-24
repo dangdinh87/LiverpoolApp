@@ -47,7 +47,7 @@
         "description": "Hoàn tất nâng cấp vào năm 2024, bổ sung hơn 7.000 chỗ ngồi ở tầng trên cùng hệ thống sảnh chung và khu vực tiếp đón hiện đại."
       },
       {
-        "name": "Kenny Dalglish Stand",
+        "name": "Sir Kenny Dalglish Stand",
         "capacity": 11762,
         "description": "Đặt theo tên cầu thủ vĩ đại nhất lịch sử Liverpool. Khánh thành năm 1992 dưới tên gọi Centenary Stand, khán đài chính thức mang tên Sir Kenny Dalglish từ năm 2017."
       }
@@ -89,7 +89,7 @@
     },
     "recordTransferOut": {
       "name": "Philippe Coutinho",
-      "fee": "145 triệu bảng (2018)",
+      "fee": "142 triệu bảng (2018)",
       "to": "Barcelona"
     }
   },
@@ -127,13 +127,13 @@
     {
       "name": "Bill Shankly",
       "years": "1959–1974",
-      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp UEFA",
+      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp UEFA, 3 Siêu cúp Anh",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Shankly_statue_out_front.jpg/330px-Shankly_statue_out_front.jpg"
     },
     {
       "name": "Bob Paisley",
       "years": "1974–1983",
-      "trophies": "6 Vô địch QG, 3 Cúp C1, 3 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA",
+      "trophies": "6 Vô địch QG, 3 Cúp C1, 3 Cúp Liên đoàn, 1 Cúp UEFA, 1 Siêu cúp UEFA, 6 Siêu cúp Anh",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Bob_Paisley_statue%2C_Anfield_2.jpg/330px-Bob_Paisley_statue%2C_Anfield_2.jpg"
     },
     {
@@ -144,7 +144,7 @@
     {
       "name": "Kenny Dalglish",
       "years": "1985–1991, 2011–2012",
-      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp Liên đoàn",
+      "trophies": "3 Vô địch QG, 2 Cúp FA, 1 Cúp Liên đoàn, 4 Siêu cúp Anh",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Kenny_Dalglish_2009_Singapore.jpg/330px-Kenny_Dalglish_2009_Singapore.jpg"
     },
     {

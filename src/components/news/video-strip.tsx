@@ -1,6 +1,7 @@
 import { Play } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import type { NewsArticle } from "@/lib/news/types";
+import { SOURCE_CONFIG } from "@/lib/news-config";
 import { cleanTitle } from "@/components/news/news-text";
 import { NewsThumb } from "@/components/home/news-thumb";
 import { LocalMatchDay } from "@/components/ui/local-time";
@@ -24,7 +25,7 @@ export async function VideoStrip({
   const t = await getTranslations("News.video");
 
   return (
-    <section aria-labelledby="video-strip-heading" className="mt-10">
+    <section id="videos" aria-labelledby="video-strip-heading" className="scroll-mt-24 mt-10">
       <div className="mb-3 flex items-baseline justify-between gap-4">
         <h2
           id="video-strip-heading"
@@ -38,34 +39,38 @@ export async function VideoStrip({
       </div>
 
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => (
-          <li key={item.link}>
-            <a
-              href={item.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text"
-            >
-              <div className="relative aspect-video overflow-hidden border border-stadium-border">
-                <NewsThumb src={item.thumbnail} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
-                <span
-                  aria-hidden
-                  className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10"
-                >
-                  <span className="flex size-12 items-center justify-center rounded-full bg-lfc-red/90 text-white">
-                    <Play className="size-5 translate-x-[1px]" fill="currentColor" aria-hidden />
+        {items.map((item) => {
+          const channel = item.author ?? SOURCE_CONFIG[item.source]?.label;
+          return (
+            <li key={item.link}>
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text"
+              >
+                <div className="relative aspect-video overflow-hidden border border-stadium-border">
+                  <NewsThumb src={item.thumbnail} sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/10"
+                  >
+                    <span className="flex size-12 items-center justify-center rounded-full bg-lfc-red/90 text-white">
+                      <Play className="size-5 translate-x-[1px]" fill="currentColor" aria-hidden />
+                    </span>
                   </span>
-                </span>
-              </div>
-              <h3 className="mt-2 font-inter text-sm font-semibold leading-snug text-white transition-colors group-hover:text-lfc-red-text">
-                {cleanTitle(item.title)}
-              </h3>
-              <p className="mt-1 font-barlow text-xs uppercase tracking-[0.1em] text-stadium-muted tabular-nums">
-                <LocalMatchDay iso={item.pubDate} locale={locale} />
-              </p>
-            </a>
-          </li>
-        ))}
+                </div>
+                <h3 className="mt-2 font-inter text-sm font-semibold leading-snug text-white transition-colors group-hover:text-lfc-red-text">
+                  {cleanTitle(item.title)}
+                </h3>
+                <p className="mt-1 font-barlow text-xs uppercase tracking-[0.1em] text-stadium-muted tabular-nums">
+                  {channel && <span>{channel} · </span>}
+                  <LocalMatchDay iso={item.pubDate} locale={locale} />
+                </p>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

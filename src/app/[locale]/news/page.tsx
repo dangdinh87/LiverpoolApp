@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
+import { Headphones, MessageSquare, Play } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
-import { getNewsFromDB, getVideoItemsFromDB } from "@/lib/news";
+import { getNewsFromDB, getPodcastItemsFromDB, getSocialItemsFromDB, getVideoItemsFromDB } from "@/lib/news";
 import { requireNonEmptyNews } from "@/lib/news/db";
 import type { NewsArticle } from "@/lib/news/types";
 import { getCachedLatestDigest, getDigestHeadline } from "@/lib/news/latest-digest";
 import { clusterStories } from "@/lib/news/story-clusters";
 import { NewsFeed } from "@/components/news/news-feed";
 import { VideoStrip } from "@/components/news/video-strip";
+import { PodcastStrip } from "@/components/news/podcast-strip";
+import { SocialStrip } from "@/components/news/social-strip";
 import { DigestCard } from "@/components/news/digest-card";
 import { NewStoriesCount } from "@/components/news/new-since";
 import { cleanTitle } from "@/components/news/news-text";
 import { PageHero } from "@/components/ui/page-hero";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -52,6 +56,18 @@ const getCachedVideoItems = unstable_cache(
   { revalidate: 1800, tags: ["news"] },
 );
 
+const getCachedPodcastItems = unstable_cache(
+  async () => getPodcastItemsFromDB(6),
+  ["news-page-podcasts-v1"],
+  { revalidate: 1800, tags: ["news"] },
+);
+
+const getCachedSocialItems = unstable_cache(
+  async () => getSocialItemsFromDB(8),
+  ["news-page-social-v1"],
+  { revalidate: 1800, tags: ["news"] },
+);
+
 // Was fresh only because the root layout forced dynamic rendering; the cached
 // queries below revalidate on their own, this bounds the page itself.
 // 30 minutes is safe because the hourly sync busts the "news" tag the moment
@@ -68,12 +84,14 @@ export default async function NewsPage({ params }: LocaleParams) {
   const t = await getTranslations("News");
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
 
-  const [allArticles, digest, videos] = await Promise.all([
+  const [allArticles, digest, videos, podcasts, socialPosts] = await Promise.all([
     getCachedNewsList().catch((): NewsArticle[] => []),
     // The same cached read as the homepage: both lead with the same day's briefing.
     // getLatestDigest throws on a DB error so the failure is not cached.
     getCachedLatestDigest().catch(() => null),
     getCachedVideoItems().catch((): NewsArticle[] => []),
+    getCachedPodcastItems().catch((): NewsArticle[] => []),
+    getCachedSocialItems().catch((): NewsArticle[] => []),
   ]);
   const nowMs = new Date().getTime();
 
@@ -95,6 +113,10 @@ export default async function NewsPage({ params }: LocaleParams) {
 
       <PageHero compact title={t("title")} description={t("heroDesc")} actions={<NewStoriesCount storyTimes={storyTimes} />} />
 
+      <div className="page-container pt-4 sm:pt-5">
+        <SectionSubNav group="editorial" current="news" />
+      </div>
+
       {digest && (
         <div className="page-container py-3 sm:py-4">
           <DigestCard
@@ -106,6 +128,43 @@ export default async function NewsPage({ params }: LocaleParams) {
         </div>
       )}
 
+      {(videos.length > 0 || podcasts.length > 0 || socialPosts.length > 0) && (
+        <nav aria-label={t("title")} className="page-container pb-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {videos.length > 0 && (
+              <a
+                href="#videos"
+                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+              >
+                <Play className="size-3.5 text-lfc-red-text" aria-hidden />
+                {t("jumpTo.video")}
+                <span className="text-stadium-muted tabular-nums">({videos.length})</span>
+              </a>
+            )}
+            {podcasts.length > 0 && (
+              <a
+                href="#podcasts"
+                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+              >
+                <Headphones className="size-3.5 text-lfc-gold" aria-hidden />
+                {t("jumpTo.podcasts")}
+                <span className="text-stadium-muted tabular-nums">({podcasts.length})</span>
+              </a>
+            )}
+            {socialPosts.length > 0 && (
+              <a
+                href="#social"
+                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+              >
+                <MessageSquare className="size-3.5 text-sky-400" aria-hidden />
+                {t("jumpTo.social")}
+                <span className="text-stadium-muted tabular-nums">({socialPosts.length})</span>
+              </a>
+            )}
+          </div>
+        </nav>
+      )}
+
       <NewsFeed
         localArticles={localArticles}
         globalArticles={globalArticles}
@@ -115,6 +174,9 @@ export default async function NewsPage({ params }: LocaleParams) {
 
       <div className="page-container">
         <VideoStrip items={videos} locale={userLang} />
+        <PodcastStrip items={podcasts} locale={userLang} />
+        <SocialStrip items={socialPosts} locale={userLang} />
+        <PresetConnectedGrid preset="fromNews" className="mt-12 pb-8" />
       </div>
 
       <p className="page-container max-w-3xl pb-14 text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>

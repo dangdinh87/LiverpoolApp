@@ -4,13 +4,15 @@ export type NewsSource =
   | "lfc" | "bbc" | "guardian" | "bongda" | "24h" | "bongdaplus"
   | "echo" | "anfield-watch" | "eotk" | "sky" | "mirror" | "independent"
   | "men" | "anfieldindex" | "liverpoolcom" | "tia" | "espn"
+  | "dailymail" | "telegraph" | "talksport" | "fourfourtwo" | "rousingthekop" | "daveockop"
   | "vnexpress" | "tuoitre" | "thanhnien"
   | "dantri" | "zingnews" | "vietnamnet" | "webthethao" | "vietnamvn"
   | "bongda24h" | "thethao247" | "soha" | "goal"
-  // Video. Not an outlet: the club's own YouTube channel, reached through the
-  // Data API because its RSS feed is disabled. Link-out only, and kept out of
-  // the /news feed so a video never competes with a written story.
-  | "lfctv";
+  // Video, podcasts and Bluesky reporters. Kept out of the /news written-article
+  // feed (via NON_ARTICLE_SOURCES) and surfaced in their own strips on /news.
+  | "lfctv" | "yt-redmentv" | "yt-taw" | "yt-anfieldagenda" | "yt-bloodred"
+  | "pod-walkon" | "pod-taw" | "pod-bloodred" | "pod-redmentv" | "pod-anfieldindex"
+  | "bsky-gorst" | "bsky-doyle" | "bsky-ornstein" | "bsky-taw";
 
 export type NewsLanguage = "en" | "vi";
 

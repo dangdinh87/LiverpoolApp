@@ -76,16 +76,16 @@
     }
   },
   "Hero": {
-    "tagline": "The latest Liverpool news, all in one place",
-    "title": "Liverpool FC coverage, in one place",
-    "subtitle": "Anfield Daily — Liverpool reporting, de-duplicated and distilled daily",
-    "description": "<b>{brand}</b> gathers Liverpool coverage from {count} English outlets, removes duplicate reporting and distils the day into one concise briefing.",
+    "tagline": "The latest Liverpool news, distilled daily",
+    "title": "Liverpool FC coverage, distilled daily",
+    "subtitle": "Anfield Daily — Liverpool reporting, podcasts and daily briefings",
+    "description": "<b>{brand}</b> gathers Liverpool coverage from across the English sports press, podcasts and reporters, removes duplicates and distils the day into one concise briefing.",
     "badge": "Daily Liverpool briefing",
     "scroll": "Scroll",
     "fixtures": "Fixtures & Results",
     "standings": "Standings",
     "headlineTop": "The latest Liverpool news,",
-    "headlineBottom": "all in one place."
+    "headlineBottom": "distilled daily."
   },
   "Home": {
     "breaking": {
@@ -161,13 +161,13 @@
   },
   "News": {
     "metadata": {
-      "title": "Liverpool news roundup",
-      "description": "Liverpool FC reporting from across the English press, reproduced in full with publisher attribution and a direct link to the original, alongside a daily briefing."
+      "title": "Liverpool news & daily briefing",
+      "description": "Liverpool FC stories from across the English sports press, alongside podcasts, YouTube channels, journalist updates and a daily briefing."
     },
     "tagline": "Liverpool FC press coverage",
     "title": "News roundup",
-    "heroDesc": "Reporting from across the English football press, credited and linked to each publisher, alongside a daily briefing.",
-    "description": "Liverpool FC reporting from 13 English outlets — including LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports and This Is Anfield.",
+    "heroDesc": "Liverpool FC reporting from across the English sports press — plus podcasts, YouTube channels and journalist updates.",
+    "description": "Liverpool FC reporting from leading English football outlets — including LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, Liverpool Echo and This Is Anfield.",
     "search": "Search news...",
     "filter": "Filter",
     "langAll": "All",
@@ -258,7 +258,7 @@
       "catAll": "All",
       "catTeamNews": "Team News",
       "catTransfer": "Transfer",
-      "catMatch": "Match Report",
+      "catMatch": "Match report",
       "catInjury": "Injury",
       "catAnalysis": "Analysis",
       "catOpinion": "Opinion",
@@ -317,6 +317,7 @@
     },
     "digest": {
       "badge": "Briefing",
+      "dailyLabel": "Daily Briefing",
       "proBadge": "By {brand}",
       "by": "By {author}",
       "sourceFromSite": "Sources: {source}",
@@ -356,6 +357,21 @@
     "video": {
       "title": "Latest video",
       "onYouTube": "On YouTube"
+    },
+    "podcasts": {
+      "title": "Liverpool podcasts",
+      "eyebrow": "Audio RSS",
+      "viewAll": "All podcasts"
+    },
+    "social": {
+      "title": "Reporter pulse",
+      "eyebrow": "On Bluesky",
+      "viewAll": "All updates"
+    },
+    "jumpTo": {
+      "video": "Video",
+      "podcasts": "Podcasts",
+      "social": "Bluesky"
     }
   },
   "NextMatch": {
@@ -495,8 +511,8 @@
       "discipline": "Discipline",
       "passing": "Passing",
       "general": "Overview",
-      "noStatsTitle": "No stats yet",
-      "noStatsDescription": "Season statistics appear here once the player has featured in competitive action."
+      "noStatsTitle": "No season stats yet",
+      "noStatsDescription": "Competitive statistics will appear here once the player features for the first team this season."
     },
     "positions": {
       "goalkeeper": "Goalkeeper",
@@ -543,6 +559,18 @@
     "fanRating": {
       "title": "Supporters' rating this season",
       "detail": "Average across {matches, plural, one {# match} other {# matches}} ({votes, plural, one {# fan rating} other {# fan ratings}} on match pages)."
+    },
+    "honourNames": {
+      "premierLeague": "Premier League",
+      "championsLeague": "Champions League",
+      "faCup": "FA Cup",
+      "carabaoCup": "Carabao Cup",
+      "leagueCup": "League Cup",
+      "fifaClubWorldCup": "FIFA Club World Cup",
+      "uefaSuperCup": "UEFA Super Cup",
+      "uefaCup": "UEFA Cup",
+      "faCommunityShield": "FA Community Shield",
+      "communityShield": "Community Shield"
     }
   },
   "Season": {
@@ -587,7 +615,7 @@
     },
     "hero": {
       "eyebrow": "Premier League · {season}",
-      "description": "Fixtures, results and the Premier League table, season by season."
+      "description": "Complete Premier League fixtures, results and standings across every archived campaign."
     },
     "tabsLabel": "Fixtures or table",
     "outage": {
@@ -739,7 +767,7 @@
       "cabinet": "Trophy Cabinet",
       "history": "History",
       "timeline": "Club Timeline",
-      "masterminds": "Masterminds",
+      "masterminds": "On the touchline",
       "managers": "Great Managers",
       "immortals": "Anfield Icons",
       "legends": "Legends",
@@ -886,7 +914,7 @@
         }
       },
       "dataTitle": "Data sources",
-      "dataSources": "Fixtures, results and league tables come from Football-Data.org and ESPN. Player statistics come from the public Fantasy Premier League API, and squad profiles from liverpoolfc.com. News is gathered from English football outlets, always credited with a direct link to the original publisher.",
+      "dataSources": "Fixtures, results and league tables are supplied by Football-Data.org and ESPN. Season player statistics come from the public Fantasy Premier League API, and first-team squad profiles from liverpoolfc.com. News is gathered from leading English football outlets — alongside Liverpool podcasts, YouTube channels and Bluesky journalist feeds — always credited with a direct link to the original publisher.",
       "techTitle": "Tech stack",
       "techStack": "Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Framer Motion · Recharts · Supabase · Cloudflare Workers · next-intl (EN/VI)"
     },
@@ -918,7 +946,7 @@
     },
     "ai": {
       "title": "Use of AI",
-      "body": "On-demand Vietnamese article translation, the daily briefing and data-driven match reports use AI via VietAPI. Every match report is checked programmatically against the underlying match feed, though automated text can still miss nuance — consult Liverpool FC's official channels for kick-off changes or ticketing."
+      "body": "On-demand Vietnamese translations, the daily briefing and post-match reports use AI via VietAPI. Every match report is cross-checked programmatically against verified match feeds, though automated prose can still miss nuance — always consult Liverpool FC's official channels for fixture changes or ticketing."
     }
   },
   "Standings": {
@@ -1026,7 +1054,7 @@
       "lineupsPredicted": "Predicted",
       "substitutes": "Substitutes",
       "coach": "Head Coach",
-      "noData": "Match timeline and statistics appear once kick-off is under way.",
+      "noData": "Live match events and statistics appear here once kick-off gets under way.",
       "empty": {
         "afterKickoff": "Available once the match kicks off.",
         "events": {
@@ -1052,7 +1080,8 @@
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and line-ups.",
       "attendance": "Attendance: {count}",
       "referee": "Referee: {name}",
-      "matchAnalysis": "Match analysis"
+      "matchAnalysis": "Match analysis",
+      "allAnalysis": "All reports"
     },
     "outage": {
       "title": "Fixtures temporarily unavailable",
@@ -1096,11 +1125,11 @@
       },
       "terms": {
         "title": "Terms of Use",
-        "content": "This website is provided as-is for informational and editorial purposes only. {brand} is an unofficial fan-run site and is not endorsed by or affiliated with Liverpool FC or the Premier League. All club names, crests and trademarks remain the property of Liverpool Football Club and Athletic Grounds Limited or their respective owners. Match schedules, scores and standings are supplied by Football-Data.org and ESPN. News reader pages reproduce stories from the outlets listed below with prominent attribution and a direct link to the original publisher. Copyright in every external article belongs to its publisher or author; {brand} claims no ownership and acts promptly on any takedown or amendment request. Automated article translations, daily briefings and data-driven match reports use AI via VietAPI and may contain occasional errors. Continued use of this site constitutes acceptance of these terms."
+        "content": "This website is provided as-is for informational and editorial purposes only. {brand} is an independent, unofficial supporter publication and is not endorsed by or affiliated with Liverpool FC or the Premier League. All club names, crests and trademarks remain the property of Liverpool Football Club and Athletic Grounds Limited or their respective owners. Fixtures, live scores and standings are supplied by Football-Data.org and ESPN. News reader pages reproduce stories from the outlets listed below with prominent attribution and a direct link to the original publisher. Copyright in every external article belongs to its publisher or author; {brand} claims no ownership and acts promptly on any takedown or amendment request. Automated translations, daily briefings and data-driven match reports use AI via VietAPI and may contain occasional errors. Continued use of this site constitutes acceptance of these terms."
       },
       "sources": {
         "title": "Data Sources",
-        "content": "League standings, fixtures and match results are provided by Football-Data.org. Domestic cup ties and live match events are supplemented by ESPN. Season player statistics come from the public Fantasy Premier League API, and first-team squad profiles come from liverpoolfc.com. News headlines and articles are gathered from 13 English outlets — LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, Mirror, The Independent, Anfield Index, Liverpool.com and ESPN — always credited with a direct link to the original story. Vietnamese translations, daily briefings and match reports are generated with AI assistance via VietAPI. Club history, records and honours are curated from publicly verifiable archives."
+        "content": "League standings, fixtures and match results are provided by Football-Data.org, with domestic cup ties and live match events supplemented by ESPN. Season player statistics come from the public Fantasy Premier League API, and first-team squad profiles come from liverpoolfc.com. News headlines and articles are gathered from leading English outlets — including LFC Official, BBC Sport, The Guardian, Liverpool Echo, Daily Mail, The Telegraph, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, Mirror, The Independent, Anfield Index, Liverpool.com, ESPN, talkSPORT, FourFourTwo, Rousing The Kop and DaveOCKOP — alongside Liverpool podcasts, YouTube channels and journalist feeds on Bluesky, always credited with a direct link to the original source. Vietnamese translations, daily briefings and match reports are generated with AI assistance via VietAPI. Club history, records and honours are compiled from publicly verifiable archives."
       }
     },
     "toc": "On this page"
@@ -1123,7 +1152,7 @@
       "or": "or"
     },
     "register": {
-      "title": "Join the Reds",
+      "title": "Create your account",
       "subtitle": "Create a free account to save articles, follow players and join match predictions.",
       "username": "Display name",
       "email": "Email address",
@@ -1378,8 +1407,8 @@
       "description": "Anfield, the first-team squad, club legends and defining nights in Liverpool FC history."
     },
     "hero": {
-      "label": "Photo Gallery",
-      "title": "Gallery",
+      "label": "Visual archive",
+      "title": "Photo gallery",
       "subtitle": "Anfield, the squad, club legends and defining moments."
     },
     "categories": {
@@ -1444,12 +1473,12 @@
   "Analysis": {
     "metadata": {
       "title": "Analysis",
-      "description": "Data-driven Liverpool match reports and tactical numbers: goals, shots, possession and what each result means in the table."
+      "description": "Data-driven Liverpool match reports and tactical breakdowns: goals, shots, possession and what each result means in the table."
     },
     "hero": {
       "eyebrow": "Written here",
       "title": "Analysis",
-      "description": "Match reports generated directly from verified match data — line-ups, events and tactical numbers — never rewritten from second-hand coverage."
+      "description": "Post-match reports built directly from verified match feeds — line-ups, events and tactical numbers — never rewritten from second-hand coverage."
     },
     "kinds": {
       "review": "Match report",
@@ -1460,10 +1489,10 @@
     },
     "empty": {
       "title": "No reports published yet",
-      "description": "Match reports are published here once full-time data has been verified."
+      "description": "New match reports appear here as soon as full-time data has been verified."
     },
     "disclosure": {
-      "body": "Drafted automatically by {brand} from structured match data. Every score, minute, stat and player name is verified against the feed before publication.",
+      "body": "Generated by {brand} directly from structured match feeds. Every score, minute, statistic and player name is verified automatically before publication.",
       "link": "How this works"
     },
     "viewMatch": "Match details",
@@ -1551,8 +1580,8 @@
       "description": "Current sidelined players, doubtful fitness notes, suspensions and expected return dates across the Liverpool first-team squad."
     },
     "summary": {
-      "sidelined": "{count} players flagged",
-      "available": "{count} players available",
+      "sidelined": "{count, plural, one {# player flagged} other {# players flagged}}",
+      "available": "{count, plural, one {# player available} other {# players available}}",
       "updated": "Availability synced every 6 hours"
     },
     "status": {
@@ -1570,17 +1599,22 @@
       "title": "Full squad reported fit",
       "description": "No Liverpool players are currently flagged as injured, doubtful or suspended in the availability feed."
     },
+    "outage": {
+      "title": "Availability feed temporarily unavailable",
+      "description": "Live squad fitness status could not be loaded from the league feed right now. Browse the full squad or check the injury reports below."
+    },
+    "allNews": "All news",
     "viewSquad": "View full squad"
   },
   "Transfers": {
     "metadata": {
       "title": "Liverpool transfer news, rumours & loans",
-      "description": "Latest Liverpool FC transfer news, confirmed moves, contract updates, daily briefings and players currently out on loan."
+      "description": "Latest Liverpool FC transfer news, confirmed signings, contract updates, daily briefings and players currently out on loan."
     },
     "hero": {
       "eyebrow": "Transfer hub",
       "title": "Liverpool transfer news & loans",
-      "description": "Transfer coverage gathered from English sports press, daily briefings and Liverpool players currently gaining experience on loan."
+      "description": "Transfer reporting curated from the English sports press, a daily Anfield briefing and Liverpool players currently gaining experience on loan."
     },
     "sections": {
       "news": "Latest transfer coverage",
@@ -1592,6 +1626,144 @@
       "title": "No recent transfer stories",
       "description": "Transfer headlines will appear here automatically as new reports arrive in the feed."
     },
+    "browseNews": "All Liverpool news",
     "viewSquad": "Browse squad"
+  },
+  "Hub": {
+    "eyebrow": "Liverpool FC",
+    "connectedHeading": "More from the club",
+    "seasonPulse": "Season at a glance",
+    "subNavLabel": "Section navigation",
+    "nav": {
+      "fixtures": "Fixtures",
+      "standings": "Standings",
+      "stats": "Stats",
+      "season": "Season",
+      "predictions": "Predictions",
+      "squad": "Squad",
+      "injuries": "Injuries",
+      "transfers": "Transfers",
+      "history": "History",
+      "gallery": "Gallery",
+      "news": "News",
+      "digest": "Daily Briefing",
+      "analysis": "Analysis",
+      "about": "About",
+      "legal": "Legal",
+      "profile": "Profile"
+    },
+    "cards": {
+      "fixtures": {
+        "title": "Fixtures & Results",
+        "desc": "Upcoming Liverpool matches, full-time scores and competition kick-offs.",
+        "badge": "Matchday"
+      },
+      "standings": {
+        "title": "League Standings",
+        "desc": "Live Premier League table, Liverpool position, points and goal difference.",
+        "badge": "Table"
+      },
+      "stats": {
+        "title": "Season Statistics",
+        "desc": "Top scorers, assist leaders, home-and-away splits and squad output.",
+        "badge": "Numbers"
+      },
+      "season": {
+        "title": "Season Overview",
+        "desc": "Full campaign breakdown across all competitions, form streaks and key dates.",
+        "badge": "Campaign"
+      },
+      "predictions": {
+        "title": "Match Predictions",
+        "desc": "Pick the starting line-up, forecast the score and climb the fan table.",
+        "badge": "Interactive"
+      },
+      "squad": {
+        "title": "First-Team Squad",
+        "desc": "Profiles, shirt numbers, positions and season records for every Red.",
+        "badge": "Players"
+      },
+      "injuries": {
+        "title": "Injury & Fitness Watch",
+        "desc": "Sidelined players, doubtful fitness notes, suspensions and return timelines.",
+        "badge": "Availability"
+      },
+      "transfers": {
+        "title": "Transfers & Loans",
+        "desc": "Confirmed Liverpool deals, loan watch across Europe and daily rumours.",
+        "badge": "Market"
+      },
+      "history": {
+        "title": "Club History & Honours",
+        "desc": "Anfield heritage, major trophies, legendary managers and iconic eras.",
+        "badge": "Heritage"
+      },
+      "gallery": {
+        "title": "Anfield Photo Gallery",
+        "desc": "Curated photography of Anfield nights, club legends and silverware.",
+        "badge": "Archive"
+      },
+      "news": {
+        "title": "Latest Liverpool News",
+        "desc": "Liverpool reporting from the English sports press, podcasts and club journalists.",
+        "badge": "Feed"
+      },
+      "digest": {
+        "title": "Daily Anfield Briefing",
+        "desc": "One concise daily summary covering every major talking point around the club.",
+        "badge": "Briefing"
+      },
+      "analysis": {
+        "title": "Tactical Analysis",
+        "desc": "Post-match reviews, pre-match previews and tactical breakdowns from Anfield.",
+        "badge": "Tactics"
+      },
+      "about": {
+        "title": "About Anfield Daily",
+        "desc": "How our editorial pipeline gathers, verifies and translates Liverpool coverage.",
+        "badge": "Platform"
+      },
+      "legal": {
+        "title": "Editorial & Legal Notice",
+        "desc": "Independent fan publication terms, attribution standards and privacy policy.",
+        "badge": "Policy"
+      },
+      "profile": {
+        "title": "Member Profile",
+        "desc": "Saved articles, favourite player, prediction points and reading streak.",
+        "badge": "Account"
+      }
+    },
+    "metrics": {
+      "played": "Played",
+      "record": "W-D-L Record",
+      "goalsForAgainst": "Goals F / A",
+      "plRank": "PL Rank",
+      "winRate": "Win Rate",
+      "upcoming": "Upcoming",
+      "squadSize": "First-Team Squad",
+      "onLoan": "Out on Loan",
+      "injuryWatch": "Injury Watch",
+      "headCoach": "Head Coach",
+      "majorHonours": "Major Honours",
+      "anfieldCapacity": "Anfield Capacity",
+      "founded": "Founded",
+      "totalArticles": "Total Analyses",
+      "matchReviews": "Match Reviews",
+      "matchPreviews": "Match Previews",
+      "positionPeers": "Position Peers",
+      "nextMatchImpact": "Next Match Availability Impact",
+      "viewMatchCentre": "Open Match Centre",
+      "viewPlayerProfile": "View Player Profile",
+      "viewSeasonStats": "View Season Stats",
+      "kickoff": "Kick-off",
+      "pointsGd": "Points / GD",
+      "recentForm": "Recent Form",
+      "nextMatch": "Next Match",
+      "leagueTitles": "League Titles",
+      "europeanCups": "European Cups",
+      "savedArticles": "Saved Articles",
+      "predictionPoints": "Prediction Points"
+    }
   }
 }

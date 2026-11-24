@@ -2,18 +2,23 @@ import "server-only";
 import { fetchAllNews } from "./pipeline";
 import { RssAdapter } from "./adapters/rss-adapter";
 import { LfcAdapter } from "./adapters/lfc-adapter";
+import { PodcastAdapter } from "./adapters/podcast-adapter";
+import { BlueskyAdapter } from "./adapters/bluesky-adapter";
 import { dropStaleLiveBlogContent, liveBlogsWithNewHeadline } from "./live-blog";
-import { YouTubeChannelAdapter } from "./youtube-data-api";
-import { RSS_FEEDS } from "./config";
+import { YouTubeChannelAdapter, YOUTUBE_CHANNELS } from "./youtube-data-api";
+import { BLUESKY_FEEDS, PODCAST_FEEDS, RSS_FEEDS } from "./config";
 import { fetchOgMeta } from "./enrichers/og-meta";
 import { articleUrlVariants, canonicalizeArticleUrl } from "./url";
 import type { SourceStats } from "./pipeline";
 import { scrapeArticle } from "./enrichers/article-extractor";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "./supabase-service";
+import { NON_ARTICLE_SOURCES } from "./db";
 import { clampToNowMs, getValidDateMs, nowIso, toIsoDateOrFallback } from "./date";
 import { sanitizeImageUrl } from "./image";
 import type { NewsArticle } from "./types";
+
+const NO_SCRAPE_FILTER = `(${["tia", "anfieldindex", "telegraph", ...NON_ARTICLE_SOURCES].join(",")})`;
 
 type NewsServiceClient = ReturnType<typeof getServiceClient>;
 
@@ -58,7 +63,7 @@ const STALE_CONTENT_MS = 24 * 3600 * 1000;
 const MATCH_PEAK_BEFORE_HOURS = 36;
 const MATCH_PEAK_AFTER_HOURS = 18;
 const MATCH_NORMAL_BEFORE_HOURS = 120;
-const FETCH_LIMIT_BASE = 120;
+const FETCH_LIMIT_BASE = 180;
 const FAST_ENRICH_LIMIT = 10;
 const ENRICH_TIMEOUT_MS = 3_500;
 const ENRICH_CANDIDATE_POOL = 40;
@@ -396,8 +401,8 @@ async function enrichMissingThumbnails(
     .select("url,thumbnail,hero_image,content_hero:content_en->>heroImage")
     .eq("is_active", true)
     .is("thumbnail", null)
-    // Link-out / video sources are never scraped.
-    .not("source", "in", "(tia,anfieldindex,lfctv)")
+    // Link-out / video / podcast / social sources are never scraped.
+    .not("source", "in", NO_SCRAPE_FILTER)
     .gte("fetched_at", since)
     .order("fetched_at", { ascending: false })
     .limit(ENRICH_CANDIDATE_POOL);
@@ -506,8 +511,8 @@ async function scrapeContentForRecentArticles(
     .from("articles")
     .select("url")
     .eq("is_active", true)
-    // Link-out / video sources are never scraped (including lfctv would poison scrapeSuccessRate).
-    .not("source", "in", "(tia,anfieldindex,lfctv)")
+    // Link-out / video / podcast / social sources are never scraped (keeps scrapeSuccessRate clean).
+    .not("source", "in", NO_SCRAPE_FILTER)
     .or(`content_en.is.null,content_scraped_at.lt.${staleCutoff}`)
     .order("relevance", { ascending: false })
     .order("published_at", { ascending: false })
@@ -611,7 +616,9 @@ export async function syncPipeline(options: SyncOptions = {}): Promise<SyncResul
     ...RSS_FEEDS.map((cfg) => new RssAdapter(cfg)),
     // Inert without YOUTUBE_API_KEY, and reports "ok" in that case so a site
     // running without the key does not trip the workflow's failure alert.
-    new YouTubeChannelAdapter(),
+    ...YOUTUBE_CHANNELS.map((cfg) => new YouTubeChannelAdapter(cfg.channelId, cfg.source)),
+    ...PODCAST_FEEDS.map((cfg) => new PodcastAdapter(cfg)),
+    ...BLUESKY_FEEDS.map((cfg) => new BlueskyAdapter(cfg)),
   ];
 
   const supabase = getServiceClient();

@@ -5,7 +5,7 @@ import { OG_CONTENT_TYPE, OG_SIZE, renderStoryCard } from "@/lib/og/story-card";
 
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
-export const alt = `${BRAND.name} — match report`;
+export const alt = `${BRAND.name} — match analysis`;
 
 /**
  * Share card for one of the site's own match reports.

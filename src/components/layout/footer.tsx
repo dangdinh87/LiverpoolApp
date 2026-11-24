@@ -34,6 +34,10 @@ const SOCIAL_LINKS = [
 const SOURCE_IDS: NewsSource[] = [
   "lfc", "bbc", "guardian", "echo", "tia", "anfield-watch", "eotk", "sky",
   "mirror", "independent", "anfieldindex", "liverpoolcom", "espn",
+  "dailymail", "telegraph", "talksport", "fourfourtwo", "rousingthekop", "daveockop",
+  "lfctv", "yt-redmentv", "yt-taw", "yt-anfieldagenda", "yt-bloodred",
+  "pod-walkon", "pod-taw", "pod-bloodred", "pod-redmentv", "pod-anfieldindex",
+  "bsky-gorst", "bsky-doyle", "bsky-ornstein", "bsky-taw",
 ];
 
 /* ── Brand icons lucide-react does not ship: X and TikTok ────────── */

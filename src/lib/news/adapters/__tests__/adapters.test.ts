@@ -56,8 +56,11 @@ describe("RSS_FEEDS", () => {
     expect(urls.some((u) => u.includes("webthethao.vn") || u.includes("thethao247.vn"))).toBe(false);
   });
 
-  it("is English-only: the Vietnamese feeds were dropped for a global audience", () => {
-    expect(RSS_FEEDS.length).toBeGreaterThan(0);
+  it("carries global English-language sports feeds only", () => {
+    const urls = RSS_FEEDS.map((f) => f.url);
     expect(RSS_FEEDS.every((f) => f.language === "en")).toBe(true);
+    expect(urls).toContain("https://www.dailymail.co.uk/sport/teampages/liverpool.rss");
+    expect(urls).toContain("https://www.telegraph.co.uk/football/rss.xml");
+    expect(urls.some((u) => u.includes("bongda.com.vn") || u.includes("vnexpress.net"))).toBe(false);
   });
 });

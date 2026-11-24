@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import type { LocaleParams } from "@/i18n/routing";
+import { getSquadPlayers } from "@/lib/squad-data";
 import { makePageMeta, buildImageGalleryJsonLd } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -13,6 +16,7 @@ import {
 } from "@/lib/gallery/queries";
 import galleryFallback from "@/data/gallery.json";
 import { PageHero } from "@/components/ui/page-hero";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 
 const GALLERY_PAGE_SIZE = 50;
 
@@ -59,11 +63,14 @@ export default async function GalleryRoute({ params }: LocaleParams) {
   let totalImages = 0;
   let categoryCounts: Record<string, number> = {};
 
-  const [galleryResult, t, breadcrumbJsonLd] = await Promise.all([
+  const [galleryResult, t, tHub, breadcrumbJsonLd] = await Promise.all([
     getCachedGalleryFirstPage().catch(() => null),
     getTranslations("Gallery.hero"),
+    getTranslations("Hub"),
     buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "gallery", path: "/gallery" }]),
   ]);
+
+  const squadCount = getSquadPlayers().length;
 
   if (galleryResult && galleryResult[0].images.length > 0) {
     const [{ images: dbImages, total }, counts] = galleryResult;
@@ -84,6 +91,27 @@ export default async function GalleryRoute({ params }: LocaleParams) {
     totalImages = galleryFallback.length;
   }
 
+  const heritageLinks = [
+    {
+      href: "/history",
+      title: tHub("cards.history.title"),
+      badge: tHub("cards.history.badge"),
+      accent: "border-t-lfc-gold",
+    },
+    {
+      href: "/squad",
+      title: tHub("cards.squad.title"),
+      badge: `${squadCount} · ${tHub("cards.squad.badge")}`,
+      accent: "border-t-lfc-red",
+    },
+    {
+      href: "/fixtures",
+      title: tHub("cards.fixtures.title"),
+      badge: tHub("cards.fixtures.badge"),
+      accent: "border-t-lfc-red",
+    },
+  ] as const;
+
   return (
     <div className="bg-stadium-bg text-white">
       <JsonLd data={[
@@ -98,12 +126,45 @@ export default async function GalleryRoute({ params }: LocaleParams) {
           locale,
         ),
       ]} />
-      <PageHero eyebrow={t("label")} title={t("title")} description={t("subtitle")} />
-      <div className="page-container pt-6 pb-16 sm:pt-8">
+      <PageHero clubCrest eyebrow={t("label")} title={t("title")} description={t("subtitle")} />
+      <div className="page-container space-y-8 pt-6 pb-16 sm:pt-8">
+        <SectionSubNav group="club" current="gallery" />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {heritageLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`group flex items-center justify-between gap-3 border border-stadium-border border-t-2 ${item.accent} bg-stadium-surface px-4 py-3 transition-colors hover:border-white/25 hover:bg-stadium-surface2`}
+            >
+              <div className="min-w-0">
+                <p className="font-barlow text-[11px] font-bold uppercase tracking-[0.14em] text-stadium-muted">
+                  {item.badge}
+                </p>
+                <p className="mt-0.5 truncate font-bebas text-xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                  {item.title}
+                </p>
+              </div>
+              <ArrowRight
+                className="size-4 shrink-0 text-stadium-muted transition-transform group-hover:translate-x-0.5 group-hover:text-white"
+                aria-hidden
+              />
+            </Link>
+          ))}
+        </div>
+
         <GalleryClient
           images={images}
           totalImages={totalImages}
           categoryCounts={categoryCounts}
+        />
+
+        <PresetConnectedGrid
+          preset="fromGallery"
+          metaOverrides={{
+            history: "1892",
+            squad: `${squadCount}`,
+          }}
         />
       </div>
     </div>

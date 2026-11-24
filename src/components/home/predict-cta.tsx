@@ -23,7 +23,7 @@ export async function PredictCta({ fixture }: { fixture: Fixture }) {
           <TeamCrest src={crest(teams.home)} name={teams.home.name} sizes="32px" />
         </span>
         <p className="min-w-0 flex-1 truncate text-center text-sm font-semibold text-white">
-          {displayTeamName(teams.home.name)} <span className="text-stadium-muted">v</span> {displayTeamName(teams.away.name)}
+          {displayTeamName(teams.home.name)} <span className="text-stadium-muted">vs</span> {displayTeamName(teams.away.name)}
         </p>
         <span className="relative size-8 shrink-0">
           <TeamCrest src={crest(teams.away)} name={teams.away.name} sizes="32px" />

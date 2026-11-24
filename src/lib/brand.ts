@@ -19,13 +19,13 @@ export const BRAND = {
   /** Display name. */
   name: "Anfield Daily",
   tagline: {
-    vi: "Tin Liverpool mới nhất, đầy đủ ở một nơi",
-    en: "The latest Liverpool news, all in one place",
+    vi: "Tin Liverpool mới nhất, chọn lọc mỗi ngày",
+    en: "The latest Liverpool news, distilled daily",
   },
   /** Meta description: the tagline expanded to one readable sentence. */
   description: {
-    vi: "Tin tức Liverpool FC tổng hợp từ báo chí thể thao Anh, lọc trùng và tóm tắt thành bản tin hằng ngày — cùng lịch thi đấu, kết quả và bảng xếp hạng. Trang tin không chính thức của người hâm mộ.",
-    en: "Liverpool FC coverage from across the English press, de-duplicated and distilled into a daily briefing — alongside fixtures, results and standings. Unofficial independent publication.",
+    vi: "Tin tức Liverpool FC tổng hợp từ báo chí thể thao Anh, lọc trùng và chọn lọc thành bản tin hằng ngày — cùng podcast, video, lịch thi đấu, kết quả và bảng xếp hạng. Trang tin không chính thức của người hâm mộ.",
+    en: "Liverpool FC coverage from across the English sports press, de-duplicated and distilled into a daily briefing — alongside podcasts, videos, fixtures, results and standings. Unofficial independent publication.",
   },
   /** One-line notice for places without room for the full footer text (share image). */
   unofficial: {

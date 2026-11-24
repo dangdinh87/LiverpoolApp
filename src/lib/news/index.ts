@@ -10,6 +10,8 @@ export { scrapeArticle, getOgImage } from "./enrichers/article-extractor";
 export {
   getNewsFromDB,
   getVideoItemsFromDB,
+  getPodcastItemsFromDB,
+  getSocialItemsFromDB,
   searchArticles,
   getNewsPaginated,
   getArticleRefsByUrls,

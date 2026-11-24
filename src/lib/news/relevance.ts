@@ -37,6 +37,25 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
   espn: 3,
   bbc: 6,
   guardian: 6,
+  dailymail: 5,
+  telegraph: 6,
+  talksport: 4,
+  fourfourtwo: 5,
+  rousingthekop: 6,
+  daveockop: 6,
+  "yt-redmentv": 8,
+  "yt-taw": 8,
+  "yt-anfieldagenda": 8,
+  "yt-bloodred": 8,
+  "pod-walkon": 8,
+  "pod-taw": 8,
+  "pod-bloodred": 8,
+  "pod-redmentv": 8,
+  "pod-anfieldindex": 8,
+  "bsky-ornstein": 8,
+  "bsky-gorst": 8,
+  "bsky-doyle": 8,
+  "bsky-taw": 7,
   bongda: 8,
   bongdaplus: 8,
   bongda24h: 8,
@@ -54,18 +73,32 @@ const SOURCE_PRIORITY: Partial<Record<NewsSource, number>> = {
 };
 
 // Liverpool-dedicated feeds get a trust boost, but still pass through identity/competitor checks.
-// Mirror / Independent / MEN publish all-football streams (Oct 2026 audit: city
-// stories and other clubs passed on the strength of the feed alone), so they are
-// NOT in this set: their items need a Liverpool identity signal like any other.
+// Mirror / Independent / MEN / Telegraph / talkSPORT / FourFourTwo publish all-football streams
+// so they are NOT in this set: their items need a Liverpool identity signal like any other.
 const LFC_DEDICATED: Set<NewsSource> = new Set([
   "lfc",
   "lfctv",
+  "yt-redmentv",
+  "yt-taw",
+  "yt-anfieldagenda",
+  "yt-bloodred",
+  "pod-walkon",
+  "pod-taw",
+  "pod-bloodred",
+  "pod-redmentv",
+  "pod-anfieldindex",
+  "bsky-gorst",
+  "bsky-doyle",
+  "bsky-taw",
   "anfield-watch",
   "eotk",
   "echo",
   "tia",
   "anfieldindex",
   "liverpoolcom",
+  "dailymail",
+  "rousingthekop",
+  "daveockop",
 ]);
 
 const DIRECT_LFC_PATTERNS: WeightedPattern[] = [

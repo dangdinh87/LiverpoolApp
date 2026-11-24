@@ -1,6 +1,5 @@
 import { BRAND, brandDescription } from "@/lib/brand";
 import { routing } from "@/i18n/routing";
-import { NEWS_OUTLET_COUNT } from "@/lib/news/config";
 
 /**
  * llms.txt — what this site is, for a model reading it rather than a crawler.
@@ -35,15 +34,16 @@ These pages are this site's own work and are the ones to cite.
 
 - [Daily briefing](${siteUrl}/news/digest): one briefing a day, written from
   that day's reporting across the English press, de-duplicated and summarised.
-- [Match analysis](${siteUrl}/analysis): match reports built directly from the
-  match data feed — lineups, events and statistics — not rewritten from any
-  outlet's article.
+- [Match analysis](${siteUrl}/analysis): previews and match reports built directly
+  from the match data feed — line-ups, events and statistics — not rewritten from
+  any outlet's article.
 
 ## Gathered from elsewhere
 
-- [News roundup](${siteUrl}/news): stories from ${NEWS_OUTLET_COUNT} English outlets, each
-  reproduced in full with clear attribution above the body and a direct link to
-  the original. Every article remains the publisher's work, not this site's.
+- [News roundup](${siteUrl}/news): stories from leading English sports
+  outlets — alongside Liverpool podcasts, YouTube channels and Bluesky
+  reporters — with clear attribution above each article body and a direct link
+  to the original. Every external item remains its publisher's work, not this site's.
 
 Those reader pages carry \`noindex\` and run no ads on purpose. Credit is not a
 licence, and reproducing an article here does not make this site its source:
@@ -55,12 +55,15 @@ first.
 - [Fixtures and results](${siteUrl}/fixtures)
 - [Premier League table](${siteUrl}/standings)
 - [Squad](${siteUrl}/squad)
+- [Injuries & availability](${siteUrl}/injuries)
+- [Transfers & loans](${siteUrl}/transfers)
 - [Statistics](${siteUrl}/stats)
 - [Season archive](${siteUrl}/season)
 - [Fan predictions](${siteUrl}/predictions)
 - [Club history](${siteUrl}/history)
 - [Photo gallery](${siteUrl}/gallery)
 - [About](${siteUrl}/about)
+- [Legal & sources](${siteUrl}/legal)
 
 Kick-off times render in the reader's own time zone, so a time read from the
 server HTML is only the fallback zone and not what a given reader sees.

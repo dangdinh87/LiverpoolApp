@@ -4,6 +4,9 @@ import { LogIn } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PresetConnectedGrid } from "@/components/ui/hub-links";
+import { getCachedFixtures } from "@/lib/football/cached-fixtures";
+import { predictionPoints } from "@/lib/fan-predictions/scoring";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isAdminEmail } from "@/lib/constants";
 import { getSiteSetting } from "@/lib/gallery/queries";
@@ -44,7 +47,7 @@ export default async function ProfilePage({ params }: LocaleParams) {
 
   const admin = isAdminEmail(user.email);
 
-  const [{ data: profile }, { data: favourites }, { data: savedArticles }, heroSetting] = await Promise.all([
+  const [{ data: profile }, { data: favourites }, { data: savedArticles }, { data: predictions }, fixtures, heroSetting, tHub] = await Promise.all([
     supabase
       .from("user_profiles")
       .select("*")
@@ -60,21 +63,55 @@ export default async function ProfilePage({ params }: LocaleParams) {
       .select("*")
       .eq("user_id", user.id)
       .order("saved_at", { ascending: false }),
+    supabase
+      .from("match_predictions")
+      .select("fixture_id, home_goals, away_goals")
+      .eq("user_id", user.id),
+    getCachedFixtures().catch(() => []),
     admin
       ? getSiteSetting<{ cloudinary_url: string }>("homepage_hero_image").catch(() => null)
       : Promise.resolve(null),
+    getTranslations("Hub"),
   ]);
 
   const currentHeroBg = heroSetting?.cloudinary_url ?? null;
+  const finished = new Set(["FT", "AET", "PEN"]);
+  const scoreByFixture = new Map<number, { home: number; away: number }>();
+  for (const f of fixtures) {
+    if (finished.has(f.fixture.status.short) && f.goals.home !== null && f.goals.away !== null) {
+      scoreByFixture.set(f.fixture.id, { home: f.goals.home, away: f.goals.away });
+    }
+  }
+  let totalPoints = 0;
+  for (const p of predictions ?? []) {
+    const actual = scoreByFixture.get(p.fixture_id);
+    if (actual) {
+      totalPoints += predictionPoints({ home: p.home_goals, away: p.away_goals }, actual);
+    }
+  }
+  const favCount = (favourites ?? []).length;
+  const savedCount = (savedArticles ?? []).length;
 
   return (
-    <ProfileLayout
-      user={{ id: user.id, email: user.email ?? null, createdAt: user.created_at }}
-      profile={profile ?? null}
-      favourites={(favourites ?? []) as FavouritePlayer[]}
-      savedArticles={(savedArticles ?? []) as SavedArticle[]}
-      isAdmin={admin}
-      currentHeroBg={currentHeroBg}
-    />
+    <>
+      <ProfileLayout
+        user={{ id: user.id, email: user.email ?? null, createdAt: user.created_at }}
+        profile={profile ?? null}
+        favourites={(favourites ?? []) as FavouritePlayer[]}
+        savedArticles={(savedArticles ?? []) as SavedArticle[]}
+        isAdmin={admin}
+        currentHeroBg={currentHeroBg}
+      />
+      <div className="page-container -mt-8 max-w-4xl pb-20">
+        <PresetConnectedGrid
+          preset="fromProfile"
+          metaOverrides={{
+            predictions: `${totalPoints} ${tHub("metrics.predictionPoints")}`,
+            ...(favCount > 0 && { squad: `${favCount} ${tHub("cards.squad.badge")}` }),
+            ...(savedCount > 0 && { news: `${savedCount} ${tHub("metrics.savedArticles")}` }),
+          }}
+        />
+      </div>
+    </>
   );
 }

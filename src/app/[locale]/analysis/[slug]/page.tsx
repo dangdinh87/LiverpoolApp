@@ -8,6 +8,7 @@ import { getHreflangAlternates, getLocalizedUrl, SCHEMA_IDS } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LocalMatchDay } from "@/components/ui/local-time";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { ArticleCard } from "@/components/site-articles/article-card";
 import { BRAND } from "@/lib/brand";
 import type { SiteArticleContent, SiteArticleKind } from "@/lib/site-articles/types";
@@ -123,8 +124,9 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
   if (!picked) notFound();
   const { content, lang } = picked;
 
-  const [t, relatedRows, breadcrumbJsonLd] = await Promise.all([
+  const [t, tHub, relatedRows, breadcrumbJsonLd] = await Promise.all([
     getTranslations({ locale, namespace: "Analysis" }),
+    getTranslations({ locale, namespace: "Hub" }),
     getCachedRelatedSiteArticles(row.kind).catch(() => []),
     buildLocalizedBreadcrumbJsonLd(locale, [
       { nav: "analysis", path: "/analysis" },
@@ -170,6 +172,10 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
         ]}
       />
 
+      <div className="mx-auto mb-8 max-w-5xl px-4 sm:px-6">
+        <SectionSubNav group="editorial" current="analysis" />
+      </div>
+
       <div className="mx-auto max-w-[68ch] px-4 sm:px-6">
         <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="section-label text-brand">{t(`kinds.${row.kind}`)}</span>
@@ -207,12 +213,35 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
         </div>
 
         {row.fixture_id && (
-          <Link
-            href={`/fixtures/${row.fixture_id}`}
-            className="tap-target mt-10 inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40"
+          <section
+            aria-label={tHub("metrics.viewMatchCentre")}
+            className="mt-10 border border-stadium-border border-t-2 border-t-lfc-red bg-stadium-surface p-5 sm:p-6"
           >
-            {t("viewMatch")}
-          </Link>
+            <p className="section-label text-brand">{tHub("metrics.viewMatchCentre")}</p>
+            <h2 className="mt-1 font-bebas text-2xl tracking-wide text-white sm:text-3xl">
+              {t("viewMatch")}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href={`/fixtures/${row.fixture_id}`}
+                className="tap-target inline-flex min-h-11 items-center bg-lfc-red px-5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:bg-lfc-red-dark"
+              >
+                {t("viewMatch")}
+              </Link>
+              <Link
+                href="/standings"
+                className="tap-target inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40"
+              >
+                {tHub("nav.standings")}
+              </Link>
+              <Link
+                href="/stats"
+                className="tap-target inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40"
+              >
+                {tHub("nav.stats")}
+              </Link>
+            </div>
+          </section>
         )}
 
         {related.length > 0 && (
@@ -232,6 +261,10 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             </ul>
           </div>
         )}
+      </div>
+
+      <div className="mx-auto mt-14 max-w-5xl px-4 sm:px-6">
+        <PresetConnectedGrid preset="fromAnalysis" />
       </div>
     </article>
   );

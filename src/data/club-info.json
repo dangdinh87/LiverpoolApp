@@ -47,7 +47,7 @@
         "description": "Completed its major redevelopment in 2024, adding more than 7,000 seats across a new upper tier alongside modern concourse and hospitality spaces."
       },
       {
-        "name": "Kenny Dalglish Stand",
+        "name": "Sir Kenny Dalglish Stand",
         "capacity": 11762,
         "description": "Named after Liverpool's greatest ever player. Opened in 1992 as the Centenary Stand, it was officially renamed in 2017 in honour of Sir Kenny Dalglish."
       }
@@ -89,7 +89,7 @@
     },
     "recordTransferOut": {
       "name": "Philippe Coutinho",
-      "fee": "£145m (2018)",
+      "fee": "£142m (2018)",
       "to": "Barcelona"
     }
   },
@@ -127,13 +127,13 @@
     {
       "name": "Bill Shankly",
       "years": "1959–1974",
-      "trophies": "3 League, 2 FA Cup, 1 UEFA Cup",
+      "trophies": "3 League, 2 FA Cup, 1 UEFA Cup, 3 Charity Shield",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Shankly_statue_out_front.jpg/330px-Shankly_statue_out_front.jpg"
     },
     {
       "name": "Bob Paisley",
       "years": "1974–1983",
-      "trophies": "6 League, 3 European Cup, 3 League Cup, 1 UEFA Cup, 1 UEFA Super Cup",
+      "trophies": "6 League, 3 European Cup, 3 League Cup, 1 UEFA Cup, 1 UEFA Super Cup, 6 Charity Shield",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Bob_Paisley_statue%2C_Anfield_2.jpg/330px-Bob_Paisley_statue%2C_Anfield_2.jpg"
     },
     {
@@ -144,7 +144,7 @@
     {
       "name": "Kenny Dalglish",
       "years": "1985–1991, 2011–2012",
-      "trophies": "3 League, 2 FA Cup, 1 League Cup",
+      "trophies": "3 League, 2 FA Cup, 1 League Cup, 4 Charity Shield",
       "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/Kenny_Dalglish_2009_Singapore.jpg/330px-Kenny_Dalglish_2009_Singapore.jpg"
     },
     {

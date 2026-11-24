@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { PageHero } from "@/components/ui/page-hero";
+import { ConnectedPagesGrid } from "@/components/ui/hub-links";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -20,14 +21,19 @@ export async function generateMetadata({ params }: LocaleParams) {
 }
 
 // Bump when the policy text in messages/*.json (Legal.*) changes.
-const LEGAL_LAST_UPDATED = new Date("2026-10-07T00:00:00+07:00");
+const LEGAL_LAST_UPDATED = new Date("2026-11-23T00:00:00+07:00");
 
 const SECTION_KEYS = ["privacy", "terms", "sources"] as const;
 
 export default async function LegalPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Legal");
+  const [t, tHub, tCommon, tHero] = await Promise.all([
+    getTranslations("Legal"),
+    getTranslations("Hub"),
+    getTranslations("Common"),
+    getTranslations("Hero"),
+  ]);
   const lastUpdated = new Intl.DateTimeFormat(locale === "vi" ? "vi-VN" : "en-GB", {
     month: "long",
     year: "numeric",
@@ -85,6 +91,42 @@ export default async function LegalPage({ params }: LocaleParams) {
             </div>
           </article>
         </div>
+
+        <ConnectedPagesGrid
+          eyebrow={tHub("eyebrow")}
+          heading={tHub("connectedHeading")}
+          className="mt-14 sm:mt-16"
+          cards={[
+            {
+              title: tHub("cards.about.title"),
+              description: tHub("cards.about.desc"),
+              href: "/about",
+              badge: tHub("cards.about.badge"),
+              accent: "gold",
+            },
+            {
+              title: tHub("cards.news.title"),
+              description: tHub("cards.news.desc"),
+              href: "/news",
+              badge: tHub("cards.news.badge"),
+              accent: "red",
+            },
+            {
+              title: tHub("cards.squad.title"),
+              description: tHub("cards.squad.desc"),
+              href: "/squad",
+              badge: tHub("cards.squad.badge"),
+              accent: "red",
+            },
+            {
+              title: tCommon("backHome"),
+              description: tHero("tagline"),
+              href: "/",
+              badge: tCommon("nav.home"),
+              accent: "gold",
+            },
+          ]}
+        />
       </div>
     </div>
   );

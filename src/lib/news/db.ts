@@ -12,15 +12,38 @@ const ARTICLE_COLUMNS =
   "url, title, snippet, thumbnail, source, language, category, relevance, published_at, fetched_at, author, hero_image, word_count, tags, title_vi, snippet_vi";
 
 /**
- * Rows that are not written articles and must not appear in the news feed.
- *
- * `lfctv` is the club's YouTube output. It lives in the same table because it
- * has the same shape — title, url, thumbnail, date, source — and gets dedup,
- * thumbnails, retention and cleanup for free, but a video is not a story and
- * would otherwise take a slot from one. The /news page shows these in their own
- * strip; `getVideoItemsFromDB` is the only reader that wants them.
+ * Non-article media sources stored in `articles` for shared dedup, cleanup and
+ * thumbnail/headline storage, kept out of written-news feeds and rendered in
+ * dedicated strips on `/news`.
  */
-export const NON_ARTICLE_SOURCES = ["lfctv"] as const;
+export const VIDEO_SOURCES = [
+  "lfctv",
+  "yt-redmentv",
+  "yt-taw",
+  "yt-anfieldagenda",
+  "yt-bloodred",
+] as const;
+
+export const PODCAST_SOURCES = [
+  "pod-walkon",
+  "pod-taw",
+  "pod-bloodred",
+  "pod-redmentv",
+  "pod-anfieldindex",
+] as const;
+
+export const SOCIAL_SOURCES = [
+  "bsky-gorst",
+  "bsky-doyle",
+  "bsky-ornstein",
+  "bsky-taw",
+] as const;
+
+export const NON_ARTICLE_SOURCES = [
+  ...VIDEO_SOURCES,
+  ...PODCAST_SOURCES,
+  ...SOCIAL_SOURCES,
+] as const;
 export const NON_ARTICLE_FILTER = `(${NON_ARTICLE_SOURCES.join(",")})`;
 
 // The row's whole life (cleanup deletes articles at 14 days). A shorter window
@@ -90,34 +113,47 @@ export async function requireNonEmptyNews(articles: Promise<NewsArticle[]>): Pro
   return list;
 }
 
-/**
- * The newest video rows — the mirror of the exclusion above.
- *
- * No relevance filter: every upload on the club's own channel is about the club
- * by definition, and `analyzeArticleRelevance` scores written prose, so a
- * one-line video description scores far too low to survive it.
- */
-export const getVideoItemsFromDB = cache(async (limit = 6): Promise<NewsArticle[]> => {
+async function getMediaItemsFromDB(
+  sources: readonly string[],
+  limit: number,
+  label: string,
+): Promise<NewsArticle[]> {
   try {
     const { data, error } = await getServiceClient()
       .from("articles")
       .select(ARTICLE_COLUMNS)
       .eq("is_active", true)
       .not("published_at", "is", null)
-      .in("source", [...NON_ARTICLE_SOURCES])
+      .in("source", [...sources])
       .order("published_at", { ascending: false, nullsFirst: false })
       .limit(limit);
 
     if (error) {
-      console.error("[news/db] video items:", error.message);
+      console.error(`[news/db] ${label}:`, error.message);
       return [];
     }
     return ((data ?? []) as ArticleRow[]).map(rowToArticle);
   } catch (err) {
-    console.error("[news/db] video items failed:", err);
+    console.error(`[news/db] ${label} failed:`, err);
     return [];
   }
-});
+}
+
+/**
+ * The newest video, podcast and Bluesky reporter rows — skipping written-prose
+ * relevance scoring so concise titles/posts still display in their own strips.
+ */
+export const getVideoItemsFromDB = cache(async (limit = 6): Promise<NewsArticle[]> =>
+  getMediaItemsFromDB(VIDEO_SOURCES, limit, "video items"),
+);
+
+export const getPodcastItemsFromDB = cache(async (limit = 6): Promise<NewsArticle[]> =>
+  getMediaItemsFromDB(PODCAST_SOURCES, limit, "podcast items"),
+);
+
+export const getSocialItemsFromDB = cache(async (limit = 8): Promise<NewsArticle[]> =>
+  getMediaItemsFromDB(SOCIAL_SOURCES, limit, "social items"),
+);
 
 export const getNewsFromDB = cache(
   async (

@@ -5,13 +5,18 @@ import { ArrowRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
-import { getAllPlayers } from "@/lib/squad-data";
+import { getAllPlayers, getSquadPlayers, type LfcPlayer } from "@/lib/squad-data";
+import { playerSurname } from "@/lib/player-surname";
+import { getNationality } from "@/lib/nationality";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
-import { getLatestDigest, getSeoArticleFromDigest } from "@/lib/news/digest";
+import { getLatestDigest } from "@/lib/news/digest";
+import { getDigestHeadline } from "@/lib/news/latest-digest";
+import { cleanTitle } from "@/components/news/news-text";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NewsCard } from "@/components/news/news-card";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { makePageMeta } from "@/lib/seo";
@@ -23,6 +28,17 @@ const getCachedTransfersDigest = unstable_cache(
   ["transfers-digest-v1"],
   { revalidate: 21600, tags: ["news-digest"] },
 );
+
+function findMentionedPlayers(title: string, players: LfcPlayer[]): LfcPlayer[] {
+  const lower = title.toLowerCase();
+  return players.filter((p) => {
+    if (lower.includes(p.name.toLowerCase())) return true;
+    const surname = playerSurname(p.name);
+    if (surname.length < 4) return false;
+    const escaped = surname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${escaped}\\b`, "i").test(title);
+  }).slice(0, 3);
+}
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params;
@@ -36,22 +52,27 @@ export default async function TransfersPage({ params }: LocaleParams) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, feed, digest, breadcrumbJsonLd] = await Promise.all([
+  const [t, tNat, tHub, feed, digest, breadcrumbJsonLd] = await Promise.all([
     getTranslations({ locale, namespace: "Transfers" }),
+    getTranslations({ locale, namespace: "PlayerDetail.nationalities" }),
+    getTranslations({ locale, namespace: "Hub" }),
     getCachedNewsFeed(100).catch(() => []),
     getCachedTransfersDigest().catch(() => null),
     buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "transfers", path: "/transfers" }]),
   ]);
 
   const transferNews = feed.filter((a) => a.category === "transfer").slice(0, 12);
-  const onLoanPlayers = getAllPlayers().filter((p) => p.onLoan);
-  const digestHeadline = digest ? getSeoArticleFromDigest(digest)?.title || digest.title : null;
+  const allPlayers = getAllPlayers();
+  const activeSquadCount = getSquadPlayers().length;
+  const onLoanPlayers = allPlayers.filter((p) => p.onLoan);
+  const digestHeadline = digest ? cleanTitle(getDigestHeadline(digest)) : null;
   const nowMs = new Date().getTime();
 
   return (
     <div className="min-h-screen bg-stadium-bg pb-16">
       <JsonLd data={breadcrumbJsonLd} />
       <PageHero
+        clubCrest
         eyebrow={t("hero.eyebrow")}
         title={t("hero.title")}
         description={t("hero.description")}
@@ -59,6 +80,58 @@ export default async function TransfersPage({ params }: LocaleParams) {
 
       <div className="page-container pt-6 sm:pt-8">
         <div className="mx-auto max-w-4xl space-y-10">
+          <SectionSubNav
+            group="club"
+            current="transfers"
+            badges={onLoanPlayers.length > 0 ? { transfers: onLoanPlayers.length } : undefined}
+          />
+
+          <DataPulseStrip
+            eyebrow={tHub("seasonPulse")}
+            items={[
+              {
+                label: tHub("metrics.squadSize"),
+                value: activeSquadCount,
+                sublabel: tHub("cards.squad.badge"),
+                href: "/squad",
+                accent: "red",
+              },
+              ...(onLoanPlayers.length > 0
+                ? [
+                    {
+                      label: tHub("metrics.onLoan"),
+                      value: onLoanPlayers.length,
+                      sublabel: tHub("cards.squad.title"),
+                      href: "/squad",
+                      accent: "gold" as const,
+                    },
+                  ]
+                : []),
+              ...(transferNews.length > 0
+                ? [
+                    {
+                      label: tHub("cards.transfers.badge"),
+                      value: transferNews.length,
+                      sublabel: tHub("nav.news"),
+                      href: "/news",
+                      accent: "red" as const,
+                    },
+                  ]
+                : []),
+              ...(digest
+                ? [
+                    {
+                      label: tHub("nav.digest"),
+                      value: digest.digest_date,
+                      sublabel: tHub("cards.digest.title"),
+                      href: `/news/digest/${digest.digest_date}`,
+                      accent: "gold" as const,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+
           {digest && digestHeadline && (
             <Link
               href={`/news/digest/${digest.digest_date}`}
@@ -78,19 +151,38 @@ export default async function TransfersPage({ params }: LocaleParams) {
           )}
 
           <section aria-label={t("sections.news")}>
-            <SectionHeader title={t("sections.news")} href="/news" />
+            <SectionHeader title={t("sections.news")} href="/news" linkLabel={t("browseNews")} />
             {transferNews.length === 0 ? (
               <EmptyState
                 title={t("empty.title")}
                 description={t("empty.description")}
                 actionHref="/news"
-                actionLabel={t("viewSquad")}
+                actionLabel={t("browseNews")}
               />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {transferNews.map((article) => (
-                  <NewsCard key={article.link} article={article} nowMs={nowMs} variant="tile" />
-                ))}
+                {transferNews.map((article) => {
+                  const matchedPlayers = findMentionedPlayers(cleanTitle(article.title), allPlayers);
+                  return (
+                    <div key={article.link} className="flex flex-col">
+                      <NewsCard article={article} nowMs={nowMs} variant="tile" />
+                      {matchedPlayers.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {matchedPlayers.map((p) => (
+                            <Link
+                              key={p.slug}
+                              href={`/player/${p.slug}`}
+                              className="inline-flex items-center gap-1 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+                            >
+                              {p.shirtNumber > 0 && <span className="text-lfc-gold tabular-nums">#{p.shirtNumber}</span>}
+                              <span>{p.name}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -99,35 +191,48 @@ export default async function TransfersPage({ params }: LocaleParams) {
             <section aria-label={t("sections.onLoan")}>
               <SectionHeader title={t("sections.onLoan")} href="/squad" linkLabel={t("viewSquad")} />
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {onLoanPlayers.map((player) => (
-                  <li key={player.slug}>
-                    <Link
-                      href={`/player/${player.slug}`}
-                      className="surface tap-target group flex items-center gap-3 p-3.5 transition-colors hover:border-white/25"
-                    >
-                      <div className="relative size-12 shrink-0 overflow-hidden bg-[var(--surface-3)]">
-                        <Image
-                          src={player.localPhoto || player.photo}
-                          alt={player.name}
-                          fill
-                          sizes="48px"
-                          className="object-cover object-top"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-bebas text-xl tracking-wide text-white group-hover:text-lfc-gold">
-                          {player.name}
-                        </p>
-                        <p className="text-xs text-stadium-muted">
-                          #{player.shirtNumber} · {player.nationality}
-                        </p>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
+                {onLoanPlayers.map((player) => {
+                  const nat = getNationality(player.nationality);
+                  const natLabel = nat.key ? tNat(nat.key) : player.nationality;
+                  return (
+                    <li key={player.slug}>
+                      <Link
+                        href={`/player/${player.slug}`}
+                        className="surface tap-target group flex items-center gap-3 p-3.5 transition-colors hover:border-white/25"
+                      >
+                        <div className="relative size-12 shrink-0 overflow-hidden bg-[var(--surface-3)]">
+                          <Image
+                            src={player.localPhoto || player.photo}
+                            alt={player.name}
+                            fill
+                            sizes="48px"
+                            className="object-cover object-top"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-bebas text-xl tracking-wide text-white group-hover:text-lfc-gold">
+                            {player.name}
+                          </p>
+                          <p className="text-xs text-stadium-muted">
+                            {player.shirtNumber > 0 ? `#${player.shirtNumber} · ` : ""}
+                            {nat.flag} {natLabel}
+                          </p>
+                        </div>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
+
+          <PresetConnectedGrid
+            preset="fromTransfers"
+            metaOverrides={{
+              squad: `${onLoanPlayers.length} ${tHub("metrics.onLoan")}`,
+              digest: digest?.digest_date,
+            }}
+          />
         </div>
       </div>
     </div>

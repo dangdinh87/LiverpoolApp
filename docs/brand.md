@@ -1,8 +1,9 @@
 # Anfield Daily — brand
 
-Liverpool news, read fast: stories from 20+ English and Vietnamese outlets,
-gathered in one place, de-duplicated and summed up every day. Fixtures, results
-and the table come alongside. Unofficial fan site.
+Liverpool news, distilled daily: stories from the English sports press,
+podcasts, YouTube channels and reporters gathered in one place,
+de-duplicated and summed up every day. Fixtures, results and the table come
+alongside. Unofficial fan site.
 
 Code: names and colours live in `src/lib/brand.ts` (`BRAND`, `MARK`, `WORDMARK`);
 static copies of the art are in `public/brand/`. Change them there, nowhere else.
@@ -18,11 +19,9 @@ static copies of the art are in `public/brand/`. Change them there, nowhere else
 
 | | Vietnamese | English |
 |---|---|---|
-| Tagline | Tin Liverpool mới nhất, đầy đủ ở một nơi | The latest Liverpool news, all in one place |
-| Home headline | Tin Liverpool mới nhất, / đầy đủ ở một nơi. | The latest Liverpool news, / all in one place. |
-| One sentence | Anfield Daily gom tin từ {n} tờ báo tiếng Anh và tiếng Việt, lọc trùng và tóm tắt thành bản tin mỗi ngày. | Anfield Daily gathers the news from {n} English and Vietnamese outlets, drops the duplicates and sums it up in a daily briefing. |
-
-`{n}` is `NEWS_OUTLET_COUNT` (counted from the feed config), never a typed number.
+| Tagline | Tin Liverpool mới nhất, chọn lọc mỗi ngày | The latest Liverpool news, distilled daily |
+| Home headline | Tin Liverpool mới nhất, / chọn lọc mỗi ngày. | The latest Liverpool news, / distilled daily. |
+| One sentence | Anfield Daily tổng hợp tin tức Liverpool từ báo chí thể thao Anh, lọc trùng lặp và chọn lọc thành bản tin hằng ngày. | Anfield Daily gathers Liverpool coverage from across the English sports press, removes duplicates and distils the day into one concise briefing. |
 
 ## Logo
 

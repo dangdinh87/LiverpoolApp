@@ -6,8 +6,8 @@ import { BRAND, MARK, WORDMARK, brandDescription, brandLocale, brandTagline, bra
 describe("brand constant", () => {
   it("keeps the display name and tagline in one place", () => {
     expect(BRAND.name).toBe("Anfield Daily");
-    expect(brandTagline("vi")).toBe("Tin Liverpool mới nhất, đầy đủ ở một nơi");
-    expect(brandTagline("en")).toBe("The latest Liverpool news, all in one place");
+    expect(brandTagline("vi")).toBe("Tin Liverpool mới nhất, chọn lọc mỗi ngày");
+    expect(brandTagline("en")).toBe("The latest Liverpool news, distilled daily");
   });
 
   it("falls back to English, the default locale", () => {

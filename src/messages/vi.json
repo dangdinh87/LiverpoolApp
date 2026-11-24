@@ -76,16 +76,16 @@
     }
   },
   "Hero": {
-    "tagline": "Tin Liverpool mới nhất, đầy đủ ở một nơi",
-    "title": "Tin tức Liverpool FC tại một nơi",
-    "subtitle": "Anfield Daily — tổng hợp báo Anh, lọc trùng và tóm tắt mỗi ngày",
-    "description": "<b>{brand}</b> tổng hợp tin tức Liverpool từ {count} đầu báo Anh, loại bỏ tin trùng lặp và đúc kết thành bản tin hằng ngày.",
+    "tagline": "Tin Liverpool mới nhất, chọn lọc mỗi ngày",
+    "title": "Tin tức Liverpool FC chọn lọc mỗi ngày",
+    "subtitle": "Anfield Daily — tổng hợp báo chí, podcast và điểm tin Liverpool mỗi ngày",
+    "description": "<b>{brand}</b> tổng hợp tin tức Liverpool từ báo chí thể thao Anh, podcast và phóng viên theo sát CLB, lọc trùng lặp và chọn lọc thành bản tin hằng ngày.",
     "badge": "Bản tin Liverpool hằng ngày",
     "scroll": "Cuộn xuống",
     "fixtures": "Lịch thi đấu & Kết quả",
     "standings": "Bảng xếp hạng",
     "headlineTop": "Tin Liverpool mới nhất,",
-    "headlineBottom": "đầy đủ ở một nơi."
+    "headlineBottom": "chọn lọc mỗi ngày."
   },
   "Home": {
     "breaking": {
@@ -162,12 +162,12 @@
   "News": {
     "metadata": {
       "title": "Điểm tin Liverpool",
-      "description": "Tin tức Liverpool FC cập nhật từ báo chí thể thao Anh: hiển thị toàn văn kèm ghi nhận nguồn, liên kết bài gốc và bản tin tóm tắt hằng ngày."
+      "description": "Tin tức Liverpool FC cập nhật từ báo chí thể thao Anh, kèm podcast, kênh YouTube, cập nhật phóng viên và bản tin tóm tắt hằng ngày."
     },
-    "tagline": "Tổng hợp báo chí Anh",
+    "tagline": "Tổng hợp báo chí thể thao Anh",
     "title": "Điểm tin",
-    "heroDesc": "Tin bài chọn lọc từ báo chí thể thao Anh, ghi rõ nguồn kèm liên kết tới bài gốc và bản tin tóm tắt hằng ngày.",
-    "description": "Tin tức Liverpool FC từ 13 đầu báo thể thao Anh — gồm LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, This Is Anfield và các nguồn uy tín khác.",
+    "heroDesc": "Tin bài Liverpool FC từ báo chí thể thao Anh — kèm podcast, kênh YouTube, cập nhật phóng viên và bản tin mỗi ngày.",
+    "description": "Tin tức Liverpool FC từ các đầu báo thể thao uy tín tại Anh — gồm LiverpoolFC.com, BBC Sport, The Guardian, Sky Sports, Liverpool Echo và This Is Anfield.",
     "search": "Tìm kiếm tin tức...",
     "filter": "Lọc",
     "langAll": "Tất cả",
@@ -219,10 +219,10 @@
       "contentUnavailableDesc": "Không thể tải nội dung bài viết lúc này. Đọc toàn văn trực tiếp trên trang của tòa soạn gốc.",
       "readOriginal": "Đọc bản gốc",
       "readFullOn": "Đọc toàn văn trên {source}",
-      "thinContentMsg": "Xem đầy đủ nội dung trực tiếp trên trang xuất bản gốc.",
-      "sourcedFrom": "Bài viết do <source>{sourceName}</source> xuất bản. Bản quyền thuộc về tòa soạn gốc; nội dung được dẫn lại toàn văn kèm ghi nguồn.",
-      "videoUnavailable": "Không thể phát video tại đây. Mở bài viết gốc để xem trực tiếp.",
-      "linkOutMsg": "Đọc toàn văn bài viết gốc trên {source}.",
+      "thinContentMsg": "Đọc trọn vẹn bài viết trên trang xuất bản gốc.",
+      "sourcedFrom": "Bài viết do <source>{sourceName}</source> xuất bản. Bản quyền thuộc về tòa soạn gốc; nội dung được dẫn lại nguyên văn kèm liên kết nguồn.",
+      "videoUnavailable": "Video không khả dụng trong trình đọc này. Mở bài viết gốc để xem trực tiếp.",
+      "linkOutMsg": "Xem toàn văn bài gốc trên {source}.",
       "moreFrom": "Tin khác từ {source}",
       "viewAll": "Xem tất cả",
       "readOriginalOn": "Đọc bài gốc trên {source}",
@@ -317,6 +317,7 @@
     },
     "digest": {
       "badge": "Bản tin",
+      "dailyLabel": "Bản tin hằng ngày",
       "proBadge": "Tổng hợp bởi {brand}",
       "by": "Bởi {author}",
       "sourceFromSite": "Nguồn đối chiếu: {source}",
@@ -356,6 +357,21 @@
     "video": {
       "title": "Video mới nhất",
       "onYouTube": "Trên YouTube"
+    },
+    "podcasts": {
+      "title": "Podcast Liverpool",
+      "eyebrow": "Nghe podcast",
+      "viewAll": "Xem tất cả"
+    },
+    "social": {
+      "title": "Cập nhật từ phóng viên",
+      "eyebrow": "Trên Bluesky",
+      "viewAll": "Xem tất cả"
+    },
+    "jumpTo": {
+      "video": "Video",
+      "podcasts": "Podcast",
+      "social": "Bluesky"
     }
   },
   "NextMatch": {
@@ -495,8 +511,8 @@
       "discipline": "Kỷ luật",
       "passing": "Chuyền bóng",
       "general": "Tổng quan",
-      "noStatsTitle": "Chưa có thống kê",
-      "noStatsDescription": "Số liệu mùa giải sẽ được cập nhật ngay khi cầu thủ có trận ra sân chính thức."
+      "noStatsTitle": "Chưa có thống kê mùa giải",
+      "noStatsDescription": "Số liệu thi đấu sẽ được cập nhật ngay khi cầu thủ có lần ra sân chính thức đầu tiên trong mùa."
     },
     "positions": {
       "goalkeeper": "Thủ môn",
@@ -543,6 +559,18 @@
     "fanRating": {
       "title": "Điểm người hâm mộ chấm mùa này",
       "detail": "Trung bình qua {matches} trận ({votes} lượt chấm trên trang trận đấu)."
+    },
+    "honourNames": {
+      "premierLeague": "Ngoại hạng Anh",
+      "championsLeague": "UEFA Champions League",
+      "faCup": "Cúp FA",
+      "carabaoCup": "Carabao Cup",
+      "leagueCup": "Cúp Liên đoàn",
+      "fifaClubWorldCup": "FIFA Club World Cup",
+      "uefaSuperCup": "Siêu cúp châu Âu",
+      "uefaCup": "Cúp UEFA",
+      "faCommunityShield": "Siêu cúp Anh",
+      "communityShield": "Siêu cúp Anh"
     }
   },
   "Season": {
@@ -587,7 +615,7 @@
     },
     "hero": {
       "eyebrow": "Ngoại hạng Anh · {season}",
-      "description": "Tra cứu lịch thi đấu, kết quả và bảng xếp hạng qua từng mùa giải."
+      "description": "Tra cứu trọn vẹn lịch thi đấu, kết quả và bảng xếp hạng Ngoại hạng Anh qua từng mùa giải."
     },
     "tabsLabel": "Lịch thi đấu hoặc bảng xếp hạng",
     "outage": {
@@ -739,8 +767,8 @@
       "cabinet": "Phòng truyền thống",
       "history": "Lịch sử",
       "timeline": "Dòng thời gian",
-      "masterminds": "Những nhà cầm quân",
-      "managers": "Các HLV vĩ đại",
+      "masterminds": "Dấu ấn chiến thuật",
+      "managers": "Những nhà cầm quân vĩ đại",
       "immortals": "Tượng đài Anfield",
       "legends": "Huyền thoại",
       "stadiumImages": "Hình ảnh sân vận động"
@@ -886,7 +914,7 @@
         }
       },
       "dataTitle": "Nguồn dữ liệu",
-      "dataSources": "Lịch thi đấu, kết quả và bảng xếp hạng lấy từ Football-Data.org và ESPN. Thống kê cầu thủ lấy từ API công khai của Fantasy Premier League; hồ sơ đội hình từ liverpoolfc.com. Tin tức được tổng hợp từ các đầu báo thể thao Anh, luôn ghi rõ nguồn và dẫn liên kết trực tiếp tới bài gốc.",
+      "dataSources": "Bảng xếp hạng, lịch thi đấu và kết quả được cập nhật từ Football-Data.org và ESPN. Thống kê cầu thủ lấy từ API công khai của Fantasy Premier League; hồ sơ đội một từ liverpoolfc.com. Tin tức được tuyển chọn từ các đầu báo thể thao uy tín tại Anh, kèm podcast Liverpool, kênh YouTube và cập nhật phóng viên trên Bluesky — luôn ghi rõ nguồn và dẫn liên kết trực tiếp tới trang gốc.",
       "techTitle": "Nền tảng kỹ thuật",
       "techStack": "Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui · Framer Motion · Recharts · Supabase · Cloudflare Workers · next-intl (EN/VI)"
     },
@@ -918,7 +946,7 @@
     },
     "ai": {
       "title": "Ứng dụng AI trong biên tập",
-      "body": "Tính năng dịch bài báo sang tiếng Việt, bản tin hằng ngày và bài phân tích sau trận sử dụng AI qua VietAPI. Dù mọi số liệu trận đấu đều được đối soát tự động với nguồn dữ liệu gốc, văn bản tự động đôi khi vẫn có thể thiếu sắc thái — với thay đổi giờ bóng lăn hoặc thông tin vé, độc giả nên đối chiếu trực tiếp trên kênh chính thức của Liverpool FC."
+      "body": "Tính năng dịch bài báo sang tiếng Việt, bản tin tổng hợp hằng ngày và bài phân tích sau trận sử dụng AI qua VietAPI. Mọi số liệu trận đấu đều được đối soát tự động với dữ liệu gốc, nhưng văn bản máy vẫn có thể thiếu sắc thái — với thay đổi giờ bóng lăn hoặc thông tin vé, độc giả nên đối chiếu trực tiếp trên kênh chính thức của Liverpool FC."
     }
   },
   "Standings": {
@@ -1052,7 +1080,8 @@
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: diễn biến chính, thông số thống kê và đội hình xuất phát.",
       "attendance": "Khán giả: {count}",
       "referee": "Trọng tài: {name}",
-      "matchAnalysis": "Phân tích trận đấu"
+      "matchAnalysis": "Phân tích trận đấu",
+      "allAnalysis": "Tất cả phân tích"
     },
     "outage": {
       "title": "Lịch thi đấu tạm thời gián đoạn",
@@ -1100,7 +1129,7 @@
       },
       "sources": {
         "title": "Nguồn dữ liệu",
-        "content": "Bảng xếp hạng, lịch thi đấu và kết quả giải vô địch được cung cấp bởi Football-Data.org. Lịch thi đấu các cúp quốc nội và diễn biến trực tiếp được bổ sung từ ESPN. Thống kê cầu thủ theo mùa lấy từ API công khai của Fantasy Premier League, còn hồ sơ đội một lấy từ liverpoolfc.com. Tin tức được tổng hợp từ 13 đầu báo và trang tin tiếng Anh — gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, Mirror, The Independent, Anfield Index, Liverpool.com và ESPN — luôn ghi rõ nguồn và dẫn liên kết trực tiếp tới bài viết gốc. Bản dịch tiếng Việt, bản tin hằng ngày và bài phân tích sau trận được biên soạn với sự hỗ trợ của AI qua VietAPI. Tư liệu lịch sử câu lạc bộ, kỷ lục và danh hiệu được tổng hợp từ các nguồn lưu trữ công khai."
+        "content": "Bảng xếp hạng, lịch thi đấu và kết quả giải vô địch được cung cấp bởi Football-Data.org; các trận đấu cúp quốc nội và diễn biến trực tiếp được bổ sung từ ESPN. Thống kê cầu thủ theo mùa lấy từ API công khai của Fantasy Premier League, còn hồ sơ đội một từ liverpoolfc.com. Tin tức được tuyển chọn từ các đầu báo thể thao uy tín tại Anh — gồm LFC Official, BBC Sport, The Guardian, Liverpool Echo, Daily Mail, The Telegraph, This Is Anfield, Anfield Watch, Empire of the Kop, Sky Sports, Mirror, The Independent, Anfield Index, Liverpool.com, ESPN, talkSPORT, FourFourTwo, Rousing The Kop và DaveOCKOP — cùng podcast Liverpool, kênh YouTube và cập nhật phóng viên trên Bluesky, luôn ghi rõ nguồn và dẫn liên kết trực tiếp tới trang gốc. Bản dịch tiếng Việt, bản tin hằng ngày và bài phân tích sau trận được biên soạn với sự hỗ trợ của AI qua VietAPI. Tư liệu lịch sử câu lạc bộ, kỷ lục và danh hiệu được tổng hợp từ các nguồn lưu trữ công khai đáng tin cậy."
       }
     },
     "toc": "Trong trang này"
@@ -1123,7 +1152,7 @@
       "or": "hoặc"
     },
     "register": {
-      "title": "Gia nhập The Reds",
+      "title": "Đăng ký tài khoản",
       "subtitle": "Tạo tài khoản miễn phí để lưu bài viết, chọn cầu thủ yêu thích và tham gia dự đoán tỷ số.",
       "username": "Tên hiển thị",
       "email": "Địa chỉ email",
@@ -1378,7 +1407,7 @@
       "description": "Sân Anfield, đội một, các huyền thoại và những khoảnh khắc định hình lịch sử Liverpool FC."
     },
     "hero": {
-      "label": "Thư viện ảnh",
+      "label": "Kho tư liệu ảnh",
       "title": "Thư viện ảnh",
       "subtitle": "Thánh địa Anfield, đội hình, huyền thoại và những đêm lịch sử."
     },
@@ -1444,12 +1473,12 @@
   "Analysis": {
     "metadata": {
       "title": "Phân tích",
-      "description": "Bài phân tích sau trận từ dữ liệu thực tế: bàn thắng, dứt điểm, kiểm soát bóng và tác động của từng kết quả lên cuộc đua của Liverpool."
+      "description": "Bài phân tích sau trận từ dữ liệu thực tế: bàn thắng, dứt điểm, kiểm soát bóng và tác động của từng kết quả lên vị trí của Liverpool."
     },
     "hero": {
       "eyebrow": "Tự biên tập",
       "title": "Phân tích",
-      "description": "Bài phân tích được biên soạn trực tiếp từ dữ liệu trận đấu đã xác thực — đội hình xuất phát, diễn biến và thông số chuyên môn — không viết lại từ nguồn thứ cấp."
+      "description": "Bài phân tích biên soạn trực tiếp từ dữ liệu trận đấu đã xác thực — đội hình xuất phát, diễn biến và thông số chuyên môn — không viết lại từ nguồn thứ cấp."
     },
     "kinds": {
       "review": "Sau trận đấu",
@@ -1460,10 +1489,10 @@
     },
     "empty": {
       "title": "Chưa có bài phân tích mới",
-      "description": "Bài viết sẽ được xuất bản tại đây sau khi trận đấu khép lại và dữ liệu thống kê được xác thực."
+      "description": "Bài phân tích mới sẽ được xuất bản tại đây ngay sau khi trận đấu khép lại và dữ liệu được xác thực."
     },
     "disclosure": {
-      "body": "Bài viết do {brand} biên soạn tự động từ dữ liệu trận đấu có cấu trúc. Mọi tỷ số, số phút, thống kê và tên cầu thủ đều được kiểm chứng tự động trước khi xuất bản.",
+      "body": "Bài viết do {brand} biên soạn tự động từ dữ liệu trận đấu có cấu trúc. Mọi tỷ số, số phút, thông số và tên cầu thủ đều được kiểm chứng trước khi xuất bản.",
       "link": "Quy trình biên tập"
     },
     "viewMatch": "Chi tiết trận đấu",
@@ -1507,7 +1536,7 @@
     "ratings": {
       "title": "Chấm điểm cầu thủ",
       "votes": "{count, plural, =0 {Chưa có lượt chấm} other {# CĐV đã chấm}}",
-      "hint": "Kéo thanh từ 1–10 để chấm các cầu thủ bạn đã theo dõi. Điểm trung bình cộng đồng hiển thị ở cột phải.",
+      "hint": "Kéo thang điểm từ 1–10 để chấm những cầu thủ bạn đã theo dõi; điểm trung bình cộng đồng hiển thị ở cột phải.",
       "closed": "Đã khóa chấm điểm 7 ngày sau khi hết giờ. Điểm trung bình cộng đồng:",
       "rate": "Chấm điểm {player}",
       "average": "Trung bình từ {count} CĐV",
@@ -1553,7 +1582,7 @@
     "summary": {
       "sidelined": "{count} cầu thủ cần theo dõi",
       "available": "{count} cầu thủ sẵn sàng",
-      "updated": "Dữ liệu thể trạng cập nhật mỗi 6 giờ"
+      "updated": "Tình trạng lực lượng đồng bộ mỗi 6 giờ"
     },
     "status": {
       "injured": "Chấn thương",
@@ -1570,17 +1599,22 @@
       "title": "Đội hình đang sung sức",
       "description": "Hiện không có cầu thủ Liverpool nào bị ghi nhận chấn thương, bỏ ngỏ hay treo giò từ dữ liệu giải đấu."
     },
+    "outage": {
+      "title": "Dữ liệu thể trạng tạm thời gián đoạn",
+      "description": "Hiện không thể tải trạng thái thể lực mới nhất từ nguồn giải đấu. Bạn có thể xem toàn bộ đội hình hoặc theo dõi tin chấn thương bên dưới."
+    },
+    "allNews": "Tất cả tin tức",
     "viewSquad": "Xem toàn bộ đội hình"
   },
   "Transfers": {
     "metadata": {
-      "title": "Tin chuyển nhượng Liverpool mới nhất & cho mượn",
-      "description": "Cập nhật tin chuyển nhượng Liverpool FC mới nhất, gia hạn hợp đồng, bản tin tổng hợp hằng ngày và danh sách cầu thủ đang cho mượn."
+      "title": "Tin chuyển nhượng Liverpool mới nhất & cầu thủ cho mượn",
+      "description": "Cập nhật tin chuyển nhượng Liverpool FC mới nhất, thương vụ chính thức, gia hạn hợp đồng, bản tin hằng ngày và danh sách cầu thủ đang cho mượn."
     },
     "hero": {
       "eyebrow": "Trung tâm chuyển nhượng",
       "title": "Tin chuyển nhượng Liverpool",
-      "description": "Tin tức chuyển nhượng chọn lọc từ báo chí Anh, bản tin tổng hợp mỗi ngày và danh sách các cầu thủ Liverpool đang thi đấu theo dạng cho mượn."
+      "description": "Tin tức chuyển nhượng chọn lọc từ báo chí thể thao Anh, bản tin tổng hợp mỗi ngày và danh sách các cầu thủ Liverpool đang thi đấu theo dạng cho mượn."
     },
     "sections": {
       "news": "Tin chuyển nhượng mới nhất",
@@ -1592,6 +1626,144 @@
       "title": "Chưa có tin chuyển nhượng mới",
       "description": "Các bài viết chuyển nhượng sẽ hiển thị tự động tại đây khi có diễn biến mới."
     },
+    "browseNews": "Tất cả tin tức",
     "viewSquad": "Xem đội hình"
+  },
+  "Hub": {
+    "eyebrow": "Liverpool FC",
+    "connectedHeading": "Xem thêm về Liverpool",
+    "seasonPulse": "Toàn cảnh mùa giải",
+    "subNavLabel": "Điều hướng chuyên mục",
+    "nav": {
+      "fixtures": "Lịch thi đấu",
+      "standings": "Bảng xếp hạng",
+      "stats": "Thống kê",
+      "season": "Mùa giải",
+      "predictions": "Dự đoán",
+      "squad": "Đội hình",
+      "injuries": "Chấn thương",
+      "transfers": "Chuyển nhượng",
+      "history": "Lịch sử",
+      "gallery": "Thư viện ảnh",
+      "news": "Tin tức",
+      "digest": "Điểm tin ngày",
+      "analysis": "Phân tích",
+      "about": "Giới thiệu",
+      "legal": "Pháp lý",
+      "profile": "Hồ sơ"
+    },
+    "cards": {
+      "fixtures": {
+        "title": "Lịch thi đấu & Kết quả",
+        "desc": "Lịch đấu sắp tới, kết quả chung cuộc và giờ bóng lăn mọi đấu trường.",
+        "badge": "Ngày thi đấu"
+      },
+      "standings": {
+        "title": "Bảng xếp hạng",
+        "desc": "Bảng điểm Ngoại hạng Anh trực tiếp, thứ hạng, điểm số và hiệu số của Liverpool.",
+        "badge": "Ngoại hạng Anh"
+      },
+      "stats": {
+        "title": "Thống kê mùa giải",
+        "desc": "Vua phá lưới, kiến tạo hàng đầu, phong độ sân nhà - sân khách và hiệu suất.",
+        "badge": "Số liệu"
+      },
+      "season": {
+        "title": "Tổng quan mùa giải",
+        "desc": "Toàn cảnh chiến dịch qua từng đấu trường, chuỗi phong độ và các cột mốc chính.",
+        "badge": "Mùa giải"
+      },
+      "predictions": {
+        "title": "Dự đoán trận đấu",
+        "desc": "Chọn đội hình xuất phát, dự đoán tỷ số và tích điểm trên bảng xếp hạng.",
+        "badge": "Tương tác"
+      },
+      "squad": {
+        "title": "Đội hình đội một",
+        "desc": "Hồ sơ, số áo, vị trí thi đấu và thông số mùa giải của từng cầu thủ.",
+        "badge": "Cầu thủ"
+      },
+      "injuries": {
+        "title": "Tình hình chấn thương",
+        "desc": "Danh sách vắng mặt, khả năng ra sân, án treo giò và tiến độ hồi phục.",
+        "badge": "Lực lượng"
+      },
+      "transfers": {
+        "title": "Chuyển nhượng & Cho mượn",
+        "desc": "Các thương vụ đã hoàn tất, cầu thủ đang cho mượn và tin chuyển nhượng mỗi ngày.",
+        "badge": "Thị trường"
+      },
+      "history": {
+        "title": "Lịch sử & Danh hiệu",
+        "desc": "Di sản Anfield, bộ sưu tập cúp, các HLV huyền thoại và những thời kỳ vàng son.",
+        "badge": "Truyền thống"
+      },
+      "gallery": {
+        "title": "Thư viện ảnh Anfield",
+        "desc": "Khoảnh khắc sân Anfield, các huyền thoại và những chiếc cúp lịch sử.",
+        "badge": "Lưu trữ"
+      },
+      "news": {
+        "title": "Tin tức Liverpool mới nhất",
+        "desc": "Tin tức Liverpool từ báo chí thể thao Anh, podcast và các phóng viên theo sát CLB.",
+        "badge": "Bản tin"
+      },
+      "digest": {
+        "title": "Điểm tin Anfield mỗi ngày",
+        "desc": "Bản tóm tắt ngắn gọn mỗi ngày về mọi tâm điểm đáng chú ý quanh CLB.",
+        "badge": "Tổng hợp"
+      },
+      "analysis": {
+        "title": "Phân tích chiến thuật",
+        "desc": "Nhận định sau trận, soi kèo chuyên môn trước trận và phân tích đấu pháp tại Anfield.",
+        "badge": "Chuyên sâu"
+      },
+      "about": {
+        "title": "Giới thiệu Anfield Daily",
+        "desc": "Cách hệ thống biên tập tổng hợp, kiểm chứng và chuyển ngữ tin tức Liverpool.",
+        "badge": "Nền tảng"
+      },
+      "legal": {
+        "title": "Pháp lý & Chính sách",
+        "desc": "Điều khoản trang tin độc lập, quy chuẩn dẫn nguồn và chính sách quyền riêng tư.",
+        "badge": "Quy định"
+      },
+      "profile": {
+        "title": "Hồ sơ thành viên",
+        "desc": "Bài viết đã lưu, cầu thủ yêu thích, điểm dự đoán và chuỗi ngày đọc tin.",
+        "badge": "Tài khoản"
+      }
+    },
+    "metrics": {
+      "played": "Số trận",
+      "record": "Thành tích T-H-B",
+      "goalsForAgainst": "Bàn thắng / Bại",
+      "plRank": "Hạng PL",
+      "winRate": "Tỷ lệ thắng",
+      "upcoming": "Sắp diễn ra",
+      "squadSize": "Đội một",
+      "onLoan": "Đang cho mượn",
+      "injuryWatch": "Theo dõi chấn thương",
+      "headCoach": "Huấn luyện viên trưởng",
+      "majorHonours": "Danh hiệu lớn",
+      "anfieldCapacity": "Sức chứa Anfield",
+      "founded": "Năm thành lập",
+      "totalArticles": "Tổng bài phân tích",
+      "matchReviews": "Đánh giá sau trận",
+      "matchPreviews": "Nhận định trước trận",
+      "positionPeers": "Cùng vị trí",
+      "nextMatchImpact": "Ảnh hưởng trận đấu kế tiếp",
+      "viewMatchCentre": "Vào trung tâm trận đấu",
+      "viewPlayerProfile": "Xem hồ sơ cầu thủ",
+      "viewSeasonStats": "Xem thống kê mùa giải",
+      "kickoff": "Giờ bóng lăn",
+      "pointsGd": "Điểm / Hiệu số",
+      "recentForm": "Phong độ gần đây",
+      "nextMatch": "Trận kế tiếp",
+      "leagueTitles": "Vô địch quốc gia",
+      "europeanCups": "Cúp C1 / Champions League",
+      "savedArticles": "Bài đã lưu",
+      "predictionPoints": "Điểm dự đoán"
+    }
   }
 }

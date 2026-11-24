@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import {
+  computeSeasonStats,
   getFixtures,
   getStandings,
   getUclStandings,
@@ -14,6 +15,7 @@ import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { matchCentreHref, type MatchCentreTab } from "@/components/fixtures/match-centre-links";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -71,18 +73,25 @@ export default async function SeasonPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { tab, season: seasonParam, view } = await searchParams;
-  const t = await getTranslations("Season");
 
   const currentYear = getCurrentSeasonYear();
   const selectedSeason = resolveSeason(seasonParam);
   const archiveSeason = selectedSeason !== currentYear ? selectedSeason : undefined;
 
   // UCL standings only available for current season on FDO free tier
-  const [fixtures, standings, uclStandings] = await Promise.all([
+  const [t, tHub, fixtures, standings, uclStandings] = await Promise.all([
+    getTranslations("Season"),
+    getTranslations("Hub"),
     getFixtures(archiveSeason),
     getStandings(archiveSeason),
     archiveSeason ? ([] as Awaited<ReturnType<typeof getUclStandings>>) : getUclStandings(),
   ]);
+
+  const seasonStats = computeSeasonStats(fixtures, standings);
+  const ov = seasonStats.overview;
+  const statsHref = archiveSeason ? `/stats/${archiveSeason}` : "/stats";
+  const standingsHref = archiveSeason ? `/season?tab=standings&season=${archiveSeason}` : "/standings";
+  const hasSummary = ov.played > 0 || ov.rank > 0;
 
   const active: MatchCentreTab = tab === "standings" ? "standings" : view === "results" ? "results" : "fixtures";
   const seasonItems = AVAILABLE_SEASONS.map((y) => ({
@@ -99,6 +108,7 @@ export default async function SeasonPage({
         { name: t("title"), path: selectedSeason === currentYear ? "/fixtures" : `/season?season=${selectedSeason}` },
       ])} />
       <PageHero
+        clubCrest
         eyebrow={t("hero.eyebrow", { season: seasonLabel(selectedSeason) })}
         title={t("title")}
         description={t("hero.description")}
@@ -106,6 +116,43 @@ export default async function SeasonPage({
         actions={<ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonSelect")} />}
       />
       <div className="page-container pb-16">
+        {hasSummary && (
+          <DataPulseStrip
+            eyebrow={`${tHub("seasonPulse")} · ${seasonLabel(selectedSeason)}`}
+            className="mt-4 mb-4"
+            items={[
+              {
+                label: tHub("metrics.record"),
+                value: `${ov.wins}-${ov.draws}-${ov.losses}`,
+                sublabel: `${ov.played} ${tHub("metrics.played")}`,
+                href: statsHref,
+                accent: "red",
+              },
+              {
+                label: tHub("metrics.goalsForAgainst"),
+                value: `${ov.goalsFor} : ${ov.goalsAgainst}`,
+                sublabel: `${ov.goalDiff >= 0 ? "+" : ""}${ov.goalDiff}`,
+                href: statsHref,
+                accent: "emerald",
+              },
+              {
+                label: tHub("metrics.winRate"),
+                value: `${ov.winRate}%`,
+                sublabel: tHub("metrics.viewSeasonStats"),
+                href: statsHref,
+                accent: "gold",
+              },
+              {
+                label: tHub("metrics.plRank"),
+                value: ov.rank > 0 ? `#${ov.rank}` : "—",
+                sublabel: ov.points > 0 ? `${ov.points} · ${tHub("nav.standings")}` : tHub("nav.standings"),
+                href: standingsHref,
+                accent: "gold",
+              },
+            ]}
+          />
+        )}
+
         {fixtures.length === 0 && standings.length === 0 ? (
           <>
             <MatchCentreNav active={active} season={archiveSeason} />
@@ -133,6 +180,16 @@ export default async function SeasonPage({
             initialView={active === "results" ? "results" : undefined}
           />
         )}
+
+        <PresetConnectedGrid
+          preset="fromSeason"
+          metaOverrides={{
+            stats: hasSummary ? `${ov.winRate}% ${tHub("metrics.winRate")}` : undefined,
+            fixtures: hasSummary ? `${ov.played} ${tHub("metrics.played")}` : undefined,
+            standings: ov.rank > 0 ? `#${ov.rank}` : undefined,
+          }}
+          className="mt-12"
+        />
       </div>
     </div>
   );

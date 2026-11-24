@@ -5,6 +5,7 @@ import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
 import { getServiceClient } from "./supabase-service";
+import { NON_ARTICLE_FILTER } from "./db";
 import { describeDigestWindow } from "./digest-window";
 import { cleanDigestText } from "./digest-text";
 import { analyzeArticleRelevance } from "./relevance";
@@ -374,7 +375,7 @@ async function fetchDigestArticles(
     .from("articles")
     .select("url, title, snippet, source, language, category, relevance")
     .eq("is_active", true)
-    .not("source", "in", "(lfctv)")
+    .not("source", "in", NON_ARTICLE_FILTER)
     .or(`published_at.gte.${since},fetched_at.gte.${since}`)
     .order("relevance", { ascending: false })
     .limit(DIGEST_ARTICLE_LIMIT + 15);
