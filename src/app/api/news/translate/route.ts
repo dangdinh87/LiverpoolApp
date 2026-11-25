@@ -1,9 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getVietapiModel } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
-import { getEnv } from "@/lib/env";
+import { getDefaultSlotModels } from "@/lib/ai/ai-model-slots";
+import { getModelChain } from "@/lib/ai/model-settings";
+import { hasAnyAiProvider, resolveModelAttempts } from "@/lib/ai/providers";
+import { hasForeignScript, stripForeignScript } from "@/lib/ai/strip-foreign-script";
 import { scrapeArticle } from "@/lib/news";
 import { getServiceClient } from "@/lib/news/supabase-service";
+import { isSameOriginRequest } from "@/lib/http-origin";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
 import { articleUrlVariants, canonicalizeArticleUrl } from "@/lib/news/url";
@@ -51,14 +54,6 @@ Format rules:
 - Return ONLY the Vietnamese translation, no commentary`;
 }
 
-// VietAPI models, verified live 2026-09-09. Ordered cheapest-first: translation
-// is high volume and the flash tier already returns clean Vietnamese.
-const TRANSLATE_MODELS = [
-  "deepseek-v4-flash",
-  "deepseek-v4-pro",
-  "claude-sonnet-5",
-] as const;
-
 interface CachedTranslationContent {
   description?: string | null;
   paragraphs?: string[];
@@ -93,10 +88,6 @@ function isUsableArticleContent(content: unknown): content is ArticleContent {
   return Array.isArray(paragraphs) && paragraphs.some((p) => typeof p === "string" && p.trim().length > 0);
 }
 
-function hasUnexpectedScript(text: string): boolean {
-  return /[\u0400-\u04FF\u3400-\u9FFF]/u.test(text);
-}
-
 function capParagraphsByChars(paragraphs: string[], maxChars: number): string[] {
   const out: string[] = [];
   let used = 0;
@@ -109,6 +100,10 @@ function capParagraphsByChars(paragraphs: string[], maxChars: number): string[] 
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const body = await req.json().catch(() => null);
     const url = body && typeof body === "object" ? (body as { url?: unknown }).url : undefined;
@@ -147,12 +142,29 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit only uncached AI generations. Cached DB translations are free to read.
-    const { allowed } = checkRateLimit(`translate:${getClientIP(req)}`, 10, 3_600_000);
-    if (!allowed) {
-      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    const ip = getClientIP(req);
+    const rateLimitError = (retryAfterSec: number) =>
+      NextResponse.json(
+        { error: "Rate limit exceeded" },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(retryAfterSec),
+            "Cache-Control": "no-store",
+          },
+        },
+      );
+    if (!checkRateLimit("translate:global:min", 30, 60_000).allowed) {
+      return rateLimitError(60);
+    }
+    if (!checkRateLimit(`translate:min:${ip}`, 3, 60_000).allowed) {
+      return rateLimitError(60);
+    }
+    if (!checkRateLimit(`translate:hr:${ip}`, 10, 3_600_000).allowed) {
+      return rateLimitError(3_600);
     }
 
-    if (!getEnv("VIETAPI_KEY")) {
+    if (!hasAnyAiProvider()) {
       return NextResponse.json(
         { error: "Translation service unavailable" },
         { status: 503 }
@@ -185,43 +197,55 @@ export async function POST(req: NextRequest) {
       const input = sections.join("\n|||\n");
       const systemPrompt = buildTranslateSystemPrompt();
 
+      const chain = await getModelChain("translate", getDefaultSlotModels("translate"));
+      const attempts = resolveModelAttempts(chain, { feature: "translate" });
+      if (attempts.length === 0) {
+        throw new Error("No configured AI provider for translate");
+      }
+
       const startedAt = Date.now();
-      let result;
-      let usedModel: string = TRANSLATE_MODELS[0];
-      for (const [index, modelId] of TRANSLATE_MODELS.entries()) {
+      let translatedText: string | undefined;
+      let usedModel: string = attempts[0].modelId;
+      for (const [index, attempt] of attempts.entries()) {
+        const label = `${attempt.modelId}${attempt.viaGateway ? " (gw)" : ""}`;
         const remaining = TRANSLATE_DEADLINE_MS - (Date.now() - startedAt);
         const attemptMs = Math.min(remaining, TRANSLATE_ATTEMPT_TIMEOUT_MS);
         if (attemptMs < MIN_TRANSLATE_ATTEMPT_MS) break;
         try {
-          result = await generateText({
-            model: getVietapiModel(modelId),
+          const result = await generateText({
+            model: attempt.model,
+            maxRetries: 0,
             system: systemPrompt,
             prompt: input,
             maxOutputTokens: 4000,
             abortSignal: AbortSignal.timeout(attemptMs),
           });
-          if (hasUnexpectedScript(result.text) && index < TRANSLATE_MODELS.length - 1) {
-            console.warn(`[translate] ${modelId} returned unexpected script, falling back...`);
-            result = undefined;
-            continue;
+          if (hasForeignScript(result.text)) {
+            if (index < attempts.length - 1) {
+              console.warn(`[translate] ${label} returned unexpected script, falling back...`);
+              continue;
+            }
+            translatedText = stripForeignScript(result.text);
+          } else {
+            translatedText = result.text;
           }
-          usedModel = modelId;
+          usedModel = attempt.modelId;
           break;
         } catch (err) {
-          if (index < TRANSLATE_MODELS.length - 1 && shouldTryNextModel(err)) {
+          if (index < attempts.length - 1 && shouldTryNextModel(err)) {
             const msg = err instanceof Error ? err.message : String(err);
-            console.warn(`[translate] ${modelId} failed, falling back: ${msg.slice(0, 160)}`);
+            console.warn(`[translate] ${label} failed, falling back: ${msg.slice(0, 160)}`);
             continue;
           }
           throw err;
         }
       }
-      if (!result) throw new Error("All translation models failed");
+      if (!translatedText) throw new Error("All translation models failed");
 
       const stripPrefix = (s: string) =>
         s.replace(/^(TITLE|TIÊU ĐỀ|P\d+)\s*[:：]\s*/i, "").trim();
 
-      const translated = result.text.split("|||").map((s) => stripPrefix(s));
+      const translated = translatedText.split("|||").map((s) => stripPrefix(s));
       const titleVi = translated[0] || content.title;
 
       const hasDescription = !!content.description;

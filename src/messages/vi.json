@@ -52,6 +52,7 @@
       "quick": "Điều hướng nhanh",
       "legal": "Pháp lý",
       "analysis": "Phân tích",
+      "chat": "Phòng chat",
       "injuries": "Chấn thương",
       "transfers": "Chuyển nhượng"
     },
@@ -1519,6 +1520,9 @@
     "update": "Cập nhật dự đoán",
     "saved": "Đã lưu",
     "signIn": "Đăng nhập để dự đoán",
+    "namePlaceholder": "Tên hiển thị (không bắt buộc)",
+    "nameHint": "Hiển thị trên bảng xếp hạng mùa này.",
+    "chatLink": "Vào phòng chat chung",
     "rule": "Đúng tỷ số nhận 3 điểm, đúng kết quả thắng/hòa/thua nhận 1 điểm. Mở nhận dự đoán tới giờ bóng lăn.",
     "yourPick": "Bạn chọn: {home}–{away}",
     "closedNoPick": "Đã khóa dự đoán khi bóng lăn.",
@@ -1531,6 +1535,8 @@
       "signIn": "Bạn cần đăng nhập trước.",
       "closed": "Trận đấu này đã khóa dự đoán.",
       "invalid": "Tỷ số nhập vào không hợp lệ.",
+      "profanity": "Tên hiển thị chứa từ ngữ không hợp lệ. Vui lòng chọn tên khác.",
+      "rateLimited": "Bạn gửi hơi nhanh. Vui lòng đợi ít phút.",
       "unavailable": "Không thể lưu dự đoán lúc này. Vui lòng thử lại sau ít phút."
     },
     "ratings": {
@@ -1648,6 +1654,7 @@
       "news": "Tin tức",
       "digest": "Điểm tin ngày",
       "analysis": "Phân tích",
+      "chat": "Phòng chat",
       "about": "Giới thiệu",
       "legal": "Pháp lý",
       "profile": "Hồ sơ"
@@ -1718,6 +1725,11 @@
         "desc": "Nhận định sau trận, soi kèo chuyên môn trước trận và phân tích đấu pháp tại Anfield.",
         "badge": "Chuyên sâu"
       },
+      "chat": {
+        "title": "Phòng chat CĐV",
+        "desc": "Phòng trò chuyện trực tiếp cùng người hâm mộ Liverpool, không cần đăng nhập.",
+        "badge": "Trực tiếp"
+      },
       "about": {
         "title": "Giới thiệu Anfield Daily",
         "desc": "Cách hệ thống biên tập tổng hợp, kiểm chứng và chuyển ngữ tin tức Liverpool.",
@@ -1764,6 +1776,101 @@
       "europeanCups": "Cúp C1 / Champions League",
       "savedArticles": "Bài đã lưu",
       "predictionPoints": "Điểm dự đoán"
+    }
+  },
+  "Assistant": {
+    "fabAria": "Mở trợ lý Anfield Daily",
+    "title": "Anfield Daily",
+    "tabAi": "Trợ lý AI",
+    "tabChat": "Chat chung",
+    "openChat": "Mở phòng chat lớn",
+    "newChat": "Cuộc trò chuyện mới",
+    "newChatConfirm": "Bắt đầu cuộc trò chuyện mới và xóa nội dung hiện tại?",
+    "cancel": "Hủy",
+    "confirmNew": "Tạo mới",
+    "expand": "Mở rộng khung",
+    "collapse": "Thu gọn khung",
+    "close": "Đóng",
+    "welcome": "Tra cứu lịch thi đấu, bảng xếp hạng, cầu thủ, chấn thương hoặc bản tin Liverpool hôm nay.",
+    "spoilerNotice": "Chế độ ẩn tỷ số đang bật — kết quả gần đây sẽ được giữ kín trừ khi bạn hỏi.",
+    "placeholder": "Hỏi lịch đấu, bảng xếp hạng, cầu thủ...",
+    "send": "Gửi",
+    "stop": "Dừng",
+    "scrollBottom": "Xuống cuối",
+    "chips": {
+      "nextMatch": "Trận tiếp theo của Liverpool khi nào?",
+      "standings": "Liverpool đang đứng hạng mấy ở Ngoại hạng Anh?",
+      "briefing": "Tóm tắt bản tin Liverpool hôm nay",
+      "injuries": "Những cầu thủ nào đang chấn thương hoặc vắng mặt?"
+    },
+    "tools": {
+      "getFixtures": "Đang tra lịch thi đấu...",
+      "getStandings": "Đang xem bảng xếp hạng...",
+      "findPlayer": "Đang tra hồ sơ cầu thủ...",
+      "getLatestNews": "Đang đọc tin mới nhất...",
+      "getInjuries": "Đang kiểm tra danh sách chấn thương...",
+      "navigate": "Đang tạo liên kết...",
+      "default": "Đang tra cứu dữ liệu..."
+    },
+    "errors": {
+      "tooManyRequests": "Bạn hỏi hơi nhanh. Vui lòng đợi một phút rồi thử lại.",
+      "conversationTooLong": "Cuộc trò chuyện đã dài. Hãy mở cuộc trò chuyện mới để hỏi tiếp.",
+      "inputTooLong": "Câu hỏi quá dài. Hãy rút gọn lại rồi gửi.",
+      "invalidPrompt": "Vui lòng nhập câu hỏi hợp lệ từ 2 đến 600 ký tự.",
+      "unavailable": "Trợ lý hiện tạm thời không khả dụng.",
+      "network": "Không thể kết nối tới trợ lý. Vui lòng thử lại."
+    }
+  },
+  "Chat": {
+    "metadata": {
+      "title": "Phòng chat CĐV Liverpool",
+      "description": "Phòng trò chuyện trực tiếp dành cho người hâm mộ Liverpool về trận đấu, đội hình, chuyển nhượng và chiến thuật mà không cần đăng nhập."
+    },
+    "hero": {
+      "eyebrow": "Cộng đồng Anfield Daily",
+      "title": "Phòng chat CĐV",
+      "description": "Trò chuyện trực tiếp về trận đấu, đội hình ra sân, chuyển nhượng và chiến thuật cùng cộng đồng Liverpool. Tham gia ngay không cần đăng nhập."
+    },
+    "box": {
+      "chatTitle": "Khung chat chung",
+      "chatSubtitle": "Trò chuyện trực tiếp cùng mọi CĐV",
+      "onlineCount": "{count} đang xem",
+      "liveLabel": "Trực tiếp",
+      "refresh": "Làm mới tin nhắn",
+      "openChatRoom": "Mở rộng",
+      "predictLink": "Dự đoán tỷ số",
+      "namePlaceholder": "Tên hiển thị (không bắt buộc)",
+      "setName": "Đặt tên",
+      "doneName": "Xong",
+      "clearName": "Xóa tên hiển thị",
+      "chatPlaceholder": "Nhắn tin chung...",
+      "send": "Gửi",
+      "guestHint": "Enter để gửi, Shift+Enter xuống dòng. Tối đa 300 ký tự.",
+      "charCount": "{n}/300",
+      "memberBadge": "Thành viên",
+      "reply": "Trả lời",
+      "replyingTo": "Đang trả lời {name}",
+      "cancelReply": "Hủy trả lời",
+      "delete": "Xóa tin nhắn",
+      "deleteCancel": "Hủy",
+      "deleteAction": "Xóa",
+      "chatEmpty": "Chưa có tin nhắn nào. Hãy mở lời chào trước giờ bóng lăn.",
+      "scrollBottom": "Xuống tin nhắn mới nhất",
+      "justNow": "vừa xong",
+      "minutesAgo": "{n} phút trước",
+      "hoursAgo": "{n} giờ trước",
+      "daysAgo": "{n} ngày trước",
+      "errors": {
+        "tooShort": "Nhập tối thiểu 2 ký tự trước khi gửi.",
+        "duplicate": "Bạn vừa gửi nội dung tương tự.",
+        "rateLimited": "Bạn gửi hơi nhanh. Vui lòng đợi ít giây.",
+        "profanity": "Vui lòng giữ ngôn từ lịch sự.",
+        "badName": "Tên hiển thị chứa từ không hợp lệ.",
+        "spam": "Tin nhắn bị chặn bởi bộ lọc chống spam.",
+        "cooldown": "Bạn gửi liên tiếp hơi nhanh. Đợi vài giây.",
+        "submitFailed": "Không thể gửi tin nhắn lúc này.",
+        "deleteFailed": "Không thể xóa tin nhắn lúc này."
+      }
     }
   }
 }

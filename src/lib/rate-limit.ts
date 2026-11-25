@@ -72,4 +72,38 @@ export function getClientIP(req: Pick<NextRequest, "headers">): string {
 /** Test-only helper to reset in-memory counters between specs. */
 export function resetRateLimitStore(): void {
   store.clear();
+  streamLocks.clear();
+}
+
+const MAX_LOCK_ENTRIES = 2_000;
+const streamLocks = new Map<string, number>();
+
+/**
+ * Acquire an exclusive in-flight stream lock per key with a bounded safety TTL.
+ * Uses lazy pruning (no setInterval) so it stays Cloudflare Workers compatible.
+ */
+export function acquireStreamLock(key: string, ttlMs: number): boolean {
+  const now = Date.now();
+  const expiresAt = streamLocks.get(key);
+  if (expiresAt !== undefined && now < expiresAt) {
+    return false;
+  }
+
+  if (streamLocks.size >= MAX_LOCK_ENTRIES) {
+    for (const [k, exp] of streamLocks) {
+      if (now >= exp) streamLocks.delete(k);
+    }
+    while (streamLocks.size >= MAX_LOCK_ENTRIES) {
+      const oldest = streamLocks.keys().next().value;
+      if (oldest === undefined) break;
+      streamLocks.delete(oldest);
+    }
+  }
+
+  streamLocks.set(key, now + ttlMs);
+  return true;
+}
+
+export function releaseStreamLock(key: string): void {
+  streamLocks.delete(key);
 }

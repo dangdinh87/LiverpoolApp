@@ -33,7 +33,7 @@ export function ScrollToTop() {
       // tree in one go (aria-hidden on a focusable button is flagged by audits).
       inert={!visible}
       className={cn(
-        "fixed z-50 flex size-11 items-center justify-center rounded-full border border-[var(--line-strong)] bg-stadium-surface/95 text-white shadow-lg backdrop-blur",
+        "scroll-to-top-btn fixed z-50 flex size-11 items-center justify-center rounded-full border border-[var(--line-strong)] bg-stadium-surface/95 text-white shadow-lg backdrop-blur",
         "transition-[opacity,transform,background-color] duration-200 ease-[var(--ease-out)] hover:bg-lfc-red",
         visible ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
       )}

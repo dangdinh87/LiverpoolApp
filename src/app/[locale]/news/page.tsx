@@ -74,6 +74,10 @@ const getCachedSocialItems = unstable_cache(
 // it inserts anything, so a new article does not wait for this to expire.
 export const revalidate = 1800;
 
+function isProductionBuild(): boolean {
+  return process.env.NEXT_PHASE === "phase-production-build";
+}
+
 // `?source=` used to be read here, which made every visit render on demand in a
 // single region. NewsFeed reads it after hydration instead, so both locales are
 // prerendered and served from the CDN edge — the articles are all in the HTML
@@ -85,7 +89,9 @@ export default async function NewsPage({ params }: LocaleParams) {
   const userLang: "en" | "vi" = locale === "vi" ? "vi" : "en";
 
   const [allArticles, digest, videos, podcasts, socialPosts] = await Promise.all([
-    getCachedNewsList().catch((): NewsArticle[] => []),
+    isProductionBuild()
+      ? getCachedNewsList().catch((): NewsArticle[] => [])
+      : getCachedNewsList(),
     // The same cached read as the homepage: both lead with the same day's briefing.
     // getLatestDigest throws on a DB error so the failure is not cached.
     getCachedLatestDigest().catch(() => null),

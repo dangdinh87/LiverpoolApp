@@ -1,23 +1,32 @@
 "use server";
 
 /**
- * Fan predictions (score, before kick-off) and player ratings (1-10, after full
- * time). Every write is checked here — signed in, kick-off not yet passed, the
- * player really played — and then made with the service role; the tables have
- * no write policies of their own (supabase/migrations/012).
+ * Fan predictions (score before kick-off — open to everyone, guest or signed-in)
+ * and player ratings (1-10 after full time — signed-in members). Every write is
+ * checked server-side and made with the service role; match_predictions and
+ * player_ratings have no client write policies (supabase/migrations/012 & 014).
  *
- * When the tables are missing or the database is down, reads report
- * `available: false` and the cards hide themselves rather than error.
+ * When migration 014 has not yet dropped `match_predictions_user_id_fkey`, guest
+ * predictions fall back transparently to `site_settings` (`guest_predictions:*`)
+ * keyed by the caller's SHA-256 cookie actor UUID.
  */
 
 import { updateTag } from "next/cache";
+import { headers } from "next/headers";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
-import { getFixtureById, getFixtureEvents, getFixtureLineups } from "@/lib/football";
+import { ensureWritableActor, readCurrentActor } from "@/lib/community/guest-identity";
+import { moderateDisplayName } from "@/lib/community/moderation";
+import {
+  readGuestFixturePredictions,
+  saveGuestFixturePrediction,
+} from "@/lib/fan-predictions/guest-store";
 import { FAN_PREDICTIONS_CACHE_TAG } from "@/lib/fan-predictions/leaderboard";
-import { getPlayerSlugByName } from "@/lib/squad-data";
-import { getServiceClient } from "@/lib/news/supabase-service";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { summarisePredictions, type CommunityPrediction, type Score } from "@/lib/fan-predictions/scoring";
+import { getFixtureById, getFixtureEvents, getFixtureLineups } from "@/lib/football";
+import { getServiceClient } from "@/lib/news/supabase-service";
+import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
+import { getPlayerSlugByName } from "@/lib/squad-data";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 import type { Fixture } from "@/lib/types/football";
 
 const LFC_ID = 40;
@@ -26,7 +35,7 @@ const FINISHED = new Set(["FT", "AET", "PEN"]);
 const RATING_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_GOALS = 20;
 
-export type PredictionWriteError = "signIn" | "closed" | "invalid" | "unavailable";
+export type PredictionWriteError = "signIn" | "closed" | "invalid" | "profanity" | "rateLimited" | "unavailable";
 
 async function currentAuth(): Promise<{ ok: true; userId: string | null } | { ok: false }> {
   try {
@@ -46,6 +55,32 @@ async function currentUserId(): Promise<string | null> {
   return auth.ok ? auth.userId : null;
 }
 
+async function requestIp(): Promise<string> {
+  try {
+    const hdrs = await headers();
+    return getClientIP({ headers: hdrs });
+  } catch {
+    return "unknown";
+  }
+}
+
+function isMissingColumnError(err: { code?: string; message?: string } | null | undefined, col: string): boolean {
+  if (!err) return false;
+  return (
+    err.code === "42703" ||
+    err.code === "PGRST204" ||
+    (typeof err.message === "string" && err.message.includes(col))
+  );
+}
+
+function isForeignKeyError(err: { code?: string; message?: string } | null | undefined): boolean {
+  if (!err) return false;
+  return (
+    err.code === "23503" ||
+    (typeof err.message === "string" && err.message.toLowerCase().includes("foreign key"))
+  );
+}
+
 /** Open until kick-off, and never for a match that is postponed or already under way. */
 function predictionsOpen(f: Fixture, now: number): boolean {
   return f.fixture.status.short === "NS" && new Date(f.fixture.date).getTime() > now;
@@ -56,6 +91,7 @@ function predictionsOpen(f: Fixture, now: number): boolean {
 export interface PredictionState {
   available: boolean;
   signedIn: boolean;
+  displayName: string | null;
   open: boolean;
   mine: Score | null;
   community: CommunityPrediction;
@@ -68,26 +104,51 @@ function isValidFixtureId(id: unknown): id is number {
 }
 
 export async function getPredictionState(fixtureId: number): Promise<PredictionState> {
-  if (!isValidFixtureId(fixtureId)) {
-    return { available: false, signedIn: false, open: false, mine: null, community: EMPTY_COMMUNITY };
-  }
-  const [fixture, userId] = await Promise.all([getFixtureById(fixtureId), currentUserId()]);
-  const base = { available: false, signedIn: !!userId, open: false, mine: null, community: EMPTY_COMMUNITY };
+  const empty: PredictionState = {
+    available: false,
+    signedIn: false,
+    displayName: null,
+    open: false,
+    mine: null,
+    community: EMPTY_COMMUNITY,
+  };
+  if (!isValidFixtureId(fixtureId)) return empty;
+
+  const [fixture, actor] = await Promise.all([getFixtureById(fixtureId), readCurrentActor()]);
+  const base: PredictionState = {
+    ...empty,
+    signedIn: Boolean(actor?.isMember),
+    displayName: actor?.username ?? null,
+  };
   if (!fixture) return base;
+
   try {
-    const { data, error } = await getServiceClient()
-      .from("match_predictions")
-      .select("user_id, home_goals, away_goals")
-      .eq("fixture_id", fixtureId);
+    const db = getServiceClient();
+    const [{ data, error }, guestMap] = await Promise.all([
+      db
+        .from("match_predictions")
+        .select("user_id, home_goals, away_goals")
+        .eq("fixture_id", fixtureId),
+      readGuestFixturePredictions(fixtureId),
+    ]);
     if (error) throw error;
-    const rows = data ?? [];
-    const own = userId ? rows.find((r) => r.user_id === userId) : undefined;
+
+    const byActor = new Map<string, Score>();
+    for (const [guestId, entry] of Object.entries(guestMap)) {
+      byActor.set(guestId, { home: entry.home, away: entry.away });
+    }
+    for (const row of data ?? []) {
+      byActor.set(row.user_id, { home: row.home_goals, away: row.away_goals });
+    }
+
+    const mine = actor ? (byActor.get(actor.actorId) ?? null) : null;
     return {
       available: true,
-      signedIn: !!userId,
+      signedIn: Boolean(actor?.isMember),
+      displayName: actor?.username ?? null,
       open: predictionsOpen(fixture, Date.now()),
-      mine: own ? { home: own.home_goals, away: own.away_goals } : null,
-      community: summarisePredictions(rows.map((r) => ({ home: r.home_goals, away: r.away_goals }))),
+      mine,
+      community: summarisePredictions([...byActor.values()]),
     };
   } catch (err) {
     console.error("[predictions] read failed:", err);
@@ -99,27 +160,77 @@ export async function savePrediction(
   fixtureId: number,
   home: number,
   away: number,
+  guestName?: string,
 ): Promise<{ ok: true } | { ok: false; error: PredictionWriteError }> {
   const valid = (n: number) => typeof n === "number" && Number.isInteger(n) && n >= 0 && n <= MAX_GOALS;
   if (!isValidFixtureId(fixtureId) || !valid(home) || !valid(away)) {
     return { ok: false, error: "invalid" };
   }
 
-  const auth = await currentAuth();
-  if (!auth.ok) return { ok: false, error: "unavailable" };
-  const userId = auth.userId;
-  if (!userId) return { ok: false, error: "signIn" };
+  const nameCheck = moderateDisplayName(guestName);
+  if (!nameCheck.ok) {
+    return { ok: false, error: "profanity" };
+  }
+
+  const ip = await requestIp();
+  if (!checkRateLimit(`predict:${ip}`, 20, 600_000).allowed) {
+    return { ok: false, error: "rateLimited" };
+  }
 
   const fixture = await getFixtureById(fixtureId);
-  if (!fixture || !predictionsOpen(fixture, Date.now())) return { ok: false, error: "closed" };
+  if (!fixture || !predictionsOpen(fixture, Date.now())) {
+    return { ok: false, error: "closed" };
+  }
+
+  let actor;
+  try {
+    actor = await ensureWritableActor(nameCheck.name ?? undefined);
+  } catch (err) {
+    console.error("[predictions] actor init failed:", err);
+    return { ok: false, error: "unavailable" };
+  }
+
+  const nowIso = new Date().toISOString();
 
   try {
-    const { error } = await getServiceClient()
+    const db = getServiceClient();
+    const baseRow = {
+      user_id: actor.actorId,
+      fixture_id: fixtureId,
+      home_goals: home,
+      away_goals: away,
+      updated_at: nowIso,
+    };
+
+    let { error } = await db
       .from("match_predictions")
       .upsert(
-        { user_id: userId, fixture_id: fixtureId, home_goals: home, away_goals: away, updated_at: new Date().toISOString() },
+        { ...baseRow, author_name: actor.username },
         { onConflict: "user_id,fixture_id" },
       );
+
+    // Pre-migration 014 compatibility: table might lack `author_name` or keep auth.users FK.
+    if (error && isMissingColumnError(error, "author_name")) {
+      const retry = await db
+        .from("match_predictions")
+        .upsert(baseRow, { onConflict: "user_id,fixture_id" });
+      error = retry.error;
+    }
+
+    if (error && isForeignKeyError(error)) {
+      const fallback = await saveGuestFixturePrediction(
+        fixtureId,
+        actor.actorId,
+        home,
+        away,
+        actor.username,
+      );
+      if (!fallback.ok) {
+        return { ok: false, error: "unavailable" };
+      }
+      error = null;
+    }
+
     if (error) {
       console.error("[predictions] save failed:", error);
       return { ok: false, error: "unavailable" };
@@ -128,16 +239,11 @@ export async function savePrediction(
     console.error("[predictions] save threw:", err);
     return { ok: false, error: "unavailable" };
   }
-  // updateTag, not revalidateTag: this is the reader's own write, so the next
-  // request must wait for fresh data rather than be served the stale leaderboard
-  // that does not contain their prediction yet.
-  //
-  // The tag clears the data cache; /predictions is also ISR, and its cached HTML
-  // would still show the old table, so the page needs dropping too. The caller
-  // re-reads its own prediction directly, which is why their own view was never
-  // the broken part — the shared leaderboard was.
+
+  // Bust both the leaderboard cache and localized /predictions & fixture pages.
   updateTag(FAN_PREDICTIONS_CACHE_TAG);
   revalidateLocalizedPath("/predictions");
+  revalidateLocalizedPath(`/fixtures/${fixtureId}`);
   return { ok: true };
 }
 
@@ -263,9 +369,6 @@ export async function saveRatings(
     return { ok: false, error: "unavailable" };
   }
   updateTag(FAN_PREDICTIONS_CACHE_TAG);
-  // Each rated player has their own page showing the fan average, and that page
-  // is ISR — the tag drops the cached query behind it but not its rendered HTML,
-  // so without this a new rating waited out the hour.
   for (const name of Object.keys(ratings)) {
     const slug = getPlayerSlugByName(name);
     if (slug) revalidateLocalizedPath(`/player/${slug}`);

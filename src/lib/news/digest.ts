@@ -1,9 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { BRAND } from "@/lib/brand";
-import { vietapi } from "@/lib/ai/vietapi";
 import { generateText } from "ai";
 import { getEnv } from "@/lib/env";
+import { getDefaultSlotModels } from "@/lib/ai/ai-model-slots";
+import { getModelChain } from "@/lib/ai/model-settings";
+import { resolveModelAttempts, type ModelAttempt } from "@/lib/ai/providers";
 import { getServiceClient } from "./supabase-service";
 import { NON_ARTICLE_FILTER } from "./db";
 import { describeDigestWindow } from "./digest-window";
@@ -111,18 +113,6 @@ function formatDigestDate(date = new Date()): string {
     year: "numeric",
   }).format(date);
 }
-
-// Model fallback chain — try each model in order until one succeeds.
-// Groq free tier has per-model daily token limits (TPD).
-// The digest is a LARGE request (~7K tokens: long prompt + up to 25 articles).
-// VietAPI prices flat per token with no per-minute cap to design around, so this
-// is ordered by prose quality rather than by throughput limits.
-// Verified live 2026-09-09.
-const DIGEST_MODELS = [
-  "deepseek-v4-flash", // default everywhere in the app: cheap, fast, clean diacritics
-  "deepseek-v4-pro",   // step up if flash fails or returns bad JSON
-  "claude-sonnet-5",   // last resort (slowest; long runs can exceed the 60s cron limit)
-] as const;
 
 /** The site's own URL, named once: the prompt and the stored record both need it. */
 const SITE_URL = (getEnv("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
@@ -422,7 +412,8 @@ function validateParsedDigest(value: unknown): ParsedDigest {
 
 // Per-attempt caps inside the 60s route budget (maxDuration): flash is normally ~15-25s.
 const DIGEST_DEADLINE_MS = 55_000;
-const DIGEST_ATTEMPT_CAP_MS: Record<(typeof DIGEST_MODELS)[number], number> = {
+const DEFAULT_DIGEST_ATTEMPT_CAP_MS = 35_000;
+const DIGEST_ATTEMPT_CAP_MS: Record<string, number> = {
   "deepseek-v4-flash": 42_000,
   "deepseek-v4-pro": 30_000,
   "claude-sonnet-5": 40_000,
@@ -455,8 +446,11 @@ export async function generateDigestFromArticles(
   // without them the model "knew" a previous head coach and contradicted the articles.
   const prompt = `${buildCurrentFactsBlock(now)}\n\nToday is ${today} (${DIGEST_TIME_ZONE}).\nPublisher/source for the SEO article: ${BRAND.name} (${siteUrl}).\n\nHere are the top ${articles.length} Liverpool FC articles from the last ${describeDigestWindow(windowHours)}:\n\n${articleList}`;
 
-  const apiKey = getEnv("VIETAPI_KEY");
-  if (!apiKey) throw new Error("VIETAPI_KEY not configured");
+  const chain = await getModelChain("digest", getDefaultSlotModels("digest"));
+  const attempts = resolveModelAttempts(chain, { feature: "digest" });
+  if (attempts.length === 0) {
+    throw new Error("No configured AI provider for digest");
+  }
 
   // ONE request for summary + sections + a 600-900 word SEO article took 84s on
   // deepseek-v4-flash (measured Oct 2026, ~55 tok/s) — longer than the route's 60s, so
@@ -464,10 +458,12 @@ export async function generateDigestFromArticles(
   // in parallel (core digest / SEO article); wall time is the slower one, ~35-45s.
   const [core, seo] = await Promise.all([
     runDigestModelChain<ParsedDigest>({
+      attempts,
       prompt, system: `${DIGEST_SYSTEM_PROMPT}\n\n${CORE_ONLY_SUFFIX}`, startedAt, options,
       parse: (text) => parseDigestJson(text),
     }),
     runDigestModelChain<{ seoArticle: DigestSeoArticle }>({
+      attempts,
       prompt, system: `${DIGEST_SYSTEM_PROMPT}\n\n${SEO_ONLY_SUFFIX}`, startedAt, options,
       parse: (text) => parseSeoOnlyJson(text),
     }).catch((err) => {
@@ -504,6 +500,7 @@ function parseSeoOnlyJson(text: string): { seoArticle: DigestSeoArticle } {
 
 /** Model fallback chain for one request; any failure (provider, timeout, truncation, bad JSON) moves on. */
 async function runDigestModelChain<T>(args: {
+  attempts: readonly ModelAttempt[];
   prompt: string;
   system: string;
   startedAt: number;
@@ -511,29 +508,32 @@ async function runDigestModelChain<T>(args: {
   parse: (text: string) => T;
 }): Promise<{ value: T; model: string; tokens: number }> {
   const failures: string[] = [];
-  for (const modelId of DIGEST_MODELS) {
+  for (const attempt of args.attempts) {
+    const label = `${attempt.modelId}${attempt.viaGateway ? " (gw)" : ""}`;
     const remaining = (args.options.deadlineMs ?? DIGEST_DEADLINE_MS) - (Date.now() - args.startedAt);
-    const attemptMs = Math.min(remaining, args.options.attemptCapMs ?? DIGEST_ATTEMPT_CAP_MS[modelId]);
+    const attemptCap = DIGEST_ATTEMPT_CAP_MS[attempt.modelId] ?? DEFAULT_DIGEST_ATTEMPT_CAP_MS;
+    const attemptMs = Math.min(remaining, args.options.attemptCapMs ?? attemptCap);
     if (attemptMs < MIN_ATTEMPT_MS) {
-      failures.push(`${modelId}: skipped, ${Math.max(0, Math.round(remaining / 1000))}s left`);
+      failures.push(`${label}: skipped, ${Math.max(0, Math.round(remaining / 1000))}s left`);
       continue;
     }
     const t0 = Date.now();
     try {
       const result = await generateText({
-        model: vietapi(modelId),
+        model: attempt.model,
+        maxRetries: 0,
         system: args.system,
         prompt: args.prompt,
         maxOutputTokens: 6000,
         abortSignal: AbortSignal.timeout(attemptMs),
       });
-      if (process.env.DIGEST_DEBUG) console.warn(`[digest] ${modelId} ok in ${Date.now() - t0}ms, out=${result.usage?.outputTokens}`);
+      if (process.env.DIGEST_DEBUG) console.warn(`[digest] ${label} ok in ${Date.now() - t0}ms, out=${result.usage?.outputTokens}`);
       if (result.finishReason === "length") throw new Error("output truncated (finishReason=length)");
-      return { value: args.parse(result.text), model: modelId, tokens: result.usage?.totalTokens ?? 0 };
+      return { value: args.parse(result.text), model: attempt.modelId, tokens: result.usage?.totalTokens ?? 0 };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      failures.push(`${modelId}: ${msg.slice(0, 160)}`);
-      console.warn(`[digest] ${modelId} failed, trying next: ${msg.slice(0, 160)}`);
+      failures.push(`${label}: ${msg.slice(0, 160)}`);
+      console.warn(`[digest] ${label} failed, trying next: ${msg.slice(0, 160)}`);
     }
   }
   throw new Error(`All digest models failed — ${failures.join(" | ")}`);

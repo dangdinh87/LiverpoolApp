@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
-import { getEnv } from "@/lib/env";
+import { hasAnyAiProvider } from "@/lib/ai/providers";
 import { withCronAuth } from "@/lib/cron";
 import { getFixtures } from "@/lib/football";
 import { loadMatchReviewFacts } from "@/lib/site-articles/match-review-facts";
@@ -32,8 +32,8 @@ const MAX_PER_RUN = 2;
  * a page can trigger that itself.
  */
 export const GET = withCronAuth(async (req) => {
-  if (!getEnv("VIETAPI_KEY")) {
-    return NextResponse.json({ error: "VIETAPI_KEY not configured" }, { status: 503 });
+  if (!hasAnyAiProvider()) {
+    return NextResponse.json({ error: "AI provider not configured" }, { status: 503 });
   }
 
   const rawFixture = req.nextUrl.searchParams.get("fixture");

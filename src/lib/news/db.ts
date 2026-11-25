@@ -118,25 +118,22 @@ async function getMediaItemsFromDB(
   limit: number,
   label: string,
 ): Promise<NewsArticle[]> {
-  try {
-    const { data, error } = await getServiceClient()
-      .from("articles")
-      .select(ARTICLE_COLUMNS)
-      .eq("is_active", true)
-      .not("published_at", "is", null)
-      .in("source", [...sources])
-      .order("published_at", { ascending: false, nullsFirst: false })
-      .limit(limit);
+  const { data, error } = await getServiceClient()
+    .from("articles")
+    .select(ARTICLE_COLUMNS)
+    .eq("is_active", true)
+    .not("published_at", "is", null)
+    .in("source", [...sources])
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
 
-    if (error) {
-      console.error(`[news/db] ${label}:`, error.message);
-      return [];
-    }
-    return ((data ?? []) as ArticleRow[]).map(rowToArticle);
-  } catch (err) {
-    console.error(`[news/db] ${label} failed:`, err);
-    return [];
+  // Throw on DB/transport failures so `unstable_cache` does not pin [] for
+  // 30 minutes on a blip. A genuine 0-row answer still returns [] and caches.
+  if (error) {
+    console.error(`[news/db] ${label}:`, error.message);
+    throw error;
   }
+  return ((data ?? []) as ArticleRow[]).map(rowToArticle);
 }
 
 /**

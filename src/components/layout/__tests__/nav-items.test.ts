@@ -34,7 +34,7 @@ describe("bottom tabs", () => {
   it("marks exactly one tab per section and none on secondary pages", () => {
     expect(activeTab("/")).toBe("home");
     expect(activeTab("/news/guardian/story")).toBe("news");
-    for (const path of ["/history", "/gallery", "/about", "/legal"]) {
+    for (const path of ["/analysis", "/history", "/gallery", "/about", "/legal"]) {
       expect(activeTab(path), path).toBeUndefined();
       expect(isActiveAny(path, MORE_PATHS), path).toBe(true);
     }

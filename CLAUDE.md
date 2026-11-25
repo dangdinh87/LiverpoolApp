@@ -11,7 +11,7 @@ Trang tin Liverpool để đọc nhanh: tổng hợp bài viết từ báo chí 
 - **Backend:** Supabase (Auth + PostgreSQL + Storage, bọc `createSupabaseFetch` timeout 3s & circuit breaker 30s)
 - **Football Data:** Football-Data.org v4 (primary, 10 req/min free tier, `fdo-client` dedup + 429 backoff) + ESPN (cup fixtures, live events, lineups, 28 match stats — free) + FPL API (player stats)
 - **News & Video:** 12 English RSS feeds + LFC Official sitemap adapter (`NEWS_OUTLET_COUNT = 13`) + LFC YouTube (`lfctv` via YouTube Data API v3), synced to Supabase
-- **AI (VietAPI):** `@ai-sdk/openai-compatible` + `ai` (`src/lib/ai/vietapi.ts`) — daily briefing (`/news/digest`), on-demand full-article EN→VI translation (`/api/news/translate`), and fact-validated post-match editorial reviews (`/analysis`)
+- **AI Layer (`src/lib/ai/`):** `@ai-sdk/openai-compatible` + `ai` — multi-provider routing across Cloudflare Workers AI (`@cf/*`), VietAPI (via Cloudflare AI Gateway with automatic direct fallback), and direct Google Gemini, with runtime slot overrides (`ai_model_settings`), foreign-script filtering, and `/api/internal/ai-models` health checks powering daily briefing (`/news/digest`), on-demand EN→VI translation (`/api/news/translate`), and fact-validated match previews/reviews (`/analysis`)
 - **Gallery:** Cloudinary image hosting + `yet-another-react-lightbox`
 - **i18n:** `next-intl` (`en` default at `/`, `vi` at `/vi`), `pickClientMessages` RSC payload filter (~52% smaller client i18n payload)
 - **State:** Zustand (`auth-store`, `toast-store`), TanStack Query (`QueryProvider`)
@@ -68,7 +68,7 @@ src/
 │   │   ├── analysis/           # /analysis listing + /analysis/[slug] AI post-match reviews
 │   │   ├── fixtures/           # /fixtures timeline + /fixtures/[id] match centre, predictions, ratings
 │   │   ├── standings/          # Premier League & Champions League tables (revalidate 6h)
-│   │   ├── predictions/        # Fan score predictions & community leaderboard
+│   │   ├── predictions/        # Login-free fan score predictions & community leaderboard
 │   │   ├── squad/              # Squad grid + position filter & search
 │   │   ├── players/            # Players directory
 │   │   ├── player/[id]/        # Player detail, FPL/season stats, bios, news mentions
@@ -89,6 +89,8 @@ src/
 │   │   ├── news/comments/      # Article comments CRUD
 │   │   ├── news/like/          # Article likes
 │   │   ├── site-articles/generate/ # Cron: fact-validated AI post-match reviews (VietAPI)
+│   │   ├── internal/ai-models/ # Bearer-protected AI model slot inspection & health-check endpoint
+│   │   ├── assistant/chat/     # Floating site-wide Matchday AI assistant streaming endpoint
 │   │   ├── calendar/liverpool.ics/ # RFC 5545 spoiler-free UTC fixture subscription feed
 │   │   ├── gallery/            # Gallery list, homepage featured & site settings
 │   │   ├── saved-articles/     # User bookmarks check
@@ -112,6 +114,7 @@ src/
 │   ├── history/                # TrophyCabinet, Timeline, LegendCard, StadiumShowcase
 │   ├── gallery/                # GalleryContent + lightbox
 │   ├── auth/ & profile/        # LoginForm, ProfileLayout, ProfileForm, AvatarUpload, SavedArticlesList
+│   ├── assistant/              # Floating Dark Stadium AI assistant (AssistantFab, AssistantPanel, markdown & SSE hook)
 │   └── analytics/              # StructuredData, GoogleAdsense, AdsenseGate, CloudflareWebAnalytics
 ├── lib/
 │   ├── brand.ts                # Single source of truth for BRAND, MARK, WORDMARK
@@ -121,7 +124,8 @@ src/
 │   ├── site-articles/          # Fact-checked AI post-match review generator & validate-draft guard
 │   ├── fan-predictions/        # Prediction scoring (3/1/0) & community leaderboard
 │   ├── calendar/               # RFC 5545 fixtures-ics builder
-│   ├── ai/vietapi.ts           # OpenAI-compatible VietAPI client
+│   ├── ai/                     # Multi-provider routing, Cloudflare AI Gateway, Workers AI, fallback, slot settings & model health checks
+│   ├── assistant/              # Site-wide assistant route directory, prompt & live Liverpool data tools
 │   ├── prompts/                # current-facts.ts & site-article-voice.ts
 │   ├── og/story-card.tsx       # Shared OpenGraph card renderer
 │   ├── seo.ts & seo-breadcrumbs.ts # Metadata, hreflang, canonical, JSON-LD builders
@@ -181,13 +185,16 @@ src/
 - **Full-article rendering & translation (`/news/[...slug]`):**
   - Renders the publisher's full extracted body inside `TranslatableExcerpt` (preserving rich HTML/video in English and toggling smoothly to the cached/on-demand Vietnamese translation), with publisher attribution **above** the body, `robots: { index: false, follow: true }`, and no ads.
 
-### AI Editorial & Translation (`src/lib/ai/vietapi.ts`)
+### AI Editorial & Translation (`src/lib/ai/`)
 
-All AI features run server-side on **VietAPI** (`VIETAPI_KEY`) via `@ai-sdk/openai-compatible` and `ai`, grounded with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — current date in `GMT+7`, `2026/27` season, head coach Andoni Iraola, active 31-player squad):
+All AI features run server-side through the shared AI infrastructure (`src/lib/ai/providers.ts`, `model-settings.ts`, `ai-model-slots.ts`, `fallback-model.ts`, `strip-foreign-script.ts`) via `@ai-sdk/openai-compatible` and `ai`, grounded with `buildCurrentFactsBlock()` (`src/lib/prompts/current-facts.ts` — current date in `GMT+7`, `2026/27` season, head coach Andoni Iraola, active 31-player squad):
 
+- **Multi-Provider & Gateway Routing:** Supports Cloudflare Workers AI (`@cf/*` with `enable_thinking: false` for Gemma 4), VietAPI (routed via Cloudflare AI Gateway when `CF_AIG_ACCOUNT_ID`, `CF_AIG_GATEWAY_ID`, and `CF_AIG_TOKEN` are set, with automatic direct-VietAPI fallback), and direct Google Gemini (`GEMINI_API_KEY`).
+- **Runtime Slot Overrides & Health Checks:** Each feature slot (`digest`, `translate`, `site_articles`, `assistant`) reads optional DB overrides from `ai_model_settings` (60s in-memory cache, falling back silently to code defaults + `AI_MODEL_*` env overrides). `/api/internal/ai-models` (protected by `CRON_SECRET`) inspects active slots/providers and runs live capability probes (`english`, `vietnamese`, `json`, `tools`) before saving overrides.
+- **Floating Matchday Assistant (`src/lib/assistant/`, `src/components/assistant/`):** `/api/assistant/chat` streams responses using the `assistant` slot with live tool calls (`getFixtures`, `getStandings`, `findPlayer`, `getLatestNews`, `getInjuries`, `navigate`), spoiler-free awareness, and `stripForeignScript()` stream filtering.
 - **Daily Briefing (`src/lib/news/digest.ts`):** Generated only by `/api/news/digest/generate` (daily cron + hourly idempotent retry) in two parallel LLM calls (structured briefing + SEO article, `Europe/London` date key). Pages read via `getLatestDigest()` and never generate during render.
-- **On-Demand Article Translation (`src/app/api/news/translate/route.ts`):** Translates verified `articles` rows (`<= 18,000` chars) into natural Vietnamese sports journalism (`deepseek-v4-flash` → `deepseek-v4-pro` → `claude-sonnet-5`), deduplicated in-flight per canonical URL, cached in `articles.content_vi` and browser `localStorage`.
-- **Post-Match Editorial Analysis (`src/lib/site-articles/`):** `/api/site-articles/generate` builds bilingual (`en` + `vi`) match reviews strictly from verified fixture facts (`match-review-facts.ts`). Drafts must pass `validateDraft()` (score/player verification, brand positioning rules, anti-cliché & HTML entity checks) and similarity checks before publishing to `site_articles` (`/analysis/[slug]`).
+- **On-Demand Article Translation (`src/app/api/news/translate/route.ts`):** Translates verified `articles` rows (`<= 18,000` chars) into natural Vietnamese sports journalism using the `translate` model chain, falls back on foreign-script leakage (`hasForeignScript` / `stripForeignScript`), deduplicates in-flight per canonical URL, and caches in `articles.content_vi` and browser `localStorage`.
+- **Post-Match Editorial Analysis (`src/lib/site-articles/`):** `/api/site-articles/generate` builds bilingual (`en` + `vi`) match previews & reviews strictly from verified fixture facts (`match-review-facts.ts`, `match-preview-facts.ts`) using the `site_articles` model chain. Drafts must pass `validateDraft()`, foreign-script checks, and similarity checks before publishing to `site_articles` (`/analysis/[slug]`).
 
 ### i18n
 
@@ -233,7 +240,14 @@ See `.env.example`.
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase admin key (server-only) |
 | `FOOTBALL_DATA_ORG_KEY` | Football-Data.org v4 API (10 req/min free tier) |
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL — SEO, `metadataBase`, OAuth redirects |
-| `VIETAPI_KEY` | VietAPI — article translation + daily briefing + post-match reviews |
+| `VIETAPI_KEY` | VietAPI — article translation + daily briefing + match previews/reviews |
+| `CF_AIG_ACCOUNT_ID` | Optional Cloudflare account ID for AI Gateway & Workers AI |
+| `CF_AIG_GATEWAY_ID` | Optional Cloudflare AI Gateway slug (`custom-vietapi` + Workers AI logs) |
+| `CF_AIG_TOKEN` | Optional Cloudflare API token (Workers AI + AI Gateway Run permissions) |
+| `GEMINI_API_KEY` | Optional direct Google Gemini API key |
+| `AI_MODEL_DIGEST` | Optional comma-separated model override for `digest` slot |
+| `AI_MODEL_TRANSLATE` | Optional comma-separated model override for `translate` slot |
+| `AI_MODEL_SITE_ARTICLES` | Optional comma-separated model override for `site_articles` slot |
 | `YOUTUBE_API_KEY` | YouTube Data API v3 — club video strip on `/news` (optional; skipped if unset) |
 | `CRON_SECRET` | Bearer secret protecting scheduled cron endpoints |
 | `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name |
@@ -258,7 +272,8 @@ Supabase PostgreSQL. Migrations in `supabase/migrations/`:
 10. `010_rls_repair_and_function_hardening.sql` — RLS policy & SQL function `search_path` hardening
 11. `011_rls_initplan_and_fk_indexes.sql` — `(select auth.uid())` RLS initplan optimisation & foreign-key indexes
 12. `012_fan_predictions_and_ratings.sql` — `match_predictions`, `player_ratings` (read-own RLS; validated writes via `src/app/actions/predictions.ts` with service role)
-13. `chat_schema.sql` — legacy unused tables (`conversations`, `messages`), retained only for schema history
+13. `013_ai_model_settings.sql` — `ai_model_settings` runtime model chains per slot (`digest`, `translate`, `site_articles`, service-role only)
+14. `chat_schema.sql` — legacy unused tables (`conversations`, `messages`), retained only for schema history
 
 ## Cloudflare Workers
 

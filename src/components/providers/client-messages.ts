@@ -16,9 +16,11 @@ import type { AbstractIntlMessages } from "next-intl";
  */
 export const CLIENT_MESSAGE_NAMESPACES = [
   "About.support",
+  "Assistant",
   "Auth.errors",
   "Auth.login",
   "Auth.register",
+  "Chat.box",
   "Common",
   "Fixtures.calendar",
   "Fixtures.detail.empty",

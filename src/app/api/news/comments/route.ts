@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { moderateMessageContent } from "@/lib/community/moderation";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { checkRateLimit, getClientIP } from "@/lib/rate-limit";
 import { isKnownNewsSourceUrl } from "@/lib/news-config";
@@ -97,9 +98,17 @@ export async function POST(req: NextRequest) {
     }
     const cleanReplyTo = typeof replyToName === "string" ? replyToName.trim() : "";
 
-    const trimmed = content.trim();
-    if (trimmed.length === 0 || trimmed.length > 1000) {
-      return NextResponse.json({ error: "Content must be 1-1000 characters" }, { status: 400 });
+    const mod = moderateMessageContent(content, { allowLinks: false, minLen: 1, maxLen: 1000 });
+    if (!mod.ok) {
+      if (mod.reason === "invalid_length") {
+        return NextResponse.json({ error: "Content must be 1-1000 characters" }, { status: 400 });
+      }
+      return NextResponse.json({ error: mod.reason }, { status: 400 });
+    }
+    const trimmed = mod.text;
+
+    if (!checkRateLimit(`comment:cd:${user.id}`, 2, 6_000).allowed) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
     }
 
     if (parentId) {

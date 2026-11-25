@@ -105,7 +105,7 @@ const PRESET_CARDS: Record<
     { slug: "fixtures", accent: "red" },
     { slug: "standings", accent: "gold" },
     { slug: "injuries", accent: "red" },
-    { slug: "profile", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
   ],
   fromFixtureDetail: [
     { slug: "standings", accent: "gold" },

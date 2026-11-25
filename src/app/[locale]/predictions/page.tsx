@@ -1,7 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Trophy } from "lucide-react";
 import type { LocaleParams } from "@/i18n/routing";
-import { Link } from "@/i18n/navigation";
 import { getCachedFixtures } from "@/lib/football/cached-fixtures";
 import { getMatchResult } from "@/lib/types/football";
 import { getPredictionLeaderboard, type LeaderboardRow } from "@/lib/fan-predictions/leaderboard";
@@ -10,7 +9,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { displayTeamName } from "@/components/fixtures/team-name";
-import { LocalMatchDay, LocalMatchTime } from "@/components/ui/local-time";
+import { FanPrediction } from "@/components/fixtures/fan-prediction";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
@@ -113,25 +112,9 @@ export default async function PredictionsPage({ params }: LocaleParams) {
           ]}
         />
 
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-8">
           {next && (
-            <Link
-              href={`/fixtures/${next.fixture.id}#predict-title`}
-              className="surface-interactive mb-8 flex items-center justify-between gap-4 p-4 sm:p-5"
-            >
-              <span className="min-w-0">
-                <span className="block text-sm text-stadium-muted">{t("nextLabel")}</span>
-                <span className="mt-0.5 block truncate font-semibold text-white">
-                  {displayTeamName(next.teams.home.name)} vs {displayTeamName(next.teams.away.name)}
-                </span>
-                <span className="mt-0.5 block text-sm tabular-nums text-stadium-muted">
-                  <LocalMatchDay iso={next.fixture.date} locale={uiLocale} /> · <LocalMatchTime iso={next.fixture.date} locale={uiLocale} />
-                </span>
-              </span>
-              <span className="inline-flex min-h-11 shrink-0 items-center bg-lfc-red px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white">
-                {t("predictNow")}
-              </span>
-            </Link>
+            <FanPrediction fixture={next} hideLeaderboardLink showMatchMeta className="mt-0" />
           )}
 
           <section aria-labelledby="leaderboard-title">

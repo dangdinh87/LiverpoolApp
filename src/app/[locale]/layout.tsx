@@ -15,6 +15,7 @@ import { Footer } from "@/components/layout/footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { GlobalToast } from "@/components/ui/toast-notification";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
+import { AssistantFab } from "@/components/assistant/assistant-fab";
 import { pickClientMessages } from "@/components/providers/client-messages";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
@@ -157,6 +158,7 @@ export default async function RootLayout({
               {/* After the footer on purpose: keyboard order stays header, content, footer, bar. */}
               <BottomNav />
               <GlobalToast />
+              <AssistantFab />
               <ScrollToTop />
             </NextIntlClientProvider>
           </QueryProvider>

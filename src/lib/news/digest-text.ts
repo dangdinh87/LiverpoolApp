@@ -1,4 +1,5 @@
 import { BRAND } from "@/lib/brand";
+import { stripForeignScript } from "@/lib/ai/strip-foreign-script";
 import type { DigestSection, DigestSeoArticle } from "./digest";
 
 /**
@@ -82,7 +83,9 @@ export function fixBrandName(text: string): string {
 
 /** Rows stored before a field existed may lack it: pass anything that is not text through. */
 const fix = <V>(value: V): V =>
-  (typeof value === "string" ? fixBrandName(fixJoinedWords(value)) : value) as V;
+  (typeof value === "string"
+    ? stripForeignScript(fixBrandName(fixJoinedWords(value)))
+    : value) as V;
 const mapAll = <V>(items: V[] | undefined | null, fn: (item: V) => V): V[] =>
   (Array.isArray(items) ? items.map(fn) : items) as V[];
 

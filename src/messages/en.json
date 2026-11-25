@@ -52,6 +52,7 @@
       "quick": "Quick navigation",
       "legal": "Legal",
       "analysis": "Analysis",
+      "chat": "Chat",
       "injuries": "Injuries",
       "transfers": "Transfers"
     },
@@ -1519,6 +1520,9 @@
     "update": "Update prediction",
     "saved": "Saved",
     "signIn": "Sign in to predict",
+    "namePlaceholder": "Display name (optional)",
+    "nameHint": "Shown on the season leaderboard.",
+    "chatLink": "Join live chat",
     "rule": "3 points for the exact scoreline, 1 point for the right outcome. Open until kick-off.",
     "yourPick": "Your pick: {home}–{away}",
     "closedNoPick": "Predictions closed at kick-off.",
@@ -1531,6 +1535,8 @@
       "signIn": "Please sign in first.",
       "closed": "Predictions for this match have closed.",
       "invalid": "Enter a valid scoreline.",
+      "profanity": "Display name contains restricted language. Please choose another name.",
+      "rateLimited": "Too many updates in a short window. Please wait a moment.",
       "unavailable": "Unable to save prediction right now. Please try again shortly."
     },
     "ratings": {
@@ -1648,6 +1654,7 @@
       "news": "News",
       "digest": "Daily Briefing",
       "analysis": "Analysis",
+      "chat": "Live Chat",
       "about": "About",
       "legal": "Legal",
       "profile": "Profile"
@@ -1718,6 +1725,11 @@
         "desc": "Post-match reviews, pre-match previews and tactical breakdowns from Anfield.",
         "badge": "Tactics"
       },
+      "chat": {
+        "title": "Supporter Live Chat",
+        "desc": "Real-time matchday chat room for Liverpool supporters, no sign-in needed.",
+        "badge": "Live"
+      },
       "about": {
         "title": "About Anfield Daily",
         "desc": "How our editorial pipeline gathers, verifies and translates Liverpool coverage.",
@@ -1764,6 +1776,101 @@
       "europeanCups": "European Cups",
       "savedArticles": "Saved Articles",
       "predictionPoints": "Prediction Points"
+    }
+  },
+  "Assistant": {
+    "fabAria": "Open Anfield Daily assistant",
+    "title": "Anfield Daily",
+    "tabAi": "AI Assistant",
+    "tabChat": "Live Chat",
+    "openChat": "Open full chat room",
+    "newChat": "New conversation",
+    "newChatConfirm": "Start a new conversation and clear the current messages?",
+    "cancel": "Cancel",
+    "confirmNew": "Start new",
+    "expand": "Expand panel",
+    "collapse": "Compact panel",
+    "close": "Close",
+    "welcome": "Look up fixtures, standings, squad profiles, injuries, or today's news briefing.",
+    "spoilerNotice": "Spoiler-free mode is active — recent scores stay hidden unless you ask.",
+    "placeholder": "Ask about fixtures, standings, players...",
+    "send": "Send",
+    "stop": "Stop",
+    "scrollBottom": "Jump to latest",
+    "chips": {
+      "nextMatch": "When is Liverpool's next match?",
+      "standings": "Where are Liverpool in the Premier League table?",
+      "briefing": "Summarise today's Liverpool news briefing",
+      "injuries": "Who is currently injured or doubtful?"
+    },
+    "tools": {
+      "getFixtures": "Checking fixtures...",
+      "getStandings": "Checking standings...",
+      "findPlayer": "Looking up player profile...",
+      "getLatestNews": "Reading latest news...",
+      "getInjuries": "Checking injury list...",
+      "navigate": "Preparing link...",
+      "default": "Looking up live data..."
+    },
+    "errors": {
+      "tooManyRequests": "Rate limit reached. Wait a minute before sending another question.",
+      "conversationTooLong": "This thread reached its limit. Start a new conversation to continue.",
+      "inputTooLong": "Your message is too long. Trim it to a shorter question.",
+      "invalidPrompt": "Enter a valid question between 2 and 600 characters.",
+      "unavailable": "Assistant is temporarily unavailable.",
+      "network": "Could not reach the assistant. Please try again."
+    }
+  },
+  "Chat": {
+    "metadata": {
+      "title": "Supporter Live Chat",
+      "description": "Real-time Liverpool supporter chat room for matchday talk, line-ups, transfers and tactics without requiring sign-in."
+    },
+    "hero": {
+      "eyebrow": "Community room",
+      "title": "Supporter Live Chat",
+      "description": "Chat live on matchday line-ups, transfers and tactics with fellow Liverpool supporters. Post straight away as a guest or signed-in member."
+    },
+    "box": {
+      "chatTitle": "Shared Live Chat",
+      "chatSubtitle": "Live chat for all supporters",
+      "onlineCount": "{count} online",
+      "liveLabel": "Live sync",
+      "refresh": "Refresh messages",
+      "openChatRoom": "Full room",
+      "predictLink": "Predict score",
+      "namePlaceholder": "Display name (optional)",
+      "setName": "Set name",
+      "doneName": "Done",
+      "clearName": "Clear display name",
+      "chatPlaceholder": "Message everyone...",
+      "send": "Send",
+      "guestHint": "Enter sends, Shift+Enter adds a new line. Max 300 chars.",
+      "charCount": "{n}/300",
+      "memberBadge": "Member",
+      "reply": "Reply",
+      "replyingTo": "Replying to {name}",
+      "cancelReply": "Cancel reply",
+      "delete": "Delete message",
+      "deleteCancel": "Cancel",
+      "deleteAction": "Delete",
+      "chatEmpty": "No messages yet. Say hello before kick-off.",
+      "scrollBottom": "Jump to latest messages",
+      "justNow": "just now",
+      "minutesAgo": "{n}m ago",
+      "hoursAgo": "{n}h ago",
+      "daysAgo": "{n}d ago",
+      "errors": {
+        "tooShort": "Write at least 2 characters before sending.",
+        "duplicate": "You just sent that exact message.",
+        "rateLimited": "Slow down slightly before sending again.",
+        "profanity": "Please keep the chat respectful.",
+        "badName": "Display name contains restricted words.",
+        "spam": "Message blocked by the anti-spam filter.",
+        "cooldown": "Sending too fast. Wait a few seconds.",
+        "submitFailed": "Unable to send message right now.",
+        "deleteFailed": "Unable to delete message right now."
+      }
     }
   }
 }

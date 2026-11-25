@@ -320,11 +320,20 @@ html {
   to { opacity: 0; }
 }
 
-/* Keyboard focus is always visible, never on mouse click. */
-:focus-visible {
-  outline: 2px solid var(--color-lfc-red-text);
-  outline-offset: 2px;
-  border-radius: 2px;
+@layer base {
+  /* Keyboard focus is always visible on interactive controls, never on mouse click. */
+  :where(a, button, summary, [role="button"], [tabindex]):not(input, textarea, select):focus-visible {
+    outline: 2px solid var(--color-lfc-red-text);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Text inputs use focus:border-* / focus-within:ring-*; keeping this in @layer base
+     ensures focus:outline-none in @layer utilities overrides it cleanly. */
+  :where(input, textarea, select):focus-visible {
+    outline: 1px solid var(--color-lfc-red);
+    outline-offset: 0;
+  }
 }
 
 ::selection {
@@ -343,6 +352,12 @@ html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-hide {
 }
 html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
   display: revert !important;
+}
+
+/* Hide ScrollToTop while the floating assistant panel is open so it never overlaps the panel footer. */
+html[data-assistant-open] .scroll-to-top-btn {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Respect users who ask for less motion: stop decorative loops and
@@ -514,4 +529,39 @@ html[data-spoiler-free]:not([data-spoiler-reveal]) .spoiler-show {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+@keyframes assistant-dot-wave {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0) scale(0.85);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2.5px) scale(1);
+  }
+}
+
+@keyframes assistant-ping {
+  0% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  75%, 100% {
+    opacity: 0;
+    transform: scale(1.75);
+  }
+}
+
+.assistant-dot {
+  animation: assistant-dot-wave 1.15s ease-in-out infinite;
+}
+.assistant-dot-2 {
+  animation-delay: 0.16s;
+}
+.assistant-dot-3 {
+  animation-delay: 0.32s;
+}
+.assistant-ping {
+  animation: assistant-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
 }

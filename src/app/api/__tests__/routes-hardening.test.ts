@@ -5,6 +5,21 @@ import { escapeIlikePattern } from "@/lib/gallery/queries";
 let mockUser: { id: string; email: string } | null = { id: "u1", email: "nguyendangdinh47@gmail.com" };
 let throwOnSupabase = false;
 let throwOnServiceWrite = false;
+const mockCookieJar = new Map<string, string>();
+
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(async () => ({
+    getAll: () => [...mockCookieJar.entries()].map(([name, value]) => ({ name, value })),
+    get: (name: string) => {
+      const value = mockCookieJar.get(name);
+      return value !== undefined ? { name, value } : undefined;
+    },
+    set: (name: string, value: string) => {
+      mockCookieJar.set(name, value);
+    },
+  })),
+  headers: vi.fn(async () => new Headers({ "cf-connecting-ip": "203.0.113.10" })),
+}));
 
 vi.mock("next/cache", () => ({
   revalidateTag: vi.fn(),
@@ -96,6 +111,7 @@ beforeEach(() => {
   mockUser = { id: "u1", email: "nguyendangdinh47@gmail.com" };
   throwOnSupabase = false;
   throwOnServiceWrite = false;
+  mockCookieJar.clear();
   vi.stubEnv("VIETAPI_KEY", "test-vietapi-key");
 });
 
@@ -213,13 +229,18 @@ describe("Server Actions runtime input & exception hardening", () => {
 
     throwOnSupabase = true;
     expect(await savePrediction(100, 2, 1)).toEqual({ ok: false, error: "unavailable" });
+    expect(await saveRatings(100, { Salah: 8 })).toEqual({ ok: false, error: "unavailable" });
 
     throwOnSupabase = false;
     throwOnServiceWrite = true;
     expect(await savePrediction(100, 2, 1)).toEqual({ ok: false, error: "unavailable" });
 
+    // Guests can submit predictions without signing in (cookie-backed actor),
+    // while post-match player ratings still require sign-in.
     throwOnServiceWrite = false;
     mockUser = null;
-    expect(await savePrediction(100, 2, 1)).toEqual({ ok: false, error: "signIn" });
+    expect(await savePrediction(100, 2, 1, "Kopite")).toEqual({ ok: true });
+    expect(mockCookieJar.has("ad_guest_token")).toBe(true);
+    expect(await saveRatings(100, { Salah: 8 })).toEqual({ ok: false, error: "signIn" });
   });
 });

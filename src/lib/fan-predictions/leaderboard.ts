@@ -3,10 +3,11 @@ import { unstable_cache } from "next/cache";
 
 /**
  * Busted by the write actions in app/actions/predictions.ts. Without it a
- * reader saw their own prediction only after the 10-minute window below, which
+ * reader saw their own prediction only after the cache window below, which
  * reads as the vote not having registered.
  */
 export const FAN_PREDICTIONS_CACHE_TAG = "fan-predictions";
+import { readGuestPredictionsForFixtures, type MergedPredictionRow } from "@/lib/fan-predictions/guest-store";
 import { getFixtures } from "@/lib/football";
 import { getServiceClient } from "@/lib/news/supabase-service";
 import { EXACT_POINTS, predictionPoints } from "./scoring";
@@ -21,9 +22,58 @@ export interface LeaderboardRow {
 
 const FINISHED = new Set(["FT", "AET", "PEN"]);
 
+async function fetchPredictionRows(fixtureIds: number[]): Promise<MergedPredictionRow[]> {
+  const db = getServiceClient();
+  const [{ data, error }, guestRows] = await Promise.all([
+    db
+      .from("match_predictions")
+      .select("user_id, fixture_id, home_goals, away_goals, author_name")
+      .in("fixture_id", fixtureIds),
+    readGuestPredictionsForFixtures(fixtureIds),
+  ]);
+
+  let primaryRows: MergedPredictionRow[] = [];
+  if (error) {
+    // Pre-migration 014 schema may not have `author_name`.
+    const missingAuthorName =
+      error.code === "42703" ||
+      error.code === "PGRST204" ||
+      (typeof error.message === "string" && error.message.includes("author_name"));
+    if (!missingAuthorName) throw error;
+
+    const fallback = await db
+      .from("match_predictions")
+      .select("user_id, fixture_id, home_goals, away_goals")
+      .in("fixture_id", fixtureIds);
+    if (fallback.error) throw fallback.error;
+    primaryRows = (fallback.data ?? []).map((r) => ({
+      ...r,
+      author_name: null,
+    }));
+  } else {
+    primaryRows = (data ?? []).map((r) => ({
+      user_id: r.user_id,
+      fixture_id: r.fixture_id,
+      home_goals: r.home_goals,
+      away_goals: r.away_goals,
+      author_name: (r as { author_name?: string | null }).author_name ?? null,
+    }));
+  }
+
+  // Merge by (user_id, fixture_id); primary match_predictions wins on collision.
+  const merged = new Map<string, MergedPredictionRow>();
+  for (const row of guestRows) {
+    merged.set(`${row.user_id}:${row.fixture_id}`, row);
+  }
+  for (const row of primaryRows) {
+    merged.set(`${row.user_id}:${row.fixture_id}`, row);
+  }
+  return [...merged.values()];
+}
+
 /**
  * This season's prediction table: points over finished matches, ties broken
- * by exact scores and then by fewer matches played. Cached for 10 minutes; a
+ * by exact scores and then by fewer matches played. Cached for 1 hour; a
  * database error throws (and so is not cached) for the page to report.
  */
 export const getPredictionLeaderboard = unstable_cache(
@@ -36,15 +86,12 @@ export const getPredictionLeaderboard = unstable_cache(
     }
     if (results.size === 0) return [];
 
+    const rows = await fetchPredictionRows([...results.keys()]);
     const db = getServiceClient();
-    const { data, error } = await db
-      .from("match_predictions")
-      .select("user_id, fixture_id, home_goals, away_goals")
-      .in("fixture_id", [...results.keys()]);
-    if (error) throw error;
 
     const totals = new Map<string, { points: number; exact: number; played: number }>();
-    for (const row of data ?? []) {
+    const authorNames = new Map<string, string>();
+    for (const row of rows) {
       const result = results.get(row.fixture_id);
       if (!result) continue;
       const pts = predictionPoints({ home: row.home_goals, away: row.away_goals }, result);
@@ -53,6 +100,9 @@ export const getPredictionLeaderboard = unstable_cache(
       t.exact += pts === EXACT_POINTS ? 1 : 0;
       t.played += 1;
       totals.set(row.user_id, t);
+      if (row.author_name?.trim()) {
+        authorNames.set(row.user_id, row.author_name.trim());
+      }
     }
 
     const top = [...totals.entries()]
@@ -66,8 +116,12 @@ export const getPredictionLeaderboard = unstable_cache(
       .in("user_id", top.map(([id]) => id));
     const names = new Map((profiles ?? []).map((p) => [p.user_id, p.username as string | null]));
 
-    // No email or full id on a public page: a username, or "Fan" plus four characters of the id.
-    return top.map(([id, t], i) => ({ rank: i + 1, name: names.get(id)?.trim() || `Fan ${id.slice(0, 4).toUpperCase()}`, ...t }));
+    // No email or full id on a public page: profile username, guest nickname, or "Fan XXXX".
+    return top.map(([id, t], i) => ({
+      rank: i + 1,
+      name: names.get(id)?.trim() || authorNames.get(id) || `Fan ${id.slice(0, 4).toUpperCase()}`,
+      ...t,
+    }));
   },
   ["prediction-leaderboard-v1"],
   { revalidate: 3600, tags: [FAN_PREDICTIONS_CACHE_TAG] },

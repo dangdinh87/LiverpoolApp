@@ -1,7 +1,11 @@
 import "server-only";
 import { generateText } from "ai";
-import { vietapi } from "@/lib/ai/vietapi";
+import { getDefaultSlotModels } from "@/lib/ai/ai-model-slots";
+import { getModelChain } from "@/lib/ai/model-settings";
 import { parseModelJson } from "@/lib/ai/parse-model-json";
+import { resolveModelAttempts } from "@/lib/ai/providers";
+import { hasForeignScript } from "@/lib/ai/strip-foreign-script";
+import type { ChatModel } from "@/lib/ai/vietapi";
 import { SITE_ARTICLE_VOICE, SITE_ARTICLE_VOICE_VI } from "@/lib/prompts/site-article-voice";
 import { validateDraft } from "./validate-draft";
 import { tooSimilar } from "./similarity";
@@ -16,9 +20,6 @@ import type { ArticleFacts, SiteArticleContent, SiteArticleKind } from "./types"
  * fails is stored rather than published. Nothing here trusts the model's
  * output, because there is no editor downstream who would catch it.
  */
-
-/** Tried in order; `pro` first for natural journalism prose, `flash` as fallback. */
-const MODELS = ["deepseek-v4-pro", "deepseek-v4-flash"] as const;
 
 /** One generation must not outlive the cron route's budget. */
 const ATTEMPT_TIMEOUT_MS = 55_000;
@@ -56,12 +57,13 @@ function buildPrompt(facts: ArticleFacts, locale: "en" | "vi"): string {
 
 /** Ask one model for a draft, bounded in time. */
 async function draftFrom(
-  model: string,
+  model: ChatModel,
   facts: ArticleFacts,
   locale: "en" | "vi",
 ): Promise<SiteArticleContent> {
   const result = await generateText({
-    model: vietapi(model),
+    model,
+    maxRetries: 0,
     prompt: buildPrompt(facts, locale),
     abortSignal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
   });
@@ -73,13 +75,24 @@ async function draftFrom(
   ) {
     throw new Error("model reply was JSON but not an article");
   }
-  return {
+  const normalized: SiteArticleContent = {
     title: draft.title,
     excerpt: draft.excerpt,
     metaTitle: draft.metaTitle ?? draft.title,
     metaDescription: draft.metaDescription ?? draft.excerpt,
     sections: draft.sections.filter((s) => s && typeof s.heading === "string" && typeof s.body === "string"),
   };
+  const allProse = [
+    normalized.title,
+    normalized.excerpt,
+    normalized.metaTitle,
+    normalized.metaDescription,
+    ...normalized.sections.flatMap((s) => [s.heading, s.body]),
+  ].join("\n");
+  if (hasForeignScript(allProse)) {
+    throw new Error("model output contained unexpected foreign script");
+  }
+  return normalized;
 }
 
 /** The prose of a draft, for the repetition check. */
@@ -103,24 +116,28 @@ export async function generateSiteArticle(args: {
   const previous = await recentBodies(kind);
   const problems: string[] = [];
 
-  for (const model of MODELS) {
+  const chain = await getModelChain("site_articles", getDefaultSlotModels("site_articles"));
+  const attempts = resolveModelAttempts(chain, { feature: "site_articles" });
+
+  for (const attempt of attempts) {
+    const label = `${attempt.modelId}${attempt.viaGateway ? " (gw)" : ""}`;
     let draft: SiteArticleContent;
     try {
-      draft = await draftFrom(model, facts, "en");
+      draft = await draftFrom(attempt.model, facts, "en");
     } catch (err) {
-      problems.push(`${model}: ${err instanceof Error ? err.message : String(err)}`);
+      problems.push(`${label}: ${err instanceof Error ? err.message : String(err)}`);
       continue;
     }
 
     const report = validateDraft(draft, facts);
     if (!report.ok) {
-      problems.push(`${model}: ${report.problems.join("; ")}`);
+      problems.push(`${label}: ${report.problems.join("; ")}`);
       continue;
     }
 
     const repeat = tooSimilar(bodyText(draft), previous);
     if (repeat) {
-      problems.push(`${model}: repeats a recent ${kind} (${repeat.score.toFixed(2)} overlap)`);
+      problems.push(`${label}: repeats a recent ${kind} (${repeat.score.toFixed(2)} overlap)`);
       continue;
     }
 
@@ -134,18 +151,18 @@ export async function generateSiteArticle(args: {
     // produced, for every article, until someone looked in the database.
     let contentVi: SiteArticleContent | null = null;
     try {
-      const vi = await draftFrom(model, facts, "vi");
+      const vi = await draftFrom(attempt.model, facts, "vi");
       const viReport = validateDraft(vi, facts);
       if (viReport.ok) contentVi = vi;
-      else problems.push(`${model} (vi): ${viReport.problems.join("; ")}`);
+      else problems.push(`${label} (vi): ${viReport.problems.join("; ")}`);
     } catch (err) {
-      problems.push(`${model} (vi): ${err instanceof Error ? err.message : String(err)}`);
+      problems.push(`${label} (vi): ${err instanceof Error ? err.message : String(err)}`);
     }
 
     const saved = await saveSiteArticle({
       slug, kind, fixtureId,
       contentEn: draft, contentVi, facts,
-      status: "published", model,
+      status: "published", model: attempt.modelId,
       // Kept on a published row too: this is where a missing Vietnamese
       // version explains itself.
       rejectReason: contentVi ? null : problems.join(" | ") || null,
@@ -153,10 +170,10 @@ export async function generateSiteArticle(args: {
     if (!saved) {
       return { ok: false, slug, reason: "failed to save published article" };
     }
-    return { ok: true, slug, model, vi: contentVi !== null };
+    return { ok: true, slug, model: attempt.modelId, vi: contentVi !== null };
   }
 
-  const reason = problems.join(" | ") || "no model produced a draft";
+  const reason = problems.join(" | ") || (attempts.length === 0 ? "no configured AI provider for site_articles" : "no model produced a draft");
   await saveSiteArticle({
     slug, kind, fixtureId,
     contentEn: null, contentVi: null, facts,

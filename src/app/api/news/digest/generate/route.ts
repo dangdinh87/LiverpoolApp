@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { revalidateLocalizedPath } from "@/i18n/revalidate";
-import { getEnv } from "@/lib/env";
+import { hasAnyAiProvider } from "@/lib/ai/providers";
 import {
   generateDailyDigest,
   getDigestDateKey,
@@ -15,9 +15,9 @@ export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async (req) => {
-  if (!getEnv("VIETAPI_KEY")) {
+  if (!hasAnyAiProvider()) {
     return NextResponse.json(
-      { error: "VIETAPI_KEY not configured" },
+      { error: "AI provider not configured" },
       { status: 503 }
     );
   }
