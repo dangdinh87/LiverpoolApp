@@ -29,6 +29,9 @@
  */
 export const SUPABASE_FETCH_TIMEOUT_MS = 3_000;
 
+/** Higher ceiling for cross-region CI static build workers (`next build`). */
+export const SUPABASE_BUILD_FETCH_TIMEOUT_MS = 15_000;
+
 /**
  * Ceiling for explicit user-initiated auth actions (sign-in, sign-up email
  * dispatch, OAuth/OTP callback verification, sign-out) where 3s is too tight.
@@ -37,6 +40,11 @@ export const SUPABASE_AUTH_TIMEOUT_MS = 12_000;
 
 /** How long to skip Supabase entirely after a connection-level failure. */
 export const SUPABASE_BREAKER_COOLDOWN_MS = 30_000;
+
+/** Short cooldown during static build so one transient burst does not poison ISR. */
+export const SUPABASE_BUILD_BREAKER_COOLDOWN_MS = 2_000;
+
+const BUILD_FAILURE_THRESHOLD = 3;
 
 /**
  * Statuses that mean "the origin/gateway never answered" rather than "the
@@ -55,10 +63,12 @@ function isOriginFailure(status: number): boolean {
 
 /** Timestamp until which requests short-circuit; 0 means the breaker is closed. */
 let breakerOpenUntil = 0;
+let consecutiveFailures = 0;
 
 /** Reset the breaker. Exported for tests. */
 export function resetSupabaseBreaker(): void {
   breakerOpenUntil = 0;
+  consecutiveFailures = 0;
 }
 
 /** Whether Supabase is currently being skipped. */
@@ -68,6 +78,13 @@ export function isSupabaseBreakerOpen(): boolean {
 
 function tripBreaker(cooldownMs: number): void {
   breakerOpenUntil = Date.now() + cooldownMs;
+}
+
+function recordFailure(isBuild: boolean, cooldownMs: number): void {
+  consecutiveFailures += 1;
+  if (!isBuild || consecutiveFailures >= BUILD_FAILURE_THRESHOLD) {
+    tripBreaker(cooldownMs);
+  }
 }
 
 /**
@@ -90,8 +107,8 @@ function asAbortError(message: string): DOMException {
  * request cancellation still works.
  */
 export function createSupabaseFetch(
-  timeoutMs: number = SUPABASE_FETCH_TIMEOUT_MS,
-  cooldownMs: number = SUPABASE_BREAKER_COOLDOWN_MS,
+  timeoutMs?: number,
+  cooldownMs?: number,
 ): typeof fetch {
   return async (input, init) => {
     if (isSupabaseBreakerOpen()) {
@@ -99,6 +116,12 @@ export function createSupabaseFetch(
         "Supabase unavailable: skipping request while the connection breaker is open",
       );
     }
+
+    const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+    const effectiveTimeoutMs =
+      timeoutMs ?? (isBuild ? SUPABASE_BUILD_FETCH_TIMEOUT_MS : SUPABASE_FETCH_TIMEOUT_MS);
+    const effectiveCooldownMs =
+      cooldownMs ?? (isBuild ? SUPABASE_BUILD_BREAKER_COOLDOWN_MS : SUPABASE_BREAKER_COOLDOWN_MS);
 
     const callerSignal = init?.signal;
     if (callerSignal?.aborted) {
@@ -130,7 +153,7 @@ export function createSupabaseFetch(
         );
         controller.abort(err);
         reject(err);
-      }, timeoutMs);
+      }, effectiveTimeoutMs);
     });
 
     let response: Response;
@@ -142,7 +165,7 @@ export function createSupabaseFetch(
       // A caller aborting its own request says nothing about Supabase's health.
       if (callerSignal?.aborted && !timedOut) throw err;
       // Only a timeout or transport failure indicates the origin is down.
-      tripBreaker(cooldownMs);
+      recordFailure(isBuild, effectiveCooldownMs);
       throw asAbortError(
         `Supabase request failed: ${err instanceof Error ? err.message : String(err)}`,
       );
@@ -152,7 +175,7 @@ export function createSupabaseFetch(
     }
 
     if (isOriginFailure(response.status)) {
-      tripBreaker(cooldownMs);
+      recordFailure(isBuild, effectiveCooldownMs);
     } else {
       // A real answer proves the origin is back.
       resetSupabaseBreaker();

@@ -62,12 +62,20 @@ jobs:
       - name: Smoke test
         run: |
           set -euo pipefail
-          for path in / /news /vi /fixtures /sitemap.xml; do
+          for path in / /news /vi /fixtures /predictions /sitemap.xml; do
             code=$(curl -sS -o /dev/null -w '%{http_code}' --retry 5 --retry-all-errors --retry-delay 5 \
               -A "Mozilla/5.0 (deploy smoke test)" "https://anfielddaily.com${path}")
             echo "${path} ${code}"
             [ "$code" = 200 ]
           done
+          if curl -sS -A "Mozilla/5.0 (deploy smoke test)" "https://anfielddaily.com/" | grep -q "Headlines temporarily unavailable"; then
+            echo "ERROR: EN homepage rendered fallback headlines placeholder"
+            exit 1
+          fi
+          if curl -sS -A "Mozilla/5.0 (deploy smoke test)" "https://anfielddaily.com/vi" | grep -q "Tin mới tạm thời gián đoạn"; then
+            echo "ERROR: VI homepage rendered fallback headlines placeholder"
+            exit 1
+          fi
 
       # Personal "deploy succeeded" ping (@DeployCFBot), same as cv-app.
       - name: Notify deploy

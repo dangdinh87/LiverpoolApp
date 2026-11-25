@@ -43,6 +43,18 @@ describe("GET /api/news/sync", () => {
     expect(revalidateLocalizedPath).toHaveBeenCalledWith("/news");
   });
 
+  it("supports ?revalidateOnly=1 without running syncPipeline", async () => {
+    const res = await (GET as unknown as (r: unknown) => Promise<Response>)({
+      nextUrl: { searchParams: new URLSearchParams("revalidateOnly=1") },
+    });
+    expect(res.status).toBe(200);
+    expect(revalidateTag).toHaveBeenCalledWith("news", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("fan-predictions", "max");
+    expect(revalidateTag).toHaveBeenCalledWith("site-articles", "max");
+    expect(revalidateLocalizedPath).toHaveBeenCalledWith("/");
+    expect(revalidateLocalizedPath).toHaveBeenCalledWith("/predictions");
+  });
+
   it("re-renders the page of each live blog whose headline moved on (pages are ISR'd for an hour)", async () => {
     const url = "https://www.liverpoolecho.co.uk/sport/football/football-news/brentford-liverpool-live-updates-32661234";
     syncResult = { inserted: 0, upserted: 3, liveBlogsRefreshed: [url] };

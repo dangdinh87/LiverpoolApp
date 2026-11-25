@@ -6,11 +6,14 @@ import {
 } from "@/lib/supabase-fetch-with-timeout";
 
 const originalFetch = globalThis.fetch;
+const originalNextPhase = process.env.NEXT_PHASE;
 
 describe("createSupabaseFetch", () => {
   beforeEach(() => resetSupabaseBreaker());
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    if (originalNextPhase === undefined) delete process.env.NEXT_PHASE;
+    else process.env.NEXT_PHASE = originalNextPhase;
     vi.restoreAllMocks();
   });
 
@@ -134,6 +137,24 @@ describe("createSupabaseFetch", () => {
     });
     controller.abort();
     await expect(pending).rejects.toThrow();
+    expect(isSupabaseBreakerOpen()).toBe(false);
+  });
+
+  it("does not trip the breaker after a single transient failure during production build", async () => {
+    process.env.NEXT_PHASE = "phase-production-build";
+    let attempt = 0;
+    globalThis.fetch = vi.fn(async () => {
+      attempt += 1;
+      if (attempt === 1) throw new TypeError("transient build blip");
+      return new Response("ok", { status: 200 });
+    }) as typeof fetch;
+
+    const doFetch = createSupabaseFetch();
+    await expect(doFetch("https://example.test")).rejects.toThrow("transient build blip");
+    expect(isSupabaseBreakerOpen()).toBe(false);
+
+    const res = await doFetch("https://example.test");
+    expect(res.status).toBe(200);
     expect(isSupabaseBreakerOpen()).toBe(false);
   });
 });

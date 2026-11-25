@@ -10,6 +10,19 @@ export const dynamic = "force-dynamic";
 
 export const GET = withCronAuth(async (req) => {
   try {
+    if (req.nextUrl.searchParams.get("revalidateOnly") === "1") {
+      revalidateTag("news", "max");
+      revalidateTag("fan-predictions", "max");
+      revalidateTag("site-articles", "max");
+      revalidateLocalizedPath("/");
+      revalidateLocalizedPath("/news");
+      revalidateLocalizedPath("/predictions");
+      return NextResponse.json(
+        { ok: true, revalidated: true },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
+
     const deep = req.nextUrl.searchParams.get("deep") === "1";
     const result = await syncPipeline({
       fetchLimit: deep ? 300 : undefined,
@@ -28,7 +41,11 @@ export const GET = withCronAuth(async (req) => {
     // `upserted` also counts rows a feed merely re-sent, which is nearly every
     // run; re-rendering on that wrote ~3 ISR entries for each one read.
     const liveBlogsRefreshed = result.liveBlogsRefreshed ?? [];
-    if (result.inserted > 0 || liveBlogsRefreshed.length > 0) {
+    if (
+      req.nextUrl.searchParams.get("revalidate") === "1" ||
+      result.inserted > 0 ||
+      liveBlogsRefreshed.length > 0
+    ) {
       // Order matters. revalidatePath only drops the rendered HTML; the
       // unstable_cache entries behind it keep their own TTL. Without busting
       // the tag first, the re-render this triggers reads the *previous* entry
