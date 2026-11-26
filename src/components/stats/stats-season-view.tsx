@@ -190,9 +190,20 @@ export async function StatsSeasonView({
         }
       />
 
-      <div className="page-container pb-16">
-        <MatchCentreNav active="stats" season={isCurrentSeason ? undefined : selectedSeason} />
-        <div className="space-y-10 pt-6 sm:space-y-14 sm:pt-10">
+      <MatchCentreNav active="stats" season={isCurrentSeason ? undefined : selectedSeason} />
+
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        <div className="mb-6 flex flex-wrap items-center gap-2 lg:hidden">
+          <ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonPicker")} />
+          <Link
+            href={seasonOverviewHref}
+            className="inline-flex min-h-9 items-center gap-1.5 border border-stadium-border bg-stadium-surface/90 px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-lfc-gold transition-colors hover:border-lfc-gold/50 hover:text-white"
+          >
+            {tHub("nav.season")} · {seasonLabel}
+            <ArrowRight className="size-3.5" aria-hidden />
+          </Link>
+        </div>
+        <div className="space-y-10 sm:space-y-14">
           {!hasData && fixtures.length === 0 && (
             <EmptyState
               icon={<BarChart3 className="size-9" aria-hidden />}

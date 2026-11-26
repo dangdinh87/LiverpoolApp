@@ -1,33 +1,15 @@
+import { PageHeroSkeleton } from "@/components/ui/page-hero";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Mirrors PageHero (season chips) + the match-centre tab bar + overview tiles + two chart cards. */
+/** Mirrors PageHero + MatchCentreNav + overview tiles + two chart cards. */
 export default function StatsLoading() {
   return (
     <div className="min-h-screen" aria-busy="true">
-      <div className="border-b border-[var(--line)]">
-        <div className="page-container pb-4 pt-[calc(var(--header-h)+0.75rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <Skeleton className="mb-2 h-3.5 w-28" />
-              <Skeleton className="h-9 w-56 sm:h-16" />
-              <Skeleton className="mt-3 h-4 w-72 max-w-full" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-11 w-28" />
-              <Skeleton className="h-11 w-28" />
-              <Skeleton className="h-11 w-28" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="page-container pb-16">
-        <div className="-mx-4 flex h-[45px] items-center gap-2 border-b border-[var(--line)] px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-          <Skeleton className="h-6 flex-1 sm:w-24 sm:flex-none" />
-          <Skeleton className="h-6 flex-1 sm:w-24 sm:flex-none" />
-          <Skeleton className="h-6 flex-1 sm:w-24 sm:flex-none" />
-          <Skeleton className="h-6 flex-1 sm:w-24 sm:flex-none" />
-        </div>
-        <div className="space-y-10 pt-6 sm:space-y-14 sm:pt-10">
+      <PageHeroSkeleton image="/assets/lfc/stadium/anfield-champions-league.webp" />
+      <MatchCentreNav active="stats" />
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        <div className="space-y-10 sm:space-y-14">
           <section>
             <Skeleton className="mb-4 h-10 w-52 sm:mb-6" />
             <div className="surface space-y-3 p-4 sm:p-6">

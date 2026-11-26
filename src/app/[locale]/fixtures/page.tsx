@@ -61,6 +61,56 @@ export default async function FixturesPage({ params }: LocaleParams) {
   const lfcStanding = standings.find((s) => s.team.id === LFC_ID);
   const goalDiff = goalsFor - goalsAgainst;
 
+  const pulseStrip = fixtures.length > 0 && (
+    <DataPulseStrip
+      eyebrow={`${tHub("seasonPulse")} · ${seasonLabel}`}
+      className="mb-6"
+      items={[
+        {
+          label: tHub("metrics.record"),
+          value: `${wins}-${draws}-${losses}`,
+          sublabel: `${playedFixtures.length} ${tHub("metrics.played")}`,
+          href: "/season",
+          accent: "red",
+        },
+        {
+          label: tHub("metrics.goalsForAgainst"),
+          value: `${goalsFor} : ${goalsAgainst}`,
+          sublabel: `${goalDiff >= 0 ? "+" : ""}${goalDiff}`,
+          href: "/stats",
+          accent: "emerald",
+        },
+        {
+          label: tHub("metrics.plRank"),
+          value: lfcStanding ? `#${lfcStanding.rank}` : "—",
+          sublabel: lfcStanding
+            ? `${lfcStanding.points} · ${lfcStanding.goalsDiff >= 0 ? "+" : ""}${lfcStanding.goalsDiff} (${tHub("metrics.pointsGd")})`
+            : tHub("nav.standings"),
+          href: "/standings",
+          accent: "gold",
+        },
+        {
+          label: tHub("metrics.upcoming"),
+          value: upcomingCount,
+          sublabel: tHub("nav.predictions"),
+          href: "/predictions",
+          accent: "red",
+        },
+      ]}
+    />
+  );
+
+  const connectedGrid = (
+    <PresetConnectedGrid
+      preset="fromFixtures"
+      metaOverrides={{
+        standings: lfcStanding ? `#${lfcStanding.rank} · ${lfcStanding.points}` : undefined,
+        predictions: `${upcomingCount} ${tHub("metrics.upcoming")}`,
+      }}
+      className="mt-12"
+    />
+  );
+
   return (
     <div className="min-h-screen">
       <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "fixtures", path: "/fixtures" }])} />
@@ -72,55 +122,18 @@ export default async function FixturesPage({ params }: LocaleParams) {
         image="/assets/lfc/stadium/anfield-champions-league.webp"
       />
 
-      <div className="page-container pb-16">
-        {fixtures.length > 0 && (
-          <DataPulseStrip
-            eyebrow={`${tHub("seasonPulse")} · ${seasonLabel}`}
-            className="mt-4 mb-4"
-            items={[
-              {
-                label: tHub("metrics.record"),
-                value: `${wins}-${draws}-${losses}`,
-                sublabel: `${playedFixtures.length} ${tHub("metrics.played")}`,
-                href: "/season",
-                accent: "red",
-              },
-              {
-                label: tHub("metrics.goalsForAgainst"),
-                value: `${goalsFor} : ${goalsAgainst}`,
-                sublabel: `${goalDiff >= 0 ? "+" : ""}${goalDiff}`,
-                href: "/stats",
-                accent: "emerald",
-              },
-              {
-                label: tHub("metrics.plRank"),
-                value: lfcStanding ? `#${lfcStanding.rank}` : "—",
-                sublabel: lfcStanding
-                  ? `${lfcStanding.points} · ${lfcStanding.goalsDiff >= 0 ? "+" : ""}${lfcStanding.goalsDiff} (${tHub("metrics.pointsGd")})`
-                  : tHub("nav.standings"),
-                href: "/standings",
-                accent: "gold",
-              },
-              {
-                label: tHub("metrics.upcoming"),
-                value: upcomingCount,
-                sublabel: tHub("nav.predictions"),
-                href: "/predictions",
-                accent: "red",
-              },
-            ]}
-          />
-        )}
-
-        {fixtures.length > 0 ? (
-          <FixtureTimeline
-            fixtures={fixtures}
-            showArchiveLink
-          />
-        ) : (
-          <>
-            <MatchCentreNav active="fixtures" />
-            <div className="mt-3 flex justify-end">
+      {fixtures.length > 0 ? (
+        <FixtureTimeline
+          fixtures={fixtures}
+          showArchiveLink
+          belowNav={pulseStrip}
+          footer={connectedGrid}
+        />
+      ) : (
+        <>
+          <MatchCentreNav active="fixtures" />
+          <div className="page-container pb-20 pt-8 sm:pt-10">
+            <div className="flex justify-end">
               <SpoilerToggle />
             </div>
             <EmptyState
@@ -132,18 +145,10 @@ export default async function FixturesPage({ params }: LocaleParams) {
               actionHref="/news"
               actionLabel={t("outage.action")}
             />
-          </>
-        )}
-
-        <PresetConnectedGrid
-          preset="fromFixtures"
-          metaOverrides={{
-            standings: lfcStanding ? `#${lfcStanding.rank} · ${lfcStanding.points}` : undefined,
-            predictions: `${upcomingCount} ${tHub("metrics.upcoming")}`,
-          }}
-          className="mt-12"
-        />
-      </div>
+            {connectedGrid}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ import { DigestToc } from "@/components/news/digest-toc";
 import { NewsThumb } from "@/components/news/news-thumb";
 import { NewsBackLink } from "@/components/news/article-parts";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHero } from "@/components/ui/page-hero";
 import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { chunkSentences, cleanTitle, isHttpUrl, keepDatesTogether, leadSentences } from "@/components/news/news-text";
 import { defaultTimeZoneForLocale, formatMatchDate, formatMatchDayMonth } from "@/lib/format-match-date";
@@ -162,13 +163,20 @@ export default async function DigestPage({
   const prev = at >= 0 ? dates[at + 1]?.digest_date : dates.find((d) => d.digest_date < date)?.digest_date;
   const next = at > 0 ? dates[at - 1]?.digest_date : at < 0 ? [...dates].reverse().find((d) => d.digest_date > date)?.digest_date : undefined;
   const latest = dates[0]?.digest_date;
+  const digestDate = new Date(`${date}T00:00:00+07:00`);
 
   if (!digest) {
     return (
       <div className="min-h-screen">
-        <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
+        <PageHero
+          clubCrest
+          eyebrow={t("proBadge", { brand: BRAND.name })}
+          title={tHub("nav.digest")}
+          description={formatMatchDayMonth(digestDate, uiLocale, true)}
+        />
+        <SectionSubNav group="editorial" current="digest" />
+        <div className="page-container pb-16 pt-8 sm:pt-10">
           <NewsBackLink label={t("backToNews")} />
-          <SectionSubNav group="editorial" current="digest" className="mt-4" />
           <div className="mt-4">
             <EmptyState
               icon={<Newspaper className="size-10" aria-hidden />}
@@ -197,7 +205,6 @@ export default async function DigestPage({
   const displayTitle = cleanTitle(seoArticle?.title || digest.title);
   const displayDescription =
     seoArticle?.metaDescription || seoArticle?.excerpt || digest.summary.slice(0, 160);
-  const digestDate = new Date(`${date}T00:00:00+07:00`);
   // A short intro, not the whole summary: the items below carry the detail.
   const intro = leadSentences(seoArticle?.excerpt || digest.summary, 230);
   // Nodes, not strings: the time renders in the viewer's own zone rather than
@@ -254,34 +261,35 @@ export default async function DigestPage({
         }),
       ]} />
 
-      {/* ─── Masthead: the lead story's photo behind date, title and intro ─── */}
-      <header className="relative isolate">
-        {heroImage && (
-          <div className="absolute inset-x-0 top-0 -z-10 h-[min(78vh,640px)] overflow-hidden">
-            <NewsThumb src={heroImage.src} source={heroImage.source} sizes="100vw" priority />
-            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-stadium-bg via-stadium-bg/80 to-stadium-bg/30" />
-          </div>
-        )}
-        <div
-          className={
-            heroImage
-              ? "page-container flex min-h-[min(78vh,640px)] flex-col justify-end pb-8 pt-[calc(var(--header-h)+1rem)]"
-              : "page-container pb-2 pt-[calc(var(--header-h)+1rem)]"
-          }
-        >
-          <div className="mb-auto">
-            <NewsBackLink label={t("backToNews")} />
-          </div>
-          <div className="reveal max-w-4xl">
-            <div className="mb-4 mt-8 flex flex-wrap items-center gap-x-3 gap-y-2">
+      <PageHero
+        clubCrest
+        eyebrow={t("proBadge", { brand: BRAND.name })}
+        title={tHub("nav.digest")}
+        description={formatMatchDayMonth(digestDate, uiLocale, true)}
+      />
+
+      <SectionSubNav group="editorial" current="digest" />
+
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        {/* ─── Lead briefing banner: photo, headline, intro & metadata ─── */}
+        <div className="mb-8 border-b border-[var(--line)] pb-8 sm:mb-10 sm:pb-10">
+          {heroImage && (
+            <div className="relative mb-6 aspect-[16/9] max-h-[380px] w-full overflow-hidden border border-[var(--line)] bg-[var(--surface-2)]">
+              <NewsThumb src={heroImage.src} source={heroImage.source} sizes="(max-width: 1152px) 100vw, 1152px" priority />
+              <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-stadium-bg/85 via-stadium-bg/20 to-transparent" />
+            </div>
+          )}
+          <div className="max-w-4xl">
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <NewsBackLink label={t("backToNews")} />
               <SiteArticleBadge label={t("proBadge", { brand: BRAND.name })} />
               <span className="text-sm text-white/65">{formatMatchDayMonth(digestDate, uiLocale, true)}</span>
             </div>
-            <h1 className="text-balance font-serif text-[32px] font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-[3.5rem]">
+            <h2 className="text-balance font-serif text-[28px] font-semibold leading-[1.12] tracking-tight text-white sm:text-4xl lg:text-[2.75rem]">
               {keepDatesTogether(displayTitle)}
-            </h1>
-            {intro && <p className="mt-5 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>}
-            <p className="mt-4 text-sm text-stadium-muted">
+            </h2>
+            {intro && <p className="mt-4 max-w-[42rem] text-[17px] leading-[1.6] text-white/90 sm:text-xl">{intro}</p>}
+            <p className="mt-3 text-sm text-stadium-muted">
               {[sections.length > 0 ? t("storyCount", { count: sections.length }) : null, ...meta]
                 .filter(Boolean)
                 .map((part, i) => (
@@ -294,14 +302,10 @@ export default async function DigestPage({
             {heroImage && <p className="mt-1 text-xs text-white/50">{t("photoCredit", { source: heroImage.credit })}</p>}
           </div>
         </div>
-      </header>
-
-      <div className="page-container pb-20">
-        <SectionSubNav group="editorial" current="digest" className="mt-6" />
         {sections.length > 0 ? (
-          <div className="mt-6 lg:mt-10 lg:grid lg:grid-cols-[15rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
+          <div className="lg:mt-4 lg:grid lg:grid-cols-[15rem_minmax(0,42rem)] lg:justify-center lg:gap-16">
             <aside className="hidden lg:block">
-              <div className="sticky top-[calc(var(--header-h)+2rem)]">
+              <div className="sticky top-[calc(var(--header-h)+4.25rem)]">
                 <DigestToc items={tocItems} label={t("inThisBriefing")} />
               </div>
             </aside>

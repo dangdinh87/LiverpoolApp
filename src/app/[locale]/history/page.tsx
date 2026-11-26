@@ -6,7 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { LocaleParams } from "@/i18n/routing";
 import { getSquadPlayers } from "@/lib/squad-data";
-import { PresetConnectedGrid } from "@/components/ui/hub-links";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import trophiesEn from "@/data/trophies.json";
 import trophiesVi from "@/data/trophies.vi.json";
 import historyEventsEn from "@/data/history.json";
@@ -43,7 +43,7 @@ function Section({ id, children, deferred }: { id: string; children: ReactNode; 
   return (
     <section
       id={id}
-      className={`scroll-mt-[calc(var(--header-h)+3.5rem)] py-10 sm:py-14 ${deferred ? "defer-render" : ""}`}
+      className={`scroll-mt-[calc(var(--header-h)+4rem)] py-10 sm:py-14 ${deferred ? "defer-render" : ""}`}
     >
       {children}
     </section>
@@ -91,9 +91,6 @@ export default async function HistoryPage({ params }: LocaleParams) {
   const clubInfo = isVi ? clubInfoVi : clubInfoEn;
   const legendPhotos = new Map(legends.flatMap((l) => (l.image ? [[l.name, l.image] as const] : [])));
 
-  const founded = clubInfo.founded.match(/\d{4}/)?.[0] ?? "1892";
-  const league = trophies[0];
-  const europe = trophies[1];
   const numberFmt = new Intl.NumberFormat(isVi ? "vi-VN" : "en-GB");
   const [recordNumber, ...recordRest] = String(clubInfo.stadium.recordAttendance).split(" ");
 
@@ -137,20 +134,13 @@ export default async function HistoryPage({ params }: LocaleParams) {
         title="Liverpool FC"
         description={t("hero.tagline")}
         image="/assets/lfc/stadium/anfield-champions-league.webp"
-        actions={
-          <dl className="grid grid-cols-4 gap-4 sm:gap-8">
-            <Stat value={founded} label={t("facts.founded")} />
-            <Stat value={String(league.count)} label={league.name} />
-            <Stat value={String(europe.count)} label={europe.name} />
-            <Stat value={numberFmt.format(clubInfo.stadium.capacity)} label={t("stadium.capacity")} />
-          </dl>
-        }
       />
 
-      <HistoryNav items={navItems} ariaLabel={t("nav.label")} />
+      <SectionSubNav group="heritage" current="history" />
 
-      <div className="page-container">
-        <div className="flex flex-wrap items-center gap-2 pt-5 sm:pt-6">
+      <div className="page-container pt-8 sm:pt-10">
+        <HistoryNav items={navItems} ariaLabel={t("nav.label")} />
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/gallery?category=legends"
             className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"

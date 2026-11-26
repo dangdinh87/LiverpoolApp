@@ -20,7 +20,7 @@ import {
 import { MomoModal } from "./momo-modal";
 import { PageHero } from "@/components/ui/page-hero";
 import { SectionHeader } from "@/components/ui/section-header";
-import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
+import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { getSquadPlayers } from "@/lib/squad-data";
 import { makePageMeta } from "@/lib/seo";
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
@@ -68,9 +68,11 @@ export default async function AboutPage({ params }: LocaleParams) {
       <JsonLd
         data={await buildLocalizedBreadcrumbJsonLd(locale, [{ nav: "about", path: "/about" }])}
       />
-      <PageHero eyebrow={t("label")} title={t("title")} description={t("tagline")} />
+      <PageHero clubCrest eyebrow={t("label")} title={t("title")} description={t("tagline")} />
 
-      <div className="page-container pb-20 pt-8 sm:pt-12">
+      <SectionSubNav group="heritage" current="about" />
+
+      <div className="page-container pb-20 pt-8 sm:pt-10">
         <DataPulseStrip
           eyebrow={tHub("seasonPulse")}
           className="mb-10 sm:mb-12"
@@ -154,7 +156,7 @@ export default async function AboutPage({ params }: LocaleParams) {
           </div>
 
           {/* Contact + support: sticky beside the text on wide screens, last on phones */}
-          <aside className="mt-12 lg:sticky lg:top-[calc(var(--header-h)+1.5rem)] lg:mt-0 lg:self-start">
+          <aside className="mt-12 lg:sticky lg:top-[calc(var(--header-h)+4.25rem)] lg:mt-0 lg:self-start">
             <div className="surface border-t-2 border-t-lfc-red p-5 sm:p-6">
               <section>
                 <SectionHeader className="mb-2 sm:mb-2" eyebrow={t("creator.title")} title={t("contact.title")} />

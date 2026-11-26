@@ -94,12 +94,11 @@ export default async function StandingsPage({ params }: LocaleParams) {
         image="/assets/lfc/stadium/anfield-corner-flag.webp"
       />
 
-      <div className="page-container pb-16">
-        <MatchCentreNav active="standings" />
-        <div className="pt-4 sm:pt-6">
-          {context && <StandingsSummary context={context} nextFixtureId={nextLeague?.fixture.id} />}
-          <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} nextOpponentId={nextOpponentId} />
-        </div>
+      <MatchCentreNav active="standings" />
+
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        {context && <StandingsSummary context={context} nextFixtureId={nextLeague?.fixture.id} />}
+        <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} nextOpponentId={nextOpponentId} />
         <PresetConnectedGrid
           preset="fromStandings"
           metaOverrides={{

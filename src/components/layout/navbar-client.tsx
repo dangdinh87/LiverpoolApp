@@ -9,8 +9,15 @@ import { useTranslations } from "next-intl";
 import { BRAND } from "@/lib/brand";
 import { BrandLogo } from "./brand-mark";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { NavbarMobileSheet, type SheetNavLink } from "./navbar-mobile-sheet";
-import { MATCH_PATHS, SQUAD_PATHS, TABS, isActiveAny, isActivePath } from "./nav-items";
+import { NavbarMobileSheet, type SheetNavSection } from "./navbar-mobile-sheet";
+import {
+  HERITAGE_PATHS,
+  MATCH_PATHS,
+  NEWS_PATHS,
+  SQUAD_PATHS,
+  isActiveAny,
+  isActivePath,
+} from "./nav-items";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,33 +44,35 @@ interface NavbarClientProps {
   profile: UserProfile | null;
 }
 
+type NavDropdownId = "matches" | "news" | "squad" | "club";
+
 const DESKTOP_LINK =
   "relative inline-flex min-h-11 items-center whitespace-nowrap px-1.5 xl:px-2 2xl:px-3 text-sm font-barlow font-semibold uppercase tracking-[0.08em] 2xl:tracking-[0.12em] transition-colors";
 
 function ActiveBar() {
-  return <span aria-hidden className="absolute inset-x-3 bottom-1 h-0.5 bg-lfc-red" />;
+  return <span aria-hidden className="absolute inset-x-1.5 bottom-1 h-0.5 bg-lfc-red" />;
 }
 
 export function NavbarClient({ user: initialUser, profile: initialProfile }: NavbarClientProps) {
   const t = useTranslations("Common.nav");
   const [scrolled, setScrolled] = useState(false);
-  const [clubMenuOpen, setClubMenuOpen] = useState(false);
-  const clubCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cancelClubMenuClose = () => {
-    if (clubCloseTimer.current) clearTimeout(clubCloseTimer.current);
-    clubCloseTimer.current = null;
+  const [openDropdown, setOpenDropdown] = useState<NavDropdownId | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navListRef = useRef<HTMLUListElement | null>(null);
+
+  const cancelDropdownClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
   };
-  const scheduleClubMenuClose = () => {
-    cancelClubMenuClose();
-    clubCloseTimer.current = setTimeout(() => setClubMenuOpen(false), 150);
+  const openMenu = (id: NavDropdownId) => {
+    cancelDropdownClose();
+    setOpenDropdown(id);
   };
-  const openedByHover = useRef(false);
-  const openClubMenuOnHover = () => {
-    cancelClubMenuClose();
-    openedByHover.current = true;
-    setClubMenuOpen(true);
+  const scheduleDropdownClose = () => {
+    cancelDropdownClose();
+    closeTimer.current = setTimeout(() => setOpenDropdown(null), 120);
   };
-  useEffect(() => cancelClubMenuClose, []);
+  useEffect(() => cancelDropdownClose, []);
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [streak, setStreak] = useState(0);
@@ -75,6 +84,28 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
   const [profile, setProfile] = useState(initialProfile);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const pathname = usePathname();
+
+  // Close open nav dropdown on route change, Escape key, or outside click.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setOpenDropdown(null); }, [pathname]);
+
+  useEffect(() => {
+    if (!openDropdown) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenDropdown(null);
+    };
+    const onPointerDown = (e: PointerEvent) => {
+      if (navListRef.current && !navListRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openDropdown]);
 
   useEffect(() => {
     const onAuthChanged = () => {
@@ -162,26 +193,83 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
   };
   const displayName = profile?.username ?? user?.email?.split("@")[0] ?? t("profile");
 
-  const mainLinks = [
-    { href: "/", label: t("home"), paths: ["/"] as readonly string[] },
-    { href: "/fixtures", label: t("season"), paths: MATCH_PATHS as readonly string[] },
-    { href: "/news", label: t("news"), paths: ["/news"] as readonly string[] },
-    { href: "/analysis", label: t("analysis"), paths: ["/analysis"] as readonly string[] },
-    { href: "/squad", label: t("squad"), paths: SQUAD_PATHS as readonly string[] },
+  const dropdownGroups: readonly {
+    id: NavDropdownId;
+    href: string;
+    label: string;
+    paths: readonly string[];
+    items: readonly { href: string; label: string }[];
+  }[] = [
+    {
+      id: "matches",
+      href: "/fixtures",
+      label: t("season"),
+      paths: MATCH_PATHS,
+      items: [
+        { href: "/fixtures", label: t("fixtures") },
+        { href: "/fixtures?view=results", label: t("results") },
+        { href: "/standings", label: t("standings") },
+        { href: "/stats", label: t("stats") },
+        { href: "/predictions", label: t("predictions") },
+        { href: "/season", label: t("seasonArchive") },
+      ],
+    },
+    {
+      id: "news",
+      href: "/news",
+      label: t("news"),
+      paths: NEWS_PATHS,
+      items: [
+        { href: "/news", label: t("latestNews") },
+        { href: "/news/digest", label: t("dailyBriefing") },
+        { href: "/analysis", label: t("analysis") },
+      ],
+    },
+    {
+      id: "squad",
+      href: "/squad",
+      label: t("squad"),
+      paths: SQUAD_PATHS,
+      items: [
+        { href: "/squad", label: t("firstTeam") },
+        { href: "/injuries", label: t("injuries") },
+        { href: "/transfers", label: t("transfers") },
+      ],
+    },
+    {
+      id: "club",
+      href: "/history",
+      label: t("club"),
+      paths: HERITAGE_PATHS,
+      items: [
+        { href: "/history", label: t("history") },
+        { href: "/gallery", label: t("clubGallery") },
+        { href: "/about", label: t("about") },
+      ],
+    },
   ];
-  const clubActive = isActivePath(pathname, "/history") || isActivePath(pathname, "/gallery");
 
-  const sheetLinks: SheetNavLink[] = [
-    ...mainLinks.map(({ href, label, paths }) => ({
-      href,
-      label,
-      paths,
-      inTabBar: TABS.some((tab) => tab.href === href),
-    })),
-    { href: "/history", label: t("history"), paths: ["/history"], inTabBar: false },
-    { href: "/gallery", label: t("clubGallery"), paths: ["/gallery"], inTabBar: false },
-    { href: "/about", label: t("about"), paths: ["/about"], inTabBar: false },
-    { href: "/legal", label: t("legal"), paths: ["/legal"], inTabBar: false },
+  const sheetSections: SheetNavSection[] = [
+    {
+      id: "matches",
+      label: t("sections.matches"),
+      links: [...dropdownGroups[0].items],
+    },
+    {
+      id: "editorial",
+      label: t("sections.editorial"),
+      links: [...dropdownGroups[1].items],
+    },
+    {
+      id: "squad",
+      label: t("sections.squad"),
+      links: [...dropdownGroups[2].items],
+    },
+    {
+      id: "club",
+      label: t("sections.club"),
+      links: [...dropdownGroups[3].items, { href: "/legal", label: t("legal") }],
+    },
   ];
 
   const avatar = (size: number) =>
@@ -213,6 +301,8 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
     </span>
   );
 
+  const homeActive = isActivePath(pathname, "/");
+
   return (
     <header
       className={cn(
@@ -231,90 +321,102 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
         )}
       />
       <nav aria-label={t("primary")} className="page-container flex h-full items-center justify-between gap-3">
-        <Link href="/" className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
+        <Link href="/" prefetch={true} className="flex shrink-0 items-center min-h-11 text-white" aria-label={BRAND.name}>
           <BrandLogo markClassName="size-7 lg:size-8" wordmarkClassName="text-[19px] lg:text-[21px]" />
         </Link>
 
-        {/* Desktop nav (from lg) */}
-        <ul className="hidden lg:flex items-center gap-0.5">
-          {mainLinks.map(({ href, label, paths }) => {
+        {/* Desktop nav (from lg): 5 top-level items with hover + chevron dropdowns */}
+        <ul ref={navListRef} className="hidden lg:flex items-center gap-1">
+          <li>
+            <Link
+              href="/"
+              prefetch={true}
+              aria-current={homeActive ? "page" : undefined}
+              className={cn(DESKTOP_LINK, homeActive ? "text-white" : "text-white/80 hover:text-white")}
+            >
+              {t("home")}
+              {homeActive && <ActiveBar />}
+            </Link>
+          </li>
+
+          {dropdownGroups.map(({ id, href, label, paths, items }) => {
             const active = isActiveAny(pathname, paths);
+            const isOpen = openDropdown === id;
             return (
-              <li key={href}>
+              <li
+                key={id}
+                className="relative flex items-center"
+                onMouseEnter={() => openMenu(id)}
+                onMouseLeave={scheduleDropdownClose}
+              >
                 <Link
                   href={href}
+                  prefetch={true}
                   aria-current={active ? "page" : undefined}
-                  className={cn(DESKTOP_LINK, active ? "text-white" : "text-white/80 hover:text-white")}
+                  onClick={() => setOpenDropdown(null)}
+                  className={cn(
+                    DESKTOP_LINK,
+                    "pr-0.5 xl:pr-1 2xl:pr-1",
+                    active ? "text-white" : "text-white/80 hover:text-white",
+                  )}
                 >
                   {label}
                   {active && <ActiveBar />}
                 </Link>
+                <button
+                  type="button"
+                  aria-label={label}
+                  aria-haspopup="menu"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenDropdown(isOpen ? null : id)}
+                  className={cn(
+                    "inline-flex min-h-11 items-center px-1 cursor-pointer transition-colors",
+                    isOpen || active ? "text-white" : "text-white/70 hover:text-white",
+                  )}
+                >
+                  <ChevronDown
+                    size={12}
+                    aria-hidden
+                    className={cn("transition-transform duration-200", isOpen && "rotate-180")}
+                  />
+                </button>
+
+                {isOpen && (
+                  <div
+                    role="menu"
+                    aria-label={label}
+                    className="absolute left-0 top-full z-50 w-52 border border-[var(--line-strong)] bg-stadium-surface py-1 shadow-2xl"
+                  >
+                    {items.map((item) => {
+                      const base = item.href.split("?")[0];
+                      const itemActive =
+                        item.href === "/fixtures?view=results"
+                          ? false
+                          : isActivePath(pathname, base) && (base !== "/news" || !isActivePath(pathname, "/news/digest"));
+                      return (
+                        <Link
+                          key={item.href}
+                          role="menuitem"
+                          href={item.href}
+                          prefetch={true}
+                          onClick={() => setOpenDropdown(null)}
+                          aria-current={itemActive ? "page" : undefined}
+                          className={cn(
+                            "flex min-h-11 items-center border-l-2 px-4 py-2.5 font-barlow text-sm font-semibold uppercase tracking-[0.1em] transition-colors",
+                            itemActive
+                              ? "border-lfc-red bg-stadium-surface2 text-white"
+                              : "border-transparent text-stadium-muted hover:bg-stadium-surface2 hover:text-white",
+                          )}
+                        >
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </li>
             );
           })}
-
-          <li>
-            <DropdownMenu modal={false} open={clubMenuOpen} onOpenChange={setClubMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <button
-                  onMouseEnter={openClubMenuOnHover}
-                  onMouseLeave={scheduleClubMenuClose}
-                  onKeyDown={() => {
-                    openedByHover.current = false;
-                  }}
-                  onPointerDown={(e) => {
-                    if (e.pointerType === "mouse" && clubMenuOpen) e.preventDefault();
-                  }}
-                  className={cn(DESKTOP_LINK, "gap-1 cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lfc-red-text", clubActive ? "text-white" : "text-white/80 hover:text-white")}
-                >
-                  {t("history")}
-                  <ChevronDown size={12} aria-hidden className={cn("transition-transform duration-200", clubMenuOpen && "rotate-180")} />
-                  {clubActive && <ActiveBar />}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                sideOffset={0}
-                onMouseEnter={cancelClubMenuClose}
-                onMouseLeave={scheduleClubMenuClose}
-                onCloseAutoFocus={(e) => {
-                  if (openedByHover.current) e.preventDefault();
-                }}
-                className="w-48 p-0 bg-stadium-surface border-[var(--line-strong)] shadow-2xl"
-              >
-                {[
-                  { href: "/history", label: t("clubOverview") },
-                  { href: "/gallery", label: t("clubGallery") },
-                ].map(({ href, label }) => (
-                  <DropdownMenuItem key={href} asChild>
-                    <Link
-                      href={href}
-                      aria-current={pathname === href ? "page" : undefined}
-                      className={cn(
-                        "block min-h-11 px-4 py-3 text-sm font-barlow font-semibold uppercase tracking-[0.12em] cursor-pointer rounded-none",
-                        pathname === href
-                          ? "text-white bg-stadium-surface2"
-                          : "text-stadium-muted hover:text-white hover:bg-stadium-surface2 focus:bg-stadium-surface2 focus:text-white"
-                      )}
-                    >
-                      {label}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </li>
-
-          <li>
-            <Link
-              href="/about"
-              aria-current={pathname === "/about" ? "page" : undefined}
-              className={cn(DESKTOP_LINK, pathname === "/about" ? "text-white" : "text-white/80 hover:text-white")}
-            >
-              {t("about")}
-              {pathname === "/about" && <ActiveBar />}
-            </Link>
-          </li>
         </ul>
 
         {/* Right side */}
@@ -390,7 +492,7 @@ export function NavbarClient({ user: initialUser, profile: initialProfile }: Nav
             authReady={authReady}
             isSignedIn={!!user}
             isPending={isPending}
-            sheetLinks={sheetLinks}
+            sheetSections={sheetSections}
             onOpenLogin={() => setLoginOpen(true)}
             onLogout={doLogout}
           />

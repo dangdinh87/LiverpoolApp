@@ -1,11 +1,12 @@
 import { ArrowRight } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { SubNavBar } from "@/components/ui/sub-nav-bar";
 import { cn } from "@/lib/utils";
 
 /* ── Shared Types & Route Maps ───────────────────────────────────── */
 
-export type SubNavGroup = "match" | "club" | "editorial";
+export type SubNavGroup = "match" | "club" | "editorial" | "heritage";
 
 export type SubNavSlug =
   | "fixtures"
@@ -18,13 +19,13 @@ export type SubNavSlug =
   | "transfers"
   | "history"
   | "gallery"
+  | "about"
   | "news"
   | "digest"
   | "analysis";
 
 export type HubCardSlug =
   | SubNavSlug
-  | "about"
   | "legal"
   | "profile";
 
@@ -48,7 +49,7 @@ export type ConnectedGridPreset =
   | "fromAbout"
   | "fromProfile";
 
-const ROUTE_HREFS: Record<HubCardSlug, string> = {
+const SUB_NAV_HREF: Record<HubCardSlug, string> = {
   fixtures: "/fixtures",
   standings: "/standings",
   stats: "/stats",
@@ -59,18 +60,19 @@ const ROUTE_HREFS: Record<HubCardSlug, string> = {
   transfers: "/transfers",
   history: "/history",
   gallery: "/gallery",
+  about: "/about",
   news: "/news",
   digest: "/news/digest",
   analysis: "/analysis",
-  about: "/about",
   legal: "/legal",
   profile: "/profile",
 };
 
 const SUB_NAV_GROUPS: Record<SubNavGroup, readonly SubNavSlug[]> = {
-  match: ["fixtures", "standings", "stats", "season", "predictions"],
-  club: ["squad", "injuries", "transfers", "stats", "history", "gallery"],
-  editorial: ["news", "digest", "analysis", "transfers", "injuries"],
+  match: ["fixtures", "standings", "stats", "predictions", "season"],
+  editorial: ["news", "digest", "analysis"],
+  club: ["squad", "injuries", "transfers"],
+  heritage: ["history", "gallery", "about"],
 };
 
 const PRESET_CARDS: Record<
@@ -78,76 +80,76 @@ const PRESET_CARDS: Record<
   readonly { slug: HubCardSlug; accent?: "red" | "gold" }[]
 > = {
   fromFixtures: [
-    { slug: "standings", accent: "gold" },
-    { slug: "predictions", accent: "red" },
-    { slug: "injuries", accent: "red" },
     { slug: "analysis", accent: "gold" },
+    { slug: "injuries", accent: "red" },
+    { slug: "squad", accent: "red" },
+    { slug: "digest", accent: "gold" },
   ],
   fromStandings: [
-    { slug: "fixtures", accent: "red" },
-    { slug: "stats", accent: "gold" },
-    { slug: "season", accent: "red" },
-    { slug: "predictions", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
+    { slug: "squad", accent: "red" },
+    { slug: "news", accent: "red" },
+    { slug: "history", accent: "gold" },
   ],
   fromStats: [
     { slug: "squad", accent: "red" },
-    { slug: "standings", accent: "gold" },
-    { slug: "season", accent: "red" },
-    { slug: "fixtures", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
+    { slug: "injuries", accent: "red" },
+    { slug: "history", accent: "gold" },
   ],
   fromSeason: [
-    { slug: "stats", accent: "gold" },
-    { slug: "fixtures", accent: "red" },
-    { slug: "standings", accent: "gold" },
     { slug: "history", accent: "red" },
+    { slug: "squad", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
+    { slug: "gallery", accent: "red" },
   ],
   fromPredictions: [
-    { slug: "fixtures", accent: "red" },
-    { slug: "standings", accent: "gold" },
     { slug: "injuries", accent: "red" },
     { slug: "analysis", accent: "gold" },
-  ],
-  fromFixtureDetail: [
-    { slug: "standings", accent: "gold" },
-    { slug: "injuries", accent: "red" },
-    { slug: "predictions", accent: "red" },
-    { slug: "analysis", accent: "gold" },
-  ],
-  fromSquad: [
-    { slug: "injuries", accent: "red" },
-    { slug: "transfers", accent: "gold" },
-    { slug: "stats", accent: "red" },
-    { slug: "history", accent: "gold" },
-  ],
-  fromPlayer: [
-    { slug: "squad", accent: "red" },
-    { slug: "stats", accent: "gold" },
-    { slug: "injuries", accent: "red" },
-    { slug: "transfers", accent: "gold" },
-  ],
-  fromInjuries: [
-    { slug: "squad", accent: "red" },
-    { slug: "fixtures", accent: "gold" },
-    { slug: "transfers", accent: "red" },
-    { slug: "news", accent: "gold" },
-  ],
-  fromTransfers: [
     { slug: "squad", accent: "red" },
     { slug: "digest", accent: "gold" },
+  ],
+  fromFixtureDetail: [
+    { slug: "analysis", accent: "gold" },
     { slug: "injuries", accent: "red" },
+    { slug: "squad", accent: "red" },
     { slug: "news", accent: "gold" },
+  ],
+  fromSquad: [
+    { slug: "stats", accent: "red" },
+    { slug: "fixtures", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
+    { slug: "history", accent: "red" },
+  ],
+  fromPlayer: [
+    { slug: "stats", accent: "gold" },
+    { slug: "fixtures", accent: "red" },
+    { slug: "news", accent: "red" },
+    { slug: "history", accent: "gold" },
+  ],
+  fromInjuries: [
+    { slug: "fixtures", accent: "gold" },
+    { slug: "predictions", accent: "red" },
+    { slug: "news", accent: "gold" },
+    { slug: "analysis", accent: "red" },
+  ],
+  fromTransfers: [
+    { slug: "digest", accent: "gold" },
+    { slug: "news", accent: "red" },
+    { slug: "fixtures", accent: "gold" },
+    { slug: "history", accent: "red" },
   ],
   fromHistory: [
-    { slug: "gallery", accent: "gold" },
     { slug: "squad", accent: "red" },
-    { slug: "fixtures", accent: "red" },
-    { slug: "about", accent: "gold" },
+    { slug: "season", accent: "gold" },
+    { slug: "stats", accent: "red" },
+    { slug: "news", accent: "gold" },
   ],
   fromGallery: [
-    { slug: "history", accent: "gold" },
     { slug: "squad", accent: "red" },
     { slug: "fixtures", accent: "red" },
     { slug: "news", accent: "gold" },
+    { slug: "analysis", accent: "gold" },
   ],
   fromHome: [
     { slug: "squad", accent: "red" },
@@ -156,28 +158,28 @@ const PRESET_CARDS: Record<
     { slug: "analysis", accent: "gold" },
   ],
   fromNews: [
-    { slug: "digest", accent: "gold" },
-    { slug: "analysis", accent: "red" },
-    { slug: "transfers", accent: "gold" },
-    { slug: "injuries", accent: "red" },
-  ],
-  fromDigest: [
-    { slug: "news", accent: "red" },
-    { slug: "analysis", accent: "gold" },
     { slug: "fixtures", accent: "red" },
     { slug: "transfers", accent: "gold" },
+    { slug: "injuries", accent: "red" },
+    { slug: "standings", accent: "gold" },
+  ],
+  fromDigest: [
+    { slug: "fixtures", accent: "red" },
+    { slug: "standings", accent: "gold" },
+    { slug: "transfers", accent: "gold" },
+    { slug: "squad", accent: "red" },
   ],
   fromAnalysis: [
     { slug: "fixtures", accent: "red" },
-    { slug: "digest", accent: "gold" },
     { slug: "standings", accent: "gold" },
     { slug: "stats", accent: "red" },
+    { slug: "predictions", accent: "gold" },
   ],
   fromAbout: [
     { slug: "legal", accent: "gold" },
     { slug: "news", accent: "red" },
-    { slug: "squad", accent: "red" },
-    { slug: "history", accent: "gold" },
+    { slug: "fixtures", accent: "red" },
+    { slug: "squad", accent: "gold" },
   ],
   fromProfile: [
     { slug: "predictions", accent: "gold" },
@@ -196,7 +198,7 @@ export interface SectionSubNavProps {
   className?: string;
 }
 
-/** Horizontal scrollable section sub-navigation bar for Match, Club, and Editorial pages. */
+/** Full-width sticky sub-navigation bar for Match, Club, Editorial, and Heritage hubs. */
 export async function SectionSubNav({
   group,
   current,
@@ -204,47 +206,20 @@ export async function SectionSubNav({
   className,
 }: SectionSubNavProps) {
   const t = await getTranslations("Hub");
-  const slugs = SUB_NAV_GROUPS[group];
+  const items = SUB_NAV_GROUPS[group].map((slug) => ({
+    slug,
+    href: SUB_NAV_HREF[slug],
+    label: t(`nav.${slug}`),
+    badge: badges?.[slug],
+  }));
 
   return (
-    <nav
-      aria-label={t("subNavLabel")}
-      className={cn("w-full max-w-full border-b border-[var(--line)]", className)}
-    >
-      <div className="scroll-x scroll-x-fade flex items-center gap-1">
-        {slugs.map((slug) => {
-          const isActive = slug === current;
-          const badge = badges?.[slug];
-          const hasBadge = badge !== undefined && badge !== "";
-
-          return (
-            <Link
-              key={slug}
-              href={ROUTE_HREFS[slug]}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 font-barlow text-sm font-semibold uppercase tracking-[0.08em] transition-colors sm:px-4",
-                isActive
-                  ? "border-lfc-red text-white"
-                  : "border-transparent text-stadium-muted hover:text-white",
-              )}
-            >
-              <span>{t(`nav.${slug}`)}</span>
-              {hasBadge && (
-                <span
-                  className={cn(
-                    "text-xs tabular-nums",
-                    isActive ? "text-lfc-gold" : "text-stadium-muted",
-                  )}
-                >
-                  {badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
+    <SubNavBar
+      ariaLabel={t("subNavLabel")}
+      items={items}
+      current={current}
+      className={className}
+    />
   );
 }
 
@@ -439,7 +414,7 @@ export async function PresetConnectedGrid({
   const entries = PRESET_CARDS[preset];
 
   const cards: ConnectedPageCard[] = entries.map(({ slug, accent }) => {
-    const href = ROUTE_HREFS[slug];
+    const href = SUB_NAV_HREF[slug];
     return {
       title: t(`cards.${slug}.title`),
       description: t(`cards.${slug}.desc`),

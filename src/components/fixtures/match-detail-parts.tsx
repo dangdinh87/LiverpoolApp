@@ -1,5 +1,6 @@
 import { ArrowDownToLine, ArrowUpFromLine, Goal } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { TeamCrest } from "@/components/ui/team-crest";
 import type { FixtureEvent, FixtureLineup, FixtureTeamStats } from "@/lib/types/football";
 import { cn } from "@/lib/utils";
@@ -13,17 +14,53 @@ export function teamLogo(id: number, apiLogo: string): string {
 const minuteLabel = (e: { time: { elapsed: number | null; extra?: number | null } }) =>
   e.time.elapsed ? (e.time.extra ? `${e.time.elapsed}+${e.time.extra}'` : `${e.time.elapsed}'`) : null;
 
+function PlayerNameLink({
+  name,
+  slug,
+  className,
+}: {
+  name: string | null | undefined;
+  slug?: string;
+  className?: string;
+}) {
+  if (!name) return null;
+  if (!slug) return <span className={className}>{name}</span>;
+  return (
+    <Link
+      href={`/player/${slug}`}
+      className={cn(
+        className,
+        "underline-offset-4 decoration-lfc-red/70 transition-colors hover:text-lfc-gold hover:underline",
+      )}
+    >
+      {name}
+    </Link>
+  );
+}
+
 // ─── Header pieces ──────────────────────────────────────────────────────────
 
 /** Scorer list under a team in the score header. */
-export function ScorerList({ goals, align }: { goals: FixtureEvent[]; align: "home" | "away" }) {
+export function ScorerList({
+  goals,
+  align,
+  playerSlugs,
+}: {
+  goals: FixtureEvent[];
+  align: "home" | "away";
+  playerSlugs?: Record<string, string>;
+}) {
   const t = useTranslations("Match.liveCard");
   if (goals.length === 0) return null;
   return (
     <ul className={cn("mt-2 space-y-0.5 text-xs text-stadium-muted", align === "home" ? "sm:text-right" : "sm:text-left")}>
       {goals.map((g, i) => (
         <li key={i} className="break-words">
-          <span className="text-white/90">{g.player.name}</span>
+          <PlayerNameLink
+            name={g.player.name}
+            slug={g.team.id === LFC_ID && g.player.name ? playerSlugs?.[g.player.name] : undefined}
+            className="text-white/90"
+          />
           {minuteLabel(g) && <span className="ml-1 text-lfc-gold tabular-nums">{minuteLabel(g)}</span>}
           {g.detail.includes("Penalty") && <span className="ml-1">({t("penShort")})</span>}
           {g.detail.includes("Own") && <span className="ml-1 text-red-400">({t("ogShort")})</span>}
@@ -35,9 +72,20 @@ export function ScorerList({ goals, align }: { goals: FixtureEvent[]; align: "ho
 
 // ─── Timeline ───────────────────────────────────────────────────────────────
 
-export function TimelineRow({ event, homeTeamId }: { event: FixtureEvent; homeTeamId: number }) {
+export function TimelineRow({
+  event,
+  homeTeamId,
+  playerSlugs,
+}: {
+  event: FixtureEvent;
+  homeTeamId: number;
+  playerSlugs?: Record<string, string>;
+}) {
   const isHome = event.team.id === homeTeamId;
+  const isLfc = event.team.id === LFC_ID;
   const minute = event.time.elapsed && event.time.elapsed > 0 ? minuteLabel(event) : null;
+  const playerSlug = isLfc && event.player.name ? playerSlugs?.[event.player.name] : undefined;
+  const assistSlug = isLfc && event.assist.name ? playerSlugs?.[event.assist.name] : undefined;
 
   return (
     <li
@@ -47,12 +95,16 @@ export function TimelineRow({ event, homeTeamId }: { event: FixtureEvent; homeTe
       )}
     >
       <div className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5", isHome ? "justify-start" : "justify-end text-right")}>
-        <span className="text-sm font-medium text-white">{event.player.name}</span>
+        <PlayerNameLink name={event.player.name} slug={playerSlug} className="text-sm font-medium text-white" />
         {event.assist.name && event.type === "Goal" && (
-          <span className="text-xs text-stadium-muted">({event.assist.name})</span>
+          <span className="text-xs text-stadium-muted">
+            (<PlayerNameLink name={event.assist.name} slug={assistSlug} />)
+          </span>
         )}
         {event.type === "subst" && event.assist.name && (
-          <span className="text-xs text-stadium-muted">← {event.assist.name}</span>
+          <span className="text-xs text-stadium-muted">
+            ← <PlayerNameLink name={event.assist.name} slug={assistSlug} />
+          </span>
         )}
       </div>
       <div className="flex w-16 shrink-0 items-center justify-center gap-1.5">
@@ -168,12 +220,15 @@ export function LineupSection({
   lineup,
   subsLabel,
   coachLabel,
+  playerSlugs,
 }: {
   lineup: FixtureLineup;
   subsLabel: string;
   coachLabel: string;
+  playerSlugs?: Record<string, string>;
 }) {
   const tPos = useTranslations("Squad.positions");
+  const isLfc = lineup.team.id === LFC_ID;
 
   return (
     <div>
@@ -193,7 +248,11 @@ export function LineupSection({
               <span className="flex size-8 shrink-0 items-center justify-center border border-[var(--line)] bg-[var(--surface-3)] font-bebas text-base text-white tabular-nums">
                 {p.number}
               </span>
-              <span className="min-w-0 truncate text-sm font-medium text-white">{p.name}</span>
+              <PlayerNameLink
+                name={p.name}
+                slug={isLfc ? playerSlugs?.[p.name] : undefined}
+                className="min-w-0 truncate text-sm font-medium text-white"
+              />
               <span className="ml-auto shrink-0 font-barlow text-xs font-semibold uppercase tracking-wider text-stadium-muted">
                 {posKey ? tPos(posKey) : p.pos}
               </span>
@@ -211,7 +270,11 @@ export function LineupSection({
                 <span className="flex size-7 shrink-0 items-center justify-center border border-[var(--line)] font-bebas text-sm text-stadium-muted tabular-nums">
                   {p.number}
                 </span>
-                <span className="truncate text-sm text-stadium-muted">{p.name}</span>
+                <PlayerNameLink
+                  name={p.name}
+                  slug={isLfc ? playerSlugs?.[p.name] : undefined}
+                  className="truncate text-sm text-stadium-muted"
+                />
               </li>
             ))}
           </ul>

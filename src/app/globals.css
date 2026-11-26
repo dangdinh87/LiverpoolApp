@@ -194,13 +194,13 @@
   }
 }
 
-/* Skeleton loading shimmer — red-tinted brand feel */
+/* Skeleton loading shimmer — calm neutral surface pulse */
 .skeleton {
   background: linear-gradient(
     90deg,
-    #1e1e1e 25%,
-    #3d1520 50%,
-    #1e1e1e 75%
+    #171717 25%,
+    #222222 50%,
+    #171717 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -255,14 +255,13 @@
 }
 
 html {
-  scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-h) + 1rem);
+  scroll-padding-top: calc(var(--header-h) + 3.5rem);
   /* No sideways scroll from a stray wide child, ever. */
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
 }
 
-/* Smooth route changes without JS: exit faster than enter, subtle 6px lift + fade. */
+/* Smooth route changes without JS: pure cross-fade with zero vertical lift. */
 @view-transition {
   navigation: auto;
 }
@@ -270,11 +269,15 @@ html {
   animation: page-fade-out var(--dur-fast) ease-in both;
 }
 ::view-transition-new(root) {
-  animation: reveal 220ms var(--ease-out) both;
+  animation: page-fade-in 120ms ease-out both;
 }
 @keyframes page-fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* The header is the same element on every page: give it its own transition
@@ -289,6 +292,12 @@ html {
   view-transition-name: bottom-nav;
 }
 ::view-transition-group(bottom-nav) {
+  animation-duration: 0s;
+}
+.section-subnav {
+  view-transition-name: section-subnav;
+}
+::view-transition-group(section-subnav) {
   animation-duration: 0s;
 }
 

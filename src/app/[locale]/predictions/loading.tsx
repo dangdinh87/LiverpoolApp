@@ -1,19 +1,15 @@
+import { PageHeroSkeleton } from "@/components/ui/page-hero";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Content-shaped skeleton matching /predictions: PageHero + next-match CTA + leaderboard table. */
+/** Mirrors PageHero + MatchCentreNav + next-match CTA + leaderboard table. */
 export default function PredictionsLoading() {
   return (
     <div className="min-h-screen" aria-busy="true">
-      <div className="border-b border-[var(--line)]">
-        <div className="page-container pb-5 pt-[calc(var(--header-h)+1rem)] sm:pb-7 sm:pt-[calc(var(--header-h)+1.75rem)]">
-          <Skeleton className="h-3.5 w-28" />
-          <Skeleton className="mt-2 h-10 w-60 sm:h-12 sm:w-80" />
-          <Skeleton className="mt-2 h-4 w-full max-w-md" />
-        </div>
-      </div>
-
-      <div className="page-container pb-16 pt-6">
-        <div className="mx-auto max-w-3xl">
+      <PageHeroSkeleton image="/assets/lfc/stadium/anfield-champions-league.webp" />
+      <MatchCentreNav active="predictions" />
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        <div className="mx-auto max-w-4xl">
           <div className="surface mb-8 flex items-center justify-between gap-4 p-4 sm:p-5">
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-3.5 w-28" />

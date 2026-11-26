@@ -48,9 +48,20 @@ interface FixtureTimelineProps {
   season?: number;
   /** Footer link to the season archive (only the /fixtures page needs it). */
   showArchiveLink?: boolean;
+  /** Optional content rendered inside .page-container right above the timeline/controls. */
+  belowNav?: React.ReactNode;
+  /** Optional content rendered at the bottom of .page-container. */
+  footer?: React.ReactNode;
 }
 
-export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink = false }: FixtureTimelineProps) {
+export function FixtureTimeline({
+  fixtures,
+  initialView,
+  season,
+  showArchiveLink = false,
+  belowNav,
+  footer,
+}: FixtureTimelineProps) {
   const t = useTranslations("Fixtures.timeline");
   const locale = useLocale() === "vi" ? "vi" : "en";
 
@@ -120,110 +131,115 @@ export function FixtureTimeline({ fixtures, initialView, season, showArchiveLink
   const showWatchHint = view === "upcoming" && upcoming.some((f) => competitionKey(f.league.name) === "pl");
 
   return (
-    <div>
+    <>
       <MatchCentreNav
         active={view === "upcoming" ? "fixtures" : "results"}
         season={season}
-        counts={{ fixtures: upcoming.length, results: results.length }}
         onSelectView={selectView}
       />
 
-      {availableComps.length > 1 && (
-        <div className="pt-3">
-          <ChipBar items={compItems} active={comp} onSelect={setComp} ariaLabel={t("filterLabel")} />
-        </div>
-      )}
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        {belowNav}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        {/* The zone is said once here, not under every kick-off. */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-1)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
-            >
-              <Clock size={14} aria-hidden />
-              {t("zoneChip", { zone: zoneOffset })}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 text-[13px] leading-snug text-stadium-muted">
-            <p>{t("gmtHint", { zone: zoneOffset })}</p>
-            {showWatchHint && <p className="mt-2">{t("plWatch")}</p>}
-          </PopoverContent>
-        </Popover>
-        {/* `shrink-0` only once there is room beside the hint. On a 320px phone
-            it kept this row at its max-content width — both buttons plus the gap
-            — so `flex-wrap` never got the chance to wrap and the page scrolled
-            sideways by 44px. */}
-        <div className="flex flex-wrap gap-2 sm:shrink-0">
-          <SpoilerToggle />
-          {!season && <AddToCalendar />}
+        {availableComps.length > 1 && (
+          <div className={belowNav ? "mt-6" : undefined}>
+            <ChipBar items={compItems} active={comp} onSelect={setComp} ariaLabel={t("filterLabel")} />
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          {/* The zone is said once here, not under every kick-off. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center gap-2 border border-[var(--line-strong)] bg-[var(--surface-1)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-stadium-muted transition-colors hover:border-white/40 hover:text-white"
+              >
+                <Clock size={14} aria-hidden />
+                {t("zoneChip", { zone: zoneOffset })}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 text-[13px] leading-snug text-stadium-muted">
+              <p>{t("gmtHint", { zone: zoneOffset })}</p>
+              {showWatchHint && <p className="mt-2">{t("plWatch")}</p>}
+            </PopoverContent>
+          </Popover>
+          {/* `shrink-0` only once there is room beside the hint. On a 320px phone
+              it kept this row at its max-content width — both buttons plus the gap
+              — so `flex-wrap` never got the chance to wrap and the page scrolled
+              sideways by 44px. */}
+          <div className="flex flex-wrap gap-2 sm:shrink-0">
+            <SpoilerToggle />
+            {!season && <AddToCalendar />}
+          </div>
         </div>
+
+        {groups.length === 0 ? (
+          <EmptyState
+            className="mt-6"
+            icon={<CalendarX className="size-9" aria-hidden />}
+            title={t("emptyTitle")}
+            description={view === "upcoming" ? t("noFixtures") : t("noResults")}
+          />
+        ) : (
+          <div className="mt-4 space-y-8">
+            {groups.map((group) => (
+              <section key={group.key} aria-label={group.label}>
+                <h2 className="mb-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-brand">
+                  {group.label}
+                </h2>
+                <ul className="space-y-3">
+                  {group.items.map((fixture) => (
+                    <li key={fixture.fixture.id}>
+                      <MatchCard fixture={fixture} isNext={fixture.fixture.id === nextId} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+
+            {laterGroups.length > 0 && (
+              <section aria-label={t("later")}>
+                <h2 className="mb-1 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white">
+                  {t("later")}
+                  <span className="ml-2 text-stadium-muted tabular-nums">{laterCount}</span>
+                </h2>
+                <Accordion type="multiple" className="border-t border-[var(--line)]">
+                  {laterGroups.map((group) => (
+                    <AccordionItem key={group.key} value={group.key} className="border-[var(--line)]">
+                      <AccordionTrigger className="min-h-12 items-center rounded-none py-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white hover:no-underline [&>svg]:translate-y-0">
+                        <span className="flex flex-1 items-baseline justify-between gap-3">
+                          {group.label}
+                          <span className="text-xs font-medium tracking-[0.1em] text-stadium-muted tabular-nums">{t("matchCount", { count: group.items.length })}</span>
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-3">
+                        <ul className="space-y-2">
+                          {group.items.map((fixture) => (
+                            <li key={fixture.fixture.id}>
+                              <CompactMatchRow fixture={fixture} />
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </section>
+            )}
+          </div>
+        )}
+
+        {showArchiveLink && (
+          <p className="mt-8 text-center text-sm">
+            <Link href="/season" className="inline-flex min-h-11 items-center text-stadium-muted underline-offset-4 transition-colors hover:text-white hover:underline">
+              {t("archive")}
+            </Link>
+          </p>
+        )}
+
+        {footer}
       </div>
-
-      {groups.length === 0 ? (
-        <EmptyState
-          className="mt-6"
-          icon={<CalendarX className="size-9" aria-hidden />}
-          title={t("emptyTitle")}
-          description={view === "upcoming" ? t("noFixtures") : t("noResults")}
-        />
-      ) : (
-        <div className="mt-4 space-y-8">
-          {groups.map((group) => (
-            <section key={group.key} aria-label={group.label}>
-              <h2 className="mb-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-brand">
-                {group.label}
-              </h2>
-              <ul className="space-y-3">
-                {group.items.map((fixture) => (
-                  <li key={fixture.fixture.id}>
-                    <MatchCard fixture={fixture} isNext={fixture.fixture.id === nextId} />
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-
-          {laterGroups.length > 0 && (
-            <section aria-label={t("later")}>
-              <h2 className="mb-1 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white">
-                {t("later")}
-                <span className="ml-2 text-stadium-muted tabular-nums">{laterCount}</span>
-              </h2>
-              <Accordion type="multiple" className="border-t border-[var(--line)]">
-                {laterGroups.map((group) => (
-                  <AccordionItem key={group.key} value={group.key} className="border-[var(--line)]">
-                    <AccordionTrigger className="min-h-12 items-center rounded-none py-3 font-barlow text-sm font-semibold uppercase tracking-[0.14em] text-white hover:no-underline [&>svg]:translate-y-0">
-                      <span className="flex flex-1 items-baseline justify-between gap-3">
-                        {group.label}
-                        <span className="text-xs font-medium tracking-[0.1em] text-stadium-muted tabular-nums">{t("matchCount", { count: group.items.length })}</span>
-                      </span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-3">
-                      <ul className="space-y-2">
-                        {group.items.map((fixture) => (
-                          <li key={fixture.fixture.id}>
-                            <CompactMatchRow fixture={fixture} />
-                          </li>
-                        ))}
-                      </ul>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </section>
-          )}
-        </div>
-      )}
-
-      {showArchiveLink && (
-        <p className="mt-8 text-center text-sm">
-          <Link href="/season" className="inline-flex min-h-11 items-center text-stadium-muted underline-offset-4 transition-colors hover:text-white hover:underline">
-            {t("archive")}
-          </Link>
-        </p>
-      )}
-    </div>
+    </>
   );
 }

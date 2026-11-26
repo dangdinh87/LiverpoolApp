@@ -37,7 +37,7 @@ describe("hub-links Server Components", () => {
     expect(source).not.toMatch(/["']use client["']/);
   });
 
-  it("renders SectionSubNav with group routes, active state, and badges", async () => {
+  it("renders SectionSubNav with symmetric closed group routes, sticky shell, active state, and badges", async () => {
     const { SectionSubNav } = await import("@/components/ui/hub-links");
 
     const matchEl = await SectionSubNav({
@@ -46,27 +46,19 @@ describe("hub-links Server Components", () => {
       badges: { fixtures: 12 },
     });
     const { document: matchDoc } = parseHTML(renderToStaticMarkup(matchEl));
+    const matchNav = matchDoc.querySelector("nav");
+    expect(matchNav?.className).toContain("section-subnav");
+    expect(matchNav?.className).toContain("sticky");
     const matchLinks = Array.from(matchDoc.querySelectorAll("a"));
     expect(matchLinks.map((a) => a.getAttribute("href"))).toEqual([
       "/fixtures",
       "/standings",
       "/stats",
-      "/season",
       "/predictions",
+      "/season",
     ]);
     expect(matchLinks[1]?.getAttribute("aria-current")).toBe("page");
     expect(matchLinks[0]?.textContent).toContain("12");
-
-    const clubEl = await SectionSubNav({ group: "club", current: "injuries" });
-    const { document: clubDoc } = parseHTML(renderToStaticMarkup(clubEl));
-    expect(Array.from(clubDoc.querySelectorAll("a")).map((a) => a.getAttribute("href"))).toEqual([
-      "/squad",
-      "/injuries",
-      "/transfers",
-      "/stats",
-      "/history",
-      "/gallery",
-    ]);
 
     const editorialEl = await SectionSubNav({ group: "editorial", current: "digest" });
     const { document: editorialDoc } = parseHTML(renderToStaticMarkup(editorialEl));
@@ -74,9 +66,24 @@ describe("hub-links Server Components", () => {
       "/news",
       "/news/digest",
       "/analysis",
-      "/transfers",
-      "/injuries",
     ]);
+
+    const clubEl = await SectionSubNav({ group: "club", current: "injuries" });
+    const { document: clubDoc } = parseHTML(renderToStaticMarkup(clubEl));
+    expect(Array.from(clubDoc.querySelectorAll("a")).map((a) => a.getAttribute("href"))).toEqual([
+      "/squad",
+      "/injuries",
+      "/transfers",
+    ]);
+
+    const heritageEl = await SectionSubNav({ group: "heritage", current: "about" });
+    const { document: heritageDoc } = parseHTML(renderToStaticMarkup(heritageEl));
+    expect(Array.from(heritageDoc.querySelectorAll("a")).map((a) => a.getAttribute("href"))).toEqual([
+      "/history",
+      "/gallery",
+      "/about",
+    ]);
+    expect(heritageDoc.querySelectorAll("a")[2]?.getAttribute("aria-current")).toBe("page");
   });
 
   it("renders DataPulseStrip KPI cards with static and linked items", async () => {

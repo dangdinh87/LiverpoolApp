@@ -1,17 +1,14 @@
+import { PageHeroSkeleton } from "@/components/ui/page-hero";
+import { HubSubNavClient } from "@/components/ui/hub-subnav-client";
 import { Skeleton, SkeletonText } from "@/components/ui/skeleton";
 
-/** Mirrors the about page: hero, intro copy, feature tiles. */
+/** Mirrors PageHero + Heritage HubSubNavClient + intro copy + feature tiles. */
 export default function AboutLoading() {
   return (
-    <div aria-busy="true" className="bg-stadium-bg">
-      <div className="border-b border-[var(--line)]">
-        <div className="page-container pb-4 pt-[calc(var(--header-h)+0.75rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
-          <Skeleton className="mb-1 h-3 w-20 sm:mb-2" />
-          <Skeleton className="h-[5.25rem] w-11/12 sm:h-16 sm:w-1/2" />
-          <Skeleton className="mt-2 h-4 w-full max-w-xl sm:mt-3" />
-        </div>
-      </div>
-      <div className="page-container pb-20 pt-8 sm:pt-12">
+    <div className="min-h-screen" aria-busy="true">
+      <PageHeroSkeleton />
+      <HubSubNavClient group="heritage" current="about" />
+      <div className="page-container pb-20 pt-8 sm:pt-10">
         <div className="max-w-3xl space-y-10">
           <div className="space-y-4">
             <Skeleton className="h-9 w-56" />

@@ -11,10 +11,12 @@
 export const isActivePath = (pathname: string, base: string) =>
   base === "/" ? pathname === "/" : pathname === base || pathname.startsWith(base + "/");
 
-export const MATCH_PATHS = ["/season", "/fixtures", "/standings", "/stats"] as const;
-export const SQUAD_PATHS = ["/squad", "/player", "/players"] as const;
+export const MATCH_PATHS = ["/season", "/fixtures", "/standings", "/stats", "/predictions"] as const;
+export const SQUAD_PATHS = ["/squad", "/player", "/players", "/injuries", "/transfers"] as const;
+export const HERITAGE_PATHS = ["/history", "/gallery", "/about"] as const;
+export const NEWS_PATHS = ["/news", "/analysis"] as const;
 /** Pages reached from the "Thêm" (More) sheet rather than a tab. */
-export const MORE_PATHS = ["/analysis", "/injuries", "/transfers", "/history", "/gallery", "/about", "/legal", "/profile", "/auth"] as const;
+export const MORE_PATHS = ["/analysis", "/history", "/gallery", "/about", "/legal", "/profile", "/auth"] as const;
 
 export const isActiveAny = (pathname: string, bases: readonly string[]) =>
   bases.some((base) => isActivePath(pathname, base));

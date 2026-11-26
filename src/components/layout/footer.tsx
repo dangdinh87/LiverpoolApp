@@ -81,18 +81,22 @@ export function Footer() {
   const navT = useTranslations("Common.nav");
   const locale = useLocale();
 
-  // One list per column; no link appears twice (standings and stats live under "Trận đấu").
+  // Two balanced columns; every major hub destination appears once cleanly.
   const EXPLORE_LINKS = [
-    { href: "/fixtures", label: navT("season") },
+    { href: "/fixtures", label: navT("fixtures") },
+    { href: "/standings", label: navT("standings") },
+    { href: "/stats", label: navT("stats") },
+    { href: "/predictions", label: navT("predictions") },
     { href: "/squad", label: navT("squad") },
-    { href: "/news", label: navT("news") },
-    { href: "/analysis", label: navT("analysis") },
     { href: "/injuries", label: navT("injuries") },
     { href: "/transfers", label: navT("transfers") },
-    { href: "/history", label: t("club") },
-    { href: "/gallery", label: navT("clubGallery") },
   ] as const;
   const INFO_LINKS = [
+    { href: "/news", label: navT("news") },
+    { href: "/news/digest", label: navT("dailyBriefing") },
+    { href: "/analysis", label: navT("analysis") },
+    { href: "/history", label: t("club") },
+    { href: "/gallery", label: navT("clubGallery") },
     { href: "/about", label: navT("about") },
     { href: "/legal", label: t("legal") },
   ] as const;

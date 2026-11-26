@@ -5,7 +5,7 @@ import { Activity, ArrowRight, Calendar, CheckCircle2, CloudOff } from "lucide-r
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
-import { getSquadPlayers, type LfcPlayer } from "@/lib/squad-data";
+import { getPlayerSlugByName, getSquadPlayers, type LfcPlayer } from "@/lib/squad-data";
 import { findFplMatch, getAllFplStats, getFixtures, type FplPlayerStats } from "@/lib/football";
 import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
 import { CANONICAL_LFC_ID, requireNonEmptyArray } from "@/lib/football/fdo-client";
@@ -132,11 +132,11 @@ export default async function InjuriesPage({ params }: LocaleParams) {
       )
     : null;
 
-  const injuryNews = feed.filter((a) => a.category === "injury").slice(0, 8);
+  const injuryNews = feed.filter((a) => a.category === "injury").slice(0, 9);
   const nowMs = new Date().getTime();
 
   return (
-    <div className="min-h-screen bg-stadium-bg pb-16">
+    <div className="min-h-screen bg-stadium-bg">
       <JsonLd data={breadcrumbJsonLd} />
       <PageHero
         clubCrest
@@ -145,13 +145,12 @@ export default async function InjuriesPage({ params }: LocaleParams) {
         description={t("hero.description")}
       />
 
-      <div className="page-container pt-6 sm:pt-8">
-        <div className="mx-auto max-w-4xl space-y-10">
-          <SectionSubNav
-            group="club"
-            current="injuries"
-            badges={flagged.length > 0 ? { injuries: flagged.length } : undefined}
-          />
+      <SectionSubNav
+        group="club"
+        current="injuries"
+      />
+
+      <div className="page-container space-y-10 pb-20 pt-8 sm:pt-10">
 
           {nextMatch && nextOpponent && (
             <section
@@ -206,19 +205,22 @@ export default async function InjuriesPage({ params }: LocaleParams) {
               </div>
               {flagged.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2 border-t border-stadium-border pt-3">
-                  {flagged.slice(0, 6).map(({ player, statusKey }) => (
-                    <Link
-                      key={player.slug}
-                      href={`/player/${player.slug}`}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 border px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider transition-colors hover:border-white/40",
-                        STATUS_STYLE[statusKey],
-                      )}
-                    >
-                      <span>{player.name}</span>
-                      <span className="opacity-80">· {t(`status.${statusKey}`)}</span>
-                    </Link>
-                  ))}
+                  {flagged.slice(0, 6).map(({ player, statusKey }) => {
+                    const slug = getPlayerSlugByName(player.name) ?? player.slug;
+                    return (
+                      <Link
+                        key={slug}
+                        href={`/player/${slug}`}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 border px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider transition-colors hover:border-white/40",
+                          STATUS_STYLE[statusKey],
+                        )}
+                      >
+                        <span>{player.name}</span>
+                        <span className="opacity-80">· {t(`status.${statusKey}`)}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </section>
@@ -267,55 +269,58 @@ export default async function InjuriesPage({ params }: LocaleParams) {
                 actionLabel={t("viewSquad")}
               />
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {flagged.map(({ player, fpl, statusKey }) => (
-                  <li key={player.slug}>
-                    <Link
-                      href={`/player/${player.slug}`}
-                      className="surface tap-target group flex items-start gap-3.5 p-4 transition-colors hover:border-white/25"
-                    >
-                      <div className="relative size-14 shrink-0 overflow-hidden bg-[var(--surface-3)]">
-                        <Image
-                          src={player.localPhoto || player.photo}
-                          alt={player.name}
-                          fill
-                          sizes="56px"
-                          className="object-cover object-top"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-bebas text-2xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
-                            {player.name}
-                          </span>
-                          {player.shirtNumber > 0 && (
-                            <span className="font-barlow text-xs font-semibold text-stadium-muted">
-                              #{player.shirtNumber}
-                            </span>
-                          )}
+              <ul className={cn("grid gap-3 sm:grid-cols-2", flagged.length >= 3 && "lg:grid-cols-3")}>
+                {flagged.map(({ player, fpl, statusKey }) => {
+                  const slug = getPlayerSlugByName(player.name) ?? player.slug;
+                  return (
+                    <li key={slug}>
+                      <Link
+                        href={`/player/${slug}`}
+                        className="surface tap-target group flex items-start gap-3.5 p-4 transition-colors hover:border-white/25"
+                      >
+                        <div className="relative size-14 shrink-0 overflow-hidden bg-[var(--surface-3)]">
+                          <Image
+                            src={player.localPhoto || player.photo}
+                            alt={player.name}
+                            fill
+                            sizes="56px"
+                            className="object-cover object-top"
+                          />
                         </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                          <span
-                            className={cn(
-                              "inline-block border px-2 py-0.5 font-barlow text-[11px] font-semibold uppercase tracking-wider",
-                              STATUS_STYLE[statusKey],
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bebas text-2xl leading-none tracking-wide text-white group-hover:text-lfc-gold">
+                              {player.name}
+                            </span>
+                            {player.shirtNumber > 0 && (
+                              <span className="font-barlow text-xs font-semibold text-stadium-muted">
+                                #{player.shirtNumber}
+                              </span>
                             )}
-                          >
-                            {t(`status.${statusKey}`)}
-                          </span>
-                          {fpl.chanceOfPlayingNextRound !== null && fpl.chanceOfPlayingNextRound < 100 && (
-                            <span className="text-xs text-stadium-muted">
-                              {t("chanceOfPlaying", { pct: fpl.chanceOfPlayingNextRound })}
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                            <span
+                              className={cn(
+                                "inline-block border px-2 py-0.5 font-barlow text-[11px] font-semibold uppercase tracking-wider",
+                                STATUS_STYLE[statusKey],
+                              )}
+                            >
+                              {t(`status.${statusKey}`)}
                             </span>
+                            {fpl.chanceOfPlayingNextRound !== null && fpl.chanceOfPlayingNextRound < 100 && (
+                              <span className="text-xs text-stadium-muted">
+                                {t("chanceOfPlaying", { pct: fpl.chanceOfPlayingNextRound })}
+                              </span>
+                            )}
+                          </div>
+                          {fpl.news.trim() && (
+                            <p className="mt-2 text-sm leading-snug text-white/80">{fpl.news.trim()}</p>
                           )}
                         </div>
-                        {fpl.news.trim() && (
-                          <p className="mt-2 text-sm leading-snug text-white/80">{fpl.news.trim()}</p>
-                        )}
-                      </div>
-                    </Link>
-                  </li>
-                ))}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
@@ -323,7 +328,7 @@ export default async function InjuriesPage({ params }: LocaleParams) {
           {injuryNews.length > 0 && (
             <section aria-label={t("sections.news")}>
               <SectionHeader title={t("sections.news")} href="/news" linkLabel={t("allNews")} />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {injuryNews.map((article) => {
                   const mentioned = findMentionedPlayers(article.title, squadPlayers);
                   return (
@@ -331,16 +336,20 @@ export default async function InjuriesPage({ params }: LocaleParams) {
                       <NewsCard article={article} nowMs={nowMs} variant="tile" />
                       {mentioned.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          {mentioned.map((p) => (
-                            <Link
-                              key={p.slug}
-                              href={`/player/${p.slug}`}
-                              className="inline-flex items-center gap-1 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
-                            >
-                              {p.shirtNumber > 0 && <span className="text-lfc-gold tabular-nums">#{p.shirtNumber}</span>}
-                              <span>{p.name}</span>
-                            </Link>
-                          ))}
+                          {mentioned.map((p) => {
+                            const slug = getPlayerSlugByName(p.name);
+                            if (!slug) return null;
+                            return (
+                              <Link
+                                key={slug}
+                                href={`/player/${slug}`}
+                                className="inline-flex items-center gap-1 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+                              >
+                                {p.shirtNumber > 0 && <span className="text-lfc-gold tabular-nums">#{p.shirtNumber}</span>}
+                                <span>{p.name}</span>
+                              </Link>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -357,7 +366,6 @@ export default async function InjuriesPage({ params }: LocaleParams) {
               fixtures: nextOpponent?.name,
             }}
           />
-        </div>
       </div>
     </div>
   );

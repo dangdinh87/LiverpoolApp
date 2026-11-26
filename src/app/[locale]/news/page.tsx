@@ -117,58 +117,67 @@ export default async function NewsPage({ params }: LocaleParams) {
     <div className="min-h-screen">
       <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/news" }])} />
 
-      <PageHero compact title={t("title")} description={t("heroDesc")} actions={<NewStoriesCount storyTimes={storyTimes} />} />
+      <PageHero
+        clubCrest
+        eyebrow={t("tagline")}
+        title={t("title")}
+        description={t("heroDesc")}
+        actions={<NewStoriesCount storyTimes={storyTimes} />}
+      />
 
-      <div className="page-container pt-4 sm:pt-5">
-        <SectionSubNav group="editorial" current="news" />
-      </div>
+      <SectionSubNav
+        group="editorial"
+        current="news"
+      />
 
-      {digest && (
-        <div className="page-container py-3 sm:py-4">
-          <DigestCard
-            as="h2"
-            date={digest.digest_date}
-            title={cleanTitle(getDigestHeadline(digest))}
-            articleCount={digest.article_count}
-          />
+      {(digest || videos.length > 0 || podcasts.length > 0 || socialPosts.length > 0) && (
+        <div className="page-container space-y-4 pt-8 sm:pt-10 pb-3">
+          {digest && (
+            <DigestCard
+              as="h2"
+              date={digest.digest_date}
+              title={cleanTitle(getDigestHeadline(digest))}
+              articleCount={digest.article_count}
+            />
+          )}
+
+          {(videos.length > 0 || podcasts.length > 0 || socialPosts.length > 0) && (
+            <nav aria-label={t("title")}>
+              <div className="flex flex-wrap items-center gap-2">
+                {videos.length > 0 && (
+                  <a
+                    href="#videos"
+                    className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+                  >
+                    <Play className="size-3.5 text-lfc-red-text" aria-hidden />
+                    {t("jumpTo.video")}
+                    <span className="text-stadium-muted tabular-nums">({videos.length})</span>
+                  </a>
+                )}
+                {podcasts.length > 0 && (
+                  <a
+                    href="#podcasts"
+                    className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+                  >
+                    <Headphones className="size-3.5 text-lfc-gold" aria-hidden />
+                    {t("jumpTo.podcasts")}
+                    <span className="text-stadium-muted tabular-nums">({podcasts.length})</span>
+                  </a>
+                )}
+                {socialPosts.length > 0 && (
+                  <a
+                    href="#social"
+                    className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
+                  >
+                    <MessageSquare className="size-3.5 text-sky-400" aria-hidden />
+                    {t("jumpTo.social")}
+                    <span className="text-stadium-muted tabular-nums">({socialPosts.length})</span>
+                  </a>
+                )}
+              </div>
+            </nav>
+          )}
         </div>
-      )}
-
-      {(videos.length > 0 || podcasts.length > 0 || socialPosts.length > 0) && (
-        <nav aria-label={t("title")} className="page-container pb-2 pt-1">
-          <div className="flex flex-wrap items-center gap-2">
-            {videos.length > 0 && (
-              <a
-                href="#videos"
-                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
-              >
-                <Play className="size-3.5 text-lfc-red-text" aria-hidden />
-                {t("jumpTo.video")}
-                <span className="text-stadium-muted tabular-nums">({videos.length})</span>
-              </a>
-            )}
-            {podcasts.length > 0 && (
-              <a
-                href="#podcasts"
-                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
-              >
-                <Headphones className="size-3.5 text-lfc-gold" aria-hidden />
-                {t("jumpTo.podcasts")}
-                <span className="text-stadium-muted tabular-nums">({podcasts.length})</span>
-              </a>
-            )}
-            {socialPosts.length > 0 && (
-              <a
-                href="#social"
-                className="inline-flex min-h-9 items-center gap-1.5 border border-[var(--line-strong)] bg-[var(--surface-2)] px-3 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white/90 transition-colors hover:border-lfc-gold/60 hover:text-white"
-              >
-                <MessageSquare className="size-3.5 text-sky-400" aria-hidden />
-                {t("jumpTo.social")}
-                <span className="text-stadium-muted tabular-nums">({socialPosts.length})</span>
-              </a>
-            )}
-          </div>
-        </nav>
       )}
 
       <NewsFeed
@@ -178,14 +187,13 @@ export default async function NewsPage({ params }: LocaleParams) {
         nowMs={nowMs}
       />
 
-      <div className="page-container">
+      <div className="page-container pb-20">
         <VideoStrip items={videos} locale={userLang} />
         <PodcastStrip items={podcasts} locale={userLang} />
         <SocialStrip items={socialPosts} locale={userLang} />
-        <PresetConnectedGrid preset="fromNews" className="mt-12 pb-8" />
+        <PresetConnectedGrid preset="fromNews" className="mt-12" />
+        <p className="mt-8 max-w-3xl text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>
       </div>
-
-      <p className="page-container max-w-3xl pb-14 text-[13px] leading-relaxed text-stadium-muted">{t("attribution")}</p>
     </div>
   );
 }

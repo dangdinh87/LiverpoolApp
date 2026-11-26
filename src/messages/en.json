@@ -54,7 +54,20 @@
       "analysis": "Analysis",
       "chat": "Chat",
       "injuries": "Injuries",
-      "transfers": "Transfers"
+      "transfers": "Transfers",
+      "club": "Club",
+      "results": "Results",
+      "predictions": "Predictions",
+      "seasonArchive": "Season Archive",
+      "latestNews": "Latest News",
+      "dailyBriefing": "Daily Briefing",
+      "firstTeam": "First Team",
+      "sections": {
+        "matches": "Matches",
+        "editorial": "News & Analysis",
+        "squad": "Squad",
+        "club": "Club"
+      }
     },
     "labels": {
       "opponent": "Opponent",
@@ -1081,7 +1094,8 @@
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: match timeline, statistics and line-ups.",
       "attendance": "Attendance: {count}",
       "referee": "Referee: {name}",
-      "matchAnalysis": "Match analysis",
+      "matchAnalysis": "Match Analysis",
+      "readAnalysis": "Read preview & tactical report",
       "allAnalysis": "All reports"
     },
     "outage": {
@@ -1094,7 +1108,9 @@
       "fixtures": "Fixtures",
       "results": "Results",
       "standings": "Table",
-      "stats": "Stats"
+      "stats": "Stats",
+      "predictions": "Predictions",
+      "archive": "Season Archive"
     },
     "calendar": {
       "button": "Add to calendar",
@@ -1683,7 +1699,7 @@
       "predictions": {
         "title": "Match Predictions",
         "desc": "Pick the starting line-up, forecast the score and climb the fan table.",
-        "badge": "Interactive"
+        "badge": "Predictions"
       },
       "squad": {
         "title": "First-Team Squad",
@@ -1707,7 +1723,7 @@
       },
       "gallery": {
         "title": "Anfield Photo Gallery",
-        "desc": "Curated photography of Anfield nights, club legends and silverware.",
+        "desc": "Photography of Anfield nights, club legends and silverware.",
         "badge": "Archive"
       },
       "news": {
@@ -1733,7 +1749,7 @@
       "about": {
         "title": "About Anfield Daily",
         "desc": "How our editorial pipeline gathers, verifies and translates Liverpool coverage.",
-        "badge": "Platform"
+        "badge": "Publication"
       },
       "legal": {
         "title": "Editorial & Legal Notice",

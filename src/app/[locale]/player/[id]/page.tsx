@@ -305,9 +305,9 @@ export default async function PlayerPage({ params }: PageProps) {
         </div>
       </header>
 
-      <div className="page-container space-y-10 pb-20 pt-6 sm:space-y-14 sm:pt-8">
-        <SectionSubNav group="club" current="squad" />
+      <SectionSubNav group="club" current="squad" />
 
+      <div className="page-container space-y-10 pb-20 pt-8 sm:space-y-14 sm:pt-10">
         {/* ─── Key facts ─── */}
         <section>
           <SectionHeader title={t("sections.playerInfo")} />

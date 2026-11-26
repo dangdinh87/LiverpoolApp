@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { LocaleParams } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
-import { getAllPlayers, getSquadPlayers, type LfcPlayer } from "@/lib/squad-data";
+import { getAllPlayers, getPlayerSlugByName, getSquadPlayers, type LfcPlayer } from "@/lib/squad-data";
 import { playerSurname } from "@/lib/player-surname";
 import { getNationality } from "@/lib/nationality";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
@@ -69,7 +69,7 @@ export default async function TransfersPage({ params }: LocaleParams) {
   const nowMs = new Date().getTime();
 
   return (
-    <div className="min-h-screen bg-stadium-bg pb-16">
+    <div className="min-h-screen bg-stadium-bg">
       <JsonLd data={breadcrumbJsonLd} />
       <PageHero
         clubCrest
@@ -78,13 +78,12 @@ export default async function TransfersPage({ params }: LocaleParams) {
         description={t("hero.description")}
       />
 
-      <div className="page-container pt-6 sm:pt-8">
-        <div className="mx-auto max-w-4xl space-y-10">
-          <SectionSubNav
-            group="club"
-            current="transfers"
-            badges={onLoanPlayers.length > 0 ? { transfers: onLoanPlayers.length } : undefined}
-          />
+      <SectionSubNav
+        group="club"
+        current="transfers"
+      />
+
+      <div className="page-container space-y-10 pb-20 pt-8 sm:pt-10">
 
           <DataPulseStrip
             eyebrow={tHub("seasonPulse")}
@@ -160,7 +159,7 @@ export default async function TransfersPage({ params }: LocaleParams) {
                 actionLabel={t("browseNews")}
               />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {transferNews.map((article) => {
                   const matchedPlayers = findMentionedPlayers(cleanTitle(article.title), allPlayers);
                   return (
@@ -168,16 +167,20 @@ export default async function TransfersPage({ params }: LocaleParams) {
                       <NewsCard article={article} nowMs={nowMs} variant="tile" />
                       {matchedPlayers.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
-                          {matchedPlayers.map((p) => (
-                            <Link
-                              key={p.slug}
-                              href={`/player/${p.slug}`}
-                              className="inline-flex items-center gap-1 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
-                            >
-                              {p.shirtNumber > 0 && <span className="text-lfc-gold tabular-nums">#{p.shirtNumber}</span>}
-                              <span>{p.name}</span>
-                            </Link>
-                          ))}
+                          {matchedPlayers.map((p) => {
+                            const slug = getPlayerSlugByName(p.name);
+                            if (!slug) return null;
+                            return (
+                              <Link
+                                key={slug}
+                                href={`/player/${slug}`}
+                                className="inline-flex items-center gap-1 border border-stadium-border bg-stadium-surface px-2.5 py-1 font-barlow text-xs font-semibold uppercase tracking-wider text-white transition-colors hover:border-lfc-gold hover:text-lfc-gold"
+                              >
+                                {p.shirtNumber > 0 && <span className="text-lfc-gold tabular-nums">#{p.shirtNumber}</span>}
+                                <span>{p.name}</span>
+                              </Link>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -194,10 +197,11 @@ export default async function TransfersPage({ params }: LocaleParams) {
                 {onLoanPlayers.map((player) => {
                   const nat = getNationality(player.nationality);
                   const natLabel = nat.key ? tNat(nat.key) : player.nationality;
+                  const slug = getPlayerSlugByName(player.name) ?? player.slug;
                   return (
-                    <li key={player.slug}>
+                    <li key={slug}>
                       <Link
-                        href={`/player/${player.slug}`}
+                        href={`/player/${slug}`}
                         className="surface tap-target group flex items-center gap-3 p-3.5 transition-colors hover:border-white/25"
                       >
                         <div className="relative size-12 shrink-0 overflow-hidden bg-[var(--surface-3)]">
@@ -233,7 +237,6 @@ export default async function TransfersPage({ params }: LocaleParams) {
               digest: digest?.digest_date,
             }}
           />
-        </div>
       </div>
     </div>
   );

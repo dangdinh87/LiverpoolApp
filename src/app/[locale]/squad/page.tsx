@@ -104,8 +104,8 @@ export default async function SquadPage({ params }: LocaleParams) {
         description={t("count", { count: squadPlayers.length, n: squadPlayers.length })}
         image="/assets/lfc/stadium/anfield-pitch.webp"
       />
-      <div className="page-container space-y-6 pb-16 pt-4 sm:space-y-8 sm:pt-6">
-        <SectionSubNav group="club" current="squad" />
+      <SectionSubNav group="club" current="squad" />
+      <div className="page-container space-y-6 pb-20 pt-8 sm:space-y-8 sm:pt-10">
 
         <DataPulseStrip eyebrow={tHub("seasonPulse")} items={squadPulseItems} />
 

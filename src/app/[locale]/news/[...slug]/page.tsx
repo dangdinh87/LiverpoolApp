@@ -22,6 +22,7 @@ import {
 import { detectSource as detectArticleSource, isLinkOutOnlyUrl, VI_SOURCES } from "@/lib/news/source-detect";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { BRAND } from "@/lib/brand";
 import "@/components/news/article-reader.css";
 import { ReadTracker } from "@/components/news/read-tracker";
@@ -35,6 +36,7 @@ import { ArticleLinkOut } from "@/components/news/article-linkout";
 import { RelatedArticles } from "@/components/news/related-articles";
 import { TranslatableExcerpt } from "@/components/news/translatable-excerpt";
 import { CommentSection } from "@/components/news/comment-section";
+import { PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
 import { assessReadability, cleanSnippet, cleanTitle, dropHeroDuplicate, filterJunk, imageKey, isEmbeddableImageUrl, pickTitle } from "@/components/news/news-text";
 
 // 6 hours. The excerpt itself never changes, and revalidateTag refreshes the
@@ -202,7 +204,7 @@ export default async function ArticlePage({
   if (!url || !isKnownNewsSourceUrl(url)) notFound();
 
   const dbContent = await getArticleContentFromDB(url);
-  const [content, allArticles, fixtures, engagement, t, tNews] = await Promise.all([
+  const [content, allArticles, fixtures, engagement, t, tNews, tHub] = await Promise.all([
     dbContent ? Promise.resolve(dbContent) : scrapeIfStored(url),
     // Shared across every article page instead of a 100-row query per render.
     getCachedNewsFeed(100),
@@ -214,7 +216,31 @@ export default async function ArticlePage({
     getArticleEngagement(url),
     getTranslations("News.article"),
     getTranslations("News"),
+    getTranslations("Hub"),
   ]);
+
+  const editorialFooter = (
+    <div className="mt-12 space-y-6">
+      <nav aria-label={tHub("subNavLabel")} className="flex flex-wrap items-center gap-2 border-t border-[var(--line)] pt-6">
+        {(
+          [
+            { href: "/news", label: tHub("nav.news") },
+            { href: "/news/digest", label: tHub("nav.digest") },
+            { href: "/analysis", label: tHub("nav.analysis") },
+          ] as const
+        ).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="inline-flex min-h-10 items-center border border-[var(--line-strong)] px-3.5 font-barlow text-xs font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-lfc-gold/60 hover:text-lfc-gold"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+      <PresetConnectedGrid preset="fromNews" />
+    </div>
+  );
 
   const nextMatch: Fixture | null =
     [...fixtures]
@@ -234,14 +260,22 @@ export default async function ArticlePage({
   if (!content) {
     const expired = listed ? null : await getExpiredArticleMeta(url);
     return (
-      <ArticleLinkOut
-        url={url}
-        title={listed ? cleanTitle(listed.title) : expired?.title}
-        lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : expired?.lead}
-        heroImage={listed?.thumbnail ?? listed?.heroImage ?? expired?.heroImage}
-        sourceName={sourceName}
-        related={getRelatedArticles(url, listed?.title ?? expired?.title ?? "", allArticles, source)}
-      />
+      <div className="min-h-screen pt-[var(--header-h)]">
+        <SectionSubNav group="editorial" current="news" />
+        <div className="[&>div]:min-h-0 [&>div>div]:pt-6 sm:[&>div>div]:pt-8">
+          <ArticleLinkOut
+            url={url}
+            title={listed ? cleanTitle(listed.title) : expired?.title}
+            lead={listed ? cleanSnippet(listed.contentSnippet, listed.title) ?? undefined : expired?.lead}
+            heroImage={listed?.thumbnail ?? listed?.heroImage ?? expired?.heroImage}
+            sourceName={sourceName}
+            related={getRelatedArticles(url, listed?.title ?? expired?.title ?? "", allArticles, source)}
+          />
+        </div>
+        <div className="page-container pb-16">
+          {editorialFooter}
+        </div>
+      </div>
     );
   }
 
@@ -260,14 +294,22 @@ export default async function ArticlePage({
 
   if (readability === "linkout") {
     return (
-      <ArticleLinkOut
-        url={url}
-        title={title || undefined}
-        lead={description ?? (paragraphs[0] || undefined)}
-        heroImage={content.heroImage ?? listed?.thumbnail}
-        sourceName={sourceName}
-        related={getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage))}
-      />
+      <div className="min-h-screen pt-[var(--header-h)]">
+        <SectionSubNav group="editorial" current="news" />
+        <div className="[&>div]:min-h-0 [&>div>div]:pt-6 sm:[&>div>div]:pt-8">
+          <ArticleLinkOut
+            url={url}
+            title={title || undefined}
+            lead={description ?? (paragraphs[0] || undefined)}
+            heroImage={content.heroImage ?? listed?.thumbnail}
+            sourceName={sourceName}
+            related={getRelatedArticles(url, title, allArticles, source, 4, imageKey(content.heroImage))}
+          />
+        </div>
+        <div className="page-container pb-16">
+          {editorialFooter}
+        </div>
+      </div>
     );
   }
 
@@ -298,7 +340,7 @@ export default async function ArticlePage({
   const ctaHint = readability === "thin" ? t("thinContentMsg") : undefined;
 
   return (
-    <article className="min-h-screen">
+    <article className="min-h-screen pt-[var(--header-h)]">
       <ReadTracker articleUrl={url} />
       {/* Breadcrumb only. This page is another publisher's story shown as an
           excerpt; NewsArticle markup here named this site as its publisher,
@@ -308,7 +350,9 @@ export default async function ArticlePage({
         { name: title, path: canonicalPath },
       ])} />
 
-      <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1rem)]">
+      <SectionSubNav group="editorial" current="news" />
+
+      <div className="page-container pb-16 pt-6 sm:pt-8">
         <NewsBackLink label={t("backToNews")} />
 
         <div className="lg:mt-2 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-12">
@@ -417,6 +461,7 @@ export default async function ArticlePage({
         </div>
 
         {nextMatch && <ArticleNextMatch fixture={nextMatch} className="mt-12 lg:hidden" />}
+        {editorialFooter}
       </div>
     </article>
   );

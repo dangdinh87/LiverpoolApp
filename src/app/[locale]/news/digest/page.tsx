@@ -11,7 +11,9 @@ import { FOOTBALL_CACHE_TAG } from "@/lib/football/cache-tags";
 import { requireNonEmptyArray } from "@/lib/football/fdo-client";
 import { defaultTimeZoneForLocale, formatMatchDate } from "@/lib/format-match-date";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHero } from "@/components/ui/page-hero";
 import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = { robots: { index: false } };
 
@@ -80,8 +82,14 @@ export default async function DigestIndexPage({ params }: LocaleParams) {
 
   return (
     <div className="min-h-screen">
-      <div className="page-container max-w-5xl pb-16 pt-[calc(var(--header-h)+1.5rem)]">
-        <SectionSubNav group="editorial" current="digest" className="mb-6" />
+      <PageHero
+        clubCrest
+        eyebrow={t("proBadge", { brand: BRAND.name })}
+        title={failed ? t("unavailableTitle") : t("notGeneratedTitle")}
+        description={failed ? t("unavailableDesc") : t("notGeneratedDesc")}
+      />
+      <SectionSubNav group="editorial" current="digest" />
+      <div className="page-container pb-20 pt-8 sm:pt-10">
         <EmptyState
           tone={failed ? "error" : "empty"}
           icon={<Newspaper className="size-10" aria-hidden />}

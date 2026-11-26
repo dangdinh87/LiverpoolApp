@@ -7,7 +7,8 @@ import { getPredictionLeaderboard, type LeaderboardRow } from "@/lib/fan-predict
 import { EXACT_POINTS, RESULT_POINTS } from "@/lib/fan-predictions/scoring";
 import { PageHero } from "@/components/ui/page-hero";
 import { EmptyState } from "@/components/ui/empty-state";
-import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
+import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
 import { displayTeamName } from "@/components/fixtures/team-name";
 import { FanPrediction } from "@/components/fixtures/fan-prediction";
 import { defaultTimeZoneForLocale, formatMatchDayMonth, formatMatchTime } from "@/lib/format-match-date";
@@ -72,12 +73,18 @@ export default async function PredictionsPage({ params }: LocaleParams) {
   return (
     <div className="min-h-screen">
       <JsonLd data={await buildLocalizedBreadcrumbJsonLd(locale, [{ name: t("title"), path: "/predictions" }])} />
-      <PageHero clubCrest eyebrow={t("eyebrow")} title={t("title")} description={t("rule", { exact: EXACT_POINTS, result: RESULT_POINTS })} />
+      <PageHero
+        clubCrest
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        description={t("rule", { exact: EXACT_POINTS, result: RESULT_POINTS })}
+        image="/assets/lfc/stadium/anfield-champions-league.webp"
+      />
 
-      {/* The width goes on an inner box: .page-container's own max-width outranks max-w-3xl. */}
-      <div className="page-container pb-16 pt-4">
-        <SectionSubNav group="match" current="predictions" className="mb-6" />
+      <MatchCentreNav active="predictions" />
 
+      {/* The width goes on an inner box: .page-container's own max-width outranks max-w-4xl. */}
+      <div className="page-container pb-20 pt-8 sm:pt-10">
         <DataPulseStrip
           eyebrow={tHub("seasonPulse")}
           className="mb-8"
@@ -112,7 +119,7 @@ export default async function PredictionsPage({ params }: LocaleParams) {
           ]}
         />
 
-        <div className="mx-auto max-w-3xl space-y-8">
+        <div className="mx-auto max-w-4xl space-y-8">
           {next && (
             <FanPrediction fixture={next} hideLeaderboardLink showMatchMeta className="mt-0" />
           )}

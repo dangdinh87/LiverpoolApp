@@ -86,7 +86,7 @@ export default async function AnalysisPage({ params }: LocaleParams) {
     : null;
 
   return (
-    <div className="min-h-screen bg-stadium-bg pb-16">
+    <div className="min-h-screen bg-stadium-bg">
       <JsonLd data={breadcrumbJsonLd} />
 
       <PageHero
@@ -96,27 +96,43 @@ export default async function AnalysisPage({ params }: LocaleParams) {
         description={t("hero.description")}
       />
 
-      <section aria-label={t("hero.title")} className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
-        <SectionSubNav group="editorial" current="analysis" className="mb-6" />
+      <SectionSubNav
+        group="editorial"
+        current="analysis"
+      />
+
+      <section aria-label={t("hero.title")} className="page-container pb-20 pt-8 sm:pt-10">
         <DataPulseStrip
           eyebrow={tHub("seasonPulse")}
           className="mb-8"
           items={[
-            {
-              label: tHub("metrics.totalArticles"),
-              value: articles.length,
-              accent: "red",
-            },
-            {
-              label: tHub("metrics.matchReviews"),
-              value: reviewCount,
-              accent: "gold",
-            },
-            {
-              label: tHub("metrics.matchPreviews"),
-              value: previewCount,
-              accent: "red",
-            },
+            ...(articles.length > 0
+              ? [
+                  {
+                    label: tHub("metrics.totalArticles"),
+                    value: articles.length,
+                    accent: "red" as const,
+                  },
+                ]
+              : []),
+            ...(reviewCount > 0
+              ? [
+                  {
+                    label: tHub("metrics.matchReviews"),
+                    value: reviewCount,
+                    accent: "gold" as const,
+                  },
+                ]
+              : []),
+            ...(previewCount > 0
+              ? [
+                  {
+                    label: tHub("metrics.matchPreviews"),
+                    value: previewCount,
+                    accent: "red" as const,
+                  },
+                ]
+              : []),
             {
               label: nextMatch ? tHub("metrics.nextMatch") : tHub("nav.fixtures"),
               value: matchOpp

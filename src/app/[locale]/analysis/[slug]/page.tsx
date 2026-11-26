@@ -140,7 +140,7 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
   const url = getLocalizedUrl(`/analysis/${slug}`, lang);
 
   return (
-    <article lang={lang} className="min-h-screen bg-stadium-bg pb-16 pt-24">
+    <article lang={lang} className="min-h-screen bg-stadium-bg pb-16 pt-[var(--header-h)]">
       <JsonLd
         data={[
           {
@@ -172,11 +172,10 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
         ]}
       />
 
-      <div className="mx-auto mb-8 max-w-5xl px-4 sm:px-6">
-        <SectionSubNav group="editorial" current="analysis" />
-      </div>
+      <SectionSubNav group="editorial" current="analysis" />
 
-      <div className="mx-auto max-w-[68ch] px-4 sm:px-6">
+      <div className="page-container pt-8 sm:pt-10">
+        <div className="mx-auto max-w-3xl">
         <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="section-label text-brand">{t(`kinds.${row.kind}`)}</span>
           {(row.match_date ?? row.published_at) && (
@@ -229,6 +228,12 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
                 {t("viewMatch")}
               </Link>
               <Link
+                href="/predictions"
+                className="tap-target inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40"
+              >
+                {tHub("nav.predictions")}
+              </Link>
+              <Link
                 href="/standings"
                 className="tap-target inline-flex min-h-11 items-center border border-[var(--line-strong)] px-4 font-barlow text-sm font-semibold uppercase tracking-[0.1em] text-white transition-colors hover:border-white/40"
               >
@@ -261,9 +266,10 @@ export default async function AnalysisArticlePage({ params }: { params: Params }
             </ul>
           </div>
         )}
+        </div>
       </div>
 
-      <div className="mx-auto mt-14 max-w-5xl px-4 sm:px-6">
+      <div className="page-container mt-14">
         <PresetConnectedGrid preset="fromAnalysis" />
       </div>
     </article>

@@ -1,29 +1,19 @@
+import { PageHeroSkeleton } from "@/components/ui/page-hero";
+import { HubSubNavClient } from "@/components/ui/hub-subnav-client";
 import { Skeleton, SkeletonCard } from "@/components/ui/skeleton";
 
-/** Mirrors the history page: compact hero, section nav, first timeline cards. */
+/** Mirrors PageHero + Heritage HubSubNavClient + section nav + timeline cards. */
 export default function HistoryLoading() {
   return (
-    <div aria-busy="true" className="bg-stadium-bg">
-      <div className="border-b border-[var(--line)]">
-        <div className="page-container pb-4 pt-[calc(var(--header-h)+0.75rem)] sm:pb-10 sm:pt-[calc(var(--header-h)+3rem)]">
-          <Skeleton className="mb-1 h-3 w-28 sm:mb-2" />
-          <Skeleton className="h-10 w-3/4 sm:h-16 sm:w-1/2" />
-          <Skeleton className="mt-2 h-4 w-full max-w-xl sm:mt-3" />
-          <div className="mt-5 grid grid-cols-4 gap-4 sm:max-w-xl">
-            {Array.from({ length: 4 }, (_, i) => (
-              <Skeleton key={i} className="h-12" />
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="border-b border-[var(--line)]">
-        <div className="page-container flex h-12 items-center gap-6">
+    <div className="min-h-screen" aria-busy="true">
+      <PageHeroSkeleton />
+      <HubSubNavClient group="heritage" current="history" />
+      <div className="page-container pb-20 pt-8 sm:pt-10">
+        <div className="mb-8 flex gap-4 border-b border-[var(--line)] pb-3">
           {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-3 w-16" />
+            <Skeleton key={i} className="h-4 w-20" />
           ))}
         </div>
-      </div>
-      <div className="page-container py-10 sm:py-14">
         <Skeleton className="mb-6 h-9 w-48" />
         <div className="space-y-6 border-l border-[var(--line-strong)] pl-8 md:mx-auto md:max-w-2xl">
           <SkeletonCard aspect="aspect-[16/9]" />

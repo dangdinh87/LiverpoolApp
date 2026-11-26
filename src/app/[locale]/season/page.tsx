@@ -100,6 +100,61 @@ export default async function SeasonPage({
     href: y === currentYear ? matchCentreHref(active) : matchCentreHref(active, y),
   }));
 
+  const pulseStrip = hasSummary && (
+    <DataPulseStrip
+      eyebrow={`${tHub("seasonPulse")} · ${seasonLabel(selectedSeason)}`}
+      className="mb-6"
+      items={[
+        {
+          label: tHub("metrics.record"),
+          value: `${ov.wins}-${ov.draws}-${ov.losses}`,
+          sublabel: `${ov.played} ${tHub("metrics.played")}`,
+          href: statsHref,
+          accent: "red",
+        },
+        {
+          label: tHub("metrics.goalsForAgainst"),
+          value: `${ov.goalsFor} : ${ov.goalsAgainst}`,
+          sublabel: `${ov.goalDiff >= 0 ? "+" : ""}${ov.goalDiff}`,
+          href: statsHref,
+          accent: "emerald",
+        },
+        {
+          label: tHub("metrics.winRate"),
+          value: `${ov.winRate}%`,
+          sublabel: tHub("metrics.viewSeasonStats"),
+          href: statsHref,
+          accent: "gold",
+        },
+        {
+          label: tHub("metrics.plRank"),
+          value: ov.rank > 0 ? `#${ov.rank}` : "—",
+          sublabel: ov.points > 0 ? `${ov.points} · ${tHub("nav.standings")}` : tHub("nav.standings"),
+          href: standingsHref,
+          accent: "gold",
+        },
+      ]}
+    />
+  );
+
+  const connectedGrid = (
+    <PresetConnectedGrid
+      preset="fromSeason"
+      metaOverrides={{
+        stats: hasSummary ? `${ov.winRate}% ${tHub("metrics.winRate")}` : undefined,
+        fixtures: hasSummary ? `${ov.played} ${tHub("metrics.played")}` : undefined,
+        standings: ov.rank > 0 ? `#${ov.rank}` : undefined,
+      }}
+      className="mt-12"
+    />
+  );
+
+  const mobileSeasonPicker = (
+    <div className="mb-6 lg:hidden">
+      <ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonSelect")} />
+    </div>
+  );
+
   return (
     <div className="min-h-screen">
       {/* The one page in the sitemap that carried no structured data. */}
@@ -112,50 +167,16 @@ export default async function SeasonPage({
         eyebrow={t("hero.eyebrow", { season: seasonLabel(selectedSeason) })}
         title={t("title")}
         description={t("hero.description")}
-        image="/assets/lfc/stadium/anfield-main-stand.jpg"
+        image="/assets/lfc/stadium/anfield-champions-league.webp"
         actions={<ChipBar items={seasonItems} active={String(selectedSeason)} ariaLabel={t("seasonSelect")} />}
       />
-      <div className="page-container pb-16">
-        {hasSummary && (
-          <DataPulseStrip
-            eyebrow={`${tHub("seasonPulse")} · ${seasonLabel(selectedSeason)}`}
-            className="mt-4 mb-4"
-            items={[
-              {
-                label: tHub("metrics.record"),
-                value: `${ov.wins}-${ov.draws}-${ov.losses}`,
-                sublabel: `${ov.played} ${tHub("metrics.played")}`,
-                href: statsHref,
-                accent: "red",
-              },
-              {
-                label: tHub("metrics.goalsForAgainst"),
-                value: `${ov.goalsFor} : ${ov.goalsAgainst}`,
-                sublabel: `${ov.goalDiff >= 0 ? "+" : ""}${ov.goalDiff}`,
-                href: statsHref,
-                accent: "emerald",
-              },
-              {
-                label: tHub("metrics.winRate"),
-                value: `${ov.winRate}%`,
-                sublabel: tHub("metrics.viewSeasonStats"),
-                href: statsHref,
-                accent: "gold",
-              },
-              {
-                label: tHub("metrics.plRank"),
-                value: ov.rank > 0 ? `#${ov.rank}` : "—",
-                sublabel: ov.points > 0 ? `${ov.points} · ${tHub("nav.standings")}` : tHub("nav.standings"),
-                href: standingsHref,
-                accent: "gold",
-              },
-            ]}
-          />
-        )}
 
-        {fixtures.length === 0 && standings.length === 0 ? (
-          <>
-            <MatchCentreNav active={active} season={archiveSeason} />
+      {fixtures.length === 0 && standings.length === 0 ? (
+        <>
+          <MatchCentreNav active={active} season={archiveSeason} />
+          <div className="page-container pb-20 pt-8 sm:pt-10">
+            {mobileSeasonPicker}
+            {pulseStrip}
             <EmptyState
               className="mt-6"
               tone="error"
@@ -165,32 +186,33 @@ export default async function SeasonPage({
               actionHref="/news"
               actionLabel={t("outage.action")}
             />
-          </>
-        ) : active === "standings" ? (
-          <>
-            <MatchCentreNav active="standings" season={archiveSeason} />
-            <div className="pt-4">
-              <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />
-            </div>
-          </>
-        ) : (
-          <FixtureTimeline
-            fixtures={fixtures}
-            season={archiveSeason}
-            initialView={active === "results" ? "results" : undefined}
-          />
-        )}
-
-        <PresetConnectedGrid
-          preset="fromSeason"
-          metaOverrides={{
-            stats: hasSummary ? `${ov.winRate}% ${tHub("metrics.winRate")}` : undefined,
-            fixtures: hasSummary ? `${ov.played} ${tHub("metrics.played")}` : undefined,
-            standings: ov.rank > 0 ? `#${ov.rank}` : undefined,
-          }}
-          className="mt-12"
+            {connectedGrid}
+          </div>
+        </>
+      ) : active === "standings" ? (
+        <>
+          <MatchCentreNav active="standings" season={archiveSeason} />
+          <div className="page-container pb-20 pt-8 sm:pt-10">
+            {mobileSeasonPicker}
+            {pulseStrip}
+            <StandingsCompTabs plStandings={standings} uclStandings={uclStandings} />
+            {connectedGrid}
+          </div>
+        </>
+      ) : (
+        <FixtureTimeline
+          fixtures={fixtures}
+          season={archiveSeason}
+          initialView={active === "results" ? "results" : undefined}
+          belowNav={
+            <>
+              {mobileSeasonPicker}
+              {pulseStrip}
+            </>
+          }
+          footer={connectedGrid}
         />
-      </div>
+      )}
     </div>
   );
 }

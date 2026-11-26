@@ -53,7 +53,7 @@ export function BottomNav() {
             <li key={id}>
               <Link
                 href={href}
-                prefetch={false}
+                prefetch={true}
                 aria-current={active ? "page" : undefined}
                 className={cn(CELL, active ? "text-white" : "text-stadium-muted")}
               >

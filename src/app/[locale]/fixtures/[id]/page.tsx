@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { unstable_cache } from "next/cache";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
+import { ArrowLeft, ArrowRight, ListOrdered, BarChart3, Shirt, Swords } from "lucide-react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
   getFixtures,
@@ -43,7 +43,9 @@ import { buildSportsEventJsonLd, getLocalizedUrl, makePageMeta } from "@/lib/seo
 import { buildLocalizedBreadcrumbJsonLd } from "@/lib/seo-breadcrumbs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { ArticleCard } from "@/components/site-articles/article-card";
-import { DataPulseStrip, PresetConnectedGrid, SectionSubNav } from "@/components/ui/hub-links";
+import { DataPulseStrip, PresetConnectedGrid } from "@/components/ui/hub-links";
+import { MatchCentreNav } from "@/components/fixtures/match-centre-nav";
+import { getPlayerSlugByName } from "@/lib/squad-data";
 import { cleanTitle, formatNewsDate } from "@/components/news/news-text";
 import { getCachedNewsFeed } from "@/lib/news/cached-feed";
 import { SOURCE_CONFIG, getArticleUrl } from "@/lib/news-config";
@@ -200,6 +202,25 @@ export default async function FixtureDetailPage({ params }: PageProps) {
   const hasLineups = !!(homeLineup || awayLineup);
   const lineupLabel = isConfirmed ? tDetail("lineupsConfirmed") : tDetail("lineupsPredicted");
   const homeIsLfc = teams.home.id === LFC_ID;
+  const lfcLineup = homeIsLfc ? homeLineup : awayLineup;
+  const playerSlugs: Record<string, string> = {};
+  const addPlayerSlug = (name: string | null | undefined) => {
+    if (!name || playerSlugs[name]) return;
+    const slug = getPlayerSlugByName(name);
+    if (slug) playerSlugs[name] = slug;
+  };
+  for (const e of resolvedEvents) {
+    if (e.team.id === LFC_ID) {
+      addPlayerSlug(e.player.name);
+      addPlayerSlug(e.assist.name);
+    }
+  }
+  if (lfcLineup) {
+    for (const { player: p } of [...lfcLineup.startXI, ...lfcLineup.substitutes]) {
+      addPlayerSlug(p.name);
+    }
+  }
+
   const pens =
     f.status.short === "PEN" && score.penalty.home !== null && score.penalty.away !== null
       ? `${score.penalty.home}–${score.penalty.away}`
@@ -218,11 +239,12 @@ export default async function FixtureDetailPage({ params }: PageProps) {
       : []),
     { id: "lineups", label: tMatch("tabs.lineups") },
     { id: "h2h", label: tMatch("tabs.h2h") },
+    ...(fixtureArticles.length > 0 ? [{ id: "analysis", label: tDetail("matchAnalysis") }] : []),
   ];
-  const sectionClass = "mt-10 scroll-mt-[calc(var(--header-h)+3.5rem)]";
+  const sectionClass = "mt-10 scroll-mt-[calc(var(--header-h)+4rem)]";
 
   return (
-    <div className="min-h-screen pb-16 pt-[calc(var(--header-h)+1rem)] sm:pt-[calc(var(--header-h)+1.5rem)]">
+    <div className="min-h-screen pt-[var(--header-h)]">
       <JsonLd data={[
         await buildLocalizedBreadcrumbJsonLd(locale, [
           { nav: "fixtures", path: "/fixtures" },
@@ -242,9 +264,9 @@ export default async function FixtureDetailPage({ params }: PageProps) {
           status: f.status.short,
         }),
       ]} />
-      <div className="page-container">
+      <MatchCentreNav active={isFinished ? "results" : "fixtures"} />
+      <div className="page-container pb-16 pt-6 sm:pt-8">
         <div className="mx-auto max-w-3xl">
-          <SectionSubNav group="match" current="fixtures" className="mb-4" />
           <Link
             href="/fixtures"
             className="group mb-4 inline-flex min-h-11 items-center gap-2 text-sm text-stadium-muted transition-colors hover:text-white"
@@ -275,6 +297,26 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             refereeLabel={referee ? tDetail("referee", { name: referee }) : null}
           />
 
+          {fixtureArticles.length > 0 && (
+            <Link
+              href={`/analysis/${fixtureArticles[0].row.slug}`}
+              className="group mt-4 flex flex-col gap-2 border border-lfc-gold/30 bg-lfc-gold/[0.06] px-4 py-3 transition-colors hover:border-lfc-gold/60 hover:bg-lfc-gold/[0.1] sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="min-w-0">
+                <p className="font-barlow text-xs font-semibold uppercase tracking-[0.12em] text-lfc-gold">
+                  {tDetail("matchAnalysis")}
+                </p>
+                <p className="mt-0.5 truncate text-sm font-semibold text-white group-hover:text-lfc-gold">
+                  {fixtureArticles[0].content.title}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1.5 font-barlow text-xs font-semibold uppercase tracking-[0.08em] text-lfc-gold">
+                {tDetail("readAnalysis")}
+                <ArrowRight size={14} aria-hidden className="transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
+          )}
+
           {hasStarted && <SpoilerRevealPanel />}
 
           {isFinished ? (
@@ -286,22 +328,20 @@ export default async function FixtureDetailPage({ params }: PageProps) {
             <FanPrediction fixture={match} />
           )}
 
-          {sections.length > 2 && (
+          {sections.length >= 2 && (
             <nav
               aria-label={tDetail("sectionsLabel")}
-              className="sticky top-[var(--header-h)] z-30 -mx-4 mt-4 border-b border-[var(--line)] bg-stadium-bg/95 px-4 backdrop-blur md:hidden"
+              className="mt-6 flex flex-wrap gap-2 border-y border-[var(--line)] py-2.5"
             >
-              <div className="scroll-x flex">
-                {sections.map((sec) => (
-                  <a
-                    key={sec.id}
-                    href={`#${sec.id}`}
-                    className="inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap px-3 font-barlow text-[15px] font-semibold uppercase tracking-[0.08em] text-stadium-muted transition-colors hover:text-white"
-                  >
-                    {sec.label}
-                  </a>
-                ))}
-              </div>
+              {sections.map((sec) => (
+                <a
+                  key={sec.id}
+                  href={`#${sec.id}`}
+                  className="inline-flex min-h-9 items-center border border-[var(--line)] bg-[var(--surface-1)] px-3 py-1 font-barlow text-xs font-semibold uppercase tracking-[0.08em] text-stadium-muted transition-colors hover:border-white/30 hover:text-white"
+                >
+                  {sec.label}
+                </a>
+              ))}
             </nav>
           )}
 
@@ -315,7 +355,7 @@ export default async function FixtureDetailPage({ params }: PageProps) {
               ) : hasEvents ? (
                 <ul className="surface px-4 sm:px-5">
                   {resolvedEvents.map((event, i) => (
-                    <TimelineRow key={i} event={event} homeTeamId={teams.home.id} />
+                    <TimelineRow key={i} event={event} homeTeamId={teams.home.id} playerSlugs={playerSlugs} />
                   ))}
                 </ul>
               ) : (
@@ -368,8 +408,22 @@ export default async function FixtureDetailPage({ params }: PageProps) {
                     {lineupLabel}
                   </span>
                   <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-                    {homeLineup && <LineupSection lineup={homeLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
-                    {awayLineup && <LineupSection lineup={awayLineup} subsLabel={tDetail("substitutes")} coachLabel={tDetail("coach")} />}
+                    {homeLineup && (
+                      <LineupSection
+                        lineup={homeLineup}
+                        subsLabel={tDetail("substitutes")}
+                        coachLabel={tDetail("coach")}
+                        playerSlugs={homeIsLfc ? playerSlugs : undefined}
+                      />
+                    )}
+                    {awayLineup && (
+                      <LineupSection
+                        lineup={awayLineup}
+                        subsLabel={tDetail("substitutes")}
+                        coachLabel={tDetail("coach")}
+                        playerSlugs={!homeIsLfc ? playerSlugs : undefined}
+                      />
+                    )}
                   </div>
                 </div>
               </div>

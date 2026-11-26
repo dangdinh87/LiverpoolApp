@@ -54,7 +54,20 @@
       "analysis": "Phân tích",
       "chat": "Phòng chat",
       "injuries": "Chấn thương",
-      "transfers": "Chuyển nhượng"
+      "transfers": "Chuyển nhượng",
+      "club": "Câu lạc bộ",
+      "results": "Kết quả",
+      "predictions": "Dự đoán",
+      "seasonArchive": "Lưu trữ mùa giải",
+      "latestNews": "Tin mới nhất",
+      "dailyBriefing": "Điểm tin ngày",
+      "firstTeam": "Đội một",
+      "sections": {
+        "matches": "Trận đấu",
+        "editorial": "Tin tức & Phân tích",
+        "squad": "Đội hình",
+        "club": "Câu lạc bộ"
+      }
     },
     "labels": {
       "opponent": "Đối thủ",
@@ -1081,7 +1094,8 @@
       "metaFinished": "{home} {homeGoals}–{awayGoals} {away}. {competition}: diễn biến chính, thông số thống kê và đội hình xuất phát.",
       "attendance": "Khán giả: {count}",
       "referee": "Trọng tài: {name}",
-      "matchAnalysis": "Phân tích trận đấu",
+      "matchAnalysis": "Bài phân tích trận đấu",
+      "readAnalysis": "Đọc nhận định & phân tích chiến thuật",
       "allAnalysis": "Tất cả phân tích"
     },
     "outage": {
@@ -1094,7 +1108,9 @@
       "fixtures": "Lịch đấu",
       "results": "Kết quả",
       "standings": "BXH",
-      "stats": "Thống kê"
+      "stats": "Thống kê",
+      "predictions": "Dự đoán",
+      "archive": "Lưu trữ mùa giải"
     },
     "calendar": {
       "button": "Thêm vào lịch",
@@ -1683,7 +1699,7 @@
       "predictions": {
         "title": "Dự đoán trận đấu",
         "desc": "Chọn đội hình xuất phát, dự đoán tỷ số và tích điểm trên bảng xếp hạng.",
-        "badge": "Tương tác"
+        "badge": "Dự đoán"
       },
       "squad": {
         "title": "Đội hình đội một",
@@ -1733,7 +1749,7 @@
       "about": {
         "title": "Giới thiệu Anfield Daily",
         "desc": "Cách hệ thống biên tập tổng hợp, kiểm chứng và chuyển ngữ tin tức Liverpool.",
-        "badge": "Nền tảng"
+        "badge": "Giới thiệu"
       },
       "legal": {
         "title": "Pháp lý & Chính sách",
