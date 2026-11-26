@@ -27,19 +27,19 @@
  * 8s a page with two stages spent 15s before rendering, which overran the
  * platform's function limit and returned nothing at all.
  */
-export const SUPABASE_FETCH_TIMEOUT_MS = 3_000;
+export const SUPABASE_FETCH_TIMEOUT_MS = 5_000;
 
 /** Higher ceiling for cross-region CI static build workers (`next build`). */
 export const SUPABASE_BUILD_FETCH_TIMEOUT_MS = 15_000;
 
 /**
  * Ceiling for explicit user-initiated auth actions (sign-in, sign-up email
- * dispatch, OAuth/OTP callback verification, sign-out) where 3s is too tight.
+ * dispatch, OAuth/OTP callback verification, sign-out) where 5s is too tight.
  */
 export const SUPABASE_AUTH_TIMEOUT_MS = 12_000;
 
-/** How long to skip Supabase entirely after a connection-level failure. */
-export const SUPABASE_BREAKER_COOLDOWN_MS = 30_000;
+/** How long to skip Supabase background reads after a connection-level failure. */
+export const SUPABASE_BREAKER_COOLDOWN_MS = 8_000;
 
 /** Short cooldown during static build so one transient burst does not poison ISR. */
 export const SUPABASE_BUILD_BREAKER_COOLDOWN_MS = 2_000;
@@ -109,9 +109,11 @@ function asAbortError(message: string): DOMException {
 export function createSupabaseFetch(
   timeoutMs?: number,
   cooldownMs?: number,
+  options?: { bypassBreaker?: boolean },
 ): typeof fetch {
+  const bypassBreaker = Boolean(options?.bypassBreaker);
   return async (input, init) => {
-    if (isSupabaseBreakerOpen()) {
+    if (!bypassBreaker && isSupabaseBreakerOpen()) {
       throw asAbortError(
         "Supabase unavailable: skipping request while the connection breaker is open",
       );
@@ -165,7 +167,9 @@ export function createSupabaseFetch(
       // A caller aborting its own request says nothing about Supabase's health.
       if (callerSignal?.aborted && !timedOut) throw err;
       // Only a timeout or transport failure indicates the origin is down.
-      recordFailure(isBuild, effectiveCooldownMs);
+      if (!bypassBreaker) {
+        recordFailure(isBuild, effectiveCooldownMs);
+      }
       throw asAbortError(
         `Supabase request failed: ${err instanceof Error ? err.message : String(err)}`,
       );
@@ -175,7 +179,9 @@ export function createSupabaseFetch(
     }
 
     if (isOriginFailure(response.status)) {
-      recordFailure(isBuild, effectiveCooldownMs);
+      if (!bypassBreaker) {
+        recordFailure(isBuild, effectiveCooldownMs);
+      }
     } else {
       // A real answer proves the origin is back.
       resetSupabaseBreaker();

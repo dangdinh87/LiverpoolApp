@@ -63,9 +63,12 @@ function normalizeMap(raw: unknown): GuestPredictionMap {
 
 export async function readGuestFixturePredictions(
   fixtureId: number,
+  options?: { bypassBreaker?: boolean },
 ): Promise<GuestPredictionMap> {
   try {
-    const { data, error } = await getServiceClient()
+    const { data, error } = await getServiceClient(
+      options?.bypassBreaker ? { timeoutMs: 8_000, bypassBreaker: true } : undefined,
+    )
       .from("site_settings")
       .select("value")
       .eq("key", keyFor(fixtureId))
@@ -121,8 +124,8 @@ export async function saveGuestFixturePrediction(
   authorName: string | null,
 ): Promise<{ ok: boolean }> {
   try {
-    const db = getServiceClient();
-    const existing = await readGuestFixturePredictions(fixtureId);
+    const db = getServiceClient({ timeoutMs: 8_000, bypassBreaker: true });
+    const existing = await readGuestFixturePredictions(fixtureId, { bypassBreaker: true });
     const next: GuestPredictionMap = {
       ...existing,
       [actorId]: {

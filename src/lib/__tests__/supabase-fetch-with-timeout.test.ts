@@ -157,4 +157,22 @@ describe("createSupabaseFetch", () => {
     expect(res.status).toBe(200);
     expect(isSupabaseBreakerOpen()).toBe(false);
   });
+
+  it("allows bypassBreaker writes while the read breaker is open and closes the breaker on 200", async () => {
+    let fail = true;
+    globalThis.fetch = vi.fn(async () =>
+      fail ? new Response("", { status: 522 }) : new Response("ok", { status: 200 }),
+    ) as typeof fetch;
+
+    const readFetch = createSupabaseFetch();
+    const writeFetch = createSupabaseFetch(8_000, undefined, { bypassBreaker: true });
+
+    await readFetch("https://example.test");
+    expect(isSupabaseBreakerOpen()).toBe(true);
+
+    fail = false;
+    const writeRes = await writeFetch("https://example.test", { method: "POST" });
+    expect(writeRes.status).toBe(200);
+    expect(isSupabaseBreakerOpen()).toBe(false);
+  });
 });

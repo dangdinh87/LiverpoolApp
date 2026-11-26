@@ -193,7 +193,7 @@ export async function savePrediction(
   const nowIso = new Date().toISOString();
 
   try {
-    const db = getServiceClient();
+    const db = getServiceClient({ timeoutMs: 8_000, bypassBreaker: true });
     const baseRow = {
       user_id: actor.actorId,
       fixture_id: fixtureId,
@@ -354,7 +354,7 @@ export async function saveRatings(
 
   try {
     const now = new Date().toISOString();
-    const { error } = await getServiceClient()
+    const { error } = await getServiceClient({ timeoutMs: 8_000, bypassBreaker: true })
       .from("player_ratings")
       .upsert(
         entries.map(([player_name, rating]) => ({ user_id: userId, fixture_id: fixtureId, player_name, rating, updated_at: now })),

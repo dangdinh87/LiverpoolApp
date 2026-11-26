@@ -1,20 +1,25 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { getServiceClient } from "@/lib/news/supabase-service";
+import { resetIdentityCache } from "./guest-identity";
 
 export const CHAT_ROOMS = ["matchday", "transfers", "tactics", "general"] as const;
 export type ChatRoom = (typeof CHAT_ROOMS)[number];
 export type ChatRoomFilter = ChatRoom | "all";
 
-export const CHAT_CACHE_TAG = "community-forum";
 const FALLBACK_KEY = "community_forum_v1";
 const MAX_FALLBACK_POSTS = 250;
+const READ_CACHE_TTL_MS = 3_000;
+const MISSING_TABLE_TTL_MS = 10 * 60_000;
 
 const PRESENCE_TTL_MS = 45_000;
 const MAX_PRESENCE_ENTRIES = 1_000;
 // Bounded Map with lazy pruning only (no module-scope setInterval for Cloudflare Workers workerd).
 const presenceMap = new Map<string, number>();
+
+let cachedAllPosts: { posts: StoredChatPost[]; fetchedAt: number } | null = null;
+let inflightRead: Promise<StoredChatPost[]> | null = null;
+let forumTableMissingUntil = 0;
 
 export interface StoredChatPost {
   id: string;
@@ -71,9 +76,13 @@ export function getOnlineChatCount(): number {
   return presenceMap.size;
 }
 
-/** Test-only helper to clear in-memory presence entries between specs. */
+/** Test-only helper to clear in-memory presence, read cache, and identity caches between specs. */
 export function resetChatPresence(): void {
   presenceMap.clear();
+  cachedAllPosts = null;
+  inflightRead = null;
+  forumTableMissingUntil = 0;
+  resetIdentityCache();
 }
 
 export function isChatRoom(value: unknown): value is ChatRoom {
@@ -168,25 +177,39 @@ export function toChatMessageDTO(
   };
 }
 
-async function readFallbackPosts(): Promise<StoredChatPost[]> {
-  try {
-    const { data, error } = await getServiceClient()
-      .from("site_settings")
-      .select("value")
-      .eq("key", FALLBACK_KEY)
-      .maybeSingle();
-    if (error || !data || !Array.isArray(data.value)) return [];
-    const out: StoredChatPost[] = [];
-    for (const item of data.value) {
-      if (item && typeof item === "object") {
-        const mapped = mapRow(item as Record<string, unknown>);
-        if (mapped) out.push(mapped);
-      }
-    }
-    return out;
-  } catch {
-    return [];
+function filterPosts(
+  posts: StoredChatPost[],
+  room: ChatRoom | null,
+  limit: number,
+): StoredChatPost[] {
+  const filtered = room ? posts.filter((p) => p.room === room) : posts;
+  return filtered
+    .slice()
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit);
+}
+
+async function readFallbackPosts(options?: { bypassBreaker?: boolean }): Promise<StoredChatPost[]> {
+  const client = getServiceClient(
+    options?.bypassBreaker ? { timeoutMs: 8_000, bypassBreaker: true } : undefined,
+  );
+  const { data, error } = await client
+    .from("site_settings")
+    .select("value")
+    .eq("key", FALLBACK_KEY)
+    .maybeSingle();
+  if (error) {
+    throw error;
   }
+  if (!data || !Array.isArray(data.value)) return [];
+  const out: StoredChatPost[] = [];
+  for (const item of data.value) {
+    if (item && typeof item === "object") {
+      const mapped = mapRow(item as Record<string, unknown>);
+      if (mapped) out.push(mapped);
+    }
+  }
+  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 async function writeFallbackPosts(posts: StoredChatPost[]): Promise<{ ok: boolean }> {
@@ -195,7 +218,7 @@ async function writeFallbackPosts(posts: StoredChatPost[]): Promise<{ ok: boolea
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, MAX_FALLBACK_POSTS);
 
-    const { error } = await getServiceClient()
+    const { error } = await getServiceClient({ timeoutMs: 8_000, bypassBreaker: true })
       .from("site_settings")
       .upsert(
         {
@@ -216,43 +239,63 @@ async function writeFallbackPosts(posts: StoredChatPost[]): Promise<{ ok: boolea
   }
 }
 
+async function fetchRecentPostsFromDB(): Promise<StoredChatPost[]> {
+  if (Date.now() < forumTableMissingUntil) {
+    return readFallbackPosts();
+  }
+
+  const db = getServiceClient();
+  const { data, error } = await db
+    .from("forum_posts")
+    .select("id, room, author_id, is_member, author_name, author_avatar, content, parent_id, reply_to_name, created_at")
+    .order("created_at", { ascending: false })
+    .limit(150);
+
+  if (error) {
+    if (isMissingForumTableError(error)) {
+      forumTableMissingUntil = Date.now() + MISSING_TABLE_TTL_MS;
+      return readFallbackPosts();
+    }
+    throw error;
+  }
+
+  return (data ?? [])
+    .map((row) => mapRow(row as Record<string, unknown>))
+    .filter((p): p is StoredChatPost => p !== null);
+}
+
 export async function listStoredChatMessages(options?: {
   room?: ChatRoomFilter;
   limit?: number;
+  throwOnError?: boolean;
 }): Promise<StoredChatPost[]> {
   const limit = Math.min(Math.max(options?.limit ?? 80, 1), 150);
   const room = options?.room && options.room !== "all" ? options.room : null;
 
+  if (cachedAllPosts && Date.now() - cachedAllPosts.fetchedAt < READ_CACHE_TTL_MS) {
+    return filterPosts(cachedAllPosts.posts, room, limit);
+  }
+
   try {
-    const db = getServiceClient();
-    let query = db
-      .from("forum_posts")
-      .select("id, room, author_id, is_member, author_name, author_avatar, content, parent_id, reply_to_name, created_at")
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    inflightRead ??= fetchRecentPostsFromDB()
+      .then((posts) => {
+        cachedAllPosts = { posts, fetchedAt: Date.now() };
+        return posts;
+      })
+      .finally(() => {
+        inflightRead = null;
+      });
 
-    if (room) {
-      query = query.eq("room", room);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      if (isMissingForumTableError(error)) {
-        const fallback = await readFallbackPosts();
-        const filtered = room ? fallback.filter((p) => p.room === room) : fallback;
-        return filtered
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-          .slice(0, limit);
-      }
-      console.error("[chat] list failed:", error.message);
-      return [];
-    }
-
-    return (data ?? [])
-      .map((row) => mapRow(row as Record<string, unknown>))
-      .filter((p): p is StoredChatPost => p !== null);
+    const posts = await inflightRead;
+    return filterPosts(posts, room, limit);
   } catch (err) {
-    console.error("[chat] list threw:", err);
+    console.error("[chat] list failed:", err);
+    if (cachedAllPosts) {
+      return filterPosts(cachedAllPosts.posts, room, limit);
+    }
+    if (options?.throwOnError) {
+      throw err;
+    }
     return [];
   }
 }
@@ -267,7 +310,21 @@ export async function createChatPost(input: {
   parentId?: string | null;
   replyToName?: string | null;
 }): Promise<{ ok: true; post: StoredChatPost } | { ok: false; error: "parent_not_found" | "unavailable" }> {
-  const db = getServiceClient();
+  const cacheCreatedPost = (post: StoredChatPost) => {
+    const existing = cachedAllPosts?.posts ?? [];
+    cachedAllPosts = {
+      posts: [post, ...existing.filter((p) => p.id !== post.id)].slice(0, MAX_FALLBACK_POSTS),
+      fetchedAt: Date.now(),
+    };
+  };
+
+  if (Date.now() < forumTableMissingUntil) {
+    const fallbackRes = await createFallbackPost(input);
+    if (fallbackRes.ok) cacheCreatedPost(fallbackRes.post);
+    return fallbackRes;
+  }
+
+  const db = getServiceClient({ timeoutMs: 8_000, bypassBreaker: true });
 
   try {
     let resolvedRoom: ChatRoom = input.room;
@@ -293,7 +350,10 @@ export async function createChatPost(input: {
         .maybeSingle();
 
       if (parentErr && isMissingForumTableError(parentErr)) {
-        return createFallbackPost(input);
+        forumTableMissingUntil = Date.now() + MISSING_TABLE_TTL_MS;
+        const fallbackRes = await createFallbackPost(input);
+        if (fallbackRes.ok) cacheCreatedPost(fallbackRes.post);
+        return fallbackRes;
       }
       if (parentErr) {
         console.error("[chat] parent check failed:", parentErr.message);
@@ -319,7 +379,10 @@ export async function createChatPost(input: {
 
     if (error) {
       if (isMissingForumTableError(error)) {
-        return createFallbackPost(input);
+        forumTableMissingUntil = Date.now() + MISSING_TABLE_TTL_MS;
+        const fallbackRes = await createFallbackPost(input);
+        if (fallbackRes.ok) cacheCreatedPost(fallbackRes.post);
+        return fallbackRes;
       }
       console.error("[chat] insert failed:", error.message);
       return { ok: false, error: "unavailable" };
@@ -327,6 +390,7 @@ export async function createChatPost(input: {
 
     const mapped = mapRow(data as Record<string, unknown>);
     if (!mapped) return { ok: false, error: "unavailable" };
+    cacheCreatedPost(mapped);
     return { ok: true, post: mapped };
   } catch (err) {
     console.error("[chat] create threw:", err);
@@ -344,35 +408,40 @@ async function createFallbackPost(input: {
   parentId?: string | null;
   replyToName?: string | null;
 }): Promise<{ ok: true; post: StoredChatPost } | { ok: false; error: "parent_not_found" | "unavailable" }> {
-  const posts = await readFallbackPosts();
-  let resolvedRoom = input.room;
-  let resolvedParentId = input.parentId ?? null;
-  let resolvedReplyTo = input.replyToName ?? null;
+  try {
+    const posts = await readFallbackPosts({ bypassBreaker: true });
+    let resolvedRoom = input.room;
+    let resolvedParentId = input.parentId ?? null;
+    let resolvedReplyTo = input.replyToName ?? null;
 
-  if (resolvedParentId) {
-    const parent = posts.find((p) => p.id === resolvedParentId);
-    if (!parent) return { ok: false, error: "parent_not_found" };
-    resolvedRoom = parent.room;
-    resolvedParentId = parent.parentId ?? parent.id;
-    resolvedReplyTo = resolvedReplyTo || parent.authorName;
+    if (resolvedParentId) {
+      const parent = posts.find((p) => p.id === resolvedParentId);
+      if (!parent) return { ok: false, error: "parent_not_found" };
+      resolvedRoom = parent.room;
+      resolvedParentId = parent.parentId ?? parent.id;
+      resolvedReplyTo = resolvedReplyTo || parent.authorName;
+    }
+
+    const post: StoredChatPost = {
+      id: globalThis.crypto.randomUUID(),
+      room: resolvedRoom,
+      authorId: input.authorId,
+      isMember: input.isMember,
+      authorName: input.authorName,
+      authorAvatar: input.authorAvatar,
+      content: input.content,
+      parentId: resolvedParentId,
+      replyToName: resolvedReplyTo,
+      createdAt: new Date().toISOString(),
+    };
+
+    const saved = await writeFallbackPosts([post, ...posts]);
+    if (!saved.ok) return { ok: false, error: "unavailable" };
+    return { ok: true, post };
+  } catch (err) {
+    console.error("[chat] fallback create threw:", err);
+    return { ok: false, error: "unavailable" };
   }
-
-  const post: StoredChatPost = {
-    id: globalThis.crypto.randomUUID(),
-    room: resolvedRoom,
-    authorId: input.authorId,
-    isMember: input.isMember,
-    authorName: input.authorName,
-    authorAvatar: input.authorAvatar,
-    content: input.content,
-    parentId: resolvedParentId,
-    replyToName: resolvedReplyTo,
-    createdAt: new Date().toISOString(),
-  };
-
-  const saved = await writeFallbackPosts([post, ...posts]);
-  if (!saved.ok) return { ok: false, error: "unavailable" };
-  return { ok: true, post };
 }
 
 export async function deleteChatPost(input: {
@@ -380,7 +449,21 @@ export async function deleteChatPost(input: {
   actorId: string;
   isAdmin: boolean;
 }): Promise<{ ok: true } | { ok: false; error: "not_found" | "forbidden" | "unavailable" }> {
-  const db = getServiceClient();
+  const pruneCachedPost = () => {
+    if (!cachedAllPosts) return;
+    cachedAllPosts = {
+      posts: cachedAllPosts.posts.filter((p) => p.id !== input.id && p.parentId !== input.id),
+      fetchedAt: Date.now(),
+    };
+  };
+
+  if (Date.now() < forumTableMissingUntil) {
+    const fallbackRes = await deleteFallbackPost(input);
+    if (fallbackRes.ok) pruneCachedPost();
+    return fallbackRes;
+  }
+
+  const db = getServiceClient({ timeoutMs: 8_000, bypassBreaker: true });
 
   try {
     const { data: existing, error: readErr } = await db
@@ -391,7 +474,10 @@ export async function deleteChatPost(input: {
 
     if (readErr) {
       if (isMissingForumTableError(readErr)) {
-        return deleteFallbackPost(input);
+        forumTableMissingUntil = Date.now() + MISSING_TABLE_TTL_MS;
+        const fallbackRes = await deleteFallbackPost(input);
+        if (fallbackRes.ok) pruneCachedPost();
+        return fallbackRes;
       }
       console.error("[chat] delete read failed:", readErr.message);
       return { ok: false, error: "unavailable" };
@@ -407,6 +493,7 @@ export async function deleteChatPost(input: {
       console.error("[chat] delete failed:", delErr.message);
       return { ok: false, error: "unavailable" };
     }
+    pruneCachedPost();
     return { ok: true };
   } catch (err) {
     console.error("[chat] delete threw:", err);
@@ -419,28 +506,20 @@ async function deleteFallbackPost(input: {
   actorId: string;
   isAdmin: boolean;
 }): Promise<{ ok: true } | { ok: false; error: "not_found" | "forbidden" | "unavailable" }> {
-  const posts = await readFallbackPosts();
-  const target = posts.find((p) => p.id === input.id);
-  if (!target) return { ok: false, error: "not_found" };
-  if (target.authorId !== input.actorId && !input.isAdmin) {
-    return { ok: false, error: "forbidden" };
+  try {
+    const posts = await readFallbackPosts({ bypassBreaker: true });
+    const target = posts.find((p) => p.id === input.id);
+    if (!target) return { ok: false, error: "not_found" };
+    if (target.authorId !== input.actorId && !input.isAdmin) {
+      return { ok: false, error: "forbidden" };
+    }
+
+    const next = posts.filter((p) => p.id !== input.id && p.parentId !== input.id);
+    const saved = await writeFallbackPosts(next);
+    if (!saved.ok) return { ok: false, error: "unavailable" };
+    return { ok: true };
+  } catch (err) {
+    console.error("[chat] fallback delete threw:", err);
+    return { ok: false, error: "unavailable" };
   }
-
-  const next = posts.filter((p) => p.id !== input.id && p.parentId !== input.id);
-  const saved = await writeFallbackPosts(next);
-  if (!saved.ok) return { ok: false, error: "unavailable" };
-  return { ok: true };
 }
-
-/**
- * Cached public snapshot of recent chat messages for ISR pages (/chat and /).
- * Returns anonymised DTOs (`isOwn: false, canDelete: false`) without reading cookies.
- */
-export const getCachedRecentChatMessages = unstable_cache(
-  async (limit: number = 80): Promise<ChatMessageDTO[]> => {
-    const posts = await listStoredChatMessages({ room: "all", limit });
-    return posts.map((post) => toChatMessageDTO(post, null));
-  },
-  ["community-chat-initial-v1"],
-  { revalidate: 1800, tags: [CHAT_CACHE_TAG] },
-);

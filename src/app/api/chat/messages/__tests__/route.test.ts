@@ -5,6 +5,10 @@ import { resetRateLimitStore } from "@/lib/rate-limit";
 const cookieJar = new Map<string, string>();
 const cookieSetLog: Array<{ name: string; value: string; options?: Record<string, unknown> }> = [];
 let storedPosts: Array<Record<string, unknown>> = [];
+let fallbackStoredPosts: Array<Record<string, unknown>> = [];
+let forumTableError: { code?: string; message?: string } | null = null;
+let fallbackReadError: { message: string } | null = null;
+let forumQueryCount = 0;
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
@@ -44,6 +48,32 @@ vi.mock("@/lib/news/supabase-service", () => ({
   getServiceClient: () => ({
     from: (table: string) => {
       if (table === "forum_posts") {
+        forumQueryCount += 1;
+        if (forumTableError) {
+          const err = forumTableError;
+          return {
+            select: () => ({
+              order: () => ({
+                limit: () => ({
+                  eq: async () => ({ data: null, error: err }),
+                  then: (resolve: (v: { data: null; error: typeof err }) => void) =>
+                    resolve({ data: null, error: err }),
+                }),
+              }),
+              eq: () => ({
+                maybeSingle: async () => ({ data: null, error: err }),
+              }),
+            }),
+            insert: () => ({
+              select: () => ({
+                single: async () => ({ data: null, error: err }),
+              }),
+            }),
+            delete: () => ({
+              eq: async () => ({ error: err }),
+            }),
+          };
+        }
         return {
           select: () => ({
             order: () => ({
@@ -85,7 +115,18 @@ vi.mock("@/lib/news/supabase-service", () => ({
         };
       }
       return {
-        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () =>
+              fallbackReadError
+                ? { data: null, error: fallbackReadError }
+                : { data: { value: fallbackStoredPosts }, error: null },
+          }),
+        }),
+        upsert: async (row: { value?: Array<Record<string, unknown>> }) => {
+          fallbackStoredPosts = Array.isArray(row.value) ? row.value : [];
+          return { error: null };
+        },
       };
     },
   }),
@@ -108,6 +149,10 @@ beforeEach(async () => {
   cookieJar.clear();
   cookieSetLog.length = 0;
   storedPosts = [];
+  fallbackStoredPosts = [];
+  forumTableError = null;
+  fallbackReadError = null;
+  forumQueryCount = 0;
   resetRateLimitStore();
   revalidateLocalizedPathMock.mockReset();
   const { resetChatPresence } = await import("@/lib/community/chat-db");
@@ -340,5 +385,48 @@ describe("/api/chat/messages", () => {
     );
     expect(globalLimited.status).toBe(429);
     expect(globalLimited.headers.get("Retry-After")).toBe("60");
+  });
+
+  it("returns 503 on cold DB failure and serves stale cached messages when warm DB throws", async () => {
+    vi.useFakeTimers();
+    const { GET, POST } = await import("../route");
+
+    forumTableError = { message: "upstream timeout" };
+    const coldFail = await GET(new NextRequest("http://localhost:3000/api/chat/messages?room=general"));
+    expect(coldFail.status).toBe(503);
+
+    // Recover and warm cache via POST + GET
+    forumTableError = null;
+    expect((await POST(makePostReq({ content: "Up the Reds!" }, "198.51.100.55"))).status).toBe(201);
+
+    // Move past 3s read cache TTL, then inject a DB failure: GET must serve stale cache (200) instead of []
+    vi.advanceTimersByTime(3_500);
+    forumTableError = { message: "transient outage" };
+    const staleRes = await GET(new NextRequest("http://localhost:3000/api/chat/messages?room=general"));
+    expect(staleRes.status).toBe(200);
+    const staleBody = await staleRes.json();
+    expect(staleBody.messages).toHaveLength(1);
+    expect(staleBody.messages[0].content).toBe("Up the Reds!");
+  });
+
+  it("caches missing forum_posts (PGRST205) so subsequent GET/POST fall back to site_settings without re-querying forum_posts", async () => {
+    vi.useFakeTimers();
+    const { GET, POST } = await import("../route");
+
+    forumTableError = { code: "PGRST205", message: "Could not find table forum_posts" };
+    const firstPost = await POST(makePostReq({ content: "Fallback chat test" }, "198.51.100.77"));
+    expect(firstPost.status).toBe(201);
+    const queriesAfterFirst = forumQueryCount;
+    expect(queriesAfterFirst).toBeGreaterThan(0);
+
+    // Next GET after cache TTL and next POST after slowmode must skip forum_posts completely
+    vi.advanceTimersByTime(4_200);
+    const getRes = await GET(new NextRequest("http://localhost:3000/api/chat/messages?room=general"));
+    expect(getRes.status).toBe(200);
+    expect((await getRes.json()).messages[0].content).toBe("Fallback chat test");
+
+    const secondPost = await POST(makePostReq({ content: "Fallback chat second" }, "198.51.100.77"));
+    expect(secondPost.status).toBe(201);
+    expect(forumQueryCount).toBe(queriesAfterFirst);
   });
 });

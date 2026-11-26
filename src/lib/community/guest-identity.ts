@@ -11,6 +11,29 @@ export const COMMUNITY_NAME_STORAGE_KEY = "ad_community_name";
 
 const TOKEN_RE = /^[0-9a-f]{64}$/;
 const ONE_YEAR_SEC = 365 * 24 * 60 * 60;
+const MEMBER_CACHE_TTL_MS = 60_000;
+const MAX_MEMBER_CACHE_ENTRIES = 500;
+
+const memberCache = new Map<string, { actor: CommunityActor; expiresAt: number }>();
+
+/** Clear in-memory signed-in member cache (used by unit tests). */
+export function resetIdentityCache(): void {
+  memberCache.clear();
+}
+
+async function sessionCacheKey(
+  sbCookies: ReadonlyArray<{ name: string; value: string }>,
+): Promise<string> {
+  const raw = sbCookies
+    .map((c) => `${c.name}=${c.value}`)
+    .sort()
+    .join(";");
+  const digest = await globalThis.crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(raw),
+  );
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export interface CommunityActor {
   actorId: string;
@@ -63,8 +86,20 @@ function cookieOptions(httpOnly: boolean) {
   };
 }
 
-async function readSignedInMember(): Promise<CommunityActor | null> {
+async function readSignedInMember(
+  sbCookies: ReadonlyArray<{ name: string; value: string }>,
+): Promise<CommunityActor | null> {
   try {
+    const key = await sessionCacheKey(sbCookies);
+    const now = Date.now();
+    const cached = memberCache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.actor;
+    }
+    if (cached) {
+      memberCache.delete(key);
+    }
+
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return null;
@@ -76,13 +111,20 @@ async function readSignedInMember(): Promise<CommunityActor | null> {
       .maybeSingle();
 
     const username = sanitizeDisplayName(profile?.username) ?? fallbackFanName(user.id);
-    return {
+    const actor: CommunityActor = {
       actorId: user.id,
       isMember: true,
       isAdmin: isAdminEmail(user.email),
       username,
       avatarUrl: profile?.avatar_url ?? null,
     };
+
+    if (memberCache.size >= MAX_MEMBER_CACHE_ENTRIES) {
+      const oldest = memberCache.keys().next().value;
+      if (oldest !== undefined) memberCache.delete(oldest);
+    }
+    memberCache.set(key, { actor, expiresAt: now + MEMBER_CACHE_TTL_MS });
+    return actor;
   } catch {
     return null;
   }
@@ -95,10 +137,10 @@ async function readSignedInMember(): Promise<CommunityActor | null> {
  */
 export async function readCurrentActor(): Promise<CommunityActor | null> {
   const cookieStore = await cookies();
-  const hasSbCookie = cookieStore.getAll().some((c) => c.name.startsWith("sb-"));
+  const sbCookies = cookieStore.getAll().filter((c) => c.name.startsWith("sb-"));
 
-  if (hasSbCookie) {
-    const member = await readSignedInMember();
+  if (sbCookies.length > 0) {
+    const member = await readSignedInMember(sbCookies);
     if (member) return member;
   }
 
@@ -122,12 +164,19 @@ export async function readCurrentActor(): Promise<CommunityActor | null> {
  * Ensure the caller has a persistent identity (signed-in member OR cryptographically
  * hashed guest cookie) before writing a prediction or forum post.
  */
-export async function ensureWritableActor(preferredName?: unknown): Promise<CommunityActor> {
-  const cookieStore = await cookies();
-  const hasSbCookie = cookieStore.getAll().some((c) => c.name.startsWith("sb-"));
+export async function ensureWritableActor(
+  preferredName?: unknown,
+  existingActor?: CommunityActor | null,
+): Promise<CommunityActor> {
+  if (existingActor?.isMember) {
+    return existingActor;
+  }
 
-  if (hasSbCookie) {
-    const member = await readSignedInMember();
+  const cookieStore = await cookies();
+  const sbCookies = cookieStore.getAll().filter((c) => c.name.startsWith("sb-"));
+
+  if (sbCookies.length > 0) {
+    const member = await readSignedInMember(sbCookies);
     if (member) return member;
   }
 

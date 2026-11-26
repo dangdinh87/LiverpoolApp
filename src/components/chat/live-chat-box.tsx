@@ -55,7 +55,7 @@ interface LiveChatBoxProps {
 
 const COMMUNITY_NAME_KEY = "ad_community_name";
 const COMMUNITY_NAME_EVENT = "ad:community-name";
-const POLL_MS = 4_000;
+const POLL_MS = 5_000;
 const CHAT_MAX_CHARS = 300;
 const CHAT_COOLDOWN_SEC = 4;
 
@@ -336,8 +336,8 @@ export function LiveChatBox({
     persistName(displayName);
     stickToBottomRef.current = true;
 
-    try {
-      const res = await fetch("/api/chat/messages", {
+    const postMessageOnce = () =>
+      fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -349,6 +349,19 @@ export function LiveChatBox({
           website: honeypot || undefined,
         }),
       });
+
+    try {
+      let res: Response;
+      try {
+        res = await postMessageOnce();
+        if (res.status >= 500) {
+          await new Promise((r) => setTimeout(r, 450));
+          res = await postMessageOnce();
+        }
+      } catch {
+        await new Promise((r) => setTimeout(r, 450));
+        res = await postMessageOnce();
+      }
       const data = (await res.json().catch(() => null)) as {
         message?: ChatMessageItem;
         error?: string;

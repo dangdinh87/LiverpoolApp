@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
-  CHAT_CACHE_TAG,
   CHAT_ROOMS,
   createChatPost,
   deleteChatPost,
@@ -62,7 +60,7 @@ export async function GET(req: NextRequest) {
   try {
     const [actor, posts] = await Promise.all([
       readCurrentActor(),
-      listStoredChatMessages({ room, limit }),
+      listStoredChatMessages({ room, limit, throwOnError: true }),
     ]);
 
     recordChatPresence(actor?.actorId ?? getClientIP(req));
@@ -86,7 +84,7 @@ export async function GET(req: NextRequest) {
     console.error("[chat] GET failed:", err);
     return NextResponse.json(
       { error: "unavailable" },
-      { status: 500, headers: { "Cache-Control": "no-store" } },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
     );
   }
 }
@@ -139,6 +137,7 @@ export async function POST(req: NextRequest) {
       typeof parsed.data.displayName === "string" && parsed.data.displayName.trim() === "";
     const actor = await ensureWritableActor(
       clearedDisplayName ? "" : (nameCheck.name ?? undefined),
+      existingActor,
     );
 
     // Multi-layer rate limits on both IP and actor UUID:
@@ -207,8 +206,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    revalidateTag(CHAT_CACHE_TAG, "max");
-
     const dto = toChatMessageDTO(created.post, {
       actorId: actor.actorId,
       isAdmin: actor.isAdmin,
@@ -256,8 +253,6 @@ export async function DELETE(req: NextRequest) {
         res.error === "not_found" ? 404 : res.error === "forbidden" ? 403 : 500;
       return NextResponse.json({ error: res.error }, { status });
     }
-
-    revalidateTag(CHAT_CACHE_TAG, "max");
 
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
   } catch (err) {
