@@ -173,6 +173,23 @@ export function Footer() {
                 <a href={`mailto:${BRAND.contactEmail}`} className={LINK}>
                   {BRAND.contactEmail}
                 </a>
+                {/* Listing badge from Chợ Dev. `allowTransparency` is left out:
+                    React 19 warns on it, and the inline transparent background
+                    already does the job. */}
+                <iframe
+                  src="https://chodev.pro/embed/badge/anfield-daily?theme=dark"
+                  width={250}
+                  height={54}
+                  loading="lazy"
+                  referrerPolicy="origin"
+                  title="Featured on Chợ Dev"
+                  className="mt-3 block"
+                  style={{ border: "none", overflow: "hidden", borderRadius: "14px", background: "transparent" }}
+                >
+                  <a href="https://chodev.pro/p/anfield-daily" target="_blank" rel="noopener">
+                    Featured on Chợ Dev
+                  </a>
+                </iframe>
               </div>
             </div>
           </div>
